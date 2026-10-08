@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Money, ValidationError } from '@cashdeck/domain'
+import { encodeBrCode, Money, ValidationError } from '@cashdeck/domain'
 import { captureBillSchema } from '@/dtos/bill'
 import { NotFoundError } from '@/errors/errors'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
@@ -12,6 +12,13 @@ import {
   TENANT,
 } from '@/testing/scenario.test-helpers'
 
+const PIX_WITH_AMOUNT = encodeBrCode({
+  key: 'tax@example.com',
+  merchantName: 'Receita Exemplo',
+  merchantCity: 'BRASILIA',
+  amount: Money.of(15000),
+})
+
 function setup() {
   const deps = scenario()
   const capture = makeCaptureBill(deps)
@@ -22,7 +29,7 @@ function setup() {
 
 describe('captureBill', () => {
   it('captures a boleto from its digitable line and dedupes it', async () => {
-    const { run } = setup()
+    const { deps, run } = setup()
     const first = await run({ paymentCode: BOLETO_LINE, source: 'CAMERA' })
     expect(first.duplicate).toBe(false)
     expect(first.bill).toMatchObject({
@@ -33,6 +40,10 @@ describe('captureBill', () => {
       status: 'OPEN',
     })
     expect(first.bill.amount).toEqual(Money.of(12345))
+
+    expect(
+      (await deps.payments.findPlan(TENANT, first.bill.id))?.steps.at(-1)?.mode,
+    ).toBe('ASSISTED')
 
     const second = await run({ paymentCode: BOLETO_BARCODE })
     expect(second.duplicate).toBe(true)
@@ -61,6 +72,60 @@ describe('captureBill', () => {
       payee: 'Landlord',
     })
     expect(named.bill.payee).toBe('Landlord')
+  })
+
+  it('captures a boleto com Pix with both codes', async () => {
+    const { run } = setup()
+    const { bill } = await run({
+      paymentCode: BOLETO_LINE,
+      pixCode: PIX_NO_AMOUNT,
+    })
+    expect(bill).toMatchObject({
+      kind: 'BOLETO',
+      code: BOLETO_BARCODE,
+      pixCode: PIX_NO_AMOUNT,
+      payee: 'Fulano de Tal',
+    })
+    expect(bill.amount).toEqual(Money.of(12345))
+    const pixOnly = await setup().run({
+      pixCode: PIX_NO_AMOUNT,
+      amountCents: 900,
+    })
+    expect(pixOnly.bill).toMatchObject({
+      kind: 'PIX_QR',
+      code: PIX_NO_AMOUNT,
+      pixCode: PIX_NO_AMOUNT,
+    })
+    const tax = await setup().run({
+      paymentCode: TAX_BARCODE,
+      pixCode: PIX_WITH_AMOUNT,
+      dueDate: '2026-10-20',
+    })
+    expect(tax.bill).toMatchObject({
+      kind: 'TAX_BARCODE',
+      pixCode: PIX_WITH_AMOUNT,
+    })
+    expect(tax.bill.amount).toEqual(Money.of(15000))
+  })
+
+  it('rejects a Pix code that does not match its barcode', async () => {
+    const { run } = setup()
+    await expect(
+      run({ paymentCode: PIX_NO_AMOUNT, pixCode: PIX_NO_AMOUNT }),
+    ).rejects.toThrow('next to a barcode')
+    await expect(
+      run({ paymentCode: BOLETO_LINE, pixCode: TAX_BARCODE }),
+    ).rejects.toThrow('next to a barcode')
+    await expect(
+      run({ paymentCode: BOLETO_LINE, pixCode: PIX_WITH_AMOUNT }),
+    ).rejects.toThrow('amounts differ')
+    expect(() =>
+      captureBillSchema.parse({
+        entityId: 'pf',
+        pixCode: PIX_NO_AMOUNT,
+        pixKey: 'k',
+      }),
+    ).toThrow()
   })
 
   it('captures a Pix key and a DARF without barcode with explicit amounts', async () => {

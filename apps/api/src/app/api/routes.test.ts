@@ -66,7 +66,10 @@ describe('api routes', () => {
     const detail = await json(
       await getBill(new Request('http://x'), params(created.body.data.id)),
     )
-    expect(detail.body.data).toMatchObject({ plan: null, attempts: [] })
+    expect(detail.body.data).toMatchObject({ attempts: [], pixCode: null })
+    expect(
+      detail.body.data.plan.steps.map((step: { rail: string }) => step.rail),
+    ).toEqual(['INTER_EMPRESAS', 'C6_EMPRESAS', 'ASSISTED'])
   })
 
   it('walks the ladder down to assisted while rails are unconfigured', async () => {

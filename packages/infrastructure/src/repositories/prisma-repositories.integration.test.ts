@@ -79,7 +79,7 @@ describe.skipIf(!url)('Prisma repositories against a database', () => {
     await repos.payments.savePlan(
       tenantId,
       createPaymentPlan(bill.id, [
-        { mode: 'AUTOMATIC', rail: 'ASAAS' },
+        { mode: 'AUTOMATIC', rail: 'ASAAS', method: 'BOLETO' },
         ASSISTED_STEP,
       ]),
     )
@@ -89,11 +89,12 @@ describe.skipIf(!url)('Prisma repositories against a database', () => {
       stepIndex: 0,
       rail: 'ASAAS',
       mode: 'AUTOMATIC',
+      method: 'BOLETO',
       amount: bill.amount,
       outcome: 'PAID',
       reason: null,
       externalId: 'ext',
-      idempotencyKey: `${bill.id}:0`,
+      idempotencyKey: `${bill.id}:0:BOLETO`,
       at,
     })
 

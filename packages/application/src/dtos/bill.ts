@@ -4,6 +4,7 @@ import {
   BILL_SOURCES,
   BILL_STATUSES,
   ENTITY_KINDS,
+  PAYMENT_METHODS,
   RAIL_IDS,
   STEP_MODES,
   type Bill,
@@ -19,6 +20,7 @@ export const captureBillSchema = z
     entityId: z.string().min(1),
     source: z.enum(BILL_SOURCES).default('MANUAL'),
     paymentCode: z.string().trim().min(1).optional(),
+    pixCode: z.string().trim().min(1).optional(),
     pixKey: z.string().trim().min(1).optional(),
     darfWithoutBarcode: z.boolean().optional(),
     amountCents: z.int().positive().optional(),
@@ -27,11 +29,14 @@ export const captureBillSchema = z
   })
   .refine(
     input =>
-      [input.paymentCode, input.pixKey, input.darfWithoutBarcode].filter(
-        Boolean,
-      ).length === 1,
+      [
+        input.paymentCode ?? input.pixCode,
+        input.pixKey,
+        input.darfWithoutBarcode,
+      ].filter(Boolean).length === 1,
     {
-      message: 'Send exactly one of paymentCode, pixKey or darfWithoutBarcode.',
+      message:
+        'Send a paymentCode (with an optional pixCode), a pixCode, a pixKey or darfWithoutBarcode.',
     },
   )
 
@@ -60,6 +65,7 @@ export const billViewSchema = z.object({
   amount: moneyViewSchema,
   dueDate: isoDate,
   code: z.string().nullable(),
+  pixCode: z.string().nullable(),
   createdAt: z.string(),
   paidAt: z.string().nullable(),
   paidBy: z.enum(['RAIL', 'USER']).nullable(),
@@ -70,6 +76,7 @@ export type BillView = z.infer<typeof billViewSchema>
 export const paymentStepViewSchema = z.object({
   mode: z.enum(STEP_MODES),
   rail: z.enum(RAIL_IDS),
+  method: z.enum(PAYMENT_METHODS),
 })
 
 export const paymentAttemptViewSchema = z.object({
@@ -77,6 +84,7 @@ export const paymentAttemptViewSchema = z.object({
   stepIndex: z.int(),
   rail: z.enum(RAIL_IDS),
   mode: z.enum(STEP_MODES),
+  method: z.enum(PAYMENT_METHODS),
   amount: moneyViewSchema,
   outcome: z.enum([
     'PAID',
@@ -111,6 +119,7 @@ export function toBillView(bill: Bill, entityKind: EntityKind): BillView {
     amount: bill.amount.toJSON(),
     dueDate: bill.dueDate,
     code: bill.code,
+    pixCode: bill.pixCode,
     createdAt: bill.createdAt.toISOString(),
     paidAt: bill.paidAt?.toISOString() ?? null,
     paidBy: bill.paidBy,
@@ -131,6 +140,7 @@ export function toBillDetailView(
       stepIndex: attempt.stepIndex,
       rail: attempt.rail,
       mode: attempt.mode,
+      method: attempt.method,
       amount: attempt.amount.toJSON(),
       outcome: attempt.outcome,
       reason: attempt.reason,

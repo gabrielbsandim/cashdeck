@@ -15,9 +15,21 @@ export const RAIL_IDS = [
 ] as const
 export type RailId = (typeof RAIL_IDS)[number]
 
-export type PaymentStep = { readonly mode: StepMode; readonly rail: RailId }
+export const PAYMENT_METHODS = ['PIX', 'BOLETO'] as const
+// BOLETO covers every barcode payment, tax guides included.
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 
-export const ASSISTED_STEP: PaymentStep = { mode: 'ASSISTED', rail: 'ASSISTED' }
+export type PaymentStep = {
+  readonly mode: StepMode
+  readonly rail: RailId
+  readonly method: PaymentMethod
+}
+
+export const ASSISTED_STEP: PaymentStep = {
+  mode: 'ASSISTED',
+  rail: 'ASSISTED',
+  method: 'BOLETO',
+}
 
 export type PaymentPlan = {
   readonly billId: string
@@ -38,6 +50,7 @@ export type PaymentAttempt = {
   readonly stepIndex: number
   readonly rail: RailId
   readonly mode: StepMode
+  readonly method: PaymentMethod
   readonly amount: Money
   readonly outcome: AttemptOutcome
   readonly reason: string | null
@@ -85,8 +98,26 @@ export function jumpToAssisted(plan: PaymentPlan): PaymentPlan {
   return { ...plan, currentStep: plan.steps.length - 1 }
 }
 
-export function idempotencyKey(billId: string, stepIndex: number): string {
-  return `${billId}:${stepIndex}`
+export function idempotencyKey(
+  billId: string,
+  stepIndex: number,
+  method: PaymentMethod,
+): string {
+  return `${billId}:${stepIndex}:${method}`
+}
+
+const COMMITTED_OUTCOMES: readonly AttemptOutcome[] = [
+  'PAID',
+  'SUBMITTED',
+  'PENDING_APPROVAL',
+]
+
+// A bill can carry a Pix code and a barcode; once either rail took the money,
+// or may still take it, no other step is tried.
+export function hasCommittedAttempt(
+  attempts: readonly PaymentAttempt[],
+): boolean {
+  return attempts.some(attempt => COMMITTED_OUTCOMES.includes(attempt.outcome))
 }
 
 const STATUS_BY_OUTCOME: Record<AttemptOutcome, BillStatus> = {
@@ -101,16 +132,12 @@ export function billStatusFor(outcome: AttemptOutcome): BillStatus {
   return STATUS_BY_OUTCOME[outcome]
 }
 
-const auto = (rail: RailId): PaymentStep => ({ mode: 'AUTOMATIC', rail })
-const approval = (rail: RailId): PaymentStep => ({
-  mode: 'BANK_APPROVAL',
-  rail,
-})
+type Route = { readonly mode: StepMode; readonly rail: RailId }
 
-const DEFAULT_ROUTES: Record<
-  EntityKind,
-  Record<BillKind, readonly PaymentStep[]>
-> = {
+const auto = (rail: RailId): Route => ({ mode: 'AUTOMATIC', rail })
+const approval = (rail: RailId): Route => ({ mode: 'BANK_APPROVAL', rail })
+
+const DEFAULT_ROUTES: Record<EntityKind, Record<BillKind, readonly Route[]>> = {
   PF: {
     PIX_KEY: [auto('MERCADO_PAGO_PAYOUTS')],
     PIX_QR: [auto('ASAAS')],
@@ -127,13 +154,42 @@ const DEFAULT_ROUTES: Record<
   },
 }
 
+const PIX_KINDS: readonly BillKind[] = ['PIX_KEY', 'PIX_QR']
+
+export function methodFor(kind: BillKind): PaymentMethod {
+  return PIX_KINDS.includes(kind) ? 'PIX' : 'BOLETO'
+}
+
+export type RouteInput = {
+  entityKind: EntityKind
+  billKind: BillKind
+  hasPixCode: boolean
+}
+
+// The kind a rail is asked to support for a step: a Pix step on a barcode
+// bill pays its BR Code, so the rail must take a Pix QR.
+export type RailFilter = (rail: RailId, kind: BillKind) => boolean
+
 export function routePayment(
-  entityKind: EntityKind,
-  billKind: BillKind,
-  enabledRails: ReadonlySet<RailId>,
+  input: RouteInput,
+  canUse: RailFilter,
 ): PaymentStep[] {
-  const steps = DEFAULT_ROUTES[entityKind][billKind].filter(step =>
-    enabledRails.has(step.rail),
+  const routes = DEFAULT_ROUTES[input.entityKind]
+  const pixFirst = input.hasPixCode && methodFor(input.billKind) === 'BOLETO'
+  const pix = pixFirst
+    ? routes.PIX_QR.map(route => [route, 'PIX_QR'] as const)
+    : []
+  const own = routes[input.billKind].map(
+    route => [route, input.billKind] as const,
   )
-  return [...steps, ASSISTED_STEP]
+  const steps = [...pix, ...own]
+    .filter(([route, kind]) => canUse(route.rail, kind))
+    .map(
+      ([route, kind]): PaymentStep => ({ ...route, method: methodFor(kind) }),
+    )
+  const assisted: PaymentStep = {
+    ...ASSISTED_STEP,
+    method: pixFirst ? 'PIX' : methodFor(input.billKind),
+  }
+  return [...steps, assisted]
 }

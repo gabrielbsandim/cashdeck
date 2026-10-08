@@ -1,4 +1,5 @@
 import { type LocalDate } from '@/calendar/local-date'
+import { parseBrCode } from '@/codes/br-code'
 import { type DecodedPaymentCode } from '@/codes/payment-code'
 import { type Money } from '@/money/money'
 import { InvalidTransitionError, ValidationError } from '@/shared/domain-error'
@@ -46,6 +47,8 @@ export type Bill = {
   readonly amount: Money
   readonly dueDate: LocalDate
   readonly code: string | null
+  // The BR Code copy-and-paste of a "boleto com Pix", or of a Pix QR bill.
+  readonly pixCode: string | null
   readonly createdAt: Date
   readonly paidAt: Date | null
   readonly paidBy: PaidBy | null
@@ -53,10 +56,17 @@ export type Bill = {
 
 export type CreateBillInput = Omit<
   Bill,
-  'status' | 'paidAt' | 'paidBy' | 'payee' | 'code'
+  'status' | 'paidAt' | 'paidBy' | 'payee' | 'code' | 'pixCode'
 > & {
   payee?: string | null
   code?: string | null
+  pixCode?: string | null
+}
+
+function resolvePixCode(input: CreateBillInput, code: string | null) {
+  const pixCode = input.pixCode?.trim() || null
+  const candidate = input.kind === 'PIX_QR' ? (pixCode ?? code) : pixCode
+  return candidate === null ? null : parseBrCode(candidate).payload
 }
 
 export function createBill(input: CreateBillInput): Bill {
@@ -71,6 +81,7 @@ export function createBill(input: CreateBillInput): Bill {
     ...input,
     payee: input.payee?.trim() || null,
     code,
+    pixCode: resolvePixCode(input, code),
     status: 'OPEN',
     paidAt: null,
     paidBy: null,

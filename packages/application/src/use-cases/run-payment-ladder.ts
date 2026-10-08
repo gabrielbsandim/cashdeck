@@ -3,6 +3,7 @@ import {
   type BillStatus,
   billStatusFor,
   currentStep,
+  hasCommittedAttempt,
   idempotencyKey,
   isAtAssistedStep,
   isSettled,
@@ -60,6 +61,7 @@ export function assistedInstructions(bill: Bill): AssistedInstructions {
   return {
     kind: bill.kind,
     copyCode: bill.code,
+    pixCode: bill.pixCode,
     amountCents: bill.amount.cents,
     dueDate: bill.dueDate,
   }
@@ -123,7 +125,7 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     if (await exceedsCap(tenantId, bill, step, settings, today)) {
       return failed('DAILY_CAP_EXCEEDED')
     }
-    const key = idempotencyKey(bill.id, plan.currentStep)
+    const key = idempotencyKey(bill.id, plan.currentStep, step.method)
     const previous = await deps.idempotency.find<RailResult>(tenantId, key)
     if (previous) {
       return previous
@@ -132,6 +134,7 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
       const result = await rail.pay({
         bill,
         mode: step.mode,
+        method: step.method,
         idempotencyKey: key,
       })
       await deps.idempotency.save(tenantId, key, 'payment', result)
@@ -154,11 +157,12 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
       stepIndex: plan.currentStep,
       rail: step.rail,
       mode: step.mode,
+      method: step.method,
       amount: bill.amount,
       outcome: result.outcome,
       reason: result.reason ?? null,
       externalId: result.externalId ?? null,
-      idempotencyKey: idempotencyKey(bill.id, plan.currentStep),
+      idempotencyKey: idempotencyKey(bill.id, plan.currentStep, step.method),
       at: deps.clock.now(),
     }
     await deps.payments.addAttempt(tenantId, attempt)
@@ -172,6 +176,7 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
       result: result.outcome,
       details: {
         stepIndex: attempt.stepIndex,
+        method: attempt.method,
         reason: attempt.reason,
         idempotencyKey: attempt.idempotencyKey,
       },
@@ -230,7 +235,12 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     }
     const stored = await deps.payments.findPlan(tenantId, billId)
     const plan = stored ?? (await buildPlan(tenantId, bill))
-    if (isSettled(bill) || WAITING.includes(bill.status)) {
+    const previous = await deps.payments.listAttempts(tenantId, billId)
+    if (
+      isSettled(bill) ||
+      WAITING.includes(bill.status) ||
+      hasCommittedAttempt(previous)
+    ) {
       return { bill, plan, attempts: [], instructions: null }
     }
     const settings = await deps.settings.get(tenantId, bill.entityId)

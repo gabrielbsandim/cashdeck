@@ -22,7 +22,24 @@ export type ProviderTransaction = {
   description: string
 }
 
+export type ProviderCheck = { ok: boolean; message: string | null }
+
+export type ProviderItemStatus =
+  | 'UPDATED'
+  | 'UPDATING'
+  | 'LOGIN_ERROR'
+  | 'OUTDATED'
+  | 'WAITING_USER_INPUT'
+
+export type ProviderItem = {
+  itemId: string
+  institutionName: string
+  status: ProviderItemStatus
+  lastUpdatedAt: string | null
+}
+
 export interface OpenFinanceProvider {
+  getItem(itemId: string): Promise<ProviderItem>
   listAccounts(connection: OpenFinanceConnection): Promise<ProviderAccount[]>
   listTransactions(
     connection: OpenFinanceConnection,
@@ -88,6 +105,7 @@ export interface InvoiceIssuer {
   issue(draft: InvoiceDraft, idempotencyKey: string): Promise<IssuedInvoice>
   get(externalId: string): Promise<IssuedInvoice>
   cancel(externalId: string, reason: string): Promise<IssuedInvoice>
+  check(): Promise<ProviderCheck>
 }
 
 export type Notification = {

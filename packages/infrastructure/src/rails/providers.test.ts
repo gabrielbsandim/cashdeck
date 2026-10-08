@@ -32,6 +32,10 @@ describe('unconfigured rails', () => {
     await expect(interEmpresasRail().pay({} as never)).rejects.toThrow(
       ProviderNotConfiguredError,
     )
+    expect(await asaasRail().check()).toEqual({
+      ok: false,
+      message: 'Asaas is not configured.',
+    })
   })
 })
 
@@ -49,5 +53,7 @@ describe('unconfigured providers', () => {
     await expect(notaas.issue()).rejects.toThrow('Notaas is not configured.')
     await expect(notaas.get()).rejects.toThrow(ProviderNotConfiguredError)
     await expect(notaas.cancel()).rejects.toThrow(ProviderNotConfiguredError)
+    await expect(pluggy.getItem()).rejects.toThrow(ProviderNotConfiguredError)
+    expect((await notaas.check()).ok).toBe(false)
   })
 })

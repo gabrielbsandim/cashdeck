@@ -80,6 +80,11 @@ enum StepMode {
   ASSISTED
 }
 
+enum PaymentMethod {
+  PIX
+  BOLETO
+}
+
 enum AttemptOutcome {
   PAID
   SUBMITTED
@@ -304,6 +309,7 @@ model Bill {
   currency    String     @default("BRL") @db.Char(3)
   dueDate     DateTime   @map("due_date") @db.Date
   code        String?
+  pixCode     String?    @map("pix_code")
   createdAt   DateTime   @map("created_at")
   paidAt      DateTime?  @map("paid_at")
   paidBy      PaidBy?    @map("paid_by")
@@ -336,6 +342,7 @@ model PaymentAttempt {
   stepIndex      Int            @map("step_index")
   rail           RailId
   mode           StepMode
+  method         PaymentMethod  @default(BOLETO)
   amountCents    BigInt         @map("amount_cents")
   outcome        AttemptOutcome
   reason         String?

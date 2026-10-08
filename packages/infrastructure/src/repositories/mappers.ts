@@ -13,6 +13,7 @@ import {
   type FinancialEntity,
   type LocalDate,
   type PaidBy,
+  type PaymentMethod,
   type PaymentAttempt,
   type AttemptOutcome,
   type RailId,
@@ -54,6 +55,7 @@ export type BillRow = {
   currency: string
   dueDate: Date
   code: string | null
+  pixCode: string | null
   createdAt: Date
   paidAt: Date | null
   paidBy: PaidBy | null
@@ -66,6 +68,7 @@ export type AttemptRow = {
   stepIndex: number
   rail: RailId
   mode: StepMode
+  method: PaymentMethod
   amountCents: bigint
   outcome: AttemptOutcome
   reason: string | null
@@ -138,6 +141,7 @@ export function billFromRow(row: BillRow): Bill {
     amount: Money.of(Number(row.amountCents), row.currency),
     dueDate: fromDbDate(row.dueDate),
     code: row.code,
+    pixCode: row.pixCode,
     createdAt: row.createdAt,
     paidAt: row.paidAt,
     paidBy: row.paidBy,
@@ -157,6 +161,7 @@ export function billToRow(bill: Bill): BillRow {
     currency: bill.amount.currency,
     dueDate: toDbDate(bill.dueDate),
     code: bill.code,
+    pixCode: bill.pixCode,
     createdAt: bill.createdAt,
     paidAt: bill.paidAt,
     paidBy: bill.paidBy,
@@ -170,6 +175,7 @@ export function attemptFromRow(row: AttemptRow): PaymentAttempt {
     stepIndex: row.stepIndex,
     rail: row.rail,
     mode: row.mode,
+    method: row.method,
     amount: Money.of(Number(row.amountCents)),
     outcome: row.outcome,
     reason: row.reason,
@@ -190,6 +196,7 @@ export function attemptToRow(
     stepIndex: attempt.stepIndex,
     rail: attempt.rail,
     mode: attempt.mode,
+    method: attempt.method,
     amountCents: BigInt(attempt.amount.cents),
     outcome: attempt.outcome,
     reason: attempt.reason,

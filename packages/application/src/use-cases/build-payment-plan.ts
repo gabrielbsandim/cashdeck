@@ -32,13 +32,18 @@ export function makeBuildPaymentPlan(deps: BuildPaymentPlanDeps) {
       throw new NotFoundError('Entity')
     }
     const settings = await deps.settings.get(tenantId, entity.id)
-    const enabled = settings.enabledRails.filter(rail =>
-      deps.rails.get(rail)?.supports(bill.kind, entity.kind),
+    const enabled = new Set(settings.enabledRails)
+    const steps = routePayment(
+      {
+        entityKind: entity.kind,
+        billKind: bill.kind,
+        hasPixCode: bill.pixCode !== null,
+      },
+      (rail, kind) =>
+        enabled.has(rail) &&
+        deps.rails.get(rail)?.supports(kind, entity.kind) === true,
     )
-    const plan = createPaymentPlan(
-      bill.id,
-      routePayment(entity.kind, bill.kind, new Set(enabled)),
-    )
+    const plan = createPaymentPlan(bill.id, steps)
     await deps.payments.savePlan(tenantId, plan)
     return plan
   }

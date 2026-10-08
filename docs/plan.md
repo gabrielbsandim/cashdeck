@@ -177,21 +177,30 @@ owning entity. The orchestrator tries them in order and records every attempt.
 | 2 | Approval in bank | Approves the batch in the bank's web banking | Not approved before the cutoff |
 | 3 | Assisted | Pays with the copied code or Pix payload | Never; it stays open until marked paid or the bill is cancelled |
 
+### 5.0 Pix first
+
+Most boletos now carry a Pix BR Code next to the barcode ("boleto com Pix"),
+and DAS guides do too. Whenever a bill carries a BR Code, the ladder pays it by
+Pix first, with the entity's Pix QR rails, then tries the barcode rails, then
+falls to assisted, which shows the Pix copy-and-paste first and the barcode
+second. The order is the same for PF and PJ; PF still has no step 2. Once an
+attempt on either method is paid or pending, no other step runs for that bill.
+
 ### 5.1 PF routing (default)
 
 | Bill kind | Step 1 | Step 2 | Step 3 |
 |---|---|---|---|
 | Pix to a key | Mercado Pago Payouts from the reserve | none | Assisted |
-| Pix QR, boleto | Pix from the reserve to Asaas on the due date, then Asaas pays | none | Assisted |
-| Tax guide (PF DARF) | none | none | Assisted |
+| Pix QR, boleto | Pix from the reserve to Asaas on the due date, then Asaas pays (by Pix when the bill carries a BR Code, then by barcode) | none | Assisted (Pix code first) |
+| Tax guide (PF DARF) | Asaas by Pix, only when the guide carries a BR Code | none | Assisted |
 
 ### 5.2 PJ routing (default)
 
 | Bill kind | Step 1 | Step 2 | Step 3 |
 |---|---|---|---|
 | Pix to a key | Inter Empresas | C6 schedule-payments batch | Assisted |
-| Boleto | Inter Empresas | C6 schedule-payments batch | Assisted |
-| DAS, DARF, GPS with barcode | Inter Empresas | none (C6 batch accepts only `BOLETO` and `PIX`) | Assisted |
+| Boleto | Inter Empresas (Pix first when the bill carries a BR Code, then barcode) | C6 schedule-payments batch | Assisted (Pix code first) |
+| DAS, DARF, GPS with barcode | Inter Empresas (Pix first when the guide carries a BR Code, then barcode) | none (C6 batch accepts only `BOLETO` and `PIX`) | Assisted |
 | DARF without barcode | Inter Empresas `/banking/v2/pagamento/darf` | none | Assisted |
 
 ### 5.3 Safety rules

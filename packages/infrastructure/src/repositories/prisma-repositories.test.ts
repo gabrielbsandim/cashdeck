@@ -105,6 +105,7 @@ const attempt: PaymentAttempt = {
   stepIndex: 0,
   rail: 'INTER_EMPRESAS',
   mode: 'AUTOMATIC',
+  method: 'BOLETO',
   amount: Money.of(12345),
   outcome: 'PAID',
   reason: null,
@@ -207,7 +208,7 @@ describe('PrismaPaymentRepository', () => {
   it('stores plans as json and attempts as rows', async () => {
     const { db, repos } = mockClient()
     const plan = createPaymentPlan('b1', [
-      { mode: 'AUTOMATIC', rail: 'INTER_EMPRESAS' },
+      { mode: 'AUTOMATIC', rail: 'INTER_EMPRESAS', method: 'PIX' },
       ASSISTED_STEP,
     ])
     await repos.payments.savePlan(TENANT, plan)
@@ -222,6 +223,15 @@ describe('PrismaPaymentRepository', () => {
       currentStep: 0,
     })
     expect(await repos.payments.findPlan(TENANT, 'b1')).toEqual(plan)
+    db.paymentPlan.findFirst.mockResolvedValueOnce({
+      billId: 'b1',
+      tenantId: TENANT,
+      steps: [{ mode: 'ASSISTED', rail: 'ASSISTED' }],
+      currentStep: 0,
+    })
+    expect((await repos.payments.findPlan(TENANT, 'b1'))?.steps).toEqual([
+      ASSISTED_STEP,
+    ])
     db.paymentPlan.findFirst.mockResolvedValueOnce(null)
     expect(await repos.payments.findPlan(TENANT, 'b2')).toBeNull()
 

@@ -144,6 +144,16 @@ export function saoPauloDayRange(day: LocalDate): { gte: Date; lt: Date } {
   return { gte, lt: new Date(gte.getTime() + DAY_MS) }
 }
 
+type StoredStep = Omit<PaymentStep, 'method'> & {
+  method?: PaymentStep['method']
+}
+
+// Plans stored before Pix-first routing carry no method; they paid barcodes.
+const withMethod = (step: StoredStep): PaymentStep => ({
+  ...step,
+  method: step.method ?? 'BOLETO',
+})
+
 export class PrismaPaymentRepository implements PaymentRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -172,7 +182,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
     }
     return {
       billId: row.billId,
-      steps: row.steps as unknown as PaymentStep[],
+      steps: (row.steps as unknown as StoredStep[]).map(withMethod),
       currentStep: row.currentStep,
     }
   }

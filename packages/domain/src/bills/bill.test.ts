@@ -11,6 +11,9 @@ import { decodePaymentCode } from '@/codes/payment-code'
 import { Money } from '@/money/money'
 import { InvalidTransitionError } from '@/shared/domain-error'
 
+const PIX =
+  '00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***63041D3D'
+
 const input = {
   id: 'b1',
   tenantId: 't1',
@@ -42,6 +45,17 @@ describe('createBill', () => {
     expect(() => createBill({ ...input, code: undefined })).toThrow(
       'payment code',
     )
+  })
+
+  it('keeps the BR Code of a boleto com Pix and of a Pix QR bill', () => {
+    expect(createBill(input).pixCode).toBeNull()
+    expect(createBill({ ...input, pixCode: ` ${PIX} ` }).pixCode).toBe(PIX)
+    expect(createBill({ ...input, kind: 'PIX_QR', code: PIX }).pixCode).toBe(
+      PIX,
+    )
+    expect(() =>
+      createBill({ ...input, pixCode: `${PIX.slice(0, -1)}0` }),
+    ).toThrow('checksum')
   })
 
   it('rejects non positive amounts', () => {

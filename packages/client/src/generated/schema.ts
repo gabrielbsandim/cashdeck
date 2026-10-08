@@ -176,6 +176,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
@@ -207,6 +208,7 @@ export interface operations {
                      */
                     source?: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
                     paymentCode?: string;
+                    pixCode?: string;
                     pixKey?: string;
                     darfWithoutBarcode?: boolean;
                     amountCents?: number;
@@ -241,6 +243,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
@@ -274,6 +277,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
@@ -323,6 +327,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
@@ -333,6 +338,8 @@ export interface operations {
                                     mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
                                     /** @enum {string} */
                                     rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                    /** @enum {string} */
+                                    method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
                             } | null;
@@ -343,6 +350,8 @@ export interface operations {
                                 rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
                                 /** @enum {string} */
                                 mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                /** @enum {string} */
+                                method: "PIX" | "BOLETO";
                                 amount: {
                                     cents: number;
                                     currency: string;
@@ -404,6 +413,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
@@ -414,6 +424,8 @@ export interface operations {
                                     mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
                                     /** @enum {string} */
                                     rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                    /** @enum {string} */
+                                    method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
                             } | null;
@@ -424,6 +436,8 @@ export interface operations {
                                 rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
                                 /** @enum {string} */
                                 mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                /** @enum {string} */
+                                method: "PIX" | "BOLETO";
                                 amount: {
                                     cents: number;
                                     currency: string;
@@ -479,6 +493,7 @@ export interface operations {
                             };
                             dueDate: string;
                             code: string | null;
+                            pixCode: string | null;
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */

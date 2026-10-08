@@ -10,6 +10,7 @@ import { FakePaymentRail } from '@/testing/providers'
 import {
   BOLETO_BARCODE,
   NOW,
+  PIX_NO_AMOUNT,
   scenario,
   TENANT,
 } from '@/testing/scenario.test-helpers'
@@ -60,7 +61,7 @@ describe('runPaymentLadder', () => {
       'C6_EMPRESAS',
       'ASSISTED',
     ])
-    expect(inter.requests[0]?.idempotencyKey).toBe('b1:0')
+    expect(inter.requests[0]?.idempotencyKey).toBe('b1:0:BOLETO')
     expect(deps.audit.events.map(e => e.action)).toEqual(['payment.attempt'])
     expect(result.instructions).toBeNull()
   })
@@ -68,7 +69,7 @@ describe('runPaymentLadder', () => {
   it('replays a stored rail result instead of paying twice', async () => {
     const inter = new FakePaymentRail('INTER_EMPRESAS')
     const { deps, run } = await setup([inter])
-    await deps.idempotency.save(TENANT, 'b1:0', 'payment', {
+    await deps.idempotency.save(TENANT, 'b1:0:BOLETO', 'payment', {
       outcome: 'PAID',
       externalId: 'earlier',
     })
@@ -118,6 +119,7 @@ describe('runPaymentLadder', () => {
     expect(result.instructions).toEqual({
       kind: 'BOLETO',
       copyCode: BOLETO_BARCODE,
+      pixCode: null,
       amountCents: 12345,
       dueDate: '2026-10-20',
     })
@@ -138,8 +140,8 @@ describe('runPaymentLadder', () => {
     await deps.payments.savePlan(
       TENANT,
       createPaymentPlan('b1', [
-        { mode: 'AUTOMATIC', rail: 'INTER_EMPRESAS' },
-        { mode: 'ASSISTED', rail: 'ASSISTED' },
+        { mode: 'AUTOMATIC', rail: 'INTER_EMPRESAS', method: 'BOLETO' },
+        { mode: 'ASSISTED', rail: 'ASSISTED', method: 'BOLETO' },
       ]),
     )
     const result = await run(TENANT, 'b1')
@@ -211,6 +213,58 @@ describe('runPaymentLadder', () => {
     expect((await paid.run(TENANT, 'b1')).attempts).toEqual([])
     const processing = await setup([], {}, bill({ status: 'PROCESSING' }))
     expect((await processing.run(TENANT, 'b1')).bill.status).toBe('PROCESSING')
+  })
+
+  it('pays a boleto com Pix through Pix first', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS')
+    const { run } = await setup([inter], {}, bill({ pixCode: PIX_NO_AMOUNT }))
+    const result = await run(TENANT, 'b1')
+    expect(result.bill.status).toBe('PAID')
+    expect(result.attempts.map(a => [a.method, a.outcome])).toEqual([
+      ['PIX', 'PAID'],
+    ])
+    expect(inter.requests[0]).toMatchObject({
+      method: 'PIX',
+      idempotencyKey: 'b1:0:PIX',
+    })
+  })
+
+  it('falls back to the barcode, then to assisted with Pix first', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS').willReturn(
+      { outcome: 'FAILED', reason: 'PIX_REJECTED' },
+      { outcome: 'FAILED', reason: 'BOLETO_REJECTED' },
+    )
+    const { run } = await setup([inter], {}, bill({ pixCode: PIX_NO_AMOUNT }))
+    const result = await run(TENANT, 'b1')
+    expect(result.attempts.map(a => [a.method, a.outcome])).toEqual([
+      ['PIX', 'FAILED'],
+      ['BOLETO', 'FAILED'],
+      ['PIX', 'ASSISTED'],
+    ])
+    expect(inter.requests.map(r => r.idempotencyKey)).toEqual([
+      'b1:0:PIX',
+      'b1:1:BOLETO',
+    ])
+    expect(result.instructions).toMatchObject({
+      pixCode: PIX_NO_AMOUNT,
+      copyCode: BOLETO_BARCODE,
+    })
+  })
+
+  it('never pays the barcode after a pending Pix attempt', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS').willReturn({
+      outcome: 'SUBMITTED',
+    })
+    const { deps, run } = await setup(
+      [inter],
+      {},
+      bill({ pixCode: PIX_NO_AMOUNT }),
+    )
+    expect((await run(TENANT, 'b1')).bill.status).toBe('PROCESSING')
+    await deps.bills.save(bill({ pixCode: PIX_NO_AMOUNT, status: 'OPEN' }))
+    const again = await run(TENANT, 'b1')
+    expect(again.attempts).toEqual([])
+    expect(inter.requests).toHaveLength(1)
   })
 
   it('fails loudly for an unknown bill or entity', async () => {

@@ -176,6 +176,10 @@
                             "nullable": true,
                             "type": "string"
                           },
+                          "pixCode": {
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -203,6 +207,7 @@
                           "amount",
                           "dueDate",
                           "code",
+                          "pixCode",
                           "createdAt",
                           "paidAt",
                           "paidBy"
@@ -261,6 +266,10 @@
                     ]
                   },
                   "paymentCode": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pixCode": {
                     "type": "string",
                     "minLength": 1
                   },
@@ -381,6 +390,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -408,6 +421,7 @@
                         "amount",
                         "dueDate",
                         "code",
+                        "pixCode",
                         "createdAt",
                         "paidAt",
                         "paidBy"
@@ -511,6 +525,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -538,6 +556,7 @@
                         "amount",
                         "dueDate",
                         "code",
+                        "pixCode",
                         "createdAt",
                         "paidAt",
                         "paidBy"
@@ -667,6 +686,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -708,11 +731,19 @@
                                       "C6_EMPRESAS",
                                       "ASSISTED"
                                     ]
+                                  },
+                                  "method": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PIX",
+                                      "BOLETO"
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "mode",
-                                  "rail"
+                                  "rail",
+                                  "method"
                                 ],
                                 "additionalProperties": false
                               }
@@ -758,6 +789,13 @@
                                   "AUTOMATIC",
                                   "BANK_APPROVAL",
                                   "ASSISTED"
+                                ]
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "PIX",
+                                  "BOLETO"
                                 ]
                               },
                               "amount": {
@@ -807,6 +845,7 @@
                               "stepIndex",
                               "rail",
                               "mode",
+                              "method",
                               "amount",
                               "outcome",
                               "reason",
@@ -828,6 +867,7 @@
                         "amount",
                         "dueDate",
                         "code",
+                        "pixCode",
                         "createdAt",
                         "paidAt",
                         "paidBy",
@@ -973,6 +1013,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -1014,11 +1058,19 @@
                                       "C6_EMPRESAS",
                                       "ASSISTED"
                                     ]
+                                  },
+                                  "method": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PIX",
+                                      "BOLETO"
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "mode",
-                                  "rail"
+                                  "rail",
+                                  "method"
                                 ],
                                 "additionalProperties": false
                               }
@@ -1064,6 +1116,13 @@
                                   "AUTOMATIC",
                                   "BANK_APPROVAL",
                                   "ASSISTED"
+                                ]
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "PIX",
+                                  "BOLETO"
                                 ]
                               },
                               "amount": {
@@ -1113,6 +1172,7 @@
                               "stepIndex",
                               "rail",
                               "mode",
+                              "method",
                               "amount",
                               "outcome",
                               "reason",
@@ -1134,6 +1194,7 @@
                         "amount",
                         "dueDate",
                         "code",
+                        "pixCode",
                         "createdAt",
                         "paidAt",
                         "paidBy",
@@ -1265,6 +1326,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -1292,6 +1357,7 @@
                         "amount",
                         "dueDate",
                         "code",
+                        "pixCode",
                         "createdAt",
                         "paidAt",
                         "paidBy"

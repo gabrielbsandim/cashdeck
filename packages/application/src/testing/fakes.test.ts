@@ -115,6 +115,7 @@ describe('repository fakes', () => {
       stepIndex: 0,
       rail: 'ASAAS' as const,
       mode: 'AUTOMATIC' as const,
+      method: 'BOLETO' as const,
       amount: Money.of(500),
       outcome: 'PAID' as const,
       reason: null,
@@ -143,6 +144,7 @@ describe('provider fakes', () => {
     expect(rail.supports('BOLETO')).toBe(true)
     expect(rail.supports('PIX_KEY')).toBe(false)
     expect(new FakePaymentRail('ASAAS').supports('PIX_KEY')).toBe(true)
+    expect(await rail.check()).toEqual({ ok: true, message: null })
   })
 
   it('filters open finance transactions by account and range', async () => {
@@ -182,6 +184,15 @@ describe('provider fakes', () => {
       }),
     ).toEqual([])
     expect(await new FakeOpenFinanceProvider().listAccounts()).toEqual([])
+    const item = {
+      itemId: 'item-1',
+      institutionName: 'Bank',
+      status: 'UPDATED' as const,
+      lastUpdatedAt: null,
+    }
+    const withItems = new FakeOpenFinanceProvider([], [], [item])
+    expect(await withItems.getItem('item-1')).toBe(item)
+    await expect(withItems.getItem('nope')).rejects.toThrow('was not found')
   })
 
   it('reads statements and fetches bills', async () => {
@@ -215,6 +226,7 @@ describe('provider fakes', () => {
     expect(await issuer.issue(draft, 'k1')).toBe(issued)
     expect((await issuer.cancel('k1', 'mistake')).status).toBe('CANCELLED')
     await expect(issuer.get('nope')).rejects.toThrow('was not issued')
+    expect(await issuer.check()).toEqual({ ok: true, message: null })
   })
 
   it('notifies and seals secrets per context', async () => {

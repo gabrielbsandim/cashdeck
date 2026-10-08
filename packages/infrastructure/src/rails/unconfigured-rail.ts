@@ -1,6 +1,7 @@
 import {
   type PaymentRail,
   type PaymentRequest,
+  type ProviderCheck,
   ProviderNotConfiguredError,
   type RailResult,
 } from '@cashdeck/application'
@@ -29,6 +30,10 @@ export class UnconfiguredRail implements PaymentRail {
 
   async pay(_request: PaymentRequest): Promise<RailResult> {
     throw new ProviderNotConfiguredError(this.provider)
+  }
+
+  async check(): Promise<ProviderCheck> {
+    return { ok: false, message: `${this.provider} is not configured.` }
   }
 }
 
