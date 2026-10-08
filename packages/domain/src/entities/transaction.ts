@@ -14,15 +14,17 @@ export type Transaction = {
   readonly categoryId: string | null
   readonly transferGroupId: string | null
   readonly externalId: string | null
+  readonly invoiceId: string | null
 }
 
 export type CreateTransactionInput = Omit<
   Transaction,
-  'categoryId' | 'transferGroupId' | 'externalId'
+  'categoryId' | 'transferGroupId' | 'externalId' | 'invoiceId'
 > & {
   categoryId?: string | null
   transferGroupId?: string | null
   externalId?: string | null
+  invoiceId?: string | null
 }
 
 export function createTransaction(input: CreateTransactionInput): Transaction {
@@ -38,6 +40,7 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
     categoryId: input.categoryId ?? null,
     transferGroupId: input.transferGroupId ?? null,
     externalId: input.externalId ?? null,
+    invoiceId: input.invoiceId ?? null,
   }
 }
 

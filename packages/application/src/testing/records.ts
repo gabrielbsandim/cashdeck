@@ -1,0 +1,296 @@
+import { type Transaction } from '@cashdeck/domain'
+import { type Page, type PageRequest } from '@/ports/repositories'
+import {
+  type Attachment,
+  type AttachmentMeta,
+  type AttachmentRepository,
+  type BudgetLimit,
+  type BudgetRepository,
+  type Connection,
+  type ConnectionRepository,
+  type DocumentStore,
+  type Institution,
+  type InstitutionRepository,
+  type InternalTransfer,
+  type Invoice,
+  type InvoiceClient,
+  type InvoiceFilter,
+  type InvoiceRepository,
+  type TransactionFilter,
+  type TransactionRepository,
+  type TransferRepository,
+} from '@/ports/records'
+
+const key = (tenantId: string, id: string) => `${tenantId}:${id}`
+
+function paginate<T>(rows: T[], page: PageRequest): Page<T> {
+  const start = Number(page.cursor ?? 0)
+  const items = rows.slice(start, start + page.limit)
+  const end = start + items.length
+  return { items, nextCursor: end < rows.length ? String(end) : null }
+}
+
+class TenantMap<T extends { tenantId: string; id: string }> {
+  protected readonly rows = new Map<string, T>()
+
+  async save(row: T): Promise<void> {
+    this.rows.set(key(row.tenantId, row.id), row)
+  }
+
+  async findById(tenantId: string, id: string): Promise<T | null> {
+    return this.rows.get(key(tenantId, id)) ?? null
+  }
+
+  protected of(tenantId: string): T[] {
+    return [...this.rows.values()].filter(row => row.tenantId === tenantId)
+  }
+}
+
+export class InMemoryInstitutionRepository
+  extends TenantMap<Institution>
+  implements InstitutionRepository
+{
+  async ensure(candidate: Institution): Promise<Institution> {
+    const existing = this.of(candidate.tenantId).find(
+      row => row.name === candidate.name,
+    )
+    if (existing) {
+      return existing
+    }
+    await this.save(candidate)
+    return candidate
+  }
+}
+
+function matches(transaction: Transaction, filter: TransactionFilter): boolean {
+  const inAccounts =
+    !filter.accountIds || filter.accountIds.includes(transaction.accountId)
+  const afterFrom = !filter.from || transaction.bookedOn >= filter.from
+  const beforeTo = !filter.to || transaction.bookedOn <= filter.to
+  return inAccounts && afterFrom && beforeTo
+}
+
+export class InMemoryTransactionRepository
+  extends TenantMap<Transaction>
+  implements TransactionRepository
+{
+  async saveNew(transactions: readonly Transaction[]): Promise<number> {
+    const fresh = transactions.filter(
+      candidate =>
+        !this.of(candidate.tenantId).some(
+          row =>
+            row.accountId === candidate.accountId &&
+            row.externalId !== null &&
+            row.externalId === candidate.externalId,
+        ),
+    )
+    for (const transaction of fresh) {
+      await this.save(transaction)
+    }
+    return fresh.length
+  }
+
+  async list(
+    tenantId: string,
+    filter: TransactionFilter,
+    page: PageRequest,
+  ): Promise<Page<Transaction>> {
+    return paginate(await this.all(tenantId, filter), page)
+  }
+
+  async all(
+    tenantId: string,
+    filter: TransactionFilter,
+  ): Promise<Transaction[]> {
+    return this.of(tenantId)
+      .filter(row => matches(row, filter))
+      .sort(
+        (a, b) =>
+          b.bookedOn.localeCompare(a.bookedOn) || a.id.localeCompare(b.id),
+      )
+  }
+}
+
+export class InMemoryConnectionRepository
+  extends TenantMap<Connection>
+  implements ConnectionRepository
+{
+  async findByItemId(
+    tenantId: string,
+    provider: string,
+    itemId: string,
+  ): Promise<Connection | null> {
+    const found = this.of(tenantId).find(
+      row => row.provider === provider && row.itemId === itemId,
+    )
+    return found ?? null
+  }
+
+  async list(tenantId: string): Promise<Connection[]> {
+    return this.of(tenantId)
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    this.rows.delete(key(tenantId, id))
+  }
+}
+
+export class InMemoryTransferRepository
+  extends TenantMap<InternalTransfer>
+  implements TransferRepository
+{
+  async list(
+    tenantId: string,
+    range: { from: Date; to: Date },
+  ): Promise<InternalTransfer[]> {
+    return this.of(tenantId)
+      .filter(row => row.at >= range.from && row.at < range.to)
+      .sort((a, b) => b.at.getTime() - a.at.getTime())
+  }
+}
+
+function invoiceMatches(invoice: Invoice, filter: InvoiceFilter): boolean {
+  return (
+    (!filter.entityId || invoice.entityId === filter.entityId) &&
+    (!filter.status || invoice.status === filter.status) &&
+    (!filter.competenceFrom || invoice.competence >= filter.competenceFrom) &&
+    (!filter.competenceTo || invoice.competence <= filter.competenceTo)
+  )
+}
+
+export class InMemoryInvoiceRepository
+  extends TenantMap<Invoice>
+  implements InvoiceRepository
+{
+  private readonly clients = new Map<string, InvoiceClient>()
+
+  async list(
+    tenantId: string,
+    filter: InvoiceFilter,
+    page: PageRequest,
+  ): Promise<Page<Invoice>> {
+    return paginate(await this.all(tenantId, filter), page)
+  }
+
+  async all(tenantId: string, filter: InvoiceFilter): Promise<Invoice[]> {
+    return this.of(tenantId)
+      .filter(row => invoiceMatches(row, filter))
+      .sort(
+        (a, b) =>
+          b.issueOn.localeCompare(a.issueOn) || a.id.localeCompare(b.id),
+      )
+  }
+
+  async findClient(
+    tenantId: string,
+    id: string,
+  ): Promise<InvoiceClient | null> {
+    return this.clients.get(key(tenantId, id)) ?? null
+  }
+
+  async findClientByName(
+    tenantId: string,
+    entityId: string,
+    name: string,
+  ): Promise<InvoiceClient | null> {
+    const found = [...this.clients.values()].find(
+      client =>
+        client.tenantId === tenantId &&
+        client.entityId === entityId &&
+        client.name === name,
+    )
+    return found ?? null
+  }
+
+  async saveClient(client: InvoiceClient): Promise<void> {
+    this.clients.set(key(client.tenantId, client.id), client)
+  }
+}
+
+export class InMemoryBudgetRepository implements BudgetRepository {
+  constructor(
+    private readonly budgets: Array<
+      BudgetLimit & { tenantId: string; entityId: string; month: string }
+    > = [],
+  ) {}
+
+  async list(
+    tenantId: string,
+    entityId: string,
+    month: string,
+  ): Promise<BudgetLimit[]> {
+    return this.budgets
+      .filter(
+        row =>
+          row.tenantId === tenantId &&
+          row.entityId === entityId &&
+          row.month === month,
+      )
+      .map(row => ({
+        categoryId: row.categoryId,
+        categoryName: row.categoryName,
+        limit: row.limit,
+      }))
+  }
+}
+
+export class InMemoryAttachmentRepository
+  extends TenantMap<Attachment>
+  implements AttachmentRepository
+{
+  async list(tenantId: string, billId: string): Promise<AttachmentMeta[]> {
+    return this.of(tenantId)
+      .filter(row => row.billId === billId)
+      .map(({ bytes: _bytes, ...meta }) => meta)
+  }
+
+  async find(tenantId: string, id: string): Promise<Attachment | null> {
+    return this.findById(tenantId, id)
+  }
+}
+
+export class InMemoryDocumentStore implements DocumentStore {
+  private readonly rows = new Map<string, unknown>()
+
+  private static id(tenantId: string, collection: string, id: string) {
+    return `${tenantId}\u0000${collection}\u0000${id}`
+  }
+
+  async get<T>(
+    tenantId: string,
+    collection: string,
+    id: string,
+  ): Promise<T | null> {
+    const found = this.rows.get(
+      InMemoryDocumentStore.id(tenantId, collection, id),
+    )
+    return found === undefined ? null : (structuredClone(found) as T)
+  }
+
+  async put<T>(
+    tenantId: string,
+    collection: string,
+    id: string,
+    data: T,
+  ): Promise<void> {
+    this.rows.set(
+      InMemoryDocumentStore.id(tenantId, collection, id),
+      structuredClone(data),
+    )
+  }
+
+  async list<T>(tenantId: string, collection: string): Promise<T[]> {
+    const prefix = InMemoryDocumentStore.id(tenantId, collection, '')
+    return [...this.rows.entries()]
+      .filter(([id]) => id.startsWith(prefix))
+      .map(([, data]) => structuredClone(data) as T)
+  }
+
+  async delete(
+    tenantId: string,
+    collection: string,
+    id: string,
+  ): Promise<void> {
+    this.rows.delete(InMemoryDocumentStore.id(tenantId, collection, id))
+  }
+}

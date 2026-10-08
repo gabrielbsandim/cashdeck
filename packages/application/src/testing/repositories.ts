@@ -1,6 +1,7 @@
 import {
   type Account,
   type Bill,
+  type EntityKind,
   type FinancialEntity,
   type LocalDate,
   type PaymentAttempt,
@@ -138,6 +139,20 @@ export class InMemoryEntityRepository implements FinancialEntityRepository {
   ): Promise<FinancialEntity | null> {
     return this.rows.get(key(tenantId, id)) ?? null
   }
+
+  async findByKind(
+    tenantId: string,
+    kind: EntityKind,
+  ): Promise<FinancialEntity | null> {
+    const all = await this.list(tenantId)
+    return all.find(entity => entity.kind === kind) ?? null
+  }
+
+  async list(tenantId: string): Promise<FinancialEntity[]> {
+    return [...this.rows.values()].filter(
+      entity => entity.tenantId === tenantId,
+    )
+  }
 }
 
 export class InMemoryAccountRepository implements AccountRepository {
@@ -152,8 +167,13 @@ export class InMemoryAccountRepository implements AccountRepository {
   }
 
   async listByEntity(tenantId: string, entityId: string): Promise<Account[]> {
+    const all = await this.list(tenantId)
+    return all.filter(account => account.entityId === entityId)
+  }
+
+  async list(tenantId: string): Promise<Account[]> {
     return [...this.rows.values()].filter(
-      account => account.tenantId === tenantId && account.entityId === entityId,
+      account => account.tenantId === tenantId,
     )
   }
 }
@@ -186,6 +206,10 @@ export class InMemorySecretStore implements SecretStore {
   async get(tenantId: string, name: string): Promise<string | null> {
     return this.rows.get(key(tenantId, name)) ?? null
   }
+
+  async delete(tenantId: string, name: string): Promise<void> {
+    this.rows.delete(key(tenantId, name))
+  }
 }
 
 export class InMemoryPayeeDirectory implements PayeeDirectory {
@@ -215,11 +239,22 @@ export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   confirmAboveCents: null,
 }
 
+// Every entity starts from the same defaults until its own settings are saved.
 export class StaticPaymentSettings implements PaymentSettingsProvider {
+  private readonly saved = new Map<string, PaymentSettings>()
+
   constructor(public settings: PaymentSettings = DEFAULT_PAYMENT_SETTINGS) {}
 
-  async get(): Promise<PaymentSettings> {
-    return this.settings
+  async get(tenantId?: string, entityId?: string): Promise<PaymentSettings> {
+    return this.saved.get(`${tenantId}:${entityId}`) ?? this.settings
+  }
+
+  async save(
+    tenantId: string,
+    entityId: string,
+    settings: PaymentSettings,
+  ): Promise<void> {
+    this.saved.set(key(tenantId, entityId), settings)
   }
 }
 

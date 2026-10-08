@@ -24,24 +24,41 @@ export type Account = {
   readonly origin: AccountOrigin
   readonly isReserve: boolean
   readonly balance: Money
+  readonly connectionId: string | null
+  readonly externalId: string | null
+  // Yield of a reserve account as a share of the CDI, in percent.
+  readonly cdiPercent: number | null
 }
 
-export type CreateAccountInput = Omit<Account, 'name' | 'isReserve'> & {
+export type CreateAccountInput = Omit<
+  Account,
+  'name' | 'isReserve' | 'connectionId' | 'externalId' | 'cdiPercent'
+> & {
   name: string
   isReserve?: boolean
+  connectionId?: string | null
+  externalId?: string | null
+  cdiPercent?: number | null
 }
 
-const RESERVE_TYPES: readonly AccountType[] = ['CHECKING', 'SAVINGS', 'WALLET']
+export const CASH_ACCOUNT_TYPES: readonly AccountType[] = [
+  'CHECKING',
+  'SAVINGS',
+  'WALLET',
+]
 
 export function createAccount(input: CreateAccountInput): Account {
   const isReserve = input.isReserve ?? false
-  if (isReserve && !RESERVE_TYPES.includes(input.type)) {
+  if (isReserve && !CASH_ACCOUNT_TYPES.includes(input.type)) {
     throw new ValidationError('Only a cash account can be the reserve.')
   }
   return {
     ...input,
     name: guard.notEmpty(input.name, 'Account name'),
     isReserve,
+    connectionId: input.connectionId ?? null,
+    externalId: input.externalId ?? null,
+    cdiPercent: input.cdiPercent ?? null,
   }
 }
 

@@ -57,6 +57,7 @@ export function payment(
   return {
     bill: bill(overrides),
     mode: 'AUTOMATIC',
+    method: overrides.pixCode ? 'PIX' : 'BOLETO',
     idempotencyKey: 'bill-1:0',
   }
 }

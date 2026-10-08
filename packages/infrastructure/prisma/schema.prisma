@@ -150,13 +150,14 @@ model Institution {
   code     String?
   manual   Boolean @default(false)
 
-  @@index([tenantId])
+  @@unique([tenantId, name])
   @@map("institutions")
 }
 
 model Connection {
   id            String    @id
   tenantId      String    @map("tenant_id")
+  entityId      String    @map("entity_id")
   institutionId String    @map("institution_id")
   provider      String
   itemId        String    @map("item_id")
@@ -180,6 +181,7 @@ model Account {
   isReserve     Boolean       @default(false) @map("is_reserve")
   balanceCents  BigInt        @default(0) @map("balance_cents")
   currency      String        @default("BRL") @db.Char(3)
+  cdiPercent    Int?          @map("cdi_percent")
 
   entity       FinancialEntity @relation(fields: [entityId], references: [id])
   transactions Transaction[]
@@ -199,6 +201,7 @@ model Transaction {
   description     String
   categoryId      String?  @map("category_id")
   transferGroupId String?  @map("transfer_group_id")
+  invoiceId       String?  @map("invoice_id")
   note            String?
 
   account Account @relation(fields: [accountId], references: [id])
@@ -231,27 +234,27 @@ model CategoryRule {
 }
 
 model Budget {
-  id          String  @id
-  tenantId    String  @map("tenant_id")
-  entityId    String  @map("entity_id")
-  categoryId  String  @map("category_id")
-  month       String  @db.Char(7)
-  limitCents  BigInt  @map("limit_cents")
-  rollover    Boolean @default(false)
+  id         String  @id
+  tenantId   String  @map("tenant_id")
+  entityId   String  @map("entity_id")
+  categoryId String  @map("category_id")
+  month      String  @db.Char(7)
+  limitCents BigInt  @map("limit_cents")
+  rollover   Boolean @default(false)
 
   @@unique([tenantId, entityId, categoryId, month])
   @@map("budgets")
 }
 
 model Recurrence {
-  id            String   @id
-  tenantId      String   @map("tenant_id")
-  entityId      String   @map("entity_id")
-  description   String
-  amountCents   BigInt   @map("amount_cents")
-  dayOfMonth    Int      @map("day_of_month")
-  confirmed     Boolean  @default(false)
-  lastSeenOn    DateTime? @map("last_seen_on") @db.Date
+  id          String    @id
+  tenantId    String    @map("tenant_id")
+  entityId    String    @map("entity_id")
+  description String
+  amountCents BigInt    @map("amount_cents")
+  dayOfMonth  Int       @map("day_of_month")
+  confirmed   Boolean   @default(false)
+  lastSeenOn  DateTime? @map("last_seen_on") @db.Date
 
   @@index([tenantId, entityId])
   @@map("recurrences")
@@ -368,12 +371,12 @@ model Payee {
 }
 
 model PaymentSettings {
-  tenantId          String  @map("tenant_id")
-  entityId          String  @map("entity_id")
-  killSwitch        Boolean @default(false) @map("kill_switch")
+  tenantId          String   @map("tenant_id")
+  entityId          String   @map("entity_id")
+  killSwitch        Boolean  @default(false) @map("kill_switch")
   enabledRails      RailId[] @map("enabled_rails")
-  dailyCapCents     Json    @default("{}") @map("daily_cap_cents")
-  confirmAboveCents BigInt? @map("confirm_above_cents")
+  dailyCapCents     Json     @default("{}") @map("daily_cap_cents")
+  confirmAboveCents BigInt?  @map("confirm_above_cents")
 
   @@id([tenantId, entityId])
   @@map("payment_settings")
@@ -423,6 +426,9 @@ model Invoice {
   fxRate       Decimal?      @map("fx_rate") @db.Decimal(18, 8)
   isExport     Boolean       @default(false) @map("is_export")
   competence   String        @db.Char(7)
+  issueOn      DateTime      @default(dbgenerated("CURRENT_DATE")) @map("issue_on") @db.Date
+  description  String        @default("")
+  serviceCode  String        @default("") @map("service_code")
   pdfUrl       String?       @map("pdf_url")
   xmlUrl       String?       @map("xml_url")
   cancelReason String?       @map("cancel_reason")
@@ -443,6 +449,48 @@ model TaxGuide {
 
   @@unique([tenantId, entityId, kind, competence])
   @@map("tax_guides")
+}
+
+model InternalTransfer {
+  id            String   @id
+  tenantId      String   @map("tenant_id")
+  kind          String
+  amountCents   BigInt   @map("amount_cents")
+  currency      String   @db.Char(3)
+  at            DateTime
+  rail          String
+  fromAccountId String   @map("from_account_id")
+  toAccountId   String   @map("to_account_id")
+  document      String?
+
+  @@index([tenantId, at])
+  @@map("internal_transfers")
+}
+
+model BillAttachment {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  billId    String   @map("bill_id")
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  size      Int
+  bytes     Bytes
+  createdAt DateTime @map("created_at")
+
+  @@index([tenantId, billId])
+  @@map("bill_attachments")
+}
+
+// Small per-tenant documents read whole: settings, drafts and export records.
+model Document {
+  tenantId   String   @map("tenant_id")
+  collection String
+  id         String
+  data       Json
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@id([tenantId, collection, id])
+  @@map("documents")
 }
 
 model Alert {
@@ -508,14 +556,14 @@ model ChatThread {
 }
 
 model ChatMessage {
-  id        String   @id
-  tenantId  String   @map("tenant_id")
-  threadId  String   @map("thread_id")
+  id        String                      @id
+  tenantId  String                      @map("tenant_id")
+  threadId  String                      @map("thread_id")
   role      String
   content   String
-  toolCalls Json?    @map("tool_calls")
+  toolCalls Json?                       @map("tool_calls")
   embedding Unsupported("vector(768)")?
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime                    @default(now()) @map("created_at")
 
   thread ChatThread @relation(fields: [threadId], references: [id])
 

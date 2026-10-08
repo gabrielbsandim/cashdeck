@@ -18,6 +18,7 @@ import {
 import {
   type Account,
   type Bill,
+  type EntityKind,
   type FinancialEntity,
   type LocalDate,
   type PaymentAttempt,
@@ -59,6 +60,25 @@ export class PrismaFinancialEntityRepository implements FinancialEntityRepositor
     })
     return row ? entityFromRow(row) : null
   }
+
+  async findByKind(
+    tenantId: string,
+    kind: EntityKind,
+  ): Promise<FinancialEntity | null> {
+    const row = await this.db.financialEntity.findFirst({
+      where: { tenantId, kind },
+      orderBy: { createdAt: 'asc' },
+    })
+    return row ? entityFromRow(row) : null
+  }
+
+  async list(tenantId: string): Promise<FinancialEntity[]> {
+    const rows = await this.db.financialEntity.findMany({
+      where: { tenantId },
+      orderBy: { kind: 'asc' },
+    })
+    return rows.map(entityFromRow)
+  }
 }
 
 export class PrismaAccountRepository implements AccountRepository {
@@ -81,6 +101,14 @@ export class PrismaAccountRepository implements AccountRepository {
   async listByEntity(tenantId: string, entityId: string): Promise<Account[]> {
     const rows = await this.db.account.findMany({
       where: { tenantId, entityId },
+      orderBy: { name: 'asc' },
+    })
+    return rows.map(accountFromRow)
+  }
+
+  async list(tenantId: string): Promise<Account[]> {
+    const rows = await this.db.account.findMany({
+      where: { tenantId },
       orderBy: { name: 'asc' },
     })
     return rows.map(accountFromRow)
@@ -271,6 +299,27 @@ export class PrismaPaymentSettings implements PaymentSettingsProvider {
         row.confirmAboveCents === null ? null : Number(row.confirmAboveCents),
     }
   }
+
+  async save(
+    tenantId: string,
+    entityId: string,
+    settings: PaymentSettings,
+  ): Promise<void> {
+    const data = {
+      killSwitch: settings.killSwitch,
+      enabledRails: [...settings.enabledRails],
+      dailyCapCents: json(settings.dailyCapCents),
+      confirmAboveCents:
+        settings.confirmAboveCents === null
+          ? null
+          : BigInt(settings.confirmAboveCents),
+    }
+    await this.db.paymentSettings.upsert({
+      where: { tenantId_entityId: { tenantId, entityId } },
+      create: { tenantId, entityId, ...data },
+      update: data,
+    })
+  }
 }
 
 export class PrismaAuditLog implements AuditLog {
@@ -324,6 +373,10 @@ export class PrismaSecretStore implements SecretStore {
       where: { tenantId_name: { tenantId, name } },
     })
     return row?.sealed ?? null
+  }
+
+  async delete(tenantId: string, name: string): Promise<void> {
+    await this.db.secret.deleteMany({ where: { tenantId, name } })
   }
 }
 

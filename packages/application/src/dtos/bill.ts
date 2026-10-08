@@ -13,7 +13,7 @@ import {
   type PaymentPlan,
 } from '@cashdeck/domain'
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+import { isoDate, moneyViewSchema } from '@/dtos/common'
 
 export const captureBillSchema = z
   .object({
@@ -47,11 +47,6 @@ export const listBillsQuerySchema = z.object({
   status: z.enum(BILL_STATUSES).optional(),
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
-})
-
-export const moneyViewSchema = z.object({
-  cents: z.int(),
-  currency: z.string().length(3),
 })
 
 export const billViewSchema = z.object({

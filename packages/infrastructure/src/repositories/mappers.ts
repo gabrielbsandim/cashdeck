@@ -1,6 +1,7 @@
 import {
   createAccount,
   createFinancialEntity,
+  createTransaction,
   Money,
   type Account,
   type AccountOrigin,
@@ -19,6 +20,7 @@ import {
   type RailId,
   type StepMode,
   type TaxRegime,
+  type Transaction,
 } from '@cashdeck/domain'
 
 export type EntityRow = {
@@ -41,6 +43,23 @@ export type AccountRow = {
   isReserve: boolean
   balanceCents: bigint
   currency: string
+  connectionId: string | null
+  externalId: string | null
+  cdiPercent: number | null
+}
+
+export type TransactionRow = {
+  id: string
+  tenantId: string
+  accountId: string
+  externalId: string | null
+  amountCents: bigint
+  currency: string
+  bookedOn: Date
+  description: string
+  categoryId: string | null
+  transferGroupId: string | null
+  invoiceId: string | null
 }
 
 export type BillRow = {
@@ -111,6 +130,9 @@ export function accountFromRow(row: AccountRow): Account {
     origin: row.origin,
     isReserve: row.isReserve,
     balance: Money.of(Number(row.balanceCents), row.currency),
+    connectionId: row.connectionId,
+    externalId: row.externalId,
+    cdiPercent: row.cdiPercent,
   })
 }
 
@@ -126,6 +148,40 @@ export function accountToRow(account: Account): AccountRow {
     isReserve: account.isReserve,
     balanceCents: BigInt(account.balance.cents),
     currency: account.balance.currency,
+    connectionId: account.connectionId,
+    externalId: account.externalId,
+    cdiPercent: account.cdiPercent,
+  }
+}
+
+export function transactionFromRow(row: TransactionRow): Transaction {
+  return createTransaction({
+    id: row.id,
+    tenantId: row.tenantId,
+    accountId: row.accountId,
+    amount: Money.of(Number(row.amountCents), row.currency),
+    bookedOn: fromDbDate(row.bookedOn),
+    description: row.description,
+    categoryId: row.categoryId,
+    transferGroupId: row.transferGroupId,
+    externalId: row.externalId,
+    invoiceId: row.invoiceId,
+  })
+}
+
+export function transactionToRow(transaction: Transaction): TransactionRow {
+  return {
+    id: transaction.id,
+    tenantId: transaction.tenantId,
+    accountId: transaction.accountId,
+    externalId: transaction.externalId,
+    amountCents: BigInt(transaction.amount.cents),
+    currency: transaction.amount.currency,
+    bookedOn: toDbDate(transaction.bookedOn),
+    description: transaction.description,
+    categoryId: transaction.categoryId,
+    transferGroupId: transaction.transferGroupId,
+    invoiceId: transaction.invoiceId,
   }
 }
 

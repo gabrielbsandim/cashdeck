@@ -2,6 +2,7 @@ import {
   type Account,
   type Bill,
   type BillStatus,
+  type EntityKind,
   type FinancialEntity,
   type LocalDate,
   type PaymentAttempt,
@@ -45,12 +46,18 @@ export interface PaymentRepository {
 export interface FinancialEntityRepository {
   save(entity: FinancialEntity): Promise<void>
   findById(tenantId: string, id: string): Promise<FinancialEntity | null>
+  findByKind(
+    tenantId: string,
+    kind: EntityKind,
+  ): Promise<FinancialEntity | null>
+  list(tenantId: string): Promise<FinancialEntity[]>
 }
 
 export interface AccountRepository {
   save(account: Account): Promise<void>
   findById(tenantId: string, id: string): Promise<Account | null>
   listByEntity(tenantId: string, entityId: string): Promise<Account[]>
+  list(tenantId: string): Promise<Account[]>
 }
 
 export interface IdempotencyStore {
@@ -66,6 +73,7 @@ export interface IdempotencyStore {
 export interface SecretStore {
   put(tenantId: string, name: string, sealed: string): Promise<void>
   get(tenantId: string, name: string): Promise<string | null>
+  delete(tenantId: string, name: string): Promise<void>
 }
 
 export interface PayeeDirectory {
@@ -86,6 +94,11 @@ export type PaymentSettings = {
 
 export interface PaymentSettingsProvider {
   get(tenantId: string, entityId: string): Promise<PaymentSettings>
+  save(
+    tenantId: string,
+    entityId: string,
+    settings: PaymentSettings,
+  ): Promise<void>
 }
 
 export type AuditEvent = {

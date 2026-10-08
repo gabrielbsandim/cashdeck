@@ -15,3 +15,21 @@ export class ProviderNotConfiguredError extends Error {
     this.name = 'ProviderNotConfiguredError'
   }
 }
+
+export class ProviderError extends Error {
+  readonly code = 'PROVIDER_ERROR'
+
+  constructor(
+    readonly provider: string,
+    message: string,
+  ) {
+    super(`${provider}: ${message}`)
+    this.name = 'ProviderError'
+  }
+}
+
+export class NotConfiguredSource extends ProviderNotConfiguredError {
+  constructor(source: string) {
+    super(`The ${source} bill source`)
+  }
+}

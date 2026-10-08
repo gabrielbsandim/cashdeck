@@ -42,6 +42,7 @@ const METHODS = [
   'findMany',
   'create',
   'aggregate',
+  'deleteMany',
 ] as const
 
 type Delegate = Record<(typeof METHODS)[number], ReturnType<typeof vi.fn>>
@@ -358,5 +359,58 @@ describe('audit, idempotency and secrets', () => {
     expect(await repos.secrets.get(TENANT, 'inter')).toBe('v1.sealed')
     db.secret.findUnique.mockResolvedValueOnce(null)
     expect(await repos.secrets.get(TENANT, 'missing')).toBeNull()
+  })
+})
+
+describe('lookups added for the API', () => {
+  it('finds entities by kind and lists entities and accounts', async () => {
+    const { db, repos } = mockClient()
+    db.financialEntity.findFirst.mockResolvedValueOnce(entityToRow(entity))
+    expect(await repos.entities.findByKind(TENANT, 'PJ')).toEqual(entity)
+    expect(db.financialEntity.findFirst.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      kind: 'PJ',
+    })
+    db.financialEntity.findFirst.mockResolvedValueOnce(null)
+    expect(await repos.entities.findByKind(TENANT, 'PF')).toBeNull()
+    db.financialEntity.findMany.mockResolvedValueOnce([entityToRow(entity)])
+    expect(await repos.entities.list(TENANT)).toEqual([entity])
+    const linked = {
+      ...account,
+      connectionId: 'c1',
+      externalId: 'x',
+      cdiPercent: 100,
+    }
+    db.account.findMany.mockResolvedValueOnce([accountToRow(linked)])
+    expect(await repos.accounts.list(TENANT)).toEqual([linked])
+  })
+
+  it('saves payment settings and deletes secrets', async () => {
+    const { db, repos } = mockClient()
+    await repos.settings.save(TENANT, 'company', {
+      killSwitch: true,
+      enabledRails: ['ASAAS'],
+      dailyCapCents: { ASAAS: 100 },
+      confirmAboveCents: 5000,
+    })
+    expect(db.paymentSettings.upsert.mock.calls[0]?.[0].update).toEqual({
+      killSwitch: true,
+      enabledRails: ['ASAAS'],
+      dailyCapCents: { ASAAS: 100 },
+      confirmAboveCents: 5000n,
+    })
+    await repos.settings.save(TENANT, 'company', {
+      killSwitch: false,
+      enabledRails: [],
+      dailyCapCents: {},
+      confirmAboveCents: null,
+    })
+    expect(
+      db.paymentSettings.upsert.mock.calls[1]?.[0].create.confirmAboveCents,
+    ).toBeNull()
+    await repos.secrets.delete(TENANT, 'inter')
+    expect(db.secret.deleteMany).toHaveBeenCalledWith({
+      where: { tenantId: TENANT, name: 'inter' },
+    })
   })
 })
