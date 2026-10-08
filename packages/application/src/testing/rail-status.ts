@@ -1,5 +1,9 @@
 import { type RailId } from '@cashdeck/domain'
-import { type RailStatus, type RailStatusReader } from '@/ports/rail-status'
+import {
+  type RailStatus,
+  type RailStatusReader,
+  type RailStatusScope,
+} from '@/ports/rail-status'
 
 export class FakeRailStatusReader implements RailStatusReader {
   readonly asked: string[] = []
@@ -12,7 +16,10 @@ export class FakeRailStatusReader implements RailStatusReader {
     return this
   }
 
-  async status(externalId: string): Promise<RailStatus> {
+  async status(
+    externalId: string,
+    _scope: RailStatusScope,
+  ): Promise<RailStatus> {
     this.asked.push(externalId)
     return (
       this.statuses.get(externalId) ?? {
