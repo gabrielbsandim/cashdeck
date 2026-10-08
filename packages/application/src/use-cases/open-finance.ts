@@ -42,6 +42,11 @@ type OpenFinanceDeps = Pick<
 const balanceOf = (account: ProviderAccount) =>
   Money.of(account.balanceCents, account.currency)
 
+// An adapter reports an unknown item as NotFoundError or as an HTTP 404.
+const isMissing = (error: unknown) =>
+  error instanceof NotFoundError ||
+  (error as { status?: unknown } | null)?.status === 404
+
 async function findItem(
   deps: Pick<Deps, 'openFinance'>,
   itemId: string,
@@ -49,7 +54,7 @@ async function findItem(
   try {
     return await deps.openFinance.getItem(itemId)
   } catch (error) {
-    if (error instanceof NotFoundError) {
+    if (isMissing(error)) {
       return null
     }
     throw error

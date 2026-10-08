@@ -38,6 +38,7 @@ import {
   FakeArchiveWriter,
   FakeCertificateInspector,
   FakeMailboxAuthorizer,
+  FakePdfWriter,
 } from '@/testing/services'
 
 type Options = {
@@ -76,6 +77,7 @@ export function fullDeps(options: Options = {}) {
     mailboxAuthorizer: new FakeMailboxAuthorizer(),
     certificates: new FakeCertificateInspector(),
     archives: new FakeArchiveWriter(),
+    pdfs: new FakePdfWriter(),
     llm: new FakeLlmProvider(),
   }
 }

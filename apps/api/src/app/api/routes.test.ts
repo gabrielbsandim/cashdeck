@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetContainer } from '@/server/container'
 import { GET as health } from '@/app/api/v1/health/route'
 import { GET as openapi } from '@/app/api/v1/openapi/route'
@@ -11,9 +11,17 @@ import { GET as paymentCron } from '@/app/api/cron/payment-ladder/route'
 const BOLETO_LINE = '00190000090280001234256789012178916050000012345'
 const TAX_BARCODE = '85600000001500003282026102000000000000123000'
 
+const TOKEN = 'test-token-0123456789'
+const AUTH = { authorization: `Bearer ${TOKEN}` }
+
+function get(path: string) {
+  return new Request(`http://localhost/api/v1${path}`, { headers: AUTH })
+}
+
 function post(path: string, body?: unknown) {
   return new Request(`http://localhost/api/v1${path}`, {
     method: 'POST',
+    headers: AUTH,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 }
@@ -23,6 +31,10 @@ const params = (id: string) => ({ params: Promise.resolve({ id }) })
 async function json(response: Response) {
   return { status: response.status, body: await response.json() }
 }
+
+beforeEach(() => {
+  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+})
 
 afterEach(() => {
   resetContainer()
@@ -55,16 +67,12 @@ describe('api routes', () => {
     )
     expect(again.status).toBe(200)
 
-    const list = await json(
-      await listBills(
-        new Request('http://localhost/api/v1/bills?entityId=company'),
-      ),
-    )
+    const list = await json(await listBills(get('/bills?entityId=company')))
     expect(list.body.data).toHaveLength(1)
     expect(list.body.nextCursor).toBeNull()
 
     const detail = await json(
-      await getBill(new Request('http://x'), params(created.body.data.id)),
+      await getBill(get('/bills/x'), params(created.body.data.id)),
     )
     expect(detail.body.data).toMatchObject({ attempts: [], pixCode: null })
     expect(
@@ -116,22 +124,39 @@ describe('api routes', () => {
     ])
     const broken = new Request('http://localhost/api/v1/bills', {
       method: 'POST',
+      headers: AUTH,
       body: '{',
     })
     expect((await captureBill(broken)).status).toBe(400)
-    expect(
-      (await listBills(new Request('http://localhost/api/v1/bills?limit=0')))
-        .status,
-    ).toBe(422)
-    expect(
-      (await getBill(new Request('http://x'), params('nope'))).status,
-    ).toBe(404)
+    expect((await listBills(get('/bills?limit=0'))).status).toBe(422)
+    expect((await getBill(get('/bills/x'), params('nope'))).status).toBe(404)
     expect(
       (await payBill(post('/bills/nope/pay'), params('nope'))).status,
     ).toBe(404)
     expect(
       (await markPaid(post('/bills/nope/mark-paid'), params('nope'))).status,
     ).toBe(404)
+  })
+
+  it('guards every route with the API token', async () => {
+    const anonymous = await json(
+      await listBills(new Request('http://localhost/api/v1/bills')),
+    )
+    expect([anonymous.status, anonymous.body.error.code]).toEqual([
+      401,
+      'UNAUTHORIZED',
+    ])
+    const wrong = new Request('http://localhost/api/v1/bills', {
+      headers: { authorization: 'Bearer nope' },
+    })
+    expect((await listBills(wrong)).status).toBe(401)
+    vi.stubEnv('CASHDECK_API_TOKEN', '')
+    const unset = await json(await listBills(get('/bills')))
+    expect([unset.status, unset.body.error.code]).toEqual([
+      503,
+      'NOT_CONFIGURED',
+    ])
+    expect((await health()).status).toBe(200)
   })
 
   it('runs due payments from the cron route', async () => {

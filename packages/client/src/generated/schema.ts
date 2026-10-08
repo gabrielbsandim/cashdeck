@@ -11,7 +11,231 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Service is up */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Token is valid; server name and entities */
+        get: operations["checkAuth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Personal and company entities */
+        get: operations["listEntities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/personal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Personal home */
+        get: operations["getPersonalSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/company": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company home */
+        get: operations["getCompanySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/company/drafts/{invoiceId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a draft invoice; returns the refreshed company home */
+        post: operations["approveInvoiceDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/company/unbilled/{transactionId}/invoice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue an invoice for an unbilled receipt */
+        post: operations["invoiceReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/consolidated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Personal and company together */
+        get: operations["getConsolidatedSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounts of an entity */
+        get: operations["listAccounts"];
+        put?: never;
+        /** Create a manual account */
+        post: operations["createAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an account */
+        patch: operations["updateAccount"];
+        trace?: never;
+    };
+    "/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transactions, newest first */
+        get: operations["listTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transfers between the entities */
+        get: operations["listTransfers"];
+        put?: never;
+        /** Record a transfer between the entities */
+        post: operations["recordTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One transfer */
+        get: operations["getTransfer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transfer statement as a PDF */
+        get: operations["downloadTransferDocument"];
         put?: never;
         post?: never;
         delete?: never;
@@ -27,8 +251,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Bills by due date */
         get: operations["listBills"];
         put?: never;
+        /** Capture a bill; 200 when the same code already exists */
         post: operations["captureBill"];
         delete?: never;
         options?: never;
@@ -43,6 +269,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Bill with its plan */
         get: operations["getBill"];
         put?: never;
         post?: never;
@@ -61,6 +288,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Run the payment ladder */
         post: operations["payBill"];
         delete?: never;
         options?: never;
@@ -77,7 +305,674 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Mark a bill paid by hand */
         post: operations["markBillPaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bills/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment receipt and attachments */
+        get: operations["getReceipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bills/{id}/receipt/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Receipt of a paid bill as a PDF */
+        get: operations["downloadReceiptPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bills/{id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach a file to a bill */
+        post: operations["addAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bills/{id}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download an attachment */
+        get: operations["downloadAttachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/open-finance/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Look up an aggregator item */
+        post: operations["lookupItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/open-finance/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open Finance connections */
+        get: operations["listConnections"];
+        put?: never;
+        /** Link an item and import its accounts */
+        post: operations["connectItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/open-finance/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a connection; accounts become manual */
+        delete: operations["removeConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/open-finance/connections/{id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync a connection now */
+        post: operations["syncConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment rails of an entity */
+        get: operations["listRails"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rails/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove rail credentials and disable it */
+        delete: operations["removeRail"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rails/{id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable a configured rail */
+        post: operations["authorizeRail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rails/{id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credential metadata, never the secrets */
+        get: operations["getRailCredentials"];
+        /** Store rail credentials in the vault */
+        put: operations["saveRailCredentials"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rails/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a rail against its provider */
+        post: operations["testRail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Automation state */
+        get: operations["getAutomation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause every automatic payment */
+        post: operations["pauseAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume automatic payments */
+        post: operations["resumeAutomation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Tune limits of an entity */
+        patch: operations["updateAutomation"];
+        trace?: never;
+    };
+    "/capture/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mailboxes and DDA enrollments */
+        get: operations["getCaptureSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/mailboxes/oauth/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorization URL for a mailbox */
+        post: operations["startMailbox"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/mailboxes/oauth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OAuth redirect target; checked by the signed state */
+        get: operations["completeMailbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Capture a bill from a shared PDF or photo; 200 when known */
+        post: operations["captureFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/mailboxes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect a mailbox */
+        delete: operations["removeMailbox"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/mailboxes/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a mailbox now */
+        post: operations["readMailbox"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/dda/{entity}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Enable or disable DDA for an entity */
+        put: operations["setDda"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invoices of a month */
+        get: operations["listInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/issuer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invoice issuer setup, null before the first save */
+        get: operations["getIssuer"];
+        /** Save the invoice issuer setup */
+        put: operations["saveIssuer"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/issuer/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Store the issuer certificate in the vault */
+        put: operations["uploadIssuerCertificate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/issuer/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the issuer against its provider */
+        post: operations["testIssuer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/service-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Service codes the issuer accepts */
+        get: operations["listServiceCodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payroll sheet and Fator R */
+        get: operations["getPayroll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payroll/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save the payroll of a month */
+        put: operations["savePayroll"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/card-statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a card statement with the AI */
+        post: operations["readCardStatement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/card-statements/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest statement without a bill, or null */
+        get: operations["getLatestCardStatement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/card-statements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One card statement */
+        get: operations["getCardStatement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/card-statements/{id}/bill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bill the selected lines of a statement */
+        post: operations["createStatementBill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accountant-export/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What an export of the period would hold */
+        get: operations["planAccountantExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accountant-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record an export */
+        post: operations["generateAccountantExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accountant-export/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Past exports, newest first */
+        get: operations["listAccountantExports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accountant-export/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ZIP with the CSVs and attachments */
+        get: operations["downloadAccountantExport"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -135,15 +1030,915 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    checkAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token is valid; server name and entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            server: {
+                                name: string;
+                                version: string;
+                                tenantId: string;
+                            };
+                            entities: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PF" | "PJ";
+                                name: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listEntities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal and company entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            kind: "PF" | "PJ";
+                            name: string;
+                            taxId: string;
+                            /** @enum {string|null} */
+                            taxRegime: "SIMPLES_NACIONAL" | "MEI" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | null;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getPersonalSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal home */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            balance: {
+                                cents: number;
+                                currency: string;
+                            };
+                            sync: {
+                                accountCount: number;
+                                syncedAt: string | null;
+                            };
+                            reserve: {
+                                accountId: string;
+                                institution: string;
+                                product: string;
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                monthYield: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                coverDays: number;
+                                cdiPercent: number | null;
+                            } | null;
+                            forecast: {
+                                from: string;
+                                balances: {
+                                    cents: number;
+                                    currency: string;
+                                }[];
+                                floor: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            budgets: {
+                                category: string;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            alerts: ({
+                                /** @enum {string} */
+                                type: "ASSISTED_PAYMENT";
+                                at: string;
+                                billId: string;
+                                payee: string;
+                                reason: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "BUDGET_EXCEEDED";
+                                at: string;
+                                budget: {
+                                    category: string;
+                                    spent: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    limit: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                };
+                            })[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCompanySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Company home */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            cash: {
+                                cents: number;
+                                currency: string;
+                            };
+                            sync: {
+                                accountCount: number;
+                                syncedAt: string | null;
+                            };
+                            billed: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invoiceCount: number;
+                            dasEstimate: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dasDue: string;
+                            /** @enum {string} */
+                            annex: "III" | "V";
+                            drafts: {
+                                id: string;
+                                customer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                recurring: boolean;
+                                issueOn: string;
+                            }[];
+                            unbilled: {
+                                id: string;
+                                payer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                receivedOn: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    approveInvoiceDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Issue a draft invoice; returns the refreshed company home */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            cash: {
+                                cents: number;
+                                currency: string;
+                            };
+                            sync: {
+                                accountCount: number;
+                                syncedAt: string | null;
+                            };
+                            billed: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invoiceCount: number;
+                            dasEstimate: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dasDue: string;
+                            /** @enum {string} */
+                            annex: "III" | "V";
+                            drafts: {
+                                id: string;
+                                customer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                recurring: boolean;
+                                issueOn: string;
+                            }[];
+                            unbilled: {
+                                id: string;
+                                payer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                receivedOn: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    invoiceReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transactionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Issue an invoice for an unbilled receipt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            cash: {
+                                cents: number;
+                                currency: string;
+                            };
+                            sync: {
+                                accountCount: number;
+                                syncedAt: string | null;
+                            };
+                            billed: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invoiceCount: number;
+                            dasEstimate: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dasDue: string;
+                            /** @enum {string} */
+                            annex: "III" | "V";
+                            drafts: {
+                                id: string;
+                                customer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                recurring: boolean;
+                                issueOn: string;
+                            }[];
+                            unbilled: {
+                                id: string;
+                                payer: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                receivedOn: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getConsolidatedSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal and company together */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            personal: {
+                                cents: number;
+                                currency: string;
+                            };
+                            company: {
+                                cents: number;
+                                currency: string;
+                            };
+                            externalIn: {
+                                cents: number;
+                                currency: string;
+                            };
+                            externalOut: {
+                                cents: number;
+                                currency: string;
+                            };
+                            transfers: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PROFIT_DISTRIBUTION" | "PRO_LABORE";
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listAccounts: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accounts of an entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            institution: string;
+                            name: string;
+                            /** @enum {string} */
+                            type: "CHECKING" | "SAVINGS" | "CREDIT_CARD" | "INVESTMENT" | "WALLET";
+                            /** @enum {string} */
+                            origin: "CONNECTED" | "MANUAL";
+                            isReserve: boolean;
+                            balance: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cdiPercent: number | null;
+                            connectionId: string | null;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                    institution: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "CHECKING" | "SAVINGS" | "CREDIT_CARD" | "INVESTMENT" | "WALLET";
+                    /** @default BRL */
+                    currency?: string;
+                    /** @default false */
+                    isReserve?: boolean;
+                    /** @default 0 */
+                    balanceCents?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Create a manual account */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            institution: string;
+                            name: string;
+                            /** @enum {string} */
+                            type: "CHECKING" | "SAVINGS" | "CREDIT_CARD" | "INVESTMENT" | "WALLET";
+                            /** @enum {string} */
+                            origin: "CONNECTED" | "MANUAL";
+                            isReserve: boolean;
+                            balance: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cdiPercent: number | null;
+                            connectionId: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    isReserve?: boolean;
+                    cdiPercent?: number | null;
+                    balanceCents?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Update an account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            institution: string;
+                            name: string;
+                            /** @enum {string} */
+                            type: "CHECKING" | "SAVINGS" | "CREDIT_CARD" | "INVESTMENT" | "WALLET";
+                            /** @enum {string} */
+                            origin: "CONNECTED" | "MANUAL";
+                            isReserve: boolean;
+                            balance: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cdiPercent: number | null;
+                            connectionId: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listTransactions: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                entity?: "PF" | "PJ";
+                accountId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transactions, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            accountId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            bookedOn: string;
+                            description: string;
+                            categoryId: string | null;
+                            /** @enum {string} */
+                            kind: "INCOME" | "EXPENSE" | "TRANSFER";
+                            transferId: string | null;
+                            invoiceId: string | null;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listTransfers: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transfers between the entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            kind: "PROFIT_DISTRIBUTION" | "PRO_LABORE";
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            at: string;
+                            rail: string;
+                            from: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            to: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            document: string | null;
+                            neutral: boolean;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    recordTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "PROFIT_DISTRIBUTION" | "PRO_LABORE";
+                    amountCents: number;
+                    fromAccountId: string;
+                    toAccountId: string;
+                    /** Format: date-time */
+                    at?: string;
+                    /** @default PIX */
+                    rail?: string;
+                    document?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Record a transfer between the entities */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            kind: "PROFIT_DISTRIBUTION" | "PRO_LABORE";
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            at: string;
+                            rail: string;
+                            from: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            to: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            document: string | null;
+                            neutral: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One transfer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            kind: "PROFIT_DISTRIBUTION" | "PRO_LABORE";
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            at: string;
+                            rail: string;
+                            from: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            to: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                holder: string;
+                                account: string;
+                                accountId: string;
+                            };
+                            document: string | null;
+                            neutral: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadTransferDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     listBills: {
         parameters: {
             query?: {
                 entityId?: string;
-                status?: string;
+                status?: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
                 cursor?: string;
-                limit?: string;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -186,9 +1981,14 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     captureBill: {
@@ -218,41 +2018,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Existing bill with the same code */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: {
-                            id: string;
-                            entityId: string;
-                            /** @enum {string} */
-                            entityKind: "PF" | "PJ";
-                            /** @enum {string} */
-                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
-                            /** @enum {string} */
-                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
-                            /** @enum {string} */
-                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
-                            payee: string | null;
-                            amount: {
-                                cents: number;
-                                currency: string;
-                            };
-                            dueDate: string;
-                            code: string | null;
-                            pixCode: string | null;
-                            createdAt: string;
-                            paidAt: string | null;
-                            /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
-                        };
-                    };
-                };
-            };
-            /** @description Bill captured */
+            /** @description Capture a bill; 200 when the same code already exists */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -286,9 +2052,14 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     getBill: {
@@ -366,9 +2137,14 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     payBill: {
@@ -380,7 +2156,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": {
                     confirmed?: boolean;
@@ -388,7 +2164,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Ladder run */
+            /** @description Run the payment ladder */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -448,13 +2224,25 @@ export interface operations {
                                 externalId: string | null;
                                 at: string;
                             }[];
+                            instructions: {
+                                kind: string;
+                                copyCode: string | null;
+                                pixCode: string | null;
+                                amountCents: number;
+                                dueDate: string;
+                            } | null;
                         };
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     markBillPaid: {
@@ -466,9 +2254,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    attachmentId?: string;
+                    proof?: string;
+                };
+            };
+        };
         responses: {
-            /** @description Bill marked paid */
+            /** @description Mark a bill paid by hand */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -502,9 +2297,1936 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
             500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment receipt and attachments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            billId: string;
+                            proof: {
+                                rail: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                paidAt: string;
+                                payer: string;
+                                receiver: string;
+                                transactionId: string | null;
+                                authentication: string | null;
+                            } | null;
+                            attachments: {
+                                id: string;
+                                fileName: string;
+                                mimeType: string;
+                                bytes: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadReceiptPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    addAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    mimeType: string;
+                    base64: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Attach a file to a bill */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            fileName: string;
+                            mimeType: string;
+                            bytes: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    lookupItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    itemId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Look up an aggregator item */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            status: "FOUND";
+                            institution: string;
+                            consentUntil: string | null;
+                            accounts: {
+                                id: string;
+                                name: string;
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        } | {
+                            /** @enum {string} */
+                            status: "NOT_FOUND";
+                        } | {
+                            /** @enum {string} */
+                            status: "ALREADY_CONNECTED";
+                            /** @enum {string} */
+                            owner: "PF" | "PJ";
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Open Finance connections */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            itemId: string;
+                            institution: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            status: string;
+                            lastSyncAt: string | null;
+                            accountCount: number;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    connectItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    itemId: string;
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                    accountIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Link an item and import its accounts */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            connectionId: string;
+                            imported: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove a connection; accounts become manual */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    syncConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sync a connection now */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            accounts: number;
+                            transactions: number;
+                            syncedAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listRails: {
+        parameters: {
+            query: {
+                entity: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment rails of an entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string|null} */
+                            railId: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED" | null;
+                            /** @enum {string} */
+                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "RESERVE_FUNDING" | "BANK_APPROVAL" | "ASSISTED";
+                            /** @enum {string} */
+                            owner: "PF" | "PJ";
+                            step: number;
+                            institution: string;
+                            /** @enum {string} */
+                            status: "ACTIVE" | "NEEDS_AUTHORIZATION" | "UNAVAILABLE" | "ALWAYS";
+                            configurable: boolean;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeRail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove rail credentials and disable it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    authorizeRail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enable a configured rail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string|null} */
+                            railId: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED" | null;
+                            /** @enum {string} */
+                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "RESERVE_FUNDING" | "BANK_APPROVAL" | "ASSISTED";
+                            /** @enum {string} */
+                            owner: "PF" | "PJ";
+                            step: number;
+                            institution: string;
+                            /** @enum {string} */
+                            status: "ACTIVE" | "NEEDS_AUTHORIZATION" | "UNAVAILABLE" | "ALWAYS";
+                            configurable: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRailCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credential metadata, never the secrets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            certificateName: string | null;
+                            certificateValidUntil: string | null;
+                            apiKeyHint: string | null;
+                            lastTestAt: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveRailCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    certificate?: {
+                        fileName: string;
+                        mimeType: string;
+                        base64: string;
+                    };
+                    privateKey?: {
+                        fileName: string;
+                        mimeType: string;
+                        base64: string;
+                    };
+                    certificateValidUntil?: string;
+                    apiKey?: string;
+                    clientId?: string;
+                    clientSecret?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Store rail credentials in the vault */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            certificateName: string | null;
+                            certificateValidUntil: string | null;
+                            apiKeyHint: string | null;
+                            lastTestAt: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    testRail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Check a rail against its provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            checks: {
+                                /** @enum {string} */
+                                kind: "CERTIFICATE" | "API_KEY" | "SCOPE" | "PAYER_ACCOUNT";
+                                passed: boolean;
+                                millis: number | null;
+                            }[];
+                            testedAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Automation state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pausedSince: string | null;
+                            entities: {
+                                /** @enum {string} */
+                                entity: "PF" | "PJ";
+                                confirmAboveCents: number | null;
+                                dailyCapCents: {
+                                    [key: string]: number;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    pauseAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pause every automatic payment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pausedSince: string | null;
+                            entities: {
+                                /** @enum {string} */
+                                entity: "PF" | "PJ";
+                                confirmAboveCents: number | null;
+                                dailyCapCents: {
+                                    [key: string]: number;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    resumeAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resume automatic payments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pausedSince: string | null;
+                            entities: {
+                                /** @enum {string} */
+                                entity: "PF" | "PJ";
+                                confirmAboveCents: number | null;
+                                dailyCapCents: {
+                                    [key: string]: number;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateAutomation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                    confirmAboveCents?: number | null;
+                    dailyCapCents?: {
+                        [key: string]: number;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Tune limits of an entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pausedSince: string | null;
+                            entities: {
+                                /** @enum {string} */
+                                entity: "PF" | "PJ";
+                                confirmAboveCents: number | null;
+                                dailyCapCents: {
+                                    [key: string]: number;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCaptureSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mailboxes and DDA enrollments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            mailboxes: {
+                                id: string;
+                                address: string;
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                lastReadAt: string | null;
+                                billsFound: number;
+                                emailsScanned: number;
+                            }[];
+                            dda: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                bank: string;
+                                lastBatchAt: string | null;
+                                boletos: number;
+                                enabled: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    startMailbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                };
+            };
+        };
+        responses: {
+            /** @description Authorization URL for a mailbox */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            url: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    completeMailbox: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the app with connected=1 or an error code */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    captureFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    mimeType: string;
+                    base64: string;
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                };
+            };
+        };
+        responses: {
+            /** @description Capture a bill from a shared PDF or photo; 200 when known */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            entityId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            /** @enum {string} */
+                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
+                            /** @enum {string} */
+                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
+                            /** @enum {string} */
+                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
+                            payee: string | null;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dueDate: string;
+                            code: string | null;
+                            pixCode: string | null;
+                            createdAt: string;
+                            paidAt: string | null;
+                            /** @enum {string|null} */
+                            paidBy: "RAIL" | "USER" | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeMailbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disconnect a mailbox */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            mailboxes: {
+                                id: string;
+                                address: string;
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                lastReadAt: string | null;
+                                billsFound: number;
+                                emailsScanned: number;
+                            }[];
+                            dda: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                bank: string;
+                                lastBatchAt: string | null;
+                                boletos: number;
+                                enabled: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    readMailbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Read a mailbox now */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            mailboxes: {
+                                id: string;
+                                address: string;
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                lastReadAt: string | null;
+                                billsFound: number;
+                                emailsScanned: number;
+                            }[];
+                            dda: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                bank: string;
+                                lastBatchAt: string | null;
+                                boletos: number;
+                                enabled: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setDda: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity: "PF" | "PJ";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Enable or disable DDA for an entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            mailboxes: {
+                                id: string;
+                                address: string;
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                lastReadAt: string | null;
+                                billsFound: number;
+                                emailsScanned: number;
+                            }[];
+                            dda: {
+                                /** @enum {string} */
+                                owner: "PF" | "PJ";
+                                bank: string;
+                                lastBatchAt: string | null;
+                                boletos: number;
+                                enabled: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listInvoices: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                status?: "DRAFT" | "PROCESSING" | "ISSUED" | "REJECTED" | "CANCELLED";
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoices of a month */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            status: "DRAFT" | "PROCESSING" | "ISSUED" | "REJECTED" | "CANCELLED";
+                            number: string | null;
+                            competence: string;
+                            issueOn: string;
+                            recurring: boolean;
+                            isExport: boolean;
+                            pdfUrl: string | null;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getIssuer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoice issuer setup, null before the first save */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            kind: "NATIONAL" | "MUNICIPAL";
+                            city: string;
+                            certificateName: string | null;
+                            certificateExpiresOn: string | null;
+                            /** @enum {string|null} */
+                            certificateState: "VALID" | "EXPIRING_SOON" | "EXPIRED" | null;
+                            municipalRegistration: string;
+                            serviceCode: {
+                                code: string;
+                                description: string;
+                            };
+                        } | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveIssuer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "NATIONAL" | "MUNICIPAL";
+                    city: string;
+                    municipalRegistration: string;
+                    serviceCode: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Save the invoice issuer setup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            kind: "NATIONAL" | "MUNICIPAL";
+                            city: string;
+                            certificateName: string | null;
+                            certificateExpiresOn: string | null;
+                            /** @enum {string|null} */
+                            certificateState: "VALID" | "EXPIRING_SOON" | "EXPIRED" | null;
+                            municipalRegistration: string;
+                            serviceCode: {
+                                code: string;
+                                description: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    uploadIssuerCertificate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    mimeType: string;
+                    base64: string;
+                    password: string;
+                    expiresOn: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Store the issuer certificate in the vault */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            kind: "NATIONAL" | "MUNICIPAL";
+                            city: string;
+                            certificateName: string | null;
+                            certificateExpiresOn: string | null;
+                            /** @enum {string|null} */
+                            certificateState: "VALID" | "EXPIRING_SOON" | "EXPIRED" | null;
+                            municipalRegistration: string;
+                            serviceCode: {
+                                code: string;
+                                description: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    testIssuer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Check the issuer against its provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            protocol: string;
+                            elapsedMs: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listServiceCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service codes the issuer accepts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            description: string;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getPayroll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payroll sheet and Fator R */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            current: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            history: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            revenue12: {
+                                cents: number;
+                                currency: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    savePayroll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    proLaboreCents: number;
+                    salariesCents: number;
+                    fgtsCents: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Save the payroll of a month */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            current: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            history: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            revenue12: {
+                                cents: number;
+                                currency: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    readCardStatement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    mimeType: string;
+                    base64: string;
+                    /** @enum {string} */
+                    entity: "PF" | "PJ";
+                };
+            };
+        };
+        responses: {
+            /** @description Read a card statement with the AI */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            card: string;
+                            issuer: string;
+                            closing: string;
+                            due: string;
+                            rate: number;
+                            iofBps: number;
+                            paymentCode: string | null;
+                            lines: {
+                                id: string;
+                                merchant: string;
+                                date: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                needsReview: boolean;
+                            }[];
+                            billId: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getLatestCardStatement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Latest statement without a bill, or null */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            card: string;
+                            issuer: string;
+                            closing: string;
+                            due: string;
+                            rate: number;
+                            iofBps: number;
+                            paymentCode: string | null;
+                            lines: {
+                                id: string;
+                                merchant: string;
+                                date: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                needsReview: boolean;
+                            }[];
+                            billId: string | null;
+                        } | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCardStatement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One card statement */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            card: string;
+                            issuer: string;
+                            closing: string;
+                            due: string;
+                            rate: number;
+                            iofBps: number;
+                            paymentCode: string | null;
+                            lines: {
+                                id: string;
+                                merchant: string;
+                                date: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                needsReview: boolean;
+                            }[];
+                            billId: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createStatementBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    lineIds: string[];
+                    paymentCode?: string;
+                    pixKey?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bill the selected lines of a statement */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            billId: string;
+                            foreign: {
+                                cents: number;
+                                currency: string;
+                            };
+                            subtotal: {
+                                cents: number;
+                                currency: string;
+                            };
+                            iof: {
+                                cents: number;
+                                currency: string;
+                            };
+                            total: {
+                                cents: number;
+                                currency: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    planAccountantExport: {
+        parameters: {
+            query: {
+                period: "LAST_MONTH" | "LAST_QUARTER" | "CUSTOM";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What an export of the period would hold */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            from: string;
+                            to: string;
+                            items: {
+                                /** @enum {string} */
+                                kind: "STATEMENTS" | "INVOICES" | "TAX_GUIDES" | "EXPENSES" | "PAYROLL" | "RECONCILIATION";
+                                count: number;
+                                /** @enum {string} */
+                                unit: "ACCOUNTS" | "DOCUMENTS" | "MONTHS";
+                                files: number;
+                                bytes: number;
+                                selectedByDefault: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    generateAccountantExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    period: "LAST_MONTH" | "LAST_QUARTER" | "CUSTOM";
+                    from?: string;
+                    to?: string;
+                    items: ("STATEMENTS" | "INVOICES" | "TAX_GUIDES" | "EXPENSES" | "PAYROLL" | "RECONCILIATION")[];
+                    /** Format: email */
+                    sentTo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Record an export */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            month: string;
+                            sentOn: string;
+                            to: string | null;
+                            downloadPath: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listAccountantExports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Past exports, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            month: string;
+                            sentOn: string;
+                            to: string | null;
+                            downloadPath: string;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadAccountantExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
 }

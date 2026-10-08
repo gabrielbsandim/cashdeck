@@ -25,3 +25,9 @@ export interface MailboxAuthorizer {
   authorizationUrl(state: string): string
   exchange(code: string): Promise<AuthorizedMailbox>
 }
+
+export type PdfRow = readonly [label: string, value: string]
+
+export interface PdfWriter {
+  render(title: string, rows: readonly PdfRow[]): Uint8Array
+}

@@ -7,6 +7,8 @@ import {
   type CertificateFile,
   type CertificateInspector,
   type MailboxAuthorizer,
+  type PdfRow,
+  type PdfWriter,
 } from '@/ports/services'
 
 export class FakeCertificateInspector implements CertificateInspector {
@@ -53,5 +55,12 @@ export class FakeMailboxAuthorizer implements MailboxAuthorizer {
       throw new ValidationError('The authorization code was refused.')
     }
     return this.mailbox
+  }
+}
+
+export class FakePdfWriter implements PdfWriter {
+  render(title: string, rows: readonly PdfRow[]): Uint8Array {
+    const lines = rows.map(([label, value]) => `${label}: ${value}`)
+    return new TextEncoder().encode([title, ...lines].join('\n'))
   }
 }

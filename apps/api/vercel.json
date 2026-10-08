@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    {
-      "path": "/api/cron/payment-ladder",
-      "schedule": "0 11 * * 1-5"
-    }
+    { "path": "/api/cron/open-finance-sync", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/capture", "schedule": "30 9 * * *" },
+    { "path": "/api/cron/payment-ladder", "schedule": "0 11 * * 1-5" },
+    { "path": "/api/cron/reconcile-payments", "schedule": "0 21 * * 1-5" }
   ]
 }

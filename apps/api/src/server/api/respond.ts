@@ -3,6 +3,7 @@ import { ZodError } from 'zod'
 import { InvalidTransitionError, ValidationError } from '@cashdeck/domain'
 import {
   NotFoundError,
+  ProviderError,
   ProviderNotConfiguredError,
 } from '@cashdeck/application'
 import { reportError } from '@/server/observability'
@@ -17,6 +18,20 @@ export function ok<T>(data: T, status = 200): NextResponse {
 
 export function okPage<T>(items: T[], nextCursor: string | null): NextResponse {
   return NextResponse.json({ data: items, nextCursor })
+}
+
+export function fileResponse(
+  bytes: Uint8Array,
+  contentType: string,
+  fileName: string,
+): Response {
+  return new Response(Buffer.from(bytes), {
+    headers: {
+      'content-type': contentType,
+      'content-disposition': `attachment; filename="${fileName.replaceAll('"', '')}"`,
+      'content-length': String(bytes.length),
+    },
+  })
 }
 
 export function fail(
@@ -70,6 +85,12 @@ const RULES: ErrorRule[] = [
   {
     matches: error => error instanceof ProviderNotConfiguredError,
     respond: error => fail('NOT_CONFIGURED', error.message, 503),
+  },
+  {
+    matches: error =>
+      error instanceof ProviderError ||
+      (error as { code?: unknown } | null)?.code === 'PROVIDER_HTTP_ERROR',
+    respond: error => fail('PROVIDER_ERROR', error.message, 502),
   },
   {
     matches: error => prismaCode(error) !== null,

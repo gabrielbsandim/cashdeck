@@ -4,6 +4,7 @@ import { ValidationError } from '@cashdeck/domain'
 import { type HttpRequest, type HttpResponse } from '@/http/transport'
 import { X509CertificateInspector } from '@/services/certificate-inspector'
 import { GoogleMailboxAuthorizer } from '@/services/google-mailbox-authorizer'
+import { SimplePdfWriter } from '@/services/pdf-writer'
 import { crc32, StoredZipWriter } from '@/services/zip-writer'
 
 // A throwaway self-signed certificate for the subject "cashdeck-test".
@@ -175,5 +176,23 @@ describe('GoogleMailboxAuthorizer', () => {
     expect(() => authorizer.authorizationUrl('s')).toThrow(
       ProviderNotConfiguredError,
     )
+  })
+})
+
+describe('SimplePdfWriter', () => {
+  it('writes a one page PDF with a valid cross reference table', () => {
+    const bytes = new SimplePdfWriter().render('Payment receipt', [
+      ['Payee', 'Água (Serviços) \\ Ltda'],
+      ['Note', 'Emoji 🙂'],
+    ])
+    const text = Buffer.from(bytes).toString('latin1')
+    expect(text.startsWith('%PDF-1.4')).toBe(true)
+    expect(text).toContain('(Payee: Água \\(Serviços\\) \\\\ Ltda)')
+    expect(text).toContain('(Note: Emoji ?)')
+    const xref = Number(text.match(/startxref\n(\d+)/)?.[1])
+    expect(text.slice(xref, xref + 4)).toBe('xref')
+    const fourth = text.split('\n').filter(line => / 00000 n $/.test(line))[3]
+    const offset = Number(fourth?.slice(0, 10))
+    expect(text.slice(offset, offset + 7)).toBe('4 0 obj')
   })
 })

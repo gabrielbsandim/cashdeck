@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { entityKindSchema } from '@/dtos/common'
+import { entityKindSchema, uploadSchema } from '@/dtos/common'
 
 export const captureSourcesViewSchema = z.object({
   mailboxes: z.array(
@@ -24,6 +24,18 @@ export const captureSourcesViewSchema = z.object({
 })
 
 export type CaptureSourcesView = z.infer<typeof captureSourcesViewSchema>
+
+export const captureFileSchema = uploadSchema.extend({
+  entity: entityKindSchema,
+})
+
+export const fileReadingSchema = z.object({
+  paymentCode: z.string(),
+  pixCode: z.string(),
+  payee: z.string(),
+  amount: z.number(),
+  dueDate: z.string(),
+})
 
 export const startMailboxSchema = z.object({ entity: entityKindSchema })
 

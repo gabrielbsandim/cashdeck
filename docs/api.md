@@ -91,7 +91,8 @@ A wrong or missing token returns 401 `UNAUTHORIZED`.
 
 - `balance` sums the entity's checking, savings and wallet accounts, the reserve
   excluded.
-- `forecast.balances` has 31 entries: today and the next 30 days, applying the
+- `forecast.balances` has 31 entries: today and the next 30 days, starting
+  from `balance` plus the reserve, applying the
   average daily spend of the last 30 days and every open bill on its due date.
   `floor` is zero.
 - `coverDays` is how many days of open bills, in due date order, the reserve
@@ -219,6 +220,9 @@ both sides; a pro-labore is the company's expense and the person's income.
   The accounts must belong to different entities. Unlinked transactions of the
   same amount within two days on each account are linked to it. Returns the
   `TransferDetail`, 201.
+- `GET /transfers/{id}/document`: the transfer statement as a one page PDF
+  (`application/pdf`): kind, amount, date, rail, both parties and `document`
+  as the reference.
 
 ## Bills
 
@@ -237,8 +241,9 @@ when a bill is captured, so `plan` is never null.
   `BillDetailView` plus `instructions: { kind, copyCode, pixCode, amountCents, dueDate } | null`;
   at the assisted step the app shows `pixCode` first and `copyCode` (the
   barcode) second.
-- `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string }`. Returns
-  `BillView`.
+- `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
+  `attachmentId` points at a file already attached; `proof` is free text (an
+  end-to-end id, say). Returns `BillView`.
 
 `BillView`:
 
@@ -281,6 +286,9 @@ rail); the app collapses steps per mode for the three-step ladder.
   ```
 
   `proof` is present when a rail paid the bill.
+- `GET /bills/{id}/receipt/pdf`: a one page PDF receipt (`application/pdf`)
+  rendered from the rail proof, or from the bill itself when it was marked
+  paid by hand. 422 while the bill is not paid.
 - `POST /bills/{id}/attachments`: upload body. Returns the attachment, 201.
 - `GET /bills/{id}/attachments/{attachmentId}`: the file itself (raw bytes with
   its `Content-Type` and `Content-Disposition`), not JSON.
@@ -329,7 +337,7 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 
 ```json
 {
-  "id": string, "railId": "MERCADO_PAGO_PAYOUTS"|"ASAAS"|"INTER_EMPRESAS"|"C6_EMPRESAS"|"ASSISTED",
+  "id": string, "railId": "MERCADO_PAGO_PAYOUTS"|"ASAAS"|"INTER_EMPRESAS"|"C6_EMPRESAS"|"ASSISTED" | null,
   "kind": "PIX_API"|"BOLETO_API"|"TAX_API"|"RESERVE_FUNDING"|"BANK_APPROVAL"|"ASSISTED",
   "owner": "PF"|"PJ", "step": 1|2|3, "institution": string,
   "status": "ACTIVE"|"NEEDS_AUTHORIZATION"|"UNAVAILABLE"|"ALWAYS",
@@ -338,13 +346,18 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 ```
 
 - `GET /rails?entity=PF|PJ`: `[PaymentRail]` in ladder order. The personal
-  entity always lists a `BANK_APPROVAL` rail with status `UNAVAILABLE`.
+  entity always lists a `BANK_APPROVAL` rail with status `UNAVAILABLE` and
+  `railId: null` (`PF.NONE.BANK_APPROVAL`).
 - `POST /rails/{id}/authorize`: enables the rail for the ladder. Needs stored
   credentials first (422 otherwise). Returns `PaymentRail`.
 - `GET /rails/{id}/credentials`: `{ certificateName: string | null, certificateValidUntil: date | null, apiKeyHint: string | null, lastTestAt: timestamp | null }`.
   404 when nothing is stored or the rail is not configurable.
 - `PUT /rails/{id}/credentials`: body
-  `{ certificate?: Upload, privateKey?: Upload, certificatePassword?: string, certificateValidUntil?: date, apiKey?: string, clientId?: string, clientSecret?: string }`.
+  `{ certificate?: Upload, privateKey?: Upload, certificateValidUntil?: date, apiKey?: string, clientId?: string, clientSecret?: string }`.
+  Each rail takes only its own fields (422 `This rail does not use <field>`
+  otherwise): Mercado Pago `apiKey` (access token) and `privateKey` (signing
+  key); Asaas `apiKey`; Inter and C6 `clientId`, `clientSecret`,
+  `certificate` and `privateKey`, both PEM.
   Secrets are sealed in the server vault and never returned; only the file
   name, expiry and the last four characters of the API key come back. A PEM
   certificate's expiry is read from the file; a `.pfx` needs
@@ -381,6 +394,15 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 - `POST /capture/mailboxes/{id}/read`: reads it now. Returns `CaptureSources`.
 - `DELETE /capture/mailboxes/{id}`: disconnects. Returns `CaptureSources`.
 - `PUT /capture/dda/{entity}`: body `{ enabled: bool }`. Returns `CaptureSources`.
+- `POST /capture/files`: body `Upload` plus `entity` (a PDF or photo the user
+  shared). The AI reads the payment code, Pix code, payee, amount and due date;
+  the bill is captured with `source: "SHARE"` and the file attached to it.
+  Returns `BillView`, 201, or 200 when the same code was already captured. 422
+  when no code can be read.
+
+The callback is
+`/api/v1/capture/mailboxes/oauth/callback`; set it as `GMAIL_REDIRECT_URI` and
+as an authorized redirect URI of the Google OAuth client.
 
 ## Invoices (NFS-e)
 
@@ -464,3 +486,15 @@ For a card without Open Finance, usually in a foreign currency.
 - `GET /accountant-export/history`: `[{ id, month, sentOn, to, downloadPath }]`, newest first.
 - `GET /accountant-export/{id}/download`: the ZIP itself (`application/zip`),
   rebuilt from the stored period and items. Contains one CSV per item.
+
+## Crons
+
+Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
+[deploy.md](deploy.md)). Each returns `{ data: <counts> }`.
+
+| Path | When (UTC) | What |
+|---|---|---|
+| `/api/cron/open-finance-sync` | daily 09:00 | syncs every connection |
+| `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
+| `/api/cron/payment-ladder` | weekdays 11:00 | runs the ladder for bills due |
+| `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts; marks the bill `PAID`, or records the failure and moves it to the assisted step |

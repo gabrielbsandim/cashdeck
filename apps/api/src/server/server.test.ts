@@ -1,4 +1,7 @@
 import { randomBytes } from 'node:crypto'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   EnvelopeSecretVault,
@@ -87,15 +90,39 @@ describe('runCronJob', () => {
   })
 })
 
+const V1 = fileURLToPath(new URL('../app/api/v1', import.meta.url))
+
+function routeFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      return routeFiles(path)
+    }
+    return entry.name === 'route.ts' ? [path] : []
+  })
+}
+
 describe('openapi', () => {
-  it('describes every bill endpoint', () => {
+  it('describes every v1 route and method', () => {
     const document = buildOpenApiDocument()
-    expect(Object.keys(document.paths)).toEqual([
-      '/health',
-      '/bills',
-      '/bills/{id}',
-      '/bills/{id}/pay',
-      '/bills/{id}/mark-paid',
-    ])
+    const operations = routeFiles(V1)
+      .filter(file => !file.includes('/openapi/'))
+      .flatMap(file => {
+        const path = relative(V1, dirname(file)).replace(/\[(\w+)\]/g, '{$1}')
+        const source = readFileSync(file, 'utf8')
+        return [
+          ...source.matchAll(
+            /export (?:const|function|async function) (GET|POST|PUT|PATCH|DELETE)\b/g,
+          ),
+        ].map(([, method]) => `${String(method).toLowerCase()} /${path}`)
+      })
+      .sort()
+    const documented = Object.entries(document.paths)
+      .flatMap(([path, methods]) =>
+        Object.keys(methods).map(method => `${method} ${path}`),
+      )
+      .sort()
+    expect(documented).toEqual(operations)
+    expect(operations.length).toBeGreaterThan(50)
   })
 })

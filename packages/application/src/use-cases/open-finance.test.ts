@@ -96,6 +96,10 @@ describe('open finance', () => {
     }
     const { of } = setup(missing)
     expect(await of.lookup(TENANT, ITEM)).toEqual({ status: 'NOT_FOUND' })
+    missing.getItem = async () => {
+      throw Object.assign(new Error('Pluggy answered 404'), { status: 404 })
+    }
+    expect(await of.lookup(TENANT, ITEM)).toEqual({ status: 'NOT_FOUND' })
     await expect(
       of.connect(TENANT, { itemId: ITEM, entity: 'PF', accountIds: [] }),
     ).rejects.toThrow(NotFoundError)

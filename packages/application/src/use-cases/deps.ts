@@ -32,6 +32,7 @@ import {
   type ArchiveWriter,
   type CertificateInspector,
   type MailboxAuthorizer,
+  type PdfWriter,
 } from '@/ports/services'
 import { type Clock, type IdGenerator } from '@/ports/system'
 import { type RailRegistry } from '@/use-cases/build-payment-plan'
@@ -64,6 +65,7 @@ export type Deps = {
   mailboxAuthorizer: MailboxAuthorizer
   certificates: CertificateInspector
   archives: ArchiveWriter
+  pdfs: PdfWriter
   llm: LlmProvider
   clock: Clock
   ids: IdGenerator
