@@ -1,14 +1,17 @@
 import {
   type Bill,
   type BrCode,
+  type PaymentMethod,
   parseBrCode,
   ValidationError,
 } from '@cashdeck/domain'
 
-// Bill gains an optional `pixCode` with the bolepix work; it is read without
-// depending on that change so both land in any order.
-export function pixPayloadOf(bill: Bill): string | null {
-  const extra = (bill as Bill & { pixCode?: string | null }).pixCode?.trim()
+// A BOLETO step on a bolepix pays the barcode: the Pix step already ran.
+export function pixPayloadOf(bill: Bill, method: PaymentMethod): string | null {
+  if (method !== 'PIX') {
+    return null
+  }
+  const extra = bill.pixCode?.trim()
   if (extra) {
     return extra
   }

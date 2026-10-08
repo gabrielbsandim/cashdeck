@@ -170,6 +170,17 @@ describe('AsaasRail', () => {
     })
   })
 
+  it('pays the barcode of a bolepix when the step method is BOLETO', async () => {
+    const scripted = new ScriptedTransport().on('POST', `${API}/bill`, {
+      json: { id: 'b-2', status: 'PENDING' },
+    })
+    const result = await rail(scripted).pay({
+      ...payment({ pixCode: DYNAMIC_PIX }),
+      method: 'BOLETO',
+    })
+    expect(result.externalId).toBe('bill:b-2')
+  })
+
   it('maps credential and server errors', async () => {
     const auth = new ScriptedTransport().on('POST', `${API}/bill`, {
       status: 401,

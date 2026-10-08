@@ -51,13 +51,18 @@ export function bill(
   } as Bill
 }
 
+const PIX_KINDS = new Set(['PIX_KEY', 'PIX_QR'])
+
 export function payment(
   overrides: Partial<Bill> & { pixCode?: string | null } = {},
 ): PaymentRequest {
   return {
     bill: bill(overrides),
     mode: 'AUTOMATIC',
-    method: overrides.pixCode ? 'PIX' : 'BOLETO',
+    method:
+      overrides.pixCode || PIX_KINDS.has(overrides.kind ?? '')
+        ? 'PIX'
+        : 'BOLETO',
     idempotencyKey: 'bill-1:0',
   }
 }

@@ -113,7 +113,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
   async pay(request: PaymentRequest): Promise<RailResult> {
     const { bill } = request
     const config = await this.config(scopeOf(bill))
-    const pix = pixPayloadOf(bill)
+    const pix = pixPayloadOf(bill, request.method)
     if (pix) {
       return this.payPixCode(config, bill, pix)
     }

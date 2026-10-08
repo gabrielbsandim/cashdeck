@@ -12,12 +12,14 @@ import { bill, DYNAMIC_PIX, STATIC_PIX } from '@/testing/provider-fixtures'
 
 describe('pix helpers', () => {
   it('prefers the bill pix code, then a PIX_QR code', () => {
-    expect(pixPayloadOf(bill({ pixCode: ` ${STATIC_PIX} ` }))).toBe(STATIC_PIX)
-    expect(pixPayloadOf(bill({ kind: 'PIX_QR', code: STATIC_PIX }))).toBe(
-      STATIC_PIX,
-    )
-    expect(pixPayloadOf(bill())).toBeNull()
-    expect(pixPayloadOf(bill({ pixCode: '  ' }))).toBeNull()
+    const bolepix = bill({ pixCode: ` ${STATIC_PIX} ` })
+    expect(pixPayloadOf(bolepix, 'PIX')).toBe(STATIC_PIX)
+    expect(pixPayloadOf(bolepix, 'BOLETO')).toBeNull()
+    expect(
+      pixPayloadOf(bill({ kind: 'PIX_QR', code: STATIC_PIX }), 'PIX'),
+    ).toBe(STATIC_PIX)
+    expect(pixPayloadOf(bill(), 'PIX')).toBeNull()
+    expect(pixPayloadOf(bill({ pixCode: '  ' }), 'PIX')).toBeNull()
   })
 
   it('classifies and normalizes pix keys', () => {

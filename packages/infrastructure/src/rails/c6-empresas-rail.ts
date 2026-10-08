@@ -168,7 +168,7 @@ export class C6EmpresasRail implements PaymentRail, RailStatusReader {
 
   private content(request: PaymentRequest): string | null {
     const { bill } = request
-    const pix = pixPayloadOf(bill)
+    const pix = pixPayloadOf(bill, request.method)
     if (pix) {
       const decoded = decodePix(pix)
       return staticAmountMismatch(decoded, bill) ? null : decoded.payload

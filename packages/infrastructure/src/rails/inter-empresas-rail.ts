@@ -157,7 +157,7 @@ export class InterEmpresasRail implements PaymentRail, RailStatusReader {
   async pay(request: PaymentRequest): Promise<RailResult> {
     const { bill, idempotencyKey } = request
     const client = await this.client(scopeOf(bill))
-    const pix = pixPayloadOf(bill)
+    const pix = pixPayloadOf(bill, request.method)
     if (pix) {
       return this.payPixCode(client, bill, pix, idempotencyKey)
     }
