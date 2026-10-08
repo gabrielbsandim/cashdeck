@@ -1,0 +1,16 @@
+{
+  "extends": "@cashdeck/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    ".next/types/**/*.ts",
+    "vitest.config.ts",
+    "next.config.ts"
+  ],
+  "exclude": ["node_modules"]
+}

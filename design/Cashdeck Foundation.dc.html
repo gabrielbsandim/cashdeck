@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block" rel="stylesheet">
+<style>body{margin:0;background:#E9EBEF;-webkit-font-smoothing:antialiased}a{color:#3B4CC0;text-underline-offset:3px}a:hover{color:#26328A}@keyframes cdpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}</style>
+</helmet>
+<div style="padding:80px;display:flex;flex-direction:column;gap:128px;font-family:Geist,system-ui,sans-serif;color:#1B1F2B;width:max-content">
+
+<header style="display:flex;flex-direction:column;gap:20px;max-width:960px">
+<div style="display:flex;align-items:center;gap:16px">
+<div style="width:56px;height:56px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative;flex:none"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div>
+<div style="font:600 32px Geist;letter-spacing:-0.03em">Cash<span style="font-weight:400">deck</span></div>
+</div>
+<h1 style="margin:0;font:600 64px/1.02 Geist;letter-spacing:-0.035em">Foundation</h1>
+<p style="margin:0;font:400 20px/1.55 Geist;color:#4A5063;text-wrap:pretty">Stage 1, tokens, brand, components and Início. 1 px here = 1 dp / sp. Every token is labelled with its Flutter symbol; every component card is one widget. Stage 2 continues in <a href="Cashdeck Screens - Money.dc.html">Money screens</a> and <a href="Cashdeck Screens - Company.dc.html">Company, planning, chat &amp; settings</a>, plus <a href="Cashdeck Screens - Additions.dc.html">Additions</a> (Home Empresa / Consolidado, setup, rails, capture, receipts).</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">01</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Tokens</h2></div>
+<div style="display:grid;grid-template-columns:1180px 620px;gap:32px;align-items:start">
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:40px">
+<sc-for list="{{ colorGroups }}" as="g" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px"><h3 style="margin:0;font:600 22px Geist">{{ g.title }}</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">{{ g.cls }}</code></div>
+<div style="display:grid;grid-template-columns:300px 260px 260px 1fr;gap:16px;padding:0 0 8px;font:600 12px 'Geist Mono';color:#5A6072;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #E3E5EA"><span>Flutter</span><span>Light</span><span>Dark</span><span>Contrast · use</span></div>
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:300px 260px 260px 1fr;gap:16px;align-items:center;padding:8px 0;border-bottom:1px solid #F0F1F4">
+<code style="font:500 14px 'Geist Mono';color:#1B1F2B">{{ r.f }}</code>
+<div style="display:flex;align-items:center;gap:12px"><div style="{{ r.ls }}"></div><div style="display:flex;flex-direction:column;gap:2px;font:500 12px/16px 'Geist Mono';color:#4A5063"><span style="color:#1B1F2B;font-weight:600">{{ r.lh }}</span><span>{{ r.lo }}</span></div></div>
+<div style="display:flex;align-items:center;gap:12px"><div style="{{ r.ds }}"></div><div style="display:flex;flex-direction:column;gap:2px;font:500 12px/16px 'Geist Mono';color:#4A5063"><span style="color:#1B1F2B;font-weight:600">{{ r.dh }}</span><span>{{ r.do }}</span></div></div>
+<span style="font:400 14px/20px Geist;color:#4A5063">{{ r.n }}</span>
+</div>
+</sc-for>
+</div>
+</sc-for>
+<p style="margin:0;font:400 15px/1.5 Geist;color:#4A5063;max-width:900px;text-wrap:pretty">Accent <b>Cashdeck Cobalt</b> oklch(0.52 0.16 262) sits 18° cooler, 0.06 darker and calmer than Lifedeck indigo oklch(0.58 0.2 280), same family, own identity. Money semantics are derived by one rule per theme (light fg L 0.50, container L 0.945; dark fg L 0.80, container L 0.30) so hue is the only variable, and every status also carries an icon and a label. Expense is rose (355°), failed is red (27°), overdue is orange (50°), never confused, never colour-only.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="background:#fff;border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h3 style="margin:0;font:600 22px Geist">Spacing</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">AppSpacing</code></div>
+<sc-for list="{{ spacing }}" as="s" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:150px 56px 1fr;align-items:center;gap:12px;height:28px"><code style="font:500 14px 'Geist Mono'">{{ s.k }}</code><span style="font:500 14px 'Geist Mono';color:#5A6072">{{ s.v }}</span><div style="{{ s.bar }}"></div></div>
+</sc-for>
+<span style="font:400 14px/20px Geist;color:#4A5063">Screen gutter = lg (16). Card padding = lg. Section gap = xl (24). List row min height 56, transaction row 64.</span>
+</div>
+<div style="background:#fff;border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h3 style="margin:0;font:600 22px Geist">Radii</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">AppRadius</code></div>
+<div style="display:flex;gap:16px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:72px;height:72px;border-radius:8px;background:oklch(0.93 0.04 262);border:1px solid oklch(0.52 0.16 262)"></div><code style="font:500 13px 'Geist Mono'">sm 8</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:72px;height:72px;border-radius:12px;background:oklch(0.93 0.04 262);border:1px solid oklch(0.52 0.16 262)"></div><code style="font:500 13px 'Geist Mono'">md 12</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:72px;height:72px;border-radius:16px;background:oklch(0.93 0.04 262);border:1px solid oklch(0.52 0.16 262)"></div><code style="font:500 13px 'Geist Mono'">lg 16</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:72px;height:72px;border-radius:28px 28px 0 0;background:oklch(0.93 0.04 262);border:1px solid oklch(0.52 0.16 262)"></div><code style="font:500 13px 'Geist Mono'">sheet 28</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:72px;height:40px;border-radius:999px;background:oklch(0.93 0.04 262);border:1px solid oklch(0.52 0.16 262)"></div><code style="font:500 13px 'Geist Mono'">full</code></div>
+</div>
+<span style="font:400 14px/20px Geist;color:#4A5063">sm: chips, badges, inputs inner · md: buttons, fields, rows · lg: cards · sheet: bottom sheets top corners.</span>
+</div>
+<div style="background:#fff;border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h3 style="margin:0;font:600 22px Geist">Elevation</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">AppElevation</code></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:16px;background:#fff;border:1px solid #E3E5EA"></div><code style="font:500 13px 'Geist Mono'">level0</code><span style="font:400 13px/18px Geist;color:#4A5063">Border outlineVariant</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(20,24,40,.06),0 1px 3px rgba(20,24,40,.08)"></div><code style="font:500 13px 'Geist Mono'">level1</code><span style="font:400 13px/18px Geist;color:#4A5063">Cards · y1 b3 8%</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:16px;background:#fff;box-shadow:0 4px 12px rgba(20,24,40,.10)"></div><code style="font:500 13px 'Geist Mono'">level2</code><span style="font:400 13px/18px Geist;color:#4A5063">FAB, toast · y4 b12 10%</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:72px;border-radius:16px;background:#fff;box-shadow:0 -2px 24px rgba(20,24,40,.14)"></div><code style="font:500 13px 'Geist Mono'">level3</code><span style="font:400 13px/18px Geist;color:#4A5063">Sheets · y-2 b24 14%</span></div>
+</div>
+<span style="font:400 14px/20px Geist;color:#4A5063">Dark theme drops shadows and steps up tonal surfaces instead: level1 → surfaceContainerLow, level2 → surfaceContainer, level3 → surfaceContainerHigh.</span>
+</div>
+</div>
+
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px"><h3 style="margin:0;font:600 22px Geist">Typography</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">AppTextStyles · Geist (bundled asset) · amounts use FontFeature.tabularFigures()</code></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;padding-bottom:8px;font:600 12px 'Geist Mono';color:#5A6072;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #E3E5EA"><span>Flutter</span><span>size/line · weight · track</span><span>Sample</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">amountXl</code><code style="font:500 13px 'Geist Mono';color:#5A6072">40/48 · 600 · −0.8 · tnum</code><span style="font:600 40px/48px Geist;letter-spacing:-0.8px;font-variant-numeric:tabular-nums">R$ 18.742,30</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">amountLg</code><code style="font:500 13px 'Geist Mono';color:#5A6072">32/40 · 600 · −0.5 · tnum</code><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">R$ 6.200,00</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">amountMd</code><code style="font:500 13px 'Geist Mono';color:#5A6072">22/28 · 600 · −0.2 · tnum</code><span style="font:600 22px/28px Geist;letter-spacing:-0.2px;font-variant-numeric:tabular-nums">−R$ 2.400,00</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">amountSm</code><code style="font:500 13px 'Geist Mono';color:#5A6072">16/24 · 500 · 0 · tnum</code><span style="font:500 16px/24px Geist;font-variant-numeric:tabular-nums">+R$ 7.800,00</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">headlineMd</code><code style="font:500 13px 'Geist Mono';color:#5A6072">28/36 · 600 · −0.4</code><span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Contas a pagar</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">titleLg</code><code style="font:500 13px 'Geist Mono';color:#5A6072">22/28 · 600 · −0.2</code><span style="font:600 22px/28px Geist;letter-spacing:-0.2px">Escada de pagamento</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">titleMd</code><code style="font:500 13px 'Geist Mono';color:#5A6072">17/24 · 600 · 0</code><span style="font:600 17px/24px Geist">Vencem em 7 dias</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">titleSm</code><code style="font:500 13px 'Geist Mono';color:#5A6072">15/20 · 600 · 0</code><span style="font:600 15px/20px Geist">Energia Lumina</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">bodyLg</code><code style="font:500 13px 'Geist Mono';color:#5A6072">16/24 · 400 · 0</code><span style="font:400 16px/24px Geist">Aprove no internet banking até 18:00.</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">bodyMd (min)</code><code style="font:500 13px 'Geist Mono';color:#5A6072">14/20 · 400 · 0.1</code><span style="font:400 14px/20px Geist;letter-spacing:.1px">Vence 15/10 · Banco Atlântico</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">labelLg</code><code style="font:500 13px 'Geist Mono';color:#5A6072">15/20 · 600 · 0.1</code><span style="font:600 15px/20px Geist;letter-spacing:.1px">Pagar agora</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">labelMd</code><code style="font:500 13px 'Geist Mono';color:#5A6072">12/16 · 600 · 0.2</code><span style="font:600 12px/16px Geist;letter-spacing:.2px">AGENDADO · nav labels, badges only</span></div>
+<div style="display:grid;grid-template-columns:240px 200px 1fr;gap:16px;align-items:center;padding:12px 0"><code style="font:500 14px 'Geist Mono'">code</code><code style="font:500 13px 'Geist Mono';color:#5A6072">Geist Mono 15/22 · 500 · tnum</code><span style="font:500 15px/22px 'Geist Mono'">23793.38128 60000.000003</span></div>
+<span style="font:400 14px/20px Geist;color:#4A5063;margin-top:8px;text-wrap:pretty">Sizes are sp and scale with MediaQuery.textScaler up to 2.0×; rows grow vertically (no fixed heights on text containers), amounts wrap below their label when the row would overflow 360 dp.</span>
+</div>
+
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px"><h3 style="margin:0;font:600 22px Geist">Motion</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">AppMotion</code></div>
+<sc-for list="{{ motion }}" as="mo" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:260px 220px 1fr;gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid #F0F1F4"><code style="font:500 14px 'Geist Mono'">{{ mo.k }}</code><code style="font:500 13px 'Geist Mono';color:#5A6072">{{ mo.v }}</code><span style="font:400 14px/20px Geist;color:#4A5063">{{ mo.u }}</span></div>
+</sc-for>
+<span style="font:400 14px/20px Geist;color:#4A5063;margin-top:8px;text-wrap:pretty">Reduced motion (MediaQuery.disableAnimations): springs become 0 ms, page transitions become a 100 ms fade, the paid moment keeps only the colour change and the haptic.</span>
+</div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">02</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Brand</h2></div>
+<div style="display:flex;gap:32px;align-items:stretch">
+
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:28px;width:520px;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h3 style="margin:0;font:600 22px Geist">Mark</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">CdMark(size)</code></div>
+<div style="display:flex;align-items:flex-end;gap:28px">
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:24px;height:24px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div><code style="font:500 12px 'Geist Mono'">24</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:48px;height:48px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div><code style="font:500 12px 'Geist Mono'">48</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:128px;height:128px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div><code style="font:500 12px 'Geist Mono'">128</code></div>
+<div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:48px;height:48px;border-radius:28%;background:#1B1F2B;position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:#1B1F2B"></div></div></div><code style="font:500 12px 'Geist Mono'">mono</code></div>
+</div>
+<p style="margin:0;font:400 15px/1.55 Geist;color:#4A5063;text-wrap:pretty">Two cards in a deck, the back one at 45%, with a coin on the front card. Built from three rounded rectangles and one circle so it survives 24 dp and a single-colour notification icon. Geometry in % of tile: back card x28 y20, front card x18 y38, both 54×36, coin Ø 9.7.</p>
+<div style="display:flex;flex-direction:column;gap:12px;padding-top:8px;border-top:1px solid #F0F1F4">
+<code style="font:500 14px 'Geist Mono';color:#5A6072">Wordmark · Geist 600 + 400, −0.03em</code>
+<div style="display:flex;align-items:center;gap:12px"><div style="width:40px;height:40px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div><span style="font:600 34px Geist;letter-spacing:-0.03em">Cash<span style="font-weight:400">deck</span></span></div>
+<div style="display:flex;align-items:center;gap:24px;font:400 14px Geist;color:#4A5063"><span style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:5px;background:oklch(0.58 0.2 280)"></span><span><b style="font-weight:600;color:#1B1F2B">Life</b>deck · 280°</span></span><span style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:5px;background:oklch(0.52 0.16 262)"></span><span><b style="font-weight:600;color:#1B1F2B">Cash</b>deck · 262°</span></span></div>
+</div>
+</div>
+
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px;width:620px;box-sizing:border-box">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h3 style="margin:0;font:600 22px Geist">App icons</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">flutter_launcher_icons</code></div>
+<div style="display:flex;gap:28px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="width:216px;height:216px;background:oklch(0.52 0.16 262);position:relative;border-radius:4px;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:24px 24px">
+<div style="position:absolute;left:42px;top:42px;width:132px;height:132px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.7);box-sizing:border-box"></div>
+<div style="position:absolute;left:62px;top:62px;width:92px;height:92px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div>
+</div>
+<code style="font:500 12px/18px 'Geist Mono';color:#5A6072">Android adaptive · 108 dp canvas (2×)<br>safe zone Ø 66 dp dashed · glyph 46 dp</code>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:16px">
+<div style="width:72px;height:72px;border-radius:50%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:18px;top:18px;width:36px;height:36px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div></div>
+<div style="width:72px;height:72px;border-radius:30%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:18px;top:18px;width:36px;height:36px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div></div>
+<div style="width:72px;height:72px;border-radius:50%;background:oklch(0.93 0.04 262);position:relative"><div style="position:absolute;left:18px;top:18px;width:36px;height:36px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:oklch(0.32 0.12 262);opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:oklch(0.32 0.12 262)"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.93 0.04 262)"></div></div></div></div>
+</div>
+<code style="font:500 12px/18px 'Geist Mono';color:#5A6072">Masks: circle · squircle · themed (Android 13 monochrome)</code>
+<div style="display:flex;gap:16px;align-items:flex-end">
+<div style="width:120px;height:120px;border-radius:26.8px;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:22px;top:22px;width:76px;height:76px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div></div>
+<div style="width:120px;height:120px;border-radius:26.8px;background:oklch(0.17 0.012 262);position:relative"><div style="position:absolute;left:22px;top:22px;width:76px;height:76px"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:oklch(0.76 0.11 262);opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:oklch(0.76 0.11 262)"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.17 0.012 262)"></div></div></div></div>
+</div>
+<code style="font:500 12px/18px 'Geist Mono';color:#5A6072">iOS 1024 pt master (shown 120) · light · dark</code>
+</div>
+</div>
+</div>
+
+<div style="background:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px"><h3 style="margin:0;font:600 22px Geist">Splash</h3><code style="font:500 14px 'Geist Mono';color:#5A6072">flutter_native_splash · Android 12 icon 240 dp</code></div>
+<div style="display:flex;gap:24px">
+<div style="width:220px;height:488px;border-radius:24px;background:oklch(0.985 0.004 262);border:1px solid #E3E5EA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;position:relative">
+<div style="width:72px;height:72px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div>
+<span style="position:absolute;bottom:32px;font:600 15px Geist;letter-spacing:-0.02em;color:oklch(0.22 0.015 262)">Cash<span style="font-weight:400">deck</span></span>
+</div>
+<div style="width:220px;height:488px;border-radius:24px;background:oklch(0.17 0.012 262);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;position:relative">
+<div style="width:72px;height:72px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div>
+<span style="position:absolute;bottom:32px;font:600 15px Geist;letter-spacing:-0.02em;color:oklch(0.94 0.006 262)">Cash<span style="font-weight:400">deck</span></span>
+</div>
+</div>
+<span style="font:400 14px/20px Geist;color:#4A5063;max-width:464px">Background = colorScheme.surface. Wordmark baked only in the native splash; no text in raster images.</span>
+</div>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">03</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Components</h2><span style="font:400 18px Geist;color:#4A5063">One card = one widget. States: default · pressed · focused · disabled · loading · error.</span></div>
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+<div style="{{ t.vars }}">
+<div style="background:var(--board);border-radius:32px;padding:40px;display:flex;flex-direction:column;gap:24px;color:var(--on);font-family:Geist,sans-serif">
+<div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 24px Geist;color:var(--on)">{{ t.name }}</h3><code style="font:500 14px 'Geist Mono';color:var(--mu)">{{ t.sub }}</code></div>
+<div style="display:grid;grid-template-columns:repeat(4,400px);gap:24px;align-items:start">
+
+<div style="grid-column:span 2;background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+<div><div style="font:600 17px Geist">Amount text</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdAmount(value, kind, size, currency) · respects PrivacyScope</code></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><code style="font:500 12px 'Geist Mono';color:var(--mu)">xl</code><span style="font:600 40px/48px Geist;letter-spacing:-0.8px;font-variant-numeric:tabular-nums">R$ 18.742,30</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><code style="font:500 12px 'Geist Mono';color:var(--mu)">lg</code><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">R$ 6.200,00</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><code style="font:500 12px 'Geist Mono';color:var(--mu)">md</code><span style="font:600 22px/28px Geist;font-variant-numeric:tabular-nums">R$ 2.807,30</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><code style="font:500 12px 'Geist Mono';color:var(--mu)">sm</code><span style="font:500 16px/24px Geist;font-variant-numeric:tabular-nums">R$ 287,40</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;min-height:32px"><span style="font:400 14px Geist;color:var(--mu)">Income</span><span style="font:600 16px Geist;color:var(--inc);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px"><i style="font:16px/1 'Material Symbols Rounded'">south_west</i>+R$ 7.800,00</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;min-height:32px"><span style="font:400 14px Geist;color:var(--mu)">Expense</span><span style="font:600 16px Geist;color:var(--on);font-variant-numeric:tabular-nums">−R$ 1.234,56</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;min-height:32px"><span style="font:400 14px Geist;color:var(--mu)">Transfer (own)</span><span style="font:600 16px Geist;color:var(--trf);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px"><i style="font:16px/1 'Material Symbols Rounded'">sync_alt</i>R$ 1.000,00</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;min-height:32px"><span style="font:400 14px Geist;color:var(--mu)">Hidden</span><span style="font:600 16px Geist;color:var(--on);letter-spacing:1px">R$ ••••</span></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;min-height:32px"><span style="font:400 14px Geist;color:var(--mu)">Foreign</span><span style="display:flex;flex-direction:column;align-items:flex-end"><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">−US$ 20,00</span><span style="font:400 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">≈ −R$ 109,80 · 5,49</span></span></div>
+</div>
+</div>
+<span style="font:400 14px/20px Geist;color:var(--mu);text-wrap:pretty">Expense amounts stay in onSurface with a true minus (U+2212), rose is reserved for charts and category totals so lists don't turn red. Income adds + and the arrow icon. Transfers never get a sign and are excluded from totals.</span>
+</div>
+
+<div style="grid-column:span 2;background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Buttons</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdButton.filled · .tonal · .outlined · .text · .danger · height 48 · AppRadius.md</code></div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center;font:500 12px 'Geist Mono';color:var(--mu)"><span></span><span>default</span><span>pressed</span><span>focused</span><span>disabled</span><span>loading</span></div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center">
+<code style="font:500 12px 'Geist Mono';color:var(--mu)">filled</code>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Pagar</div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 48px color-mix(in srgb,var(--onpr) 14%,transparent);transform:scale(.98)">Pagar</div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;outline:2px solid var(--on);outline-offset:2px">Pagar</div>
+<div style="height:48px;border-radius:12px;background:color-mix(in srgb,var(--on) 12%,transparent);color:color-mix(in srgb,var(--on) 45%,transparent);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Pagar</div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--onpr);border-right-color:transparent;box-sizing:border-box"></span>Pagando</div>
+</div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center">
+<code style="font:500 12px 'Geist Mono';color:var(--mu)">tonal</code>
+<div style="height:48px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Revisar</div>
+<div style="height:48px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 48px color-mix(in srgb,var(--onprc) 12%,transparent);transform:scale(.98)">Revisar</div>
+<div style="height:48px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;justify-content:center;outline:2px solid var(--on);outline-offset:2px">Revisar</div>
+<div style="height:48px;border-radius:12px;background:color-mix(in srgb,var(--on) 12%,transparent);color:color-mix(in srgb,var(--on) 45%,transparent);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Revisar</div>
+<div style="height:48px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--onprc);border-right-color:transparent;box-sizing:border-box"></span>Lendo</div>
+</div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center">
+<code style="font:500 12px 'Geist Mono';color:var(--mu)">outlined</code>
+<div style="height:48px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-sizing:border-box">Editar</div>
+<div style="height:48px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-sizing:border-box;background:color-mix(in srgb,var(--pr) 12%,transparent);transform:scale(.98)">Editar</div>
+<div style="height:48px;border-radius:12px;border:1px solid var(--pr);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-sizing:border-box;outline:2px solid var(--on);outline-offset:2px">Editar</div>
+<div style="height:48px;border-radius:12px;border:1px solid color-mix(in srgb,var(--on) 12%,transparent);color:color-mix(in srgb,var(--on) 45%,transparent);font:600 15px Geist;display:flex;align-items:center;justify-content:center;box-sizing:border-box">Editar</div>
+<div style="height:48px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--pr);border-right-color:transparent;box-sizing:border-box"></span>Salvando</div>
+</div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center">
+<code style="font:500 12px 'Geist Mono';color:var(--mu)">text</code>
+<div style="height:48px;border-radius:12px;color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Ver todas</div>
+<div style="height:48px;border-radius:12px;color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--pr) 12%,transparent)">Ver todas</div>
+<div style="height:48px;border-radius:12px;color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;outline:2px solid var(--on);outline-offset:2px">Ver todas</div>
+<div style="height:48px;border-radius:12px;color:color-mix(in srgb,var(--on) 45%,transparent);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Ver todas</div>
+<div style="height:48px;border-radius:12px;color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--pr);border-right-color:transparent;box-sizing:border-box"></span>Carregando</div>
+</div>
+<div style="display:grid;grid-template-columns:72px repeat(5,1fr);gap:10px;align-items:center">
+<code style="font:500 12px 'Geist Mono';color:var(--mu)">danger</code>
+<div style="height:48px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">pause_circle</i>Pausar</div>
+<div style="height:48px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:inset 0 0 0 48px color-mix(in srgb,var(--fail) 12%,transparent);transform:scale(.98)"><i style="font:18px/1 'Material Symbols Rounded'">pause_circle</i>Pausar</div>
+<div style="height:48px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px;outline:2px solid var(--on);outline-offset:2px"><i style="font:18px/1 'Material Symbols Rounded'">pause_circle</i>Pausar</div>
+<div style="height:48px;border-radius:12px;background:color-mix(in srgb,var(--on) 12%,transparent);color:color-mix(in srgb,var(--on) 45%,transparent);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">pause_circle</i>Pausar</div>
+<div style="height:48px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--fail);border-right-color:transparent;box-sizing:border-box"></span>Pausando</div>
+</div>
+<span style="font:400 14px/20px Geist;color:var(--mu)">Pressed: state layer 12% + scale 0.98 (AppMotion.fast). Focus ring 2 dp onSurface, offset 2. Icon buttons are 48×48 with a 24 dp glyph.</span>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 17px Geist">Text field</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdTextField</code></div>
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:0 16px;display:flex;align-items:center;font:400 16px Geist;color:var(--mu);box-sizing:border-box">Nome da conta</div>
+<div style="height:56px;border:2px solid var(--pr);border-radius:12px;padding:6px 15px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--pr)">Nome da conta</span><span style="font:400 16px Geist;display:flex;align-items:center">Reserva<span style="width:2px;height:20px;background:var(--pr);margin-left:1px"></span></span></div>
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--mu)">CPF</span><span style="font:400 16px Geist;font-variant-numeric:tabular-nums">123.456.789-09</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="height:56px;border:2px solid var(--fail);border-radius:12px;padding:6px 15px;display:flex;align-items:center;gap:8px;box-sizing:border-box"><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 12px Geist;color:var(--fail)">CNPJ</span><span style="font:400 16px Geist;font-variant-numeric:tabular-nums">12.345.678/0001-00</span></div><i style="font:22px/1 'Material Symbols Rounded';color:var(--fail)">error</i></div><span style="font:400 14px Geist;color:var(--fail);padding-left:16px">Dígito verificador inválido</span></div>
+<div style="height:56px;border:1px solid color-mix(in srgb,var(--on) 12%,transparent);border-radius:12px;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;color:color-mix(in srgb,var(--on) 45%,transparent)"><span style="font:500 12px Geist">Moeda</span><span style="font:400 16px Geist">BRL, Real</span></div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Currency input</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdCurrencyInput · fills from the right</code></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:2px solid var(--pr)"><span style="font:500 12px Geist;color:var(--pr)">Valor</span><div style="display:flex;align-items:baseline;gap:8px"><span style="font:500 22px Geist;color:var(--mu)">R$</span><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">1.234,56</span><span style="width:2px;height:32px;background:var(--pr)"></span></div></div>
+<span style="font:400 14px Geist;color:var(--mu)">Disponível na reserva: R$ 6.200,00</span>
+<div style="display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--ol)"><div style="display:flex;align-items:baseline;gap:8px"><span style="height:32px;padding:0 6px 0 10px;border-radius:8px;background:var(--sf4);font:600 14px Geist;display:inline-flex;align-items:center;gap:2px;align-self:center">EUR<i style="font:18px/1 'Material Symbols Rounded'">arrow_drop_down</i></span><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">€ 2.000,00</span></div><span style="font:400 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">× 5,9200 (PTAX 07/10) = R$ 11.840,00</span></div>
+<div style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-bottom:2px solid var(--fail)"><div style="display:flex;align-items:baseline;gap:8px"><span style="font:500 22px Geist;color:var(--mu)">R$</span><span style="font:600 32px/40px Geist;font-variant-numeric:tabular-nums">4.000,00</span></div></div>
+<span style="font:400 14px Geist;color:var(--fail);display:flex;gap:6px;align-items:center"><i style="font:18px/1 'Material Symbols Rounded'">error</i>Acima do limite por pagamento (R$ 1.500,00)</span>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 17px Geist">Search field</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdSearchField · 48 high</code></div>
+<div style="height:48px;border-radius:24px;background:var(--sf4);display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--mu);font:400 16px Geist"><i style="font:22px/1 'Material Symbols Rounded'">search</i>Buscar transações</div>
+<div style="height:48px;border-radius:24px;background:var(--sf4);display:flex;align-items:center;gap:12px;padding:0 4px 0 16px;font:400 16px Geist;outline:2px solid var(--pr)"><i style="font:22px/1 'Material Symbols Rounded';color:var(--mu)">search</i><span style="flex:1">mercado</span><span style="width:40px;height:40px;border-radius:20px;display:grid;place-items:center;color:var(--mu)"><i style="font:22px/1 'Material Symbols Rounded'">close</i></span></div>
+<div style="height:48px;border-radius:24px;background:var(--sf4);display:flex;align-items:center;gap:12px;padding:0 16px;font:400 16px Geist"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--pr);border-right-color:transparent;box-sizing:border-box"></span><span style="flex:1">aluguel</span></div>
+
+<div style="margin-top:8px"><div style="font:600 17px Geist">Chips &amp; filters</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdFilterChip · 32 visual / 48 hit</code></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Todas</span>
+<span style="height:32px;padding:0 12px 0 8px;border-radius:8px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:inline-flex;align-items:center;gap:4px"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Outubro</span>
+<span style="height:32px;padding:0 6px 0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;gap:2px;box-sizing:border-box">Conta<i style="font:18px/1 'Material Symbols Rounded'">arrow_drop_down</i></span>
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box;box-shadow:inset 0 0 0 32px color-mix(in srgb,var(--on) 10%,transparent)">Pressed</span>
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--on) 12%,transparent);color:color-mix(in srgb,var(--on) 45%,transparent);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Desativado</span>
+<span style="height:32px;padding:0 4px 0 12px;border-radius:8px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:inline-flex;align-items:center;gap:4px">Mercado<i style="font:18px/1 'Material Symbols Rounded'">close</i></span>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Entity switcher</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdEntitySwitcher · CdEntityChip</code></div>
+<div style="display:flex;height:48px;border-radius:24px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box">
+<div style="flex:1;background:var(--pfc);color:var(--pf);display:flex;align-items:center;justify-content:center;gap:6px;font:600 14px Geist"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Pessoal</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;gap:6px;font:500 14px Geist">Empresa</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;gap:6px;font:500 14px Geist">Consolidado</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+<dc-import name="CdEntity" e="pf" hint-size="132px,40px"></dc-import>
+<dc-import name="CdEntity" e="pj" hint-size="140px,40px"></dc-import>
+<dc-import name="CdEntity" e="all" hint-size="170px,40px"></dc-import>
+</div>
+<span style="font:400 14px/20px Geist;color:var(--mu);text-wrap:pretty">Identity = badge (PF / PJ / stacks) + entity container tint. Chip lives in every app bar; tap opens the entity sheet. Selection persists per device.</span>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px">
+<div><div style="font:600 17px Geist">Account card</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdAccountCard · syncState</code></div>
+<sc-for list="{{ accounts }}" as="a" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv)">
+<span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;font:700 13px Geist;color:var(--mu);flex:none">{{ a.mono }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:600 15px Geist">{{ a.name }}</span><span style="{{ a.ss }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ a.ic }}</i>{{ a.sync }}</span></div>
+<span style="font:600 16px Geist;font-variant-numeric:tabular-nums;white-space:nowrap">{{ a.bal }}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px 0;display:flex;flex-direction:column;gap:4px">
+<div style="padding:0 24px 8px"><div style="font:600 17px Geist">Transaction row</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdTransactionRow · min 64</code></div>
+<sc-for list="{{ txRows }}" as="r" hint-placeholder-count="6">
+<div style="{{ r.row }}">
+<span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ r.ic }}</i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px Geist;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span style="font:400 14px Geist;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.s }}</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="{{ r.as }}">{{ r.a }}</span><sc-if value="{{ r.p }}"><span style="{{ r.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ r.p.ic }}</i>{{ r.p.l }}</span></sc-if><sc-if value="{{ r.sub }}"><span style="font:400 13px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ r.sub }}</span></sc-if></div>
+</div>
+</sc-for>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 17px Geist">Status badge</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdStatusBadge(PaymentStatus) · icon + label always</code></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ statuses }}" as="s" hint-placeholder-count="9"><span style="{{ s.st }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ s.ic }}</i>{{ s.l }}</span></sc-for>
+</div>
+<div style="margin-top:8px"><div style="font:600 17px Geist">Category icon &amp; chip</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdCategoryIcon · CdCategoryChip</code></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+<sc-for list="{{ cats }}" as="c" hint-placeholder-count="10"><div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:44px;height:44px;border-radius:14px;background:var(--sf4);display:grid;place-items:center;color:var(--on)"><i style="font:22px/1 'Material Symbols Rounded'">{{ c.ic }}</i></span><span style="font:500 12px Geist;color:var(--mu);text-align:center">{{ c.l }}</span></div></sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:32px;padding:0 12px 0 8px;border-radius:8px;background:var(--sf4);font:500 14px Geist;display:inline-flex;align-items:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">shopping_cart</i>Mercado</span>
+<span style="height:32px;padding:0 12px 0 8px;border-radius:8px;border:1px dashed var(--pr);color:var(--pr);font:600 14px Geist;display:inline-flex;align-items:center;gap:6px;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">auto_awesome</i>Sugerido: Casa</span>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Budget progress</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdBudgetBar · ticks at 80% and 100%</code></div>
+<sc-for list="{{ budgets }}" as="b" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><i style="font:20px/1 'Material Symbols Rounded';color:var(--mu)">{{ b.ic }}</i><span style="font:500 15px Geist;flex:1">{{ b.n }}</span><span style="font:500 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ b.used }} / {{ b.of }}</span></div>
+<div style="position:relative;height:8px;border-radius:4px;background:var(--sf4)"><div style="{{ b.fill }}"></div><span style="position:absolute;left:80%;top:-3px;width:2px;height:14px;background:var(--mu);border-radius:1px"></span></div>
+<sc-if value="{{ b.p }}"><span style="{{ b.p.st }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ b.p.ic }}</i>{{ b.p.l }}</span></sc-if>
+</div>
+</sc-for>
+<div style="margin-top:8px"><div style="font:600 17px Geist">Segmented control</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdSegmented · 40 high, 48 hit</code></div>
+<div style="display:flex;height:40px;border-radius:20px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box">
+<div style="flex:1;background:var(--prc);color:var(--onprc);display:flex;align-items:center;justify-content:center;gap:4px;font:600 14px Geist"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Aberta</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Fechada</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist;color:color-mix(in srgb,var(--on) 45%,transparent)">Futuras</div>
+</div>
+</div>
+
+<div style="grid-column:span 2;background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+<div><div style="font:600 17px Geist">Payment ladder</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdPaymentLadder(steps, attempts, nextAction) · the heart of the app</code></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+
+<div style="display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Escada de pagamento</span><span style="font:500 14px Geist;color:var(--mu)">Empresa · passo 2 de 3</span></div>
+<div style="display:flex;gap:4px"><div style="flex:1;height:6px;border-radius:3px;background:var(--fail)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--apr)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--sf4)"></div></div>
+<div style="display:flex;gap:12px">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;background:var(--failc);color:var(--fail);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">bolt</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-bottom:12px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px"><span style="font:600 15px Geist">1 · Automático</span><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">error</i>Falhou</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;font:400 14px/20px Geist;color:var(--mu)">
+<div style="display:flex;gap:8px"><code style="font:500 13px/20px 'Geist Mono';color:var(--on);flex:none">07:00</code><span>Pix via API · Banco Aurora, limite diário do trilho atingido</span></div>
+<div style="display:flex;gap:8px"><code style="font:500 13px/20px 'Geist Mono';color:var(--on);flex:none">07:30</code><span>Nova tentativa, mesmo motivo</span></div>
+<div style="display:flex;gap:6px;align-items:center;color:var(--on)"><i style="font:16px/1 'Material Symbols Rounded'">south</i>Desceu para o passo 2 às 07:31</div>
+</div></div></div>
+<div style="display:flex;gap:12px">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;background:var(--apr);color:var(--bg);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">approval</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;padding-bottom:12px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px"><span style="font:600 15px Geist">2 · Aprovação no banco</span><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--aprc);color:var(--apr);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">approval</i>Aguardando você</span></div>
+<span style="font:400 14px/20px Geist;color:var(--mu)">Preparado no Banco Atlântico às 07:31. Aprove no internet banking até <b style="color:var(--on);font-weight:600">18:00 de hoje</b>.</span>
+<div style="display:flex;gap:8px"><span style="height:48px;padding:0 16px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:inline-flex;align-items:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">open_in_new</i>Abrir banco</span><span style="height:48px;padding:0 12px;border-radius:12px;color:var(--pr);font:600 15px Geist;display:inline-flex;align-items:center">Já aprovei</span></div>
+</div></div>
+<div style="display:flex;gap:12px">
+<div style="flex:none"><span style="width:32px;height:32px;border-radius:16px;border:2px solid var(--ol);color:var(--mu);display:grid;place-items:center;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">verified_user</i></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px"><span style="font:600 15px Geist;color:var(--mu)">3 · Assistido</span><span style="font:500 13px Geist;color:var(--mu)">Rede de segurança</span></div>
+<span style="font:400 14px/20px Geist;color:var(--mu)">Sem aprovação até 18:00, o código fica pronto para você pagar em um toque.</span>
+</div></div>
+<div style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:12px;background:var(--sf4);font:500 14px Geist"><i style="font:20px/1 'Material Symbols Rounded';color:var(--pr)">notifications_active</i>Próxima ação: aprovar até 18:00 · lembrete às 16:00</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Escada de pagamento</span><span style="font:500 14px Geist;color:var(--mu)">Empresa · passo 3 de 3</span></div>
+<div style="display:flex;gap:4px"><div style="flex:1;height:6px;border-radius:3px;background:var(--fail)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--ol)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--pr)"></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:40px"><span style="width:32px;height:32px;border-radius:16px;background:var(--failc);color:var(--fail);display:grid;place-items:center;flex:none"><i style="font:18px/1 'Material Symbols Rounded'">bolt</i></span><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">1 · Automático</span><span style="font:400 14px Geist;color:var(--mu)">07:00 · limite diário · 2 tentativas</span></div><i style="font:20px/1 'Material Symbols Rounded';color:var(--mu)">expand_more</i></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:40px"><span style="width:32px;height:32px;border-radius:16px;background:var(--sf4);color:var(--mu);display:grid;place-items:center;flex:none"><i style="font:18px/1 'Material Symbols Rounded'">approval</i></span><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">2 · Aprovação no banco</span><span style="font:400 14px Geist;color:var(--mu)">18:00 · expirou sem aprovação</span></div><i style="font:20px/1 'Material Symbols Rounded';color:var(--mu)">expand_more</i></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--prc);color:var(--onprc)">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:16px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;flex:none"><i style="font:18px/1 'Material Symbols Rounded';font-variation-settings:'FILL' 1">verified_user</i></span><div style="display:flex;flex-direction:column"><span style="font:600 15px Geist">3 · Assistido, pronto para você</span><span style="font:400 14px Geist">Código conferido. Pague pelo app do seu banco.</span></div></div>
+<div style="display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-radius:12px;background:var(--bg);color:var(--on)"><code style="flex:1;min-width:0;font:500 14px 'Geist Mono';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">00020126580014br.gov.bcb.pix0136a1f4…</code><span style="height:40px;padding:0 12px;border-radius:10px;background:var(--pr);color:var(--onpr);font:600 14px Geist;display:inline-flex;align-items:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">content_copy</i>Copiar</span></div>
+<div style="display:flex;gap:8px"><span style="flex:1;height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:inline-flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">task_alt</i>Marcar como pago</span><span style="height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--onprc);font:600 15px Geist;display:inline-flex;align-items:center;gap:6px;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">attach_file</i>Comprovante</span></div>
+</div>
+<span style="font:400 14px/20px Geist;color:var(--mu)">Vence hoje 23:59. Se você não pagar, avisamos às 20:00, nada fica em silêncio.</span>
+</div>
+</div>
+<span style="font:400 14px/20px Geist;color:var(--mu);text-wrap:pretty">Rule: a failure always produces a visible step-down with time and reason. Step 3 uses primary, never error colour, it is the guaranteed path, not a failure state. Collapsed past steps keep their last attempt one tap away. Bank approval (step 2) exists only for Empresa and only for boleto and Pix, never for tax guides.</span>
+</div>
+<div style="grid-column:span 2;background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+<div><div style="font:600 17px Geist">Payment ladder · Pessoal</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdPaymentLadder(entity: personal) · step 2 renders skipped · CdConfirmSheet(reason: cap)</code></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+<div style="display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Escada de pagamento</span><span style="font:500 14px Geist;color:var(--mu)">Pessoal · passo 3 de 3</span></div>
+<div style="display:flex;gap:4px"><div style="flex:1;height:6px;border-radius:3px;background:var(--fail)"></div><div style="flex:1;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--ol) 0 4px,transparent 4px 8px)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--pr)"></div></div>
+<div style="display:flex;gap:12px">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;background:var(--failc);color:var(--fail);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">bolt</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-bottom:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px"><span style="font:600 15px Geist">1 · Automático</span><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">error</i>Falhou</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;font:400 14px/20px Geist;color:var(--mu)">
+<div style="display:flex;gap:8px"><code style="font:500 13px/20px 'Geist Mono';color:var(--on);flex:none">07:00</code><span>Acima do limite por pagamento, confirmação pedida no app</span></div>
+<div style="display:flex;gap:8px"><code style="font:500 13px/20px 'Geist Mono';color:var(--on);flex:none">12:00</code><span>Sem confirmação no prazo</span></div>
+<div style="display:flex;gap:6px;align-items:center;color:var(--on)"><i style="font:16px/1 'Material Symbols Rounded'">south</i>Pulou para o passo 3 às 12:00</div>
+</div></div></div>
+<div style="display:flex;gap:12px;opacity:.75">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;border:2px dashed var(--ol);color:var(--mu);display:grid;place-items:center;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">block</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;padding-bottom:10px"><span style="font:600 15px Geist;color:var(--mu);min-height:32px;display:flex;align-items:center">2 · Aprovação no banco</span><span style="font:400 14px/20px Geist;color:var(--mu)">Não disponível para esta conta</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--prc);color:var(--onprc)">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:16px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;flex:none"><i style="font:18px/1 'Material Symbols Rounded';font-variation-settings:'FILL' 1">verified_user</i></span><div style="display:flex;flex-direction:column"><span style="font:600 15px Geist">3 · Assistido, pronto para você</span><span style="font:400 14px Geist">Pague pelo app do seu banco até 15/10.</span></div></div>
+<span style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">content_copy</i>Copiar código do boleto</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="font:400 14px/20px Geist;color:var(--mu);text-wrap:pretty">Before step 1 runs, a payment above a cap, to a new payee or with an unusual amount asks for an in-app confirmation. Without it by the deadline, the bill goes to step 3, never to the bank.</span>
+<div style="border-radius:28px 28px 0 0;background:var(--sf3);padding:8px 20px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -2px 24px rgba(0,0,0,.12)">
+<div style="height:16px;display:grid;place-items:center"><span style="width:32px;height:4px;border-radius:2px;background:var(--ol)"></span></div>
+<span style="font:600 20px Geist">Confirmar Aluguel?</span>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--penc);color:var(--pen);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">shield</i>Acima do limite por pagamento</span></div>
+<div style="display:flex;flex-direction:column;gap:8px;font:400 14px Geist">
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Valor</span><span style="font-weight:600;font-variant-numeric:tabular-nums">R$ 2.400,00</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Limite</span><span style="font-variant-numeric:tabular-nums">R$ 1.500,00</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Prazo</span><span>hoje, 12:00</span></div>
+</div>
+<span style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><i style="font:20px/1 'Material Symbols Rounded'">fingerprint</i>Confirmar e pagar</span>
+<span style="height:48px;display:flex;align-items:center;justify-content:center;font:600 15px Geist;color:var(--pr)">Pagar eu mesmo (passo 3)</span>
+</div>
+</div>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px">
+<div><div style="font:600 17px Geist">Bill card</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdBillCard · status + ladder hint</code></div>
+<sc-for list="{{ billCards }}" as="b" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ b.ic }}</i></span><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:600 15px Geist">{{ b.t }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ b.due }}</span></div><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">{{ b.a }}</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="{{ b.p.st }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ b.p.ic }}</i>{{ b.p.l }}</span><span style="font:400 13px Geist;color:var(--mu);text-align:right">{{ b.rail }}</span></div>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">water_drop</i></span><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">Água Clara</span><span style="font:400 14px Geist;color:var(--mu)">Assistido · toque para concluir</span></div><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">R$ 96,20</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px">{{ paidEl }}<button onClick="{{ togglePaid }}" style="height:40px;padding:0 14px;border-radius:12px;border:0;background:var(--prc);color:var(--onprc);font:600 14px Geist;cursor:pointer">{{ paidLabel }}</button></div>
+</div>
+<span style="font:400 13px/18px Geist;color:var(--mu)">Paid moment (try it): badge springs in 240 ms (springSnappy) + HapticFeedback.mediumImpact.</span>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 17px Geist">Copyable code</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdCopyField(kind: boleto | pix)</code></div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--sf3);border:1px solid var(--olv)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 12px Geist;color:var(--mu);letter-spacing:.06em">LINHA DIGITÁVEL</span><span style="font:500 13px Geist;color:var(--paid);display:flex;gap:4px;align-items:center"><i style="font:16px/1 'Material Symbols Rounded'">verified</i>Válida</span></div>
+<code style="font:500 15px/24px 'Geist Mono';letter-spacing:.02em;word-break:break-all">23793.38128 60000.000003 00000.000400 1 98760000028740</code>
+<span style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">content_copy</i>Copiar código</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--sf3);border:1px solid var(--olv)">
+<span style="font:600 12px Geist;color:var(--mu);letter-spacing:.06em">PIX COPIA E COLA</span>
+<code style="font:500 14px/22px 'Geist Mono';word-break:break-all;color:var(--on)">00020126580014br.gov.bcb.pix0136a1f4c9e2-7b3d-4e8a-9c11-5d2f6a8b0e3c5204000053039865406287.40…</code>
+<span style="height:48px;border-radius:12px;background:var(--paidc);color:var(--paid);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Copiado</span>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px">
+<div><div style="font:600 17px Geist">Banners &amp; toast</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdInlineBanner · CdToast</code></div>
+<div style="display:flex;gap:12px;padding:12px 12px 12px 14px;border-radius:12px;background:var(--penc);color:var(--on);align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen);font-variation-settings:'FILL' 1">pause_circle</i><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:600 15px Geist">Pagamentos automáticos pausados</span><span style="font:400 14px Geist;color:var(--mu)">Nada será pago sem você.</span></div><span style="font:600 14px Geist;color:var(--pr);align-self:center;min-height:48px;display:flex;align-items:center">Retomar</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--prc);color:var(--onprc);align-items:center"><i style="font:22px/1 'Material Symbols Rounded'">info</i><span style="flex:1;font:400 14px Geist">Consentimento Open Finance renova em 12 dias.</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--failc);color:var(--on);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--fail)">sync_problem</i><span style="flex:1;font:400 14px Geist">Cooperativa Serra não sincroniza.</span><span style="font:600 14px Geist;color:var(--pr)">Reconectar</span></div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--paidc);color:var(--on);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--paid)">check_circle</i><span style="flex:1;font:400 14px Geist">Regra criada: Mercado Bom Preço → Mercado</span></div>
+<div style="display:flex;gap:12px;padding:6px 6px 6px 16px;border-radius:12px;background:var(--inv);color:var(--oninv);align-items:center;box-shadow:0 4px 12px rgba(0,0,0,.18);margin-top:4px"><i style="font:20px/1 'Material Symbols Rounded'">task_alt</i><span style="flex:1;font:500 14px Geist">Energia Lumina paga · Pix</span><span style="height:40px;padding:0 12px;display:flex;align-items:center;font:600 14px Geist;color:var(--prc)">Comprovante</span></div>
+<div style="display:flex;gap:12px;padding:6px 6px 6px 16px;border-radius:12px;background:var(--inv);color:var(--oninv);align-items:center;box-shadow:0 4px 12px rgba(0,0,0,.18)"><i style="font:20px/1 'Material Symbols Rounded'">touch_app</i><span style="flex:1;font:500 14px Geist">Água Clara marcada como paga</span><span style="height:40px;padding:0 12px;display:flex;align-items:center;font:600 14px Geist;color:var(--prc)">Desfazer</span></div>
+<span style="font:400 13px/18px Geist;color:var(--mu)">Undo only follows a manual “Marcar como pago”, a real payment can't be undone.</span>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px 0;display:flex;flex-direction:column">
+<div style="padding:0 24px 8px"><div style="font:600 17px Geist">List row</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdListRow · min 56</code></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">account_balance</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Instituições</span><span style="font:400 14px Geist;color:var(--mu)">5 conectadas · 1 manual</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">chevron_right</i></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px;background:color-mix(in srgb,var(--on) 8%,transparent)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">contrast</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Tema</span><span style="font:400 14px Geist;color:var(--mu)">Pressed · Sistema</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">chevron_right</i></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">visibility_off</i><span style="flex:1;font:500 16px Geist">Ocultar valores ao abrir</span><span style="width:52px;height:32px;border-radius:16px;background:var(--pr);position:relative;flex:none"><span style="position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:var(--onpr)"></span></span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">savings</i><span style="flex:1;font:500 16px Geist">Reserva</span><span style="font:500 15px Geist;color:var(--mu);font-variant-numeric:tabular-nums">R$ 6.200,00</span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px;color:var(--fail)"><i style="font:24px/1 'Material Symbols Rounded'">link_off</i><span style="flex:1;font:500 16px Geist">Desconectar instituição</span></div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Bottom sheet</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdBottomSheet · AppRadius.sheet</code></div>
+<div style="border-radius:28px 28px 0 0;background:var(--sf3);padding:8px 0 16px;box-shadow:0 -2px 24px rgba(0,0,0,.12)">
+<div style="height:24px;display:grid;place-items:center"><span style="width:32px;height:4px;border-radius:2px;background:var(--ol)"></span></div>
+<div style="padding:4px 24px 12px;font:600 20px Geist">Escopo</div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 24px"><span style="width:32px;height:32px;border-radius:16px;background:var(--pfc);color:var(--pf);display:grid;place-items:center;font:700 12px Geist">PF</span><span style="flex:1;font:500 16px Geist">Pessoal</span><i style="font:24px/1 'Material Symbols Rounded';color:var(--pr);font-variation-settings:'FILL' 1">radio_button_checked</i></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 24px"><span style="width:32px;height:32px;border-radius:16px;background:var(--pjc);color:var(--pj);display:grid;place-items:center;font:700 12px Geist">PJ</span><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Empresa</span><span style="font:400 14px Geist;color:var(--mu)">Estúdio Vento Sul Ltda</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">radio_button_unchecked</i></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 24px"><span style="width:32px;height:32px;border-radius:16px;background:var(--allc);color:var(--all);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">stacks</i></span><span style="flex:1;font:500 16px Geist">Consolidado</span><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">radio_button_unchecked</i></div>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Confirm sheet</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdConfirmSheet · review → confirm</code></div>
+<div style="border-radius:28px 28px 0 0;background:var(--sf3);padding:8px 24px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -2px 24px rgba(0,0,0,.12)">
+<div style="height:16px;display:grid;place-items:center"><span style="width:32px;height:4px;border-radius:2px;background:var(--ol)"></span></div>
+<div style="display:flex;align-items:center;gap:8px;font:500 13px Geist;color:var(--mu)"><span style="display:flex;align-items:center;gap:4px;color:var(--paid)"><i style="font:16px/1 'Material Symbols Rounded'">check_circle</i>Revisar</span><span style="flex:1;height:1px;background:var(--olv)"></span><span style="display:flex;align-items:center;gap:4px;color:var(--on);font-weight:600"><span style="width:18px;height:18px;border-radius:9px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;font-size:11px">2</span>Confirmar</span></div>
+<span style="font:600 20px Geist">Pagar Energia Lumina?</span>
+<div style="display:flex;flex-direction:column;gap:8px;font:400 14px Geist">
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Valor</span><span style="font-weight:600;font-variant-numeric:tabular-nums">R$ 287,40</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">De</span><span>Reserva · Banco Aurora</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Trilho</span><span>Pix via API</span></div>
+<div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Limite diário</span><span>R$ 287 de R$ 3.000</span></div>
+</div>
+<span style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px"><i style="font:20px/1 'Material Symbols Rounded'">fingerprint</i>Confirmar e pagar</span>
+<span style="height:48px;display:flex;align-items:center;justify-content:center;font:600 15px Geist;color:var(--pr)">Cancelar</span>
+</div>
+</div>
+
+<div style="background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+<div><div style="font:600 17px Geist">Empty · skeleton · error</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdEmptyState · CdSkeleton · CdErrorState</code></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;border-radius:12px;background:var(--sf2);text-align:center"><span style="width:56px;height:56px;border-radius:28px;background:var(--prc);color:var(--onprc);display:grid;place-items:center"><i style="font:28px/1 'Material Symbols Rounded'">inbox</i></span><span style="font:600 16px Geist">Nenhuma conta nova</span><span style="font:400 14px Geist;color:var(--mu)">Conecte seu e-mail, compartilhe um PDF ou escaneie.</span><span style="height:48px;padding:0 16px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">photo_camera</i>Escanear boleto</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding:8px 0">
+<div style="display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4)"></span><div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="width:60%;height:12px;border-radius:6px;background:var(--sf4)"></span><span style="width:40%;height:10px;border-radius:5px;background:var(--sf3)"></span></div><span style="width:64px;height:12px;border-radius:6px;background:var(--sf4)"></span></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4)"></span><div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="width:72%;height:12px;border-radius:6px;background:var(--sf4)"></span><span style="width:32%;height:10px;border-radius:5px;background:var(--sf3)"></span></div><span style="width:56px;height:12px;border-radius:6px;background:var(--sf4)"></span></div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;border-radius:12px;background:var(--sf2);text-align:center"><span style="width:56px;height:56px;border-radius:28px;background:var(--failc);color:var(--fail);display:grid;place-items:center"><i style="font:28px/1 'Material Symbols Rounded'">cloud_off</i></span><span style="font:600 16px Geist">Não foi possível carregar</span><span style="font:400 14px Geist;color:var(--mu)">O servidor não respondeu em 10 s.</span><span style="height:48px;padding:0 16px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;gap:6px;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">refresh</i>Tentar novamente</span></div>
+</div>
+
+<div style="grid-column:span 2;background:var(--bg);border:1px solid var(--olv);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+<div><div style="font:600 17px Geist">Chart primitives</div><code style="font:500 13px 'Geist Mono';color:var(--mu)">CdBarChart · CdLineChart · CdDonut (fl_chart) · gridlines outlineVariant, labels bodyMd</code></div>
+<div style="display:grid;grid-template-columns:1.1fr 1.2fr .8fr;gap:24px;align-items:end">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:flex-end;gap:10px;height:140px;border-bottom:1px solid var(--olv)">
+<sc-for list="{{ bars }}" as="b" hint-placeholder-count="6"><div style="flex:1;display:flex;gap:3px;align-items:flex-end;height:100%"><div style="{{ b.i }}"></div><div style="{{ b.e }}"></div></div></sc-for>
+</div>
+<div style="display:flex;gap:10px"><sc-for list="{{ bars }}" as="b" hint-placeholder-count="6"><span style="flex:1;text-align:center;font:500 12px Geist;color:var(--mu)">{{ b.m }}</span></sc-for></div>
+<div style="display:flex;gap:16px;font:400 14px Geist;color:var(--mu)"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--inc)"></span>Receitas</span><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:var(--exp)"></span>Despesas</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<svg width="100%" height="140" viewBox="0 0 328 140" preserveAspectRatio="none" style="display:block;overflow:visible">
+<line x1="0" x2="328" y1="112" y2="112" style="stroke:var(--fail);stroke-width:1.5;stroke-dasharray:4 4"></line>
+<polygon points="{{ fc.area }}" style="fill:var(--pr);fill-opacity:.12"></polygon>
+<polyline points="{{ fc.line }}" style="fill:none;stroke:var(--pr);stroke-width:2.5;stroke-linejoin:round"></polyline>
+<circle cx="{{ fc.mx }}" cy="{{ fc.my }}" r="5" style="fill:var(--bg);stroke:var(--pr);stroke-width:2.5"></circle>
+</svg>
+<div style="display:flex;justify-content:space-between;font:500 12px Geist;color:var(--mu)"><span>08/10</span><span>23/10</span><span>07/11</span></div>
+<span style="font:400 14px Geist;color:var(--mu);display:flex;align-items:center;gap:6px"><span style="width:14px;border-top:2px dashed var(--fail)"></span>Saldo mínimo de segurança</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+<div style="position:relative;width:140px;height:140px">
+<svg width="140" height="140" viewBox="0 0 100 100" style="transform:rotate(-90deg)"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><circle cx="50" cy="50" r="40" style="{{ d.st }}"></circle></sc-for></svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">R$ 4,3 mil</span><span style="font:400 12px Geist;color:var(--mu)">outubro</span></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center"><sc-for list="{{ donut }}" as="d" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:6px;font:400 13px Geist;color:var(--mu)"><span style="{{ d.dot }}"></span>{{ d.l }}</span></sc-for></div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">04</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Início · Pessoal</h2><span style="font:400 18px Geist;color:#4A5063">HomeScreen · full scroll capture. Tap the eye to hide amounts. Right: kill switch paused + privacy on.</span></div>
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+<div style="{{ t.vars }}">
+<div style="background:var(--board);border-radius:32px;padding:40px;display:flex;gap:40px;align-items:flex-start;font-family:Geist,sans-serif">
+<sc-for list="{{ homes }}" as="h" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:12px">
+<code style="font:500 13px 'Geist Mono';color:var(--mu)">{{ h.label }} · {{ t.name }}</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;gap:4px;padding:0 4px 0 16px;flex:none"><dc-import name="CdEntity" e="pf" hint-size="132px,40px"></dc-import><div style="flex:1"></div>
+<button onClick="{{ h.toggle }}" style="width:48px;height:48px;border:0;background:none;color:var(--on);border-radius:24px;display:grid;place-items:center;cursor:pointer"><i style="font:24px/1 'Material Symbols Rounded'">{{ h.eye }}</i></button>
+<span style="width:48px;height:48px;border-radius:24px;display:grid;place-items:center;position:relative;color:var(--on)"><i style="font:24px/1 'Material Symbols Rounded'">notifications</i><span style="position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:4px;background:var(--fail)"></span></span>
+</div>
+<sc-if value="{{ h.paused }}"><div style="margin:0 16px 8px;display:flex;gap:12px;padding:12px 8px 12px 14px;border-radius:12px;background:var(--penc);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen);font-variation-settings:'FILL' 1">pause_circle</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">Pagamentos automáticos pausados</span><span style="font:400 14px Geist;color:var(--mu)">Desde 07/10 · 3 contas aguardam você</span></div><span style="font:600 14px Geist;color:var(--pr);padding:0 8px;min-height:48px;display:flex;align-items:center">Retomar</span></div></sc-if>
+<div style="padding:8px 16px 20px;display:flex;flex-direction:column;gap:4px">
+<span style="font:400 14px Geist;color:var(--mu)">Saldo total</span>
+<span style="font:600 40px/48px Geist;letter-spacing:-0.8px;font-variant-numeric:tabular-nums">{{ h.total }}</span>
+<span style="font:400 14px Geist;color:var(--mu);display:flex;align-items:center;gap:6px"><i style="font:16px/1 'Material Symbols Rounded';color:var(--paid)">cloud_done</i>5 contas · atualizado há 4 min</span>
+</div>
+<div style="margin:0 16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:12px;background:var(--prc);color:var(--onprc);display:grid;place-items:center"><i style="font:20px/1 'Material Symbols Rounded'">savings</i></span><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">Reserva para contas</span><span style="font:400 14px Geist;color:var(--mu)">Banco Aurora · CDB liquidez diária</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">chevron_right</i></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap"><span style="font:600 28px/36px Geist;letter-spacing:-0.4px;font-variant-numeric:tabular-nums">{{ h.reserve }}</span><span style="font:600 14px Geist;color:var(--inc);display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums"><i style="font:16px/1 'Material Symbols Rounded'">trending_up</i>{{ h.yield }}</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="height:8px;border-radius:4px;background:var(--sf4);overflow:hidden"><div style="width:76%;height:100%;background:var(--pr);border-radius:4px"></div></div><span style="font:400 14px Geist;color:var(--mu)">Cobre as contas dos próximos 23 dias · 101% do CDI</span></div>
+</div>
+<div style="padding:24px 16px 8px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;flex-direction:column"><span style="font:600 17px Geist">Vencem em 7 dias</span><span style="font:400 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ h.due7 }} · 3 contas</span></div><span style="font:600 15px Geist;color:var(--pr);min-height:48px;display:flex;align-items:center">Ver todas</span></div>
+<div style="margin:0 16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);overflow:hidden">
+<sc-for list="{{ h.bills }}" as="b" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--olv);margin-top:-1px">
+<span style="width:40px;height:40px;border-radius:12px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ b.ic }}</i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px Geist">{{ b.t }}</span><span style="{{ b.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ b.p.ic }}</i>{{ b.p.l }}</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font:600 15px Geist;font-variant-numeric:tabular-nums">{{ b.a }}</span><span style="font:400 13px Geist;color:var(--mu)">{{ b.d }}</span></div>
+</div>
+</sc-for>
+</div>
+<div style="padding:24px 16px 8px;display:flex;flex-direction:column"><span style="font:600 17px Geist">Fluxo de caixa · 30 dias</span><span style="font:400 14px Geist;color:var(--mu)">Previsão com contas, fatura e salário</span></div>
+<div style="margin:0 16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;gap:8px"><div style="display:flex;flex-direction:column"><span style="font:400 13px Geist;color:var(--mu)">Menor saldo</span><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">{{ h.low }}</span><span style="font:400 13px Geist;color:var(--mu)">{{ h.lowD }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font:400 13px Geist;color:var(--mu)">Em 07/11</span><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">{{ h.end }}</span></div></div>
+<svg width="294" height="112" viewBox="0 0 328 140" preserveAspectRatio="none" style="display:block;overflow:visible">
+<line x1="0" x2="328" y1="112" y2="112" style="stroke:var(--fail);stroke-width:1.5;stroke-dasharray:4 4"></line>
+<line x1="0" x2="0" y1="0" y2="140" style="stroke:var(--ol);stroke-width:1"></line>
+<polygon points="{{ fc.area }}" style="fill:var(--pr);fill-opacity:.12"></polygon>
+<polyline points="{{ fc.line }}" style="fill:none;stroke:var(--pr);stroke-width:2.5;stroke-linejoin:round"></polyline>
+<circle cx="{{ fc.mx }}" cy="{{ fc.my }}" r="5" style="fill:var(--bg);stroke:var(--pr);stroke-width:2.5"></circle>
+</svg>
+<div style="display:flex;justify-content:space-between;font:500 12px Geist;color:var(--mu)"><span>Hoje</span><span>23/10</span><span>07/11</span></div>
+</div>
+<div style="padding:24px 16px 8px;display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Orçamentos de outubro</span><span style="font:600 15px Geist;color:var(--pr);min-height:48px;display:flex;align-items:center">Todos</span></div>
+<div style="margin:0 16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:16px">
+<sc-for list="{{ h.budgets }}" as="b" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><i style="font:20px/1 'Material Symbols Rounded';color:var(--mu)">{{ b.ic }}</i><span style="font:500 15px Geist;flex:1">{{ b.n }}</span><sc-if value="{{ b.p }}"><span style="{{ b.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ b.p.ic }}</i>{{ b.p.l }}</span></sc-if><span style="font:500 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ b.pct }}</span></div>
+<div style="position:relative;height:8px;border-radius:4px;background:var(--sf4)"><div style="{{ b.fill }}"></div><span style="position:absolute;left:80%;top:-3px;width:2px;height:14px;background:var(--mu);border-radius:1px"></span></div>
+</div>
+</sc-for>
+</div>
+<div style="padding:24px 16px 8px;display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Alertas</span><span style="font:600 15px Geist;color:var(--pr);min-height:48px;display:flex;align-items:center">Ver todos</span></div>
+<div style="margin:0 16px 24px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);overflow:hidden">
+<sc-for list="{{ h.alerts }}" as="al" hint-placeholder-count="2">
+<div style="display:flex;gap:12px;padding:14px;border-top:1px solid var(--olv);margin-top:-1px;align-items:flex-start"><span style="{{ al.icn }}"><i style="font:20px/1 'Material Symbols Rounded'">{{ al.ic }}</i></span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px/20px Geist">{{ al.t }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ al.s }}</span></div></div>
+</sc-for>
+</div>
+<div style="flex:1"></div>
+<dc-import name="CdNav" active="home" hint-size="100%,97px"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;killSwitch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Global state&quot;},&quot;hideAmounts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Global state&quot;}}">
+const P={bg:['surface',[.985,.004,262],[.17,.012,262],'Screen background'],sf1:['surfaceContainerLowest',[1,0,0],[.14,.01,262],'Inputs on cards'],sf2:['surfaceContainerLow',[.97,.005,262],[.205,.013,262],'Cards, nav bar'],sf3:['surfaceContainer',[.955,.006,262],[.235,.014,262],'Sheets, code fields'],sf4:['surfaceContainerHigh',[.93,.008,262],[.275,.015,262],'Avatars, tracks, search'],on:['onSurface',[.22,.015,262],[.94,.006,262],'Text'],mu:['onSurfaceVariant',[.46,.016,262],[.75,.012,262],'Secondary text'],ol:['outline',[.64,.012,262],[.56,.012,262],'Field borders (3:1 UI)'],olv:['outlineVariant',[.9,.008,262],[.33,.014,262],'Dividers, card borders'],pr:['primary',[.52,.16,262],[.76,.11,262],'Cashdeck Cobalt · actions'],onpr:['onPrimary',[.99,.003,262],[.22,.07,262],'Text on primary'],prc:['primaryContainer',[.93,.04,262],[.34,.09,262],'Tonal buttons, active nav'],onprc:['onPrimaryContainer',[.32,.12,262],[.91,.04,262],'Text on container'],inv:['inverseSurface',[.28,.015,262],[.92,.006,262],'Toast'],oninv:['onInverseSurface',[.96,.004,262],[.22,.015,262],'Toast text']};
+const MONEY=[['inc','income','Receita','south_west',155,.13],['exp','expense','Despesa','north_east',355,.14],['trf','transfer','Entre contas','sync_alt',262,.025],['pen','pending','Pendente','schedule',75,.12],['sch','scheduled','Agendado','event',225,.11],['apr','awaitingApproval','Aprovar no banco','approval',310,.14],['paid','paid','Pago','check_circle',150,.12],['fail','failed','Falhou','error',27,.17],['ovd','overdue','Vencido','event_busy',50,.15]];
+const ENT=[['pf','personal','Pessoal',262,.16],['pj','company','Empresa',185,.09],['all','consolidated','Consolidado',262,.025]];
+function hx(l,c,h){const a=c*Math.cos(h*Math.PI/180),b=c*Math.sin(h*Math.PI/180);const L=(l+.3963377774*a+.2158037573*b)**3,M=(l-.1055613458*a-.0638541728*b)**3,S=(l-.0894841775*a-1.291485548*b)**3;const f=x=>{x=Math.max(0,Math.min(1,x));x=x<=.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-.055;return Math.round(x*255).toString(16).padStart(2,'0')};return '#'+(f(4.0767416621*L-3.3077115913*M+.2309699292*S)+f(-1.2684380046*L+2.6097574011*M-.3413193965*S)+f(-.0041960863*L-.7034186147*M+1.707614701*S)).toUpperCase()}
+function lum(h){const v=[1,3,5].map(i=>{const x=parseInt(h.substr(i,2),16)/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4});return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+const cr=(a,b)=>{const A=lum(a),B=lum(b);return ((Math.max(A,B)+.05)/(Math.min(A,B)+.05)).toFixed(1)};
+const fgT=(i,c,h)=>i?[.8,+(c*.8).toFixed(3),h]:[.5,c,h];
+const ctT=(i,c,h)=>i?[.3,Math.min(c,.05),h]:[.945,Math.min(c,.045),h];
+const lc=a=>`oklch(${a[0]} ${a[1]} ${a[2]})`;
+function vars(i){const v={'--board':i?'#0B0D12':'#DDE0E6'};for(const k in P)v['--'+k]=hx(...P[k][i+1]);[...MONEY.map(m=>[m[0],m[4],m[5]]),...ENT.map(e=>[e[0],e[3],e[4]])].forEach(([k,h,c])=>{v['--'+k]=hx(...fgT(i,c,h));v['--'+k+'c']=hx(...ctT(i,c,h))});return v}
+const V=[vars(0),vars(1)];
+const THEMES=[{name:'Light',sub:'AppTheme.light()',vars:V[0]},{name:'Dark',sub:'AppTheme.dark()',vars:V[1]}];
+const ML=Object.fromEntries(MONEY.map(m=>[m[0],[m[2],m[3]]]));
+const pill=(k,l,ic)=>({st:{display:'inline-flex',alignItems:'center',gap:4,height:24,padding:'0 8px 0 6px',borderRadius:12,background:`var(--${k}c)`,color:`var(--${k})`,font:'600 12px Geist',whiteSpace:'nowrap',flex:'none',alignSelf:'flex-start',boxSizing:'border-box'},l:l||ML[k][0],ic:ic||ML[k][1]});
+const num=n=>Math.abs(n).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const brl=(n,hide,plus)=>hide?'R$ ••••':(n<0?'−':plus?'+':'')+'R$ '+num(n);
+const dd=i=>{const d=new Date(2026,9,8+i);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
+const sw=bg=>({width:40,height:40,borderRadius:8,border:'1px solid rgba(0,0,0,.1)',flex:'none',background:bg});
+function row(f,l,d,n){const lh=hx(...l),dh=hx(...d);return {f,lh,dh,lo:lc(l),do:lc(d),ls:sw(lh),ds:sw(dh),n}}
+const core=Object.entries(P).map(([k,[f,l,d,u]])=>{let n=u;if(['on','mu','pr'].includes(k))n=`${u} · ${cr(hx(...l),hx(...P.bg[1]))}:1 / ${cr(hx(...d),hx(...P.bg[2]))}:1`;if(k==='ol')n=`${u} · ${cr(hx(...l),hx(...P.bg[1]))}:1 / ${cr(hx(...d),hx(...P.bg[2]))}:1`;if(k==='onpr')n=`${u} · ${cr(hx(...l),hx(...P.pr[1]))}:1 / ${cr(hx(...d),hx(...P.pr[2]))}:1`;return row('colorScheme.'+f,l,d,n)});
+const mrows=[];MONEY.forEach(([k,f,l,ic,h,c])=>{const a=fgT(0,c,h),b=fgT(1,c,h),ca=ctT(0,c,h),cb=ctT(1,c,h);mrows.push(row('AppMoneyColors.'+f,a,b,`${l} · ${ic} · on surface ${cr(hx(...a),hx(...P.bg[1]))} / ${cr(hx(...b),hx(...P.bg[2]))} · on container ${cr(hx(...a),hx(...ca))} / ${cr(hx(...b),hx(...cb))}`));mrows.push(row('AppMoneyColors.'+f+'Container',ca,cb,'Badge & banner fill'))});
+const erows=[];ENT.forEach(([k,f,l,h,c])=>{erows.push(row('AppEntityColors.'+f,fgT(0,c,h),fgT(1,c,h),l+' badge text / chart series'));erows.push(row('AppEntityColors.'+f+'Container',ctT(0,c,h),ctT(1,c,h),l+' badge & chip tint'))});
+const colorGroups=[{title:'Core',cls:'ColorScheme (Material 3)',rows:core},{title:'Money semantics',cls:'ThemeExtension<AppMoneyColors>',rows:mrows},{title:'Entities',cls:'ThemeExtension<AppEntityColors>',rows:erows}];
+const spacing=[['xxs',2],['xs',4],['sm',8],['md',12],['lg',16],['xl',24],['xxl',32],['xxxl',48]].map(([k,v])=>({k:'AppSpacing.'+k,v:v+' dp',bar:{width:v*4,height:12,borderRadius:3,background:'oklch(0.52 0.16 262)'}}));
+const motion=[['fast','120 ms · standard','Press scale, chip toggle, switch thumb'],['medium','200 ms · standard','Sheet in, banner in, tab change'],['slow','250 ms · emphasizedDecelerate','Page push, ladder step-down'],['standard','Cubic(0.2, 0, 0, 1)','Default easing'],['emphasizedDecelerate','Cubic(0.05, 0.7, 0.1, 1)','Entering elements'],['exit','Cubic(0.3, 0, 1, 1) · 150 ms','Leaving elements'],['springSnappy','mass 1 · k 700 · c 40','Paid badge pop, toggles (settles ≈ 240 ms)'],['springGentle','mass 1 · k 380 · c 30','Sheet drag release, amount count-up']].map(([k,v,u])=>({k:'AppMotion.'+k,v,u}));
+const accounts=[{mono:'BA',name:'Banco Aurora · Corrente',bal:'R$ 5.412,18',ic:'cloud_done',sync:'há 4 min',k:'paid'},{mono:'NP',name:'Nuvem Pagamentos',bal:'R$ 2.130,12',ic:'sync',sync:'Sincronizando…',k:'sch'},{mono:'CS',name:'Cooperativa Serra',bal:'R$ 940,00',ic:'sync_problem',sync:'Reconectar · 3 dias',k:'fail'},{mono:'BT',name:'Banco Tradicional',bal:'R$ 3.860,00',ic:'upload_file',sync:'Manual · 02/10',k:'trf'}].map(a=>({...a,ss:{display:'flex',alignItems:'center',gap:4,font:'500 14px Geist',color:`var(--${a.k})`}}));
+const rowSt=pressed=>({display:'flex',alignItems:'center',gap:12,minHeight:64,padding:'8px 24px',boxSizing:'border-box',background:pressed?'color-mix(in srgb,var(--on) 8%,transparent)':'transparent'});
+const aSt=k=>({font:'600 15px Geist',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap',color:k?`var(--${k})`:'var(--on)'});
+const txRows=[{ic:'shopping_cart',t:'Mercado Bom Preço',s:'Mercado · Aurora',a:'−R$ 214,37',as:aSt()},{ic:'payments',t:'Estúdio Vento Sul',s:'Salário · Aurora',a:'+R$ 7.800,00',as:aSt('inc')},{ic:'sync_alt',t:'Para Reserva',s:'Entre contas · não conta no total',a:'R$ 1.000,00',as:aSt('trf')},{ic:'local_pharmacy',t:'Farmácia Vida',s:'Saúde · Cartão Aurora',a:'−R$ 58,90',as:aSt(),p:pill('pen')},{ic:'cloud',t:'Tessera Cloud',s:'Assinaturas · Cartão',a:'−US$ 20,00',sub:'≈ −R$ 109,80',as:aSt()},{ic:'local_taxi',t:'Rota Táxi',s:'Pressed state',a:'−R$ 32,50',as:aSt(),pressed:1}].map(r=>({...r,row:rowSt(r.pressed)}));
+const statuses=MONEY.map(m=>pill(m[0]));
+const cats=[['shopping_cart','Mercado'],['restaurant','Restaurantes'],['directions_car','Transporte'],['home','Casa'],['medical_services','Saúde'],['theaters','Lazer'],['school','Educação'],['subscriptions','Assinaturas'],['account_balance','Impostos'],['payments','Salário']].map(([ic,l])=>({ic,l}));
+const bfill=(p,k)=>({position:'absolute',left:0,top:0,height:'100%',width:Math.min(p,100)+'%',borderRadius:4,background:`var(--${k})`});
+const budgets=[{ic:'directions_car',n:'Transporte',used:'R$ 152',of:'R$ 400',fill:bfill(38,'pr')},{ic:'shopping_cart',n:'Mercado',used:'R$ 984',of:'R$ 1.200',fill:bfill(82,'pen'),p:pill('pen','82% · atenção','warning')},{ic:'restaurant',n:'Restaurantes',used:'R$ 624',of:'R$ 600',fill:bfill(104,'ovd'),p:pill('ovd','104% · estourou','error')}];
+const billCards=[{ic:'bolt',t:'Energia Lumina',due:'Vence 12/10 · em 4 dias',a:'R$ 287,40',p:pill('sch'),rail:'Passo 1 · Pix via API'},{ic:'work',t:'Coworking Ponte · PJ',due:'Vence 15/10 · em 7 dias',a:'R$ 1.200,00',p:pill('apr'),rail:'Passo 2 · Empresa · até 18:00'},{ic:'wifi',t:'Internet Fibra Sul',due:'Venceu 06/10',a:'R$ 119,90',p:pill('ovd'),rail:'Passo 3 · código pronto'},{ic:'apartment',t:'Condomínio Jardim',due:'Pago 05/10 · 07:02',a:'R$ 780,00',p:pill('paid'),rail:'Automático'}];
+const bars=[['Mai',62,48],['Jun',60,55],['Jul',64,70],['Ago',61,52],['Set',66,58],['Out',63,41]].map(([m,i,e])=>({m,i:{flex:1,height:i+'%',background:'var(--inc)',borderRadius:'4px 4px 0 0'},e:{flex:1,height:e+'%',background:'var(--exp)',borderRadius:'4px 4px 0 0'}}));
+const C=2*Math.PI*40;let off=0;const donut=[['Casa',.42,'pr'],['Mercado',.23,'pj'],['Lazer',.15,'apr'],['Outros',.2,'ol']].map(([l,f,k])=>{const st={fill:'none',stroke:`var(--${k})`,strokeWidth:14,strokeDasharray:`${f*C-1.5} ${C}`,strokeDashoffset:-off};off+=f*C;return {l,st,dot:{width:10,height:10,borderRadius:3,background:`var(--${k})`}}});
+function forecast(){const ev={2:-119.9,4:-287.4,7:-2400,12:-780,15:-450,20:-1830.44,24:-96.2,28:7800};let v=18742.3;const s=[];for(let i=0;i<=30;i++){if(i)v-=85;if(ev[i])v+=ev[i];s.push(v)}const mx=Math.max(...s),mn=Math.min(...s),lo=mn-(mx-mn)*.25;const y=x=>8+(mx-x)/(mx-lo)*104;const pts=s.map((x,i)=>[(i*328/30).toFixed(1),y(x).toFixed(1)]);const mi=s.indexOf(mn);return {s,mn,mi,line:pts.map(p=>p.join(',')).join(' '),area:'0,140 '+pts.map(p=>p.join(',')).join(' ')+' 328,140',mx:pts[mi][0],my:pts[mi][1]}}
+const FC=forecast();
+const alerts=[{ic:'south',k:'apr',t:'Aluguel desceu para aprovação no banco',s:'Limite diário do Pix · hoje 07:31'},{ic:'error',k:'ovd',t:'Restaurantes passou de 100%',s:'R$ 624 de R$ 600 · ontem'}].map(a=>({...a,icn:{width:36,height:36,borderRadius:18,background:`var(--${a.k}c)`,color:`var(--${a.k})`,display:'grid',placeItems:'center',flex:'none'}}));
+class Component extends DCLogic {
+  state = { hide: false, paid: false };
+  home(hide, paused, label, toggle) {
+    return { label, paused, toggle, eye: hide ? 'visibility_off' : 'visibility',
+      total: brl(18742.3, hide), reserve: brl(6200, hide), yield: hide ? '+R$ ••••' : '+R$ 48,12 em out.', due7: brl(2807.3, hide),
+      low: brl(FC.mn, hide), lowD: 'em ' + dd(FC.mi), end: brl(FC.s[30], hide),
+      bills: [{ic:'wifi',t:'Internet Fibra Sul',a:brl(119.9,hide),d:'venceu 06/10',p:pill('ovd','Vencido · pagar','event_busy')},{ic:'bolt',t:'Energia Lumina',a:brl(287.4,hide),d:'12/10',p:pill('sch','Automático 12/10','event')},{ic:'home',t:'Aluguel',a:brl(2400,hide),d:'15/10',p:pill('pr','Passo 3 · código pronto','verified_user')}],
+      alerts: [{ic:'verified_user',k:'pr',t:'Aluguel foi para o pagamento assistido',s:'Acima do limite por pagamento, sem confirmação no app · 12:00'},{ic:'error',k:'ovd',t:'Restaurantes passou de 100%',s:(hide?'R$ •••• de R$ ••••':'R$ 624 de R$ 600')+' · ontem'}].map(a=>({...a,icn:{width:36,height:36,borderRadius:18,background:`var(--${a.k}c)`,color:`var(--${a.k})`,display:'grid',placeItems:'center',flex:'none'}})),
+      budgets: budgets.map(b => ({...b, pct: b.n==='Transporte'?'38%':b.n==='Mercado'?'82%':'104%', p: b.p ? {...b.p, l: b.n==='Mercado'?'Atenção':'Estourou'} : null})) };
+  }
+  renderVals() {
+    const hideTweak = this.props.hideAmounts ?? false, paused = this.props.killSwitch ?? false;
+    const hide = this.state.hide || hideTweak;
+    const toggle = () => this.setState(s => ({ hide: !s.hide }));
+    const paid = this.state.paid;
+    const paidEl = paid
+      ? React.createElement('span', { key: 'p', style: { ...pill('paid').st, alignSelf: 'center', height: 32, padding: '0 12px 0 8px', fontSize: 14, animation: 'cdpop 240ms cubic-bezier(.2,0,0,1) both' } }, React.createElement('i', { style: { font: "18px/1 'Material Symbols Rounded'", fontVariationSettings: "'FILL' 1" } }, 'check_circle'), 'Pago agora')
+      : React.createElement('span', { key: 'a', style: { ...pill('pen', 'Aguardando você', 'touch_app').st, alignSelf: 'center' } }, React.createElement('i', { style: { font: "16px/1 'Material Symbols Rounded'" } }, 'touch_app'), 'Aguardando você');
+    return { themes: THEMES, colorGroups, spacing, motion, accounts, txRows, statuses, cats, budgets, billCards, bars, donut, fc: FC, alerts,
+      paidEl, paidLabel: paid ? 'Desfazer' : 'Marcar como pago', togglePaid: () => this.setState(s => ({ paid: !s.paid })),
+      homes: [this.home(hide, paused, 'A · default (interactive)', toggle), this.home(true, true, 'B · paused + privacy', () => {})] };
+  }
+}
+</script>
+</body>
+</html>

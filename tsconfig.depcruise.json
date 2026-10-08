@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cashdeck/domain": ["packages/domain/src/index.ts"],
+      "@cashdeck/application": ["packages/application/src/index.ts"],
+      "@cashdeck/infrastructure": ["packages/infrastructure/src/index.ts"],
+      "@cashdeck/i18n": ["packages/i18n/src/index.ts"],
+      "@cashdeck/client": ["packages/client/src/index.ts"],
+      "@/*": [
+        "packages/domain/src/*",
+        "packages/application/src/*",
+        "packages/infrastructure/src/*",
+        "apps/api/src/*"
+      ]
+    }
+  }
+}

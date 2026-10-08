@@ -1,0 +1,49 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths:
+      - apps/mobile/**
+      - .github/workflows/mobile.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/mobile/**
+      - .github/workflows/mobile.yml
+
+defaults:
+  run:
+    working-directory: apps/mobile
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: tool/check.sh
+
+  android:
+    name: Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.6
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build appbundle --release

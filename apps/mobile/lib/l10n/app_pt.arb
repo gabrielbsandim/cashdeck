@@ -1,0 +1,1201 @@
+{
+  "@@locale": "pt",
+  "appTitle": "Cashdeck",
+  "tabHome": "Início",
+  "tabTransactions": "Transações",
+  "tabBills": "A pagar",
+  "tabChat": "Chat",
+  "tabMore": "Mais",
+  "homeTitle": "Início",
+  "transactionsTitle": "Transações",
+  "billsTitle": "Contas a pagar",
+  "chatTitle": "Chat",
+  "moreTitle": "Mais",
+  "entityPersonal": "Pessoal",
+  "entityCompany": "Empresa",
+  "entityConsolidated": "Consolidado",
+  "comingSoonTitle": "Em breve",
+  "comingSoonMessage": "Esta área chega junto com o novo design.",
+  "retryButton": "Tentar novamente",
+  "errorNetwork": "Sem conexão. Verifique a internet e tente de novo.",
+  "errorSessionExpired": "Sua sessão expirou. Entre de novo.",
+  "errorForbidden": "Você não tem acesso a isto.",
+  "errorNotFound": "Não encontramos o que você procurou.",
+  "errorRateLimited": "Muitas tentativas. Aguarde um pouco.",
+  "errorServer": "O servidor falhou. Tente de novo em instantes.",
+  "errorUnexpected": "Algo deu errado. Tente de novo.",
+  "hideAmounts": "Ocultar valores",
+  "showAmounts": "Mostrar valores",
+  "hideAmountsSetting": "Ocultar valores na tela",
+  "themeTitle": "Tema",
+  "themeSystem": "Sistema",
+  "themeLight": "Claro",
+  "themeDark": "Escuro",
+  "billsEmptyTitle": "Nenhuma conta por aqui",
+  "billsEmptyMessage": "Boletos do e-mail, da câmera e do chat aparecem nesta lista.",
+  "billDetailTitle": "Conta",
+  "billDueOn": "Vence {date}",
+  "@billDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billOverdueSince": "Venceu {date}",
+  "@billOverdueSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billStatusPending": "Pendente",
+  "billStatusScheduled": "Agendado",
+  "billStatusAwaitingApproval": "Aprovar no banco",
+  "billStatusPaid": "Paga",
+  "billStatusFailed": "Falhou",
+  "billStatusCancelled": "Cancelada",
+  "billStatusOverdue": "Vencida",
+  "billKindBoleto": "Boleto",
+  "billKindPixKey": "Pix por chave",
+  "billKindPixQr": "Pix copia e cola",
+  "billKindTaxBarcode": "Guia de imposto",
+  "billKindDarfNoBarcode": "DARF sem código de barras",
+  "billSourceEmail": "e-mail",
+  "billSourceShare": "arquivo compartilhado",
+  "billSourceCamera": "câmera",
+  "billSourceChat": "chat",
+  "billSourceDda": "DDA",
+  "billSourceManual": "cadastro manual",
+  "billKindAndSource": "{kind} · capturado por {source}",
+  "@billKindAndSource": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentCodeLabel": "Linha digitável",
+  "copyCodeButton": "Copiar código",
+  "codeCopied": "Código copiado",
+  "ladderTitle": "Escada de pagamento",
+  "ladderStepAutomatic": "Automático",
+  "ladderStepAutomaticHint": "O Cashdeck paga pela API do banco.",
+  "ladderStepBankApproval": "Aprovação no banco",
+  "ladderStepBankApprovalHint": "O pagamento fica pronto; você aprova no internet banking.",
+  "ladderStepAssisted": "Assistido",
+  "ladderStepAssistedHint": "Você paga com o código e marca como paga.",
+  "ladderStateDone": "Concluído",
+  "ladderStateActive": "Em andamento",
+  "ladderStateFailed": "Falhou",
+  "ladderStateUpcoming": "Próximo passo",
+  "ladderStateSkipped": "Não foi preciso",
+  "ladderStateUnavailable": "Não disponível para esta conta",
+  "attemptLine": "{time} · {rail}",
+  "@attemptLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptLineWithReason": "{time} · {rail}: {reason}",
+  "@attemptLineWithReason": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "rail": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "toneIncome": "Receita",
+  "toneExpense": "Despesa",
+  "toneTransfer": "Entre contas",
+  "tonePending": "Pendente",
+  "toneScheduled": "Agendado",
+  "toneAwaitingApproval": "Aprovar no banco",
+  "tonePaid": "Pago",
+  "toneFailed": "Falhou",
+  "toneOverdue": "Vencido",
+  "toneAssisted": "Assistido",
+  "toneNeutral": "Neutro",
+  "cancelButton": "Cancelar",
+  "continueButton": "Continuar",
+  "saveButton": "Salvar",
+  "editButton": "Editar",
+  "undoButton": "Desfazer",
+  "shareButton": "Compartilhar",
+  "pdfButton": "PDF",
+  "gotItButton": "Entendi",
+  "disconnectButton": "Desconectar",
+  "replaceButton": "Trocar",
+  "seeAllButton": "Ver todas",
+  "copied": "Copiado",
+  "copyShort": "Copiar",
+  "codeValid": "Válida",
+  "hideTyped": "Ocultar o que foi digitado",
+  "showTyped": "Mostrar o que foi digitado",
+  "clearSearch": "Limpar busca",
+  "loadFailedTitle": "Não deu para carregar",
+  "budgetAttention": "Atenção",
+  "budgetExceeded": "Estourou",
+  "budgetSemantics": "{name}: {percent}% do orçamento",
+  "@budgetSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmStepReview": "Revisar",
+  "confirmStepConfirm": "Confirmar",
+  "confirmDenied": "Não confirmamos que é você. Tente novamente.",
+  "filePickerSoon": "Escolher arquivos chega com o acesso a arquivos do aparelho.",
+  "shareSoon": "Compartilhar chega com o menu de compartilhamento do aparelho.",
+  "relativeToday": "hoje",
+  "relativeTodayTitle": "Hoje",
+  "relativeYesterday": "ontem",
+  "todayAt": "hoje, {time}",
+  "@todayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "validUntil": "Válido até {date}",
+  "@validUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingStep": "Passo {step} de {total}",
+  "@onboardingStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "millis": "{ms} ms",
+  "@millis": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "entityPersonalShort": "PF",
+  "entityCompanyShort": "PJ",
+  "entitySheetTitle": "Ver as contas de",
+  "entityChipSemantics": "Entidade: {entity}. Toque para trocar.",
+  "@entityChipSemantics": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "billStatusAssisted": "Passo 3 · código pronto",
+  "billStatusNeedsConfirmation": "Confirmar no app",
+  "billHomeOverdue": "Vencido · pagar",
+  "billHomeAutomatic": "Automático {date}",
+  "@billHomeAutomatic": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billPaidByYou": "Pago por você",
+  "billPaidAutomatically": "Pago automaticamente",
+  "billHintAssisted": "Passo {step} · código pronto",
+  "@billHintAssisted": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  },
+  "billHintStep": "Passo {step} · {rail}",
+  "@billHintStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "billPaidOn": "Paga {date} às {time}",
+  "@billPaidOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "billDueToday": "Vence hoje",
+  "billDueTomorrow": "Vence amanhã, {date}",
+  "@billDueTomorrow": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billDueInDays": "Vence {date} · em {days} dias",
+  "@billDueInDays": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "billOverdueShort": "venceu {date}",
+  "@billOverdueShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "billTitleWithEntity": "{payee} · {entity}",
+  "@billTitleWithEntity": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      },
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "billsGroupNeedsYou": "Precisam de você",
+  "billsGroupUpcoming": "Próximas",
+  "billsGroupSettled": "Pagas",
+  "billMarkedPaidToast": "{payee} marcada como paga",
+  "@billMarkedPaidToast": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "billConfirmedToast": "Confirmado. O pagamento sai no passo 1.",
+  "openBankToast": "Abra o app do banco para aprovar o pagamento.",
+  "approvalCheckToast": "Vamos conferir com o banco e atualizar a conta.",
+  "pixCopyPasteLabel": "Pix copia e cola",
+  "confirmBillTitle": "Confirmar {payee}?",
+  "@confirmBillTitle": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmReasonNewPayee": "Recebedor novo",
+  "confirmRowAmount": "Valor",
+  "confirmRowDue": "Vencimento",
+  "confirmAndPayButton": "Confirmar e pagar",
+  "ladderSettled": "concluída",
+  "ladderPosition": "passo {step} de {total}",
+  "@ladderPosition": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ladderNextApprove": "Próxima ação: aprovar até 18:00 · lembrete às 16:00",
+  "ladderAssistedFootnote": "Vence {date}. Se você não pagar, avisamos de novo; nada fica em silêncio.",
+  "@ladderAssistedFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ladderSafetyNet": "Rede de segurança",
+  "ladderReadyTitle": "Assistido, pronto para você",
+  "ladderReadyBody": "Código conferido. Pague pelo app do seu banco até {date}.",
+  "@ladderReadyBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "ladderReadyPixKey": "Chave Pix conferida. Pague pelo app do seu banco até {date}.",
+  "@ladderReadyPixKey": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "markPaidButton": "Marcar como pago",
+  "receiptButton": "Comprovante",
+  "ladderWaitingForYou": "Aguardando você",
+  "ladderApprovalBody": "Preparado no {rail}. Aprove no internet banking até 18:00 de hoje.",
+  "@ladderApprovalBody": {
+    "placeholders": {
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "openBankButton": "Abrir banco",
+  "alreadyApprovedButton": "Já aprovei",
+  "ladderConfirmBody": "Acima do limite por pagamento: confirme no app para o passo 1 pagar.",
+  "reviewAndConfirmButton": "Revisar e confirmar",
+  "ladderJumped": "Pulou para o passo {step} às {time}",
+  "@ladderJumped": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ladderSteppedDown": "Desceu para o passo {step} às {time}",
+  "@ladderSteppedDown": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "ladderCollapsed": "{time} · {reason} · {count, plural, =1{1 tentativa} other{{count} tentativas}}",
+  "@ladderCollapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "totalBalance": "Saldo total",
+  "syncLine": "{count, plural, =1{1 conta} other{{count} contas}} · atualizado há {minutes} min",
+  "@syncLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLineCompany": "{count, plural, =1{1 conta PJ} other{{count} contas PJ}} · atualizado há {minutes} min",
+  "@syncLineCompany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "reserveTitle": "Reserva para contas",
+  "reserveSource": "{institution} · {product}",
+  "@reserveSource": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "product": {
+        "type": "String"
+      }
+    }
+  },
+  "reserveYield": "{amount} em {month}",
+  "@reserveYield": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "reserveCovers": "Cobre as contas dos próximos {days} dias · {cdi}% do CDI",
+  "@reserveCovers": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "cdi": {
+        "type": "int"
+      }
+    }
+  },
+  "dueIn7Days": "Vencem em 7 dias",
+  "dueSummary": "{amount} · {count, plural, =1{1 conta} other{{count} contas}}",
+  "@dueSummary": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueNothing": "Nada vence nos próximos 7 dias.",
+  "forecastTitle": "Fluxo de caixa · 30 dias",
+  "forecastSubtitle": "Previsão com contas, fatura e salário",
+  "forecastLowest": "Menor saldo",
+  "forecastOn": "em {date}",
+  "@forecastOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "forecastAt": "Em {date}",
+  "@forecastAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "forecastSemantics": "Previsão de 30 dias. Menor saldo {amount} em {date}.",
+  "@forecastSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsOfMonth": "Orçamentos de {month}",
+  "@budgetsOfMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryTransport": "Transporte",
+  "categoryGroceries": "Mercado",
+  "categoryRestaurants": "Restaurantes",
+  "alertsTitle": "Alertas",
+  "alertsEmpty": "Nada pedindo sua atenção agora.",
+  "alertAssistedTitle": "{payee} foi para o pagamento assistido",
+  "@alertAssistedTitle": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "alertBudgetTitle": "{category} passou de 100%",
+  "@alertBudgetTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "alertBudgetBody": "{spent} de {limit} · {when}",
+  "@alertBudgetBody": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "automationPausedTitle": "Pagamentos automáticos pausados",
+  "automationPausedBody": "Desde {date} · {count, plural, =0{nenhuma conta aguarda você} =1{1 conta aguarda você} other{{count} contas aguardam você}}",
+  "@automationPausedBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resumeButton": "Retomar",
+  "companyCash": "Caixa da empresa",
+  "billedInMonth": "Faturado em {month}",
+  "@billedInMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceCount": "{count, plural, =1{1 nota} other{{count} notas}}",
+  "@invoiceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dasEstimated": "DAS estimado",
+  "dasDueOn": "vence {date}",
+  "@dasDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "taxesDue": "Impostos a vencer",
+  "calendarButton": "Calendário",
+  "draftsToApprove": "Notas para aprovar",
+  "draftTitle": "Rascunho · {customer}",
+  "@draftTitle": {
+    "placeholders": {
+      "customer": {
+        "type": "String"
+      }
+    }
+  },
+  "draftRecurring": "Recorrente · emissão {date}",
+  "@draftRecurring": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "draftSingle": "Avulsa · emissão {date}",
+  "@draftSingle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "approveAndIssueButton": "Aprovar e emitir",
+  "draftEditSoon": "A edição de rascunhos chega com o emissor de notas.",
+  "invoiceIssuedToast": "Nota emitida para {customer}",
+  "@invoiceIssuedToast": {
+    "placeholders": {
+      "customer": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedWithoutInvoice": "Recebido sem nota",
+  "pixFrom": "Pix de {payer}",
+  "@pixFrom": {
+    "placeholders": {
+      "payer": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedLine": "{date} · {amount}",
+  "@receivedLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "issueInvoiceButton": "Emitir nota",
+  "consolidatedBalance": "Saldo consolidado",
+  "consolidatedMonthTitle": "{month}, sem contar duas vezes",
+  "@consolidatedMonthTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "externalIn": "Entradas de fora",
+  "externalOut": "Saídas para fora",
+  "betweenEntitiesOutside": "Entre entidades · fora",
+  "monthResult": "Resultado",
+  "betweenEntities": "Entre entidades",
+  "transferProfitDistribution": "Distribuição de lucros",
+  "transferProLabore": "Pró-labore",
+  "transferProfitSubtitle": "PJ → PF · {date} · neutra nas duas",
+  "@transferProfitSubtitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "transferProLaboreSubtitle": "PJ → PF · {date} · receita PF, despesa PJ",
+  "@transferProLaboreSubtitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "moreSectionPayments": "Pagamentos",
+  "moreSectionConnections": "Conexões",
+  "moreSectionCompany": "Empresa",
+  "moreSectionDisplay": "Aparência",
+  "moreSectionAccount": "Conta",
+  "pauseAutomationSetting": "Pausar pagamentos automáticos",
+  "pauseAutomationHint": "Enquanto ligado, nada é pago sem você",
+  "moreRailsHint": "Quem paga em cada passo",
+  "moreCaptureHint": "E-mail, DDA, câmera e chat",
+  "cardImportMenu": "Fatura de cartão sem Open Finance",
+  "moreCardImportHint": "Envie o PDF da fatura",
+  "moreItemIdHint": "Para o plano gratuito do agregador",
+  "moreIssuerHint": "NFS-e e certificado A1",
+  "payrollMenu": "Folha de pagamento",
+  "morePayrollHint": "Alimenta o Fator R",
+  "moreExportHint": "ZIP com extratos, notas e guias",
+  "lockNowSetting": "Bloquear agora",
+  "signUpTitle": "Criar o primeiro usuário",
+  "signUpBody": "Este servidor ainda não tem contas. Você será o administrador.",
+  "signInTitle": "Entrar",
+  "signInBody": "Este servidor já tem contas. Entre com seu e-mail e senha.",
+  "fieldName": "Nome",
+  "fieldEmail": "E-mail",
+  "fieldPassword": "Senha",
+  "fieldConfirmPassword": "Confirmar senha",
+  "errorNameRequired": "Diga seu nome.",
+  "errorEmailInvalid": "Confira o e-mail.",
+  "errorPasswordWeak": "Use pelo menos 8 caracteres.",
+  "errorPasswordMismatch": "As senhas não são iguais.",
+  "passwordWeak": "Fraca",
+  "passwordFair": "Razoável",
+  "passwordStrong": "Forte",
+  "passwordStrengthLine": "{label} · {count} caracteres",
+  "@passwordStrengthLine": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signUpButton": "Criar conta e entrar",
+  "signInButton": "Entrar",
+  "unlockTitle": "Olá, {name}",
+  "@unlockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unlockTitleAnonymous": "Olá",
+  "unlockSensor": "Toque no sensor para desbloquear",
+  "unlockReason": "Desbloquear o Cashdeck",
+  "unlockButton": "Desbloquear",
+  "usePassword": "Usar senha",
+  "useSensorButton": "Usar o sensor",
+  "unlockIdleNote": "Bloqueado após 5 min sem uso",
+  "itemIdTitle": "Conectar pelo item id",
+  "itemIdIntro": "No plano gratuito do agregador não há conexão dentro do app. Conecte o banco no painel do agregador e cole o item id aqui.",
+  "itemIdLabel": "Item id",
+  "itemIdInvalid": "O item id tem 36 caracteres, no formato de um UUID.",
+  "itemChecking": "Verificando…",
+  "itemFoundLine": "Válido · {institution} · consentimento até {date}",
+  "@itemFoundLine": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "itemNotFound": "Item não encontrado. Confira se copiou o id inteiro.",
+  "itemAlreadyConnected": "Já conectado em {entity}",
+  "@itemAlreadyConnected": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "itemAccountsFound": "Contas encontradas",
+  "itemIdHowButton": "Como encontrar",
+  "itemImportButton": "{count, plural, =0{Importar} =1{Importar 1 conta} other{Importar {count} contas}}",
+  "@itemImportButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemImportedToast": "{count, plural, =1{1 conta importada} other{{count} contas importadas}}",
+  "@itemImportedToast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemIdHelpTitle": "Como encontrar o item id",
+  "itemHelpStep1": "Abra o painel do agregador no navegador e entre na sua conta.",
+  "itemHelpStep2": "Em Itens, conecte seu banco por lá.",
+  "itemHelpStep3": "Abra o item conectado e copie o campo Item ID.",
+  "itemHelpStep4": "Volte aqui e cole. Validamos na hora.",
+  "itemHelpPlaceholder": "captura do painel · campo Item ID",
+  "openPanelButton": "Abrir painel",
+  "openPanelToast": "Abra o painel do agregador no navegador.",
+  "railsTitle": "Trilhos de pagamento",
+  "railPixApi": "Pix via API",
+  "railBoletoApi": "Boleto via API",
+  "railTaxApi": "Guias DAS e DARF",
+  "railReserveFunding": "Reserva para contas",
+  "railBankApproval": "Aprovação no banco",
+  "railAssisted": "Assistido",
+  "railPayer": "{bank} · pagadora",
+  "@railPayer": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railViaApi": "{bank} · via API",
+  "@railViaApi": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railFundingDetail": "{bank} · abastece o passo 1",
+  "@railFundingDetail": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railApprovalDetail": "{bank} · boleto e Pix",
+  "@railApprovalDetail": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railApprovalUnavailable": "Não existe para Pessoal; a escada pula para o passo 3",
+  "railAssistedDetail": "Código ou Pix copia e cola",
+  "railActive": "Ativo",
+  "railAuthorize": "Autorizar",
+  "railAlways": "Sempre",
+  "railsCompanyNote": "Guias DAS e DARF usam só os passos 1 e 3. A aprovação no banco aceita apenas boleto e Pix.",
+  "railsPersonalNote": "Pessoal não tem aprovação no banco: se o passo 1 falhar, a conta vai direto para o passo 3.",
+  "railsAuthorizeBanner": "{bank} precisa de autorização para preparar pagamentos.",
+  "@railsAuthorizeBanner": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railAuthorizedToast": "{bank} autorizado",
+  "@railAuthorizedToast": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railDetailTitle": "Trilho",
+  "railOwnerLine": "{entity} · {bank}",
+  "@railOwnerLine": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      },
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "railLastTest": "Último teste hoje, {time}",
+  "@railLastTest": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "railCertificateTitle": "Certificado do cliente (mTLS)",
+  "pfxPasswordLabel": "Senha do .pfx",
+  "sendSeparately": "Ou envie separados:",
+  "apiKeyLabel": "Chave de API",
+  "railTestTitle": "Teste",
+  "runTestButton": "Executar teste",
+  "railCheckCertificate": "Certificado aceito (mTLS)",
+  "railCheckApiKey": "Chave de API válida",
+  "railCheckScope": "Escopo: iniciar Pix",
+  "railCheckPayer": "Conta pagadora acessível",
+  "removeRailButton": "Remover trilho",
+  "railRemovedToast": "Trilho removido",
+  "captureTitle": "Fontes de captura",
+  "captureEmail": "E-mail",
+  "captureMailboxGrant": "OAuth · somente leitura · {entity}",
+  "@captureMailboxGrant": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "captureLastRead": "Última leitura",
+  "captureBillsFound": "Contas encontradas",
+  "captureBillsOf": "{found} de {scanned} e-mails",
+  "@captureBillsOf": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "scanned": {
+        "type": "int"
+      }
+    }
+  },
+  "captureReadNow": "Ler agora",
+  "captureReadToast": "Caixa lida agora",
+  "captureDisconnectedToast": "Caixa desconectada",
+  "captureConnectMailbox": "Conectar outra caixa",
+  "captureConnectMailboxHint": "Google, Microsoft ou IMAP",
+  "captureConnectSoon": "Conectar caixas chega com o login pelo provedor.",
+  "captureDda": "DDA",
+  "captureDdaTitle": "DDA · {entity}",
+  "@captureDdaTitle": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "captureDdaBody": "{bank} · lote de {date}, {time} · {count, plural, =0{nenhum boleto} =1{1 boleto} other{{count} boletos}}",
+  "@captureDdaBody": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureAlwaysOn": "Sempre ativos",
+  "captureShareTitle": "Compartilhar PDF ou imagem",
+  "captureShareBody": "De qualquer app para o Cashdeck",
+  "captureCameraTitle": "Câmera",
+  "captureCameraBody": "Código de barras e QR Pix",
+  "captureChatTitle": "Chat",
+  "captureChatBody": "Envie a foto ou o PDF",
+  "receiptTitle": "Comprovante",
+  "receiptPaidAutomatic": "Pago · automático",
+  "receiptPaidByYou": "Pago · por você",
+  "receiptFromBank": "Do banco",
+  "receiptAttachments": "Anexos · {count}",
+  "@receiptAttachments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "receiptPixHeader": "COMPROVANTE PIX",
+  "receiptDateTime": "Data e hora",
+  "receiptPayer": "Pagador",
+  "receiptReceiver": "Recebedor",
+  "receiptTransactionId": "ID da transação",
+  "receiptAuthentication": "Autenticação",
+  "receiptStoredNote": "Recebido do trilho {rail} · guardado no seu servidor",
+  "@receiptStoredNote": {
+    "placeholders": {
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptNoProofTitle": "Sem comprovante do banco",
+  "receiptNoProofBody": "Quando um trilho paga, o comprovante do banco aparece aqui.",
+  "receiptNoAttachments": "Nenhum anexo",
+  "receiptNoAttachmentsBody": "Anexe o comprovante que o seu banco gerou.",
+  "attachFileButton": "Anexar arquivo",
+  "attachAnotherButton": "Anexar outro arquivo",
+  "cardImportTitle": "Fatura · {card}",
+  "@cardImportTitle": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      }
+    }
+  },
+  "cardImportIssuer": "{issuer} · sem Open Finance",
+  "@cardImportIssuer": {
+    "placeholders": {
+      "issuer": {
+        "type": "String"
+      }
+    }
+  },
+  "cardStepSend": "Enviar",
+  "cardStepReview": "Revisar",
+  "cardStepCreate": "Criar conta",
+  "cardClosing": "Fechamento",
+  "cardRate": "Dólar",
+  "cardIof": "IOF",
+  "cardLineReview": "Conferir",
+  "cardSubtotal": "Subtotal {amount}",
+  "@cardSubtotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cardIofLine": "IOF {rate}",
+  "@cardIofLine": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "cardTotal": "Total da fatura",
+  "cardBecomesBill": "Vira uma conta a pagar · vence {date} · passo 1 da Reserva",
+  "@cardBecomesBill": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cardCreateBillButton": "Criar conta a pagar",
+  "cardReminder": "Lembramos você em cada fechamento (dia {day}).",
+  "@cardReminder": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "cardBillCreatedToast": "Conta a pagar criada",
+  "issuerTitle": "Emissor de notas",
+  "issuerSection": "Emissor",
+  "issuerNational": "Emissor Nacional NFS-e",
+  "issuerNationalHint": "Padrão nacional · {city} aderiu",
+  "@issuerNationalHint": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "issuerMunicipal": "Webservice da prefeitura",
+  "issuerMunicipalHint": "ABRASF",
+  "certificateA1": "Certificado A1 · e-CNPJ",
+  "certificateExpiresIn": "Vence em {days} dias · {date}",
+  "@certificateExpiresIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "certificateExpired": "Venceu em {date}",
+  "@certificateExpired": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadNewButton": "Enviar novo",
+  "remindLaterButton": "Lembrar depois",
+  "municipalRegistration": "Inscrição municipal",
+  "serviceCodeLabel": "Código de serviço padrão",
+  "testEmissionTitle": "Emissão de teste",
+  "emitTestButton": "Emitir teste",
+  "testEmissionResult": "Autorizada em homologação · protocolo {protocol} · {seconds} s",
+  "@testEmissionResult": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "issuerSavedToast": "Emissor salvo",
+  "payrollTitle": "Folha · {month}",
+  "@payrollTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "payrollIntro": "Entra no Fator R da estimativa. Lance até o dia 1º do mês seguinte.",
+  "payrollProLabore": "Pró-labore",
+  "payrollSalaries": "Salários",
+  "payrollFgts": "FGTS",
+  "payrollMonthTotal": "Folha do mês",
+  "payroll12Months": "Folha 12 meses",
+  "revenue12Months": "Receita 12 meses",
+  "fatorR": "Fator R {percent}%",
+  "@fatorR": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "annexIii": "Anexo III",
+  "annexV": "Anexo V",
+  "fatorRMarker": "Marcador = 28% (mínimo para o anexo III)",
+  "payrollPreviousMonths": "Meses anteriores",
+  "payrollSaveButton": "Salvar e atualizar estimativa",
+  "payrollSavedToast": "Folha salva. Estimativa atualizada.",
+  "transferWhen": "{weekday}, {date} · {time} · {rail}",
+  "@transferWhen": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "howItCounts": "Como conta",
+  "countsCompanyNeutral": "Saída · não é despesa",
+  "countsCompanyExpense": "Saída · é despesa",
+  "countsPersonalNeutral": "Entrada · não é receita",
+  "countsPersonalIncome": "Entrada · é receita",
+  "countsConsolidated": "Fora dos totais",
+  "neutralBadge": "Neutro",
+  "countedBadge": "Conta",
+  "categoryLabel": "Categoria",
+  "distributionTaxFree": "Isenta de IR · lucro apurado",
+  "exportTitle": "Exportar para o contador",
+  "exportPeriod": "Período",
+  "exportMonth": "{month} {year}",
+  "@exportMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "exportQuarter": "Último trimestre",
+  "exportCustom": "Personalizado",
+  "exportContents": "Conteúdo · Empresa",
+  "exportStatements": "Extratos (OFX)",
+  "exportInvoices": "Notas emitidas (XML + PDF)",
+  "exportTaxGuides": "Guias e comprovantes",
+  "exportExpenses": "Despesas com anexo",
+  "exportPayroll": "Folha e pró-labore",
+  "exportReconciliation": "Conciliação (CSV)",
+  "exportZip": "ZIP · {files} arquivos · {size} MB",
+  "@exportZip": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "exportGenerateButton": "Gerar e compartilhar",
+  "exportHistory": "Últimos envios",
+  "exportSentLine": "{date} · {to}",
+  "@exportSentLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSentToast": "ZIP gerado e enviado ao contador"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@cashdeck/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack --port 3100",
+    "build": "next build",
+    "start": "next start --port 3100",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "openapi:export": "tsx scripts/export-openapi.ts"
+  },
+  "dependencies": {
+    "@cashdeck/application": "workspace:*",
+    "@cashdeck/domain": "workspace:*",
+    "@cashdeck/i18n": "workspace:*",
+    "@cashdeck/infrastructure": "workspace:*",
+    "@sentry/nextjs": "10.69.0",
+    "next": "16.2.12",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@cashdeck/config": "workspace:*",
+    "@types/node": "22.10.2",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "@vitest/coverage-v8": "4.1.7",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.7"
+  }
+}

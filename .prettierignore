@@ -1,0 +1,13 @@
+node_modules
+dist
+.next
+out
+.turbo
+coverage
+pnpm-lock.yaml
+*.md
+next-env.d.ts
+apps/mobile
+design
+packages/client/src/generated
+packages/client/openapi.json

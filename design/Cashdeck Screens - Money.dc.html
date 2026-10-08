@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block" rel="stylesheet">
+<style>body{margin:0;background:#E9EBEF;-webkit-font-smoothing:antialiased}a{color:#3B4CC0;text-underline-offset:3px}a:hover{color:#26328A}</style>
+</helmet>
+<div style="padding:80px;display:flex;flex-direction:column;gap:112px;font-family:Geist,system-ui,sans-serif;color:#1B1F2B;width:max-content">
+
+<header style="display:flex;flex-direction:column;gap:16px;max-width:1000px">
+<h1 style="margin:0;font:600 56px/1.05 Geist;letter-spacing:-0.035em">Money screens</h1>
+<p style="margin:0;font:400 20px/1.55 Geist;color:#4A5063;text-wrap:pretty">Stage 2 · part 1, onboarding, transactions, accounts, contas a pagar. Built only from <a href="Cashdeck Foundation.dc.html">Foundation</a> tokens and widgets. New flows live in <a href="Cashdeck Screens - Additions.dc.html">Additions</a>. 360 × 800 dp frames; long screens are full-scroll captures. Each row is rendered twice: light, then dark.</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">O</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Onboarding &amp; setup</h2></div>
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+<div style="{{ t.vars }}">
+<div style="background:var(--board);border-radius:32px;padding:40px;display:flex;gap:40px;align-items:flex-start;font-family:Geist,sans-serif;color:var(--on)">
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O1 · WelcomeScreen · {{ t.name }}</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column;padding:48px 24px 16px;gap:24px">
+<div style="width:64px;height:64px;border-radius:28%;background:oklch(0.52 0.16 262);position:relative"><div style="position:absolute;left:28%;top:20%;width:54%;height:36%;border-radius:16%/24%;background:#fff;opacity:.45"></div><div style="position:absolute;left:18%;top:38%;width:54%;height:36%;border-radius:16%/24%;background:#fff"><div style="position:absolute;left:14%;bottom:20%;width:18%;height:27%;border-radius:50%;background:oklch(0.52 0.16 262)"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><span style="font:600 32px/40px Geist;letter-spacing:-0.6px;text-wrap:pretty">Todo o seu dinheiro, num só painel.</span><span style="font:400 16px/24px Geist;color:var(--mu);text-wrap:pretty">Contas, boletos e impostos da empresa, no seu servidor, com os seus dados.</span></div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px;align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pr)">account_balance</i><span style="font:400 15px Geist">Todas as contas, com ou sem Open Finance</span></div>
+<div style="display:flex;gap:12px;align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pr)">event_available</i><span style="font:400 15px Geist">Contas pagas sozinhas, você no controle</span></div>
+<div style="display:flex;gap:12px;align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pr)">dns</i><span style="font:400 15px Geist">Código aberto e auto-hospedado</span></div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--mu)">Endereço do servidor</span><span style="font:400 16px Geist">https://cashdeck.casa.local</span></div><span style="font:400 14px Geist;color:var(--paid);display:flex;gap:6px;align-items:center;padding-left:4px"><i style="font:16px/1 'Material Symbols Rounded'">check_circle</i>Servidor encontrado · v1.4.0</span></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Começar</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O2 · CreatePersonalEntityScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 1 de 6</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px;gap:16px">
+<span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Seu perfil pessoal</span>
+<span style="font:400 15px/22px Geist;color:var(--mu);margin-top:-8px">Esta é a entidade <b style="color:var(--on);font-weight:600">Pessoal (PF)</b>. Tudo no app fica separado por entidade.</span>
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--mu)">Nome</span><span style="font:400 16px Geist">Marina Souza</span></div>
+<div style="height:56px;border:2px solid var(--pr);border-radius:12px;padding:6px 15px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--pr)">CPF</span><span style="font:400 16px Geist;font-variant-numeric:tabular-nums">123.456.789-09</span></div>
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;align-items:center;box-sizing:border-box"><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 12px Geist;color:var(--mu)">Moeda principal</span><span style="font:400 16px Geist">BRL, Real brasileiro</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">arrow_drop_down</i></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:72px;padding:12px 16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)"><span style="width:40px;height:40px;border-radius:20px;background:var(--pjc);color:var(--pj);display:grid;place-items:center;font:700 13px Geist;flex:none">PJ</span><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Também tenho empresa</span><span style="font:400 14px Geist;color:var(--mu)">Notas, impostos e caixa da PJ</span></div><span style="width:52px;height:32px;border-radius:16px;background:var(--pr);position:relative;flex:none"><span style="position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:var(--onpr)"></span></span></div>
+<div style="flex:1"></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Continuar</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O3 · AddCompanyScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 2 de 6</span><span style="height:48px;padding:0 12px;display:flex;align-items:center;font:600 15px Geist;color:var(--pr)">Pular</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px;gap:16px">
+<span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Sua empresa</span>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;align-items:center;box-sizing:border-box"><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 12px Geist;color:var(--mu)">CNPJ</span><span style="font:400 16px Geist;font-variant-numeric:tabular-nums">12.345.678/0001-90</span></div><i style="font:22px/1 'Material Symbols Rounded';color:var(--paid)">check_circle</i></div><span style="font:400 14px Geist;color:var(--mu);padding-left:16px">Estúdio Vento Sul Ltda · ativa</span></div>
+<span style="font:600 15px Geist;margin-top:4px">Regime tributário</span>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border-radius:12px;border:1px solid var(--olv)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">radio_button_unchecked</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">MEI</span><span style="font:400 14px Geist;color:var(--mu)">DAS fixo mensal</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 15px;border-radius:12px;border:2px solid var(--pr);background:var(--prc)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--pr);font-variation-settings:'FILL' 1">radio_button_checked</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 16px Geist;color:var(--onprc)">Simples Nacional</span><span style="font:400 14px Geist;color:var(--onprc)">Anexo III ou V pelo Fator R</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border-radius:12px;border:1px solid var(--olv)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">radio_button_unchecked</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Lucro Presumido</span><span style="font:400 14px Geist;color:var(--mu)">DARFs de IRPJ, CSLL, PIS, Cofins</span></div></div>
+</div>
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;align-items:center;box-sizing:border-box"><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 12px Geist;color:var(--mu)">Município da NFS-e</span><span style="font:400 16px Geist">Florianópolis / SC</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">arrow_drop_down</i></div>
+<div style="flex:1"></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Continuar</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O4 · ConnectInstitutionsScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 3 de 6</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px 0 16px;gap:16px">
+<div style="padding:0 24px;display:flex;flex-direction:column;gap:8px"><span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Conecte seus bancos</span><span style="font:400 15px/22px Geist;color:var(--mu)">Via Open Finance. Você autoriza no app do banco; o consentimento vale 12 meses.</span></div>
+<div style="margin:0 24px;height:48px;border-radius:24px;background:var(--sf4);display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--mu);font:400 16px Geist"><i style="font:22px/1 'Material Symbols Rounded'">search</i>Buscar instituição</div>
+<div style="display:flex;flex-direction:column">
+<sc-for list="{{ inst }}" as="i" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 24px">
+<span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;font:700 13px Geist;color:var(--mu);flex:none">{{ i.m }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 16px Geist">{{ i.n }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ i.s }}</span></div>
+<sc-if value="{{ i.p }}"><span style="{{ i.p.st }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ i.p.ic }}</i>{{ i.p.l }}</span></sc-if>
+<sc-if value="{{ i.btn }}"><span style="height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 14px Geist;display:flex;align-items:center;box-sizing:border-box">Conectar</span></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="margin:0 24px;display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv);align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded';color:var(--mu)">lock</i><span style="flex:1;font:400 14px/20px Geist;color:var(--mu)">Credenciais nunca passam pelo Cashdeck. O token fica só no seu servidor.</span></div>
+<div style="flex:1"></div>
+<div style="padding:0 24px;display:flex;flex-direction:column;gap:8px">
+<div style="height:48px;border-radius:12px;border:1px solid var(--ol);color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box"><i style="font:20px/1 'Material Symbols Rounded'">add</i>Instituição sem Open Finance</div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Continuar · 2 conectadas</div>
+</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O5 · AddManualInstitutionScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">close</i></span><span style="flex:1;font:600 20px Geist">Instituição manual</span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:8px 24px 16px;gap:16px">
+<div style="height:56px;border:1px solid var(--ol);border-radius:12px;padding:6px 16px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box"><span style="font:500 12px Geist;color:var(--mu)">Nome</span><span style="font:400 16px Geist">Banco Tradicional</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font:600 15px Geist">Tipo de conta</span><div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:32px;padding:0 12px 0 8px;border-radius:8px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:inline-flex;align-items:center;gap:4px"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Conta corrente</span>
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Cartão</span>
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Investimento</span>
+<span style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Dinheiro</span>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:2px solid var(--pr)"><span style="font:500 12px Geist;color:var(--pr)">Saldo em 30/09/2026</span><div style="display:flex;align-items:baseline;gap:8px"><span style="font:500 22px Geist;color:var(--mu)">R$</span><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">3.860,00</span></div></div>
+<span style="font:600 15px Geist;margin-top:8px">Como atualizar</span>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 15px;border-radius:12px;border:2px solid var(--pr)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--pr);font-variation-settings:'FILL' 1">radio_button_checked</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Importar extrato</span><span style="font:400 14px Geist;color:var(--mu)">PDF, OFX ou CSV · revisão linha a linha</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border-radius:12px;border:1px solid var(--olv)"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">radio_button_unchecked</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 16px Geist">Lançar à mão</span><span style="font:400 14px Geist;color:var(--mu)">Bom para dinheiro em espécie</span></div></div>
+</div>
+<div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv);align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded';color:var(--mu)">info</i><span style="flex:1;font:400 14px/20px Geist;color:var(--mu)">Contas manuais aparecem nos totais, mas não pagam contas.</span></div>
+<div style="flex:1"></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Adicionar</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O6 · ChooseReserveScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 4 de 6</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px;gap:16px">
+<span style="font:600 28px/36px Geist;letter-spacing:-0.4px">De onde saem os pagamentos?</span>
+<span style="font:400 15px/22px Geist;color:var(--mu);margin-top:-8px">Escolha a conta reserva. As contas da PF são pagas a partir dela.</span>
+<sc-for list="{{ reserveOpts }}" as="r" hint-placeholder-count="4">
+<div style="{{ r.box }}"><i style="{{ r.radio }}">{{ r.ric }}</i><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 16px Geist">{{ r.n }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ r.s }}</span></div><span style="font:600 15px Geist;font-variant-numeric:tabular-nums">{{ r.a }}</span></div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--ol)"><span style="font:500 12px Geist;color:var(--mu)">Avise se a reserva ficar abaixo de</span><div style="display:flex;align-items:baseline;gap:8px"><span style="font:500 18px Geist;color:var(--mu)">R$</span><span style="font:600 22px/28px Geist;font-variant-numeric:tabular-nums">1.500,00</span></div></div>
+<div style="flex:1"></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Usar Reserva Aurora</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O7 · PaymentRailsScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 5 de 6</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--sf4)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px 0 16px;gap:16px">
+<div style="padding:0 24px;display:flex;flex-direction:column;gap:8px"><span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Trilhos de pagamento</span><span style="font:400 15px/22px Geist;color:var(--mu)">Cada trilho é um degrau da escada. Se um falhar, o próximo assume.</span></div>
+<div style="margin:0 24px;display:flex;height:40px;border-radius:20px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box"><div style="flex:1;background:var(--pfc);color:var(--pf);display:flex;align-items:center;justify-content:center;gap:4px;font:600 14px Geist"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Pessoal</div><div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Empresa</div></div>
+<sc-for list="{{ rails }}" as="r" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 24px">
+<span style="width:40px;height:40px;border-radius:12px;background:var(--sf4);display:grid;place-items:center;flex:none;font:700 14px Geist;color:var(--mu)">{{ r.step }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:500 16px Geist">{{ r.n }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ r.s }}</span></div>
+<span style="{{ r.p.st }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ r.p.ic }}</i>{{ r.p.l }}</span>
+</div>
+</sc-for>
+<div style="margin:0 24px;padding:14px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:10px;align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pr)">water_drop</i><span style="font:600 15px Geist">Abastecimento no dia</span></div>
+<span style="font:400 14px/20px Geist;color:var(--mu)">No dia do vencimento, às 06:00, a Reserva envia um único Pix para a conta pagadora com o total das contas do dia.</span>
+<div style="display:flex;gap:8px;align-items:center;font:400 14px Geist"><code style="font:500 13px 'Geist Mono';color:var(--mu);width:40px;flex:none">06:00</code><i style="font:18px/1 'Material Symbols Rounded';color:var(--trf)">sync_alt</i><span style="flex:1">Reserva → Corrente</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ v.fund }}</span></div>
+<div style="display:flex;gap:8px;align-items:center;font:400 14px Geist"><code style="font:500 13px 'Geist Mono';color:var(--mu);width:40px;flex:none">07:00</code><i style="font:18px/1 'Material Symbols Rounded';color:var(--mu)">bolt</i><span style="flex:1">Energia Lumina · Pix</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ v.fund }}</span></div>
+</div>
+<div style="flex:1"></div>
+<div style="padding:0 24px"><div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Continuar</div></div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">O8 · SafetyCapsScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:500 14px Geist;color:var(--mu)">Passo 6 de 6</span></div>
+<div style="display:flex;gap:4px;padding:0 24px"><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--pr)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:24px 0 16px;gap:8px">
+<div style="padding:0 24px 8px;display:flex;flex-direction:column;gap:8px"><span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Limites de segurança</span><span style="font:400 15px/22px Geist;color:var(--mu)">Acima deles, o app pede sua confirmação com biometria. Sem ela, a conta vai para o passo 3.</span></div>
+<sc-for list="{{ caps }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:8px 24px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">{{ c.ic }}</i><span style="flex:1;font:500 16px Geist">{{ c.n }}</span><span style="height:40px;padding:0 12px;border-radius:12px;background:var(--sf4);font:600 15px Geist;display:flex;align-items:center;font-variant-numeric:tabular-nums">{{ c.v }}</span></div>
+</sc-for>
+<div style="height:1px;background:var(--olv);margin:8px 24px"></div>
+<sc-for list="{{ capSw }}" as="c" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:16px;min-height:64px;padding:8px 24px"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:500 16px Geist">{{ c.n }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ c.s }}</span></div><span style="width:52px;height:32px;border-radius:16px;background:var(--pr);position:relative;flex:none"><span style="position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:var(--onpr)"></span></span></div>
+</sc-for>
+<div style="margin:8px 24px 0;display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv);align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen);font-variation-settings:'FILL' 1">pause_circle</i><span style="flex:1;font:400 14px/20px Geist;color:var(--mu)">A qualquer momento, <b style="color:var(--on);font-weight:600">Mais › Segurança › Pausar tudo</b> interrompe os pagamentos automáticos.</span></div>
+<div style="flex:1"></div>
+<div style="padding:0 24px"><div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Concluir</div></div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+</div></div>
+</sc-for>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">T · A</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Transactions &amp; accounts</h2></div>
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+<div style="{{ t.vars }}">
+<div style="background:var(--board);border-radius:32px;padding:40px;display:flex;gap:40px;align-items:flex-start;font-family:Geist,sans-serif;color:var(--on)">
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">T1 · TransactionsScreen · {{ t.name }}</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;gap:4px;padding:0 4px 0 16px;flex:none"><dc-import name="CdEntity" e="pf" hint-size="132px,40px"></dc-import><div style="flex:1"></div><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">tune</i></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">add</i></span></div>
+<div style="padding:0 16px 12px;font:600 28px/36px Geist;letter-spacing:-0.4px">Transações</div>
+<div style="margin:0 16px;height:48px;border-radius:24px;background:var(--sf4);display:flex;align-items:center;gap:12px;padding:0 16px;color:var(--mu);font:400 16px Geist"><i style="font:22px/1 'Material Symbols Rounded'">search</i>Buscar por nome, valor, nota</div>
+<div style="display:flex;gap:8px;padding:12px 16px;overflow:hidden">
+<span style="height:32px;padding:0 12px 0 8px;border-radius:8px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:inline-flex;align-items:center;gap:4px;flex:none"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Outubro</span>
+<span style="height:32px;padding:0 6px 0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;gap:2px;box-sizing:border-box;flex:none">Conta<i style="font:18px/1 'Material Symbols Rounded'">arrow_drop_down</i></span>
+<span style="height:32px;padding:0 6px 0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;gap:2px;box-sizing:border-box;flex:none">Categoria<i style="font:18px/1 'Material Symbols Rounded'">arrow_drop_down</i></span>
+<span style="height:32px;padding:0 6px 0 12px;border-radius:8px;border:1px solid var(--ol);font:500 14px Geist;display:inline-flex;align-items:center;gap:2px;box-sizing:border-box;flex:none">Entidade<i style="font:18px/1 'Material Symbols Rounded'">arrow_drop_down</i></span>
+</div>
+<div style="margin:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="padding:12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:2px"><span style="font:400 13px Geist;color:var(--mu);display:flex;gap:4px;align-items:center"><i style="font:16px/1 'Material Symbols Rounded';color:var(--inc)">south_west</i>Entradas</span><span style="font:600 16px Geist;font-variant-numeric:tabular-nums;color:var(--inc)">{{ txSum.in }}</span></div>
+<div style="padding:12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:2px"><span style="font:400 13px Geist;color:var(--mu);display:flex;gap:4px;align-items:center"><i style="font:16px/1 'Material Symbols Rounded';color:var(--exp)">north_east</i>Saídas</span><span style="font:600 16px Geist;font-variant-numeric:tabular-nums">{{ txSum.out }}</span></div>
+</div>
+<sc-for list="{{ txGroups }}" as="g" hint-placeholder-count="3">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 16px 4px"><span style="font:600 14px Geist;color:var(--mu)">{{ g.d }}</span><span style="font:500 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ g.tot }}</span></div>
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 16px">
+<span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ r.ic }}</i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px Geist;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span style="font:400 14px Geist;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.s }}</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="{{ r.as }}">{{ r.a }}</span><sc-if value="{{ r.p }}"><span style="{{ r.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ r.p.ic }}</i>{{ r.p.l }}</span></sc-if><sc-if value="{{ r.sub }}"><span style="font:400 13px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ r.sub }}</span></sc-if></div>
+</div>
+</sc-for>
+</sc-for>
+<div style="flex:1;min-height:16px"></div>
+<dc-import name="CdNav" active="tx" hint-size="100%,97px"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">T2 · TransactionDetailScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1"></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">more_vert</i></span></div>
+<div style="padding:0 16px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+<span style="width:56px;height:56px;border-radius:28px;background:var(--sf4);display:grid;place-items:center;color:var(--mu)"><i style="font:28px/1 'Material Symbols Rounded'">shopping_cart</i></span>
+<span style="font:500 16px Geist;margin-top:6px">Mercado Bom Preço</span>
+<span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">{{ v.merc }}</span>
+<span style="font:400 14px Geist;color:var(--mu)">qua, 08/10 · 10:42 · Débito Aurora ••4410</span>
+</div>
+<div style="margin:0 16px;display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:16px;background:var(--prc);color:var(--onprc)">
+<div style="display:flex;gap:10px;align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded'">auto_awesome</i><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:600 15px Geist">Sugestão: Casa › Limpeza</span><span style="font:400 14px/20px Geist">3 dos 5 itens da nota são de limpeza · 87% de confiança</span></div></div>
+<div style="display:flex;gap:8px"><span style="height:40px;padding:0 14px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 14px Geist;display:flex;align-items:center">Aceitar</span><span style="height:40px;padding:0 12px;border-radius:12px;font:600 14px Geist;display:flex;align-items:center">Manter Mercado</span></div>
+<div style="display:flex;gap:12px;align-items:center;min-height:48px;border-top:1px solid color-mix(in srgb,var(--onprc) 20%,transparent);padding-top:8px"><span style="width:20px;height:20px;border-radius:4px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;flex:none"><i style="font:16px/1 'Material Symbols Rounded'">check</i></span><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 15px Geist">Sempre categorizar assim</span><span style="font:400 14px Geist">Cria a regra “Mercado Bom Preço → Casa”</span></div></div>
+</div>
+<div style="display:flex;flex-direction:column;padding:8px 0">
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">category</i><span style="flex:1;font:400 14px Geist;color:var(--mu)">Categoria</span><span style="height:32px;padding:0 10px 0 8px;border-radius:8px;background:var(--sf4);font:500 14px Geist;display:inline-flex;align-items:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">shopping_cart</i>Mercado</span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">badge</i><span style="flex:1;font:400 14px Geist;color:var(--mu)">Entidade</span><span style="font:500 15px Geist">Pessoal</span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">call_split</i><span style="flex:1;font:400 14px Geist;color:var(--mu)">Dividir</span><span style="font:500 14px Geist;color:var(--paid);display:flex;align-items:center;gap:4px"><i style="font:16px/1 'Material Symbols Rounded'">check_circle</i>Fecha em {{ v.zero }}</span></div>
+<div style="margin:0 16px 8px 56px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv)"><i style="font:18px/1 'Material Symbols Rounded';color:var(--mu)">shopping_cart</i><span style="flex:1;font:400 14px Geist">Mercado</span><span style="font:600 14px Geist;font-variant-numeric:tabular-nums">{{ v.s1 }}</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv)"><i style="font:18px/1 'Material Symbols Rounded';color:var(--mu)">home</i><span style="flex:1;font:400 14px Geist">Casa</span><span style="font:600 14px Geist;font-variant-numeric:tabular-nums">{{ v.s2 }}</span></div>
+</div>
+<div style="display:flex;align-items:flex-start;gap:16px;min-height:56px;padding:12px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">notes</i><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:400 14px Geist;color:var(--mu)">Nota</span><span style="font:400 15px/22px Geist">Compras da semana + produtos de limpeza</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;padding:8px 16px"><div style="width:56px;height:56px;border-radius:12px;border:1px solid var(--olv);background:repeating-linear-gradient(135deg,var(--sf3) 0 6px,var(--sf4) 6px 12px);display:grid;place-items:center;flex:none"><code style="font:500 10px 'Geist Mono';color:var(--mu)">PDF</code></div><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 15px Geist">nota-fiscal.pdf</span><span style="font:400 14px Geist;color:var(--mu)">182 KB · anexada hoje</span></div><span style="width:48px;height:48px;display:grid;place-items:center;color:var(--pr)"><i style="font:24px/1 'Material Symbols Rounded'">add_photo_alternate</i></span></div>
+</div>
+<div style="flex:1"></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">A1 · AccountsScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;gap:4px;padding:0 4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><dc-import name="CdEntity" e="pf" hint-size="132px,40px"></dc-import><div style="flex:1"></div><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">sync</i></span></div>
+<div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:2px"><span style="font:600 28px/36px Geist;letter-spacing:-0.4px">Contas</span><span style="font:400 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">Saldo em contas {{ accTotal }}</span></div>
+<sc-for list="{{ accGroups }}" as="g" hint-placeholder-count="4">
+<div style="margin:0 16px 12px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);overflow:hidden">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;font:700 13px Geist;color:var(--mu);flex:none">{{ g.m }}</span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:600 15px Geist">{{ g.n }}</span><span style="{{ g.ss }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ g.ic }}</i>{{ g.sync }}</span></div><sc-if value="{{ g.act }}"><span style="height:40px;padding:0 12px;border-radius:12px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:flex;align-items:center">{{ g.act }}</span></sc-if></div>
+<sc-if value="{{ g.syncing }}"><div style="height:3px;background:var(--sf4);margin:0 14px"><div style="width:45%;height:100%;background:var(--pr)"></div></div></sc-if>
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px 8px 66px;border-top:1px solid var(--olv)"><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:500 15px Geist;display:flex;gap:6px;align-items:center">{{ r.n }}<sc-if value="{{ r.tag }}"><span style="height:20px;padding:0 6px;border-radius:6px;background:var(--prc);color:var(--onprc);font:600 11px Geist;display:inline-flex;align-items:center">{{ r.tag }}</span></sc-if></span><span style="font:400 14px Geist;color:var(--mu)">{{ r.s }}</span></div><span style="font:600 15px Geist;font-variant-numeric:tabular-nums;white-space:nowrap">{{ r.a }}</span></div>
+</sc-for>
+</div>
+</sc-for>
+<div style="flex:1"></div>
+<dc-import name="CdNav" active="home" hint-size="100%,97px"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">A2 · AccountDetailScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:600 20px Geist">Conta corrente</span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">more_vert</i></span></div>
+<div style="padding:0 16px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:16px;background:var(--sf4);display:grid;place-items:center;font:700 12px Geist;color:var(--mu)">BA</span><span style="font:400 14px Geist;color:var(--mu)">Banco Aurora · Ag 0001 · CC ••4410</span></div>
+<span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums;margin-top:8px">{{ acc.bal }}</span>
+<span style="font:400 14px Geist;color:var(--paid);display:flex;gap:6px;align-items:center"><i style="font:16px/1 'Material Symbols Rounded'">cloud_done</i>Open Finance · sincronizado 09:37</span>
+</div>
+<div style="padding:16px">
+<svg width="328" height="96" viewBox="0 0 328 140" preserveAspectRatio="none" style="display:block;overflow:visible"><polygon points="{{ acc.area }}" style="fill:var(--pr);fill-opacity:.12"></polygon><polyline points="{{ acc.line }}" style="fill:none;stroke:var(--pr);stroke-width:2.5;stroke-linejoin:round"></polyline></svg>
+<div style="display:flex;justify-content:space-between;font:500 12px Geist;color:var(--mu);margin-top:6px"><span>08/09</span><span>23/09</span><span>Hoje</span></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;background:var(--prc);color:var(--onprc)"><i style="font:22px/1 'Material Symbols Rounded'">sync</i><span style="font:600 13px Geist">Sincronizar</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;background:var(--prc);color:var(--onprc)"><i style="font:22px/1 'Material Symbols Rounded'">download</i><span style="font:600 13px Geist">Extrato</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;background:var(--prc);color:var(--onprc)"><i style="font:22px/1 'Material Symbols Rounded'">savings</i><span style="font:600 13px Geist">Ser reserva</span></div>
+</div>
+<div style="display:flex;flex-direction:column;padding:12px 0 0">
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">verified_user</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 15px Geist">Consentimento</span><span style="font:400 14px Geist;color:var(--mu)">Válido até 03/04/2027</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">chevron_right</i></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">bolt</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:500 15px Geist">Trilhos</span><span style="font:400 14px Geist;color:var(--mu)">Pix e boleto via API ativos</span></div><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">chevron_right</i></div>
+</div>
+<div style="padding:12px 16px 0;font:600 14px Geist;color:var(--mu)">Últimas</div>
+<sc-for list="{{ acc.rows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 16px"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ r.ic }}</i></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px Geist">{{ r.t }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ r.s }}</span></div><span style="{{ r.as }}">{{ r.a }}</span></div>
+</sc-for>
+<div style="flex:1"></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">A3 · CreditCardScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:600 20px Geist">Cartão Aurora Gold</span></div>
+<div style="margin:0 16px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:400 14px Geist;color:var(--mu)">Limite usado</span><code style="font:500 13px 'Geist Mono';color:var(--mu)">•••• 8812</code></div>
+<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span style="font:600 22px/28px Geist;font-variant-numeric:tabular-nums">{{ v.used }}</span><span style="font:400 14px Geist;color:var(--mu);font-variant-numeric:tabular-nums">{{ v.lim }}</span></div>
+<div style="height:8px;border-radius:4px;background:var(--sf4);display:flex;overflow:hidden"><div style="width:15%;background:var(--pr)"></div><div style="width:20%;background:color-mix(in srgb,var(--pr) 45%,transparent)"></div></div>
+<div style="display:flex;gap:16px;font:400 13px Geist;color:var(--mu)"><span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:3px;background:var(--pr)"></span>Fatura</span><span style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--pr) 45%,transparent)"></span>Parcelas futuras</span><span>Livre {{ v.free }}</span></div>
+</div>
+<div style="display:flex;height:40px;border-radius:20px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box;margin:16px 16px 0">
+<div style="flex:1;background:var(--prc);color:var(--onprc);display:flex;align-items:center;justify-content:center;gap:4px;font:600 14px Geist"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Aberta</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Fechada</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Futuras</div>
+</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="display:flex;flex-direction:column"><span style="font:400 14px Geist;color:var(--mu)">Fatura de outubro · parcial</span><span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">{{ v.fatura }}</span></div></div>
+<div style="display:flex;gap:16px;font:400 14px Geist;color:var(--mu)"><span>Fecha <b style="color:var(--on);font-weight:600">20/10</b></span><span>Vence <b style="color:var(--on);font-weight:600">28/10</b></span></div>
+<span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--schc);color:var(--sch);font:600 12px Geist;align-self:flex-start"><i style="font:16px/1 'Material Symbols Rounded'">event</i>Agendada da Reserva · 28/10</span>
+</div>
+<div style="padding:4px 16px;font:600 14px Geist;color:var(--mu)">Parcelamentos</div>
+<sc-for list="{{ installments }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 16px"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ r.ic }}</i></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><span style="font:500 15px Geist">{{ r.t }}</span><div style="display:flex;gap:3px"><sc-for list="{{ r.seg }}" as="s" hint-placeholder-count="6"><span style="{{ s }}"></span></sc-for></div></div><div style="display:flex;flex-direction:column;align-items:flex-end"><span style="font:600 15px Geist;font-variant-numeric:tabular-nums">{{ r.a }}</span><span style="font:400 13px Geist;color:var(--mu)">{{ r.n }}</span></div></div>
+</sc-for>
+<div style="padding:12px 16px 4px;font:600 14px Geist;color:var(--mu)">Lançamentos</div>
+<sc-for list="{{ ccRows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 16px"><span style="width:40px;height:40px;border-radius:20px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ r.ic }}</i></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px Geist">{{ r.t }}</span><span style="font:400 14px Geist;color:var(--mu)">{{ r.s }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end"><span style="{{ r.as }}">{{ r.a }}</span><sc-if value="{{ r.sub }}"><span style="font:400 13px Geist;color:var(--mu)">{{ r.sub }}</span></sc-if></div></div>
+</sc-for>
+<div style="flex:1"></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">A4 · StatementImportReviewScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">close</i></span><span style="flex:1;font:600 20px Geist">Importar extrato</span></div>
+<div style="display:flex;align-items:center;gap:8px;padding:0 16px 16px;font:500 13px Geist;color:var(--mu)"><span style="display:flex;gap:4px;align-items:center;color:var(--paid)"><i style="font:16px/1 'Material Symbols Rounded'">check_circle</i>Enviar</span><span style="flex:1;height:1px;background:var(--olv)"></span><span style="display:flex;gap:4px;align-items:center;color:var(--on);font-weight:600"><span style="width:18px;height:18px;border-radius:9px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;font-size:11px">2</span>Revisar</span><span style="flex:1;height:1px;background:var(--olv)"></span><span style="display:flex;gap:4px;align-items:center"><span style="width:18px;height:18px;border-radius:9px;border:1.5px solid var(--ol);display:grid;place-items:center;font-size:11px;box-sizing:border-box">3</span>Confirmar</span></div>
+<div style="margin:0 16px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv)"><div style="width:44px;height:56px;border-radius:6px;border:1px solid var(--olv);background:repeating-linear-gradient(135deg,var(--sf3) 0 6px,var(--sf4) 6px 12px);flex:none"></div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:500 15px Geist">extrato-setembro.pdf</span><span style="font:400 14px Geist;color:var(--mu)">Banco Tradicional · 3 págs · 21 linhas</span></div></div>
+<div style="display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap">
+<span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--paidc);color:var(--paid);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">check_circle</i>18 prontas</span>
+<span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--penc);color:var(--pen);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">visibility</i>2 para conferir</span>
+<span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--trfc);color:var(--trf);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">content_copy</i>1 duplicada</span>
+</div>
+<sc-for list="{{ importLines }}" as="r" hint-placeholder-count="6">
+<div style="{{ r.row }}">
+<span style="{{ r.cb }}"><i style="font:16px/1 'Material Symbols Rounded'">{{ r.cbi }}</i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px Geist;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><code style="font:500 13px 'Geist Mono';color:var(--mu)">{{ r.d }}</code><span style="height:24px;padding:0 8px 0 6px;border-radius:6px;background:var(--sf4);font:500 12px Geist;display:inline-flex;align-items:center;gap:4px"><i style="font:14px/1 'Material Symbols Rounded'">{{ r.ci }}</i>{{ r.c }}</span><sc-if value="{{ r.p }}"><span style="{{ r.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ r.p.ic }}</i>{{ r.p.l }}</span></sc-if></div></div>
+<span style="{{ r.as }}">{{ r.a }}</span>
+</div>
+</sc-for>
+<div style="flex:1"></div>
+<div style="padding:12px 16px;border-top:1px solid var(--olv);background:var(--sf2);display:flex;flex-direction:column;gap:10px">
+<span style="font:400 14px Geist;color:var(--mu);display:flex;gap:6px;align-items:center"><i style="font:16px/1 'Material Symbols Rounded';color:var(--paid)">check_circle</i>Saldo final confere: {{ v.manual }}</span>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Importar 18 lançamentos</div>
+</div>
+<div style="height:24px;display:grid;place-items:center;flex:none;background:var(--sf2)"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+</div></div>
+</sc-for>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;gap:16px"><span style="font:600 15px 'Geist Mono';color:#5A6072">B</span><h2 style="margin:0;font:600 40px Geist;letter-spacing:-0.025em">Contas a pagar</h2><span style="font:400 18px Geist;color:#4A5063">Toggle the kill switch in Tweaks to see the paused banner on B1/B2.</span></div>
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="2">
+<div style="{{ t.vars }}">
+<div style="background:var(--board);border-radius:32px;padding:40px;display:flex;gap:40px;align-items:flex-start;font-family:Geist,sans-serif;color:var(--on)">
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">B1 · BillsInboxScreen · {{ t.name }}</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12);position:relative">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;gap:4px;padding:0 4px 0 16px;flex:none"><dc-import name="CdEntity" e="pf" hint-size="132px,40px"></dc-import><div style="flex:1"></div><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">calendar_month</i></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">search</i></span></div>
+<div style="padding:0 16px 12px;font:600 28px/36px Geist;letter-spacing:-0.4px">Contas a pagar</div>
+<sc-if value="{{ paused }}"><div style="margin:0 16px 12px;display:flex;gap:12px;padding:12px 8px 12px 14px;border-radius:12px;background:var(--penc);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen);font-variation-settings:'FILL' 1">pause_circle</i><div style="flex:1;display:flex;flex-direction:column"><span style="font:600 15px Geist">Automáticos pausados</span><span style="font:400 14px Geist;color:var(--mu)">Contas vão direto ao passo 3</span></div><span style="font:600 14px Geist;color:var(--pr);padding:0 8px;min-height:48px;display:flex;align-items:center">Retomar</span></div></sc-if>
+<div style="margin:0 16px;padding:14px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:400 14px Geist;color:var(--mu)">Outubro · 9 contas</span><span style="font:600 22px Geist;font-variant-numeric:tabular-nums">{{ v.billsMonth }}</span></div>
+<div style="height:8px;border-radius:4px;display:flex;gap:2px;overflow:hidden"><span style="flex:3;background:var(--paid)"></span><span style="flex:3;background:var(--sch)"></span><span style="flex:1;background:var(--pr)"></span><span style="flex:1;background:var(--ovd)"></span><span style="flex:1;background:var(--sf4)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 12px;font:400 13px Geist;color:var(--mu)"><span style="display:flex;gap:4px;align-items:center"><i style="font:14px/1 'Material Symbols Rounded';color:var(--paid)">check_circle</i>3 pagas</span><span style="display:flex;gap:4px;align-items:center"><i style="font:14px/1 'Material Symbols Rounded';color:var(--sch)">event</i>3 agendadas</span><span style="display:flex;gap:4px;align-items:center"><i style="font:14px/1 'Material Symbols Rounded';color:var(--pr)">verified_user</i>1 assistida</span><span style="display:flex;gap:4px;align-items:center"><i style="font:14px/1 'Material Symbols Rounded';color:var(--ovd)">event_busy</i>1 vencida</span></div>
+</div>
+<div style="display:flex;height:40px;border-radius:20px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box;margin:16px 16px 4px">
+<div style="flex:1;background:var(--prc);color:var(--onprc);display:flex;align-items:center;justify-content:center;gap:4px;font:600 14px Geist">Novas · 3</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Próximas</div>
+<div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Pagas</div>
+</div>
+<sc-for list="{{ inbox }}" as="b" hint-placeholder-count="5">
+<div style="display:flex;gap:12px;padding:12px 16px;align-items:flex-start;border-bottom:1px solid var(--olv)">
+<span style="width:40px;height:40px;border-radius:12px;background:var(--sf4);display:grid;place-items:center;flex:none;color:var(--mu)"><i style="font:20px/1 'Material Symbols Rounded'">{{ b.ic }}</i></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 15px Geist;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.t }}</span><span style="font:600 15px Geist;font-variant-numeric:tabular-nums;white-space:nowrap">{{ b.a }}</span></div>
+<span style="font:400 14px Geist;color:var(--mu)">{{ b.d }}</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><span style="height:24px;padding:0 8px 0 6px;border-radius:6px;border:1px solid var(--olv);font:500 12px Geist;color:var(--mu);display:inline-flex;align-items:center;gap:4px;box-sizing:border-box"><i style="font:14px/1 'Material Symbols Rounded'">{{ b.si }}</i>{{ b.src }}</span><span style="{{ b.p.st }}"><i style="font:14px/1 'Material Symbols Rounded'">{{ b.p.ic }}</i>{{ b.p.l }}</span></div>
+</div>
+</div>
+</sc-for>
+<div style="flex:1;min-height:80px"></div>
+<div style="position:absolute;right:16px;bottom:113px;height:56px;padding:0 20px 0 16px;border-radius:16px;background:var(--prc);color:var(--onprc);font:600 15px Geist;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.18)"><i style="font:24px/1 'Material Symbols Rounded'">document_scanner</i>Capturar</div>
+<dc-import name="CdNav" active="bills" hint-size="100%,97px"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">B2 · BillDetailScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1"></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">edit</i></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">more_vert</i></span></div>
+<div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;gap:6px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--prc);color:var(--pr);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">verified_user</i>Passo 3 · código pronto</span><span style="height:24px;padding:0 8px 0 6px;border-radius:6px;border:1px solid var(--olv);font:500 12px Geist;color:var(--mu);display:inline-flex;align-items:center;gap:4px;box-sizing:border-box"><i style="font:14px/1 'Material Symbols Rounded'">mail</i>E-mail</span></div>
+<span style="font:600 22px/28px Geist;margin-top:6px">Aluguel</span>
+<span style="font:600 32px/40px Geist;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">{{ v.aluguel }}</span>
+<span style="font:400 14px/20px Geist;color:var(--mu)">Imobiliária Casa Viva · vence qua, 15/10</span>
+</div>
+<sc-if value="{{ paused }}"><div style="margin:0 16px 12px;display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--penc);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen);font-variation-settings:'FILL' 1">pause_circle</i><span style="flex:1;font:400 14px/20px Geist">Automáticos pausados, o passo 1 foi pulado.</span></div></sc-if>
+<div style="margin:0 16px;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:16px;background:var(--sf2);border:1px solid var(--olv)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 17px Geist">Escada de pagamento</span><span style="font:500 14px Geist;color:var(--mu)">3 de 3</span></div>
+<div style="display:flex;gap:4px"><div style="flex:1;height:6px;border-radius:3px;background:var(--fail)"></div><div style="flex:1;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--ol) 0 4px,transparent 4px 8px)"></div><div style="flex:1;height:6px;border-radius:3px;background:var(--pr)"></div></div>
+<div style="display:flex;gap:12px">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;background:var(--failc);color:var(--fail);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">bolt</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;padding-bottom:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px"><span style="font:600 15px Geist">Automático</span><span style="display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 6px;border-radius:12px;background:var(--failc);color:var(--fail);font:600 12px Geist"><i style="font:16px/1 'Material Symbols Rounded'">error</i>Falhou</span></div>
+<div style="display:flex;gap:8px;font:400 14px/20px Geist;color:var(--mu)"><code style="font:500 13px/20px 'Geist Mono';color:var(--on)">07:00</code><span>Acima do limite por pagamento, confirmação pedida no app</span></div>
+<div style="display:flex;gap:8px;font:400 14px/20px Geist;color:var(--mu)"><code style="font:500 13px/20px 'Geist Mono';color:var(--on)">12:00</code><span>Sem confirmação no prazo</span></div>
+<div style="display:flex;gap:6px;align-items:center;font:400 14px Geist"><i style="font:16px/1 'Material Symbols Rounded'">south</i>Pulou para o passo 3</div>
+</div></div>
+<div style="display:flex;gap:12px;opacity:.75">
+<div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:32px;height:32px;border-radius:16px;border:2px dashed var(--ol);color:var(--mu);display:grid;place-items:center;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">block</i></span><span style="width:2px;flex:1;background:var(--olv);margin:4px 0"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:2px;padding-bottom:10px"><span style="font:600 15px Geist;color:var(--mu);min-height:32px;display:flex;align-items:center">Aprovação no banco</span><span style="font:400 14px Geist;color:var(--mu)">Não disponível para esta conta</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:16px;background:var(--prc);color:var(--onprc)">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:16px;background:var(--pr);color:var(--onpr);display:grid;place-items:center;flex:none"><i style="font:18px/1 'Material Symbols Rounded';font-variation-settings:'FILL' 1">verified_user</i></span><div style="display:flex;flex-direction:column"><span style="font:600 15px Geist">Assistido, pronto para você</span><span style="font:400 14px Geist">Pague pelo app do seu banco até 15/10.</span></div></div>
+<div style="display:flex;gap:8px"><span style="flex:1;height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:inline-flex;align-items:center;justify-content:center;gap:6px"><i style="font:18px/1 'Material Symbols Rounded'">content_copy</i>Copiar código</span><span style="height:48px;padding:0 12px;border-radius:12px;border:1px solid var(--onprc);font:600 15px Geist;display:inline-flex;align-items:center;box-sizing:border-box">Já paguei</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;padding:8px 0">
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">savings</i><span style="flex:1;font:400 14px Geist;color:var(--mu)">Pagar de</span><span style="font:500 15px Geist">Reserva · Aurora</span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">home</i><span style="flex:1;font:400 14px Geist;color:var(--mu)">Categoria</span><span style="font:500 15px Geist">Casa › Aluguel</span></div>
+<div style="display:flex;align-items:center;gap:16px;min-height:56px;padding:4px 16px"><i style="font:24px/1 'Material Symbols Rounded';color:var(--mu)">barcode</i><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:400 14px Geist;color:var(--mu)">Código do boleto</span><code style="font:500 14px 'Geist Mono';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">34191.79001 01043.510047…</code></div><span style="width:48px;height:48px;display:grid;place-items:center;color:var(--pr)"><i style="font:22px/1 'Material Symbols Rounded'">content_copy</i></span></div>
+</div>
+<div style="flex:1"></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">B3 · BarcodeScannerScreen (always dark)</code>
+<div style="width:360px;height:800px;border-radius:28px;overflow:hidden;background:#000;color:#fff;border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12);position:relative">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#15171C 0 10px,#1C1F26 10px 20px);display:grid;place-items:center"><code style="font:500 12px 'Geist Mono';color:#8A90A0;margin-top:-200px">camera preview</code></div>
+<div style="position:relative;height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 16px 0 20px;font:600 12px Geist"><span>09:41</span><span style="display:flex;gap:2px"><i style="font:15px/1 'Material Symbols Rounded';font-variation-settings:'FILL' 1">wifi</i><i style="font:15px/1 'Material Symbols Rounded';font-variation-settings:'FILL' 1">battery_full</i></span></div>
+<div style="position:relative;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 8px"><span style="width:48px;height:48px;border-radius:24px;background:rgba(0,0,0,.5);display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">close</i></span><span style="width:48px;height:48px;border-radius:24px;background:rgba(0,0,0,.5);display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">flashlight_on</i></span></div>
+<div style="position:relative;margin:56px 24px 0;height:120px;border-radius:16px;border:2px solid #fff;box-shadow:0 0 0 2000px rgba(0,0,0,.55)"><div style="position:absolute;left:12px;right:12px;top:58px;height:2px;background:oklch(0.76 0.11 262);box-shadow:0 0 12px oklch(0.76 0.11 262)"></div></div>
+<span style="position:relative;text-align:center;font:500 15px Geist;margin-top:16px">Alinhe o código de barras na faixa</span>
+<div style="position:relative;display:flex;justify-content:center;margin-top:16px"><div style="display:flex;height:40px;border-radius:20px;background:rgba(0,0,0,.6);padding:4px;box-sizing:border-box;gap:4px"><span style="padding:0 14px;border-radius:16px;background:#fff;color:#111;font:600 14px Geist;display:flex;align-items:center">Boleto</span><span style="padding:0 14px;border-radius:16px;font:500 14px Geist;display:flex;align-items:center">QR Pix</span></div></div>
+<div style="flex:1"></div>
+<div style="position:relative;display:flex;justify-content:center;gap:12px;padding:0 16px 16px"><span style="height:48px;padding:0 16px;border-radius:24px;background:rgba(0,0,0,.6);font:600 14px Geist;display:flex;align-items:center;gap:6px"><i style="font:20px/1 'Material Symbols Rounded'">keyboard</i>Digitar código</span><span style="height:48px;padding:0 16px;border-radius:24px;background:rgba(0,0,0,.6);font:600 14px Geist;display:flex;align-items:center;gap:6px"><i style="font:20px/1 'Material Symbols Rounded'">picture_as_pdf</i>Abrir PDF</span></div>
+<div style="position:relative;border-radius:28px 28px 0 0;background:var(--sf3);color:var(--on);padding:8px 24px 0;display:flex;flex-direction:column;gap:12px">
+<div style="height:16px;display:grid;place-items:center"><span style="width:32px;height:4px;border-radius:2px;background:var(--ol)"></span></div>
+<div style="display:flex;align-items:center;gap:8px;font:500 14px Geist;color:var(--paid)"><i style="font:20px/1 'Material Symbols Rounded'">check_circle</i>Código lido</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="display:flex;flex-direction:column"><span style="font:600 17px Geist">Condomínio Jardim</span><span style="font:400 14px Geist;color:var(--mu)">Vence 20/10</span></div><span style="font:600 22px Geist;font-variant-numeric:tabular-nums">{{ v.condo }}</span></div>
+<div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Continuar</div>
+<div style="height:24px;display:grid;place-items:center"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">B4 · SharedBillReviewScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">close</i></span><span style="flex:1;font:600 20px Geist">Nova conta</span></div>
+<div style="margin:0 16px;display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--sf2);border:1px solid var(--olv)"><div style="width:56px;height:72px;border-radius:6px;border:1px solid var(--olv);background:repeating-linear-gradient(135deg,var(--sf3) 0 6px,var(--sf4) 6px 12px);display:grid;place-items:center;flex:none"><code style="font:500 9px 'Geist Mono';color:var(--mu)">PDF</code></div><div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px Geist">mensalidade-nov.pdf</span><span style="height:24px;padding:0 8px 0 6px;border-radius:6px;border:1px solid var(--olv);font:500 12px Geist;color:var(--mu);display:inline-flex;align-items:center;gap:4px;box-sizing:border-box;align-self:flex-start"><i style="font:14px/1 'Material Symbols Rounded'">ios_share</i>Compartilhado</span></div></div>
+<div style="padding:16px 16px 4px;font:600 14px Geist;color:var(--mu)">Lido do documento</div>
+<sc-for list="{{ extracted }}" as="f" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:4px 16px"><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:400 14px Geist;color:var(--mu)">{{ f.l }}</span><span style="{{ f.vs }}">{{ f.v }}</span></div><span style="{{ f.ics }}"><i style="font:20px/1 'Material Symbols Rounded'">{{ f.ic }}</i></span></div>
+</sc-for>
+<div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;height:40px;border-radius:20px;border:1px solid var(--ol);overflow:hidden;box-sizing:border-box"><div style="flex:1;background:var(--pfc);color:var(--pf);display:flex;align-items:center;justify-content:center;gap:4px;font:600 14px Geist"><i style="font:18px/1 'Material Symbols Rounded'">check</i>Pessoal</div><div style="flex:1;border-left:1px solid var(--ol);display:flex;align-items:center;justify-content:center;font:500 14px Geist">Empresa</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="height:32px;padding:0 12px 0 8px;border-radius:8px;border:1px dashed var(--pr);color:var(--pr);font:600 14px Geist;display:inline-flex;align-items:center;gap:6px;box-sizing:border-box"><i style="font:18px/1 'Material Symbols Rounded'">auto_awesome</i>Educação</span><span style="height:32px;padding:0 12px 0 8px;border-radius:8px;background:var(--prc);color:var(--onprc);font:600 14px Geist;display:inline-flex;align-items:center;gap:4px"><i style="font:18px/1 'Material Symbols Rounded'">repeat</i>Mensal</span></div>
+</div>
+<div style="margin:0 16px;display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--schc);align-items:center"><i style="font:22px/1 'Material Symbols Rounded';color:var(--sch)">event</i><span style="flex:1;font:400 14px/20px Geist">Passo 1 · boleto via API em <b style="font-weight:600">10/11</b>, da Reserva</span></div>
+<div style="flex:1"></div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:4px"><div style="height:48px;border-radius:12px;background:var(--pr);color:var(--onpr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Salvar e agendar</div><div style="height:48px;color:var(--pr);font:600 15px Geist;display:flex;align-items:center;justify-content:center">Descartar</div></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:12px"><code style="font:500 13px 'Geist Mono';color:var(--mu)">B5 · BillsCalendarScreen</code>
+<div style="width:360px;min-height:800px;border-radius:28px;overflow:hidden;background:var(--bg);color:var(--on);border:1px solid var(--olv);display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,.12)">
+<dc-import name="CdStatus" hint-size="100%,24px"></dc-import>
+<div style="height:64px;display:flex;align-items:center;padding:0 4px;gap:4px;flex:none"><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">arrow_back</i></span><span style="flex:1;font:600 20px Geist">Próximos 30 dias</span></div>
+<div style="display:flex;align-items:center;padding:0 4px 0 16px"><span style="flex:1;font:600 17px Geist">Outubro 2026</span><span style="width:48px;height:48px;display:grid;place-items:center;color:var(--mu)"><i style="font:24px/1 'Material Symbols Rounded'">chevron_left</i></span><span style="width:48px;height:48px;display:grid;place-items:center"><i style="font:24px/1 'Material Symbols Rounded'">chevron_right</i></span></div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px;font:600 12px Geist;color:var(--mu);text-align:center"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);padding:4px 8px 8px;row-gap:2px">
+<sc-for list="{{ cal }}" as="c" hint-placeholder-count="35">
+<div style="height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="{{ c.st }}">{{ c.d }}</span><div style="display:flex;gap:2px;height:5px"><sc-for list="{{ c.dots }}" as="k" hint-placeholder-count="0"><span style="{{ k }}"></span></sc-for></div></div>
+</sc-for>
+</div>
+<div style="padding:8px 16px 4px;display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 17px Geist">Uso da reserva</span><span style="font:400 14px Geist;color:var(--mu)">início {{ v.resStart }}</span></div>
+<sc-for list="{{ resUse }}" as="r" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 16px">
+<code style="font:500 13px 'Geist Mono';color:var(--mu);width:40px;flex:none">{{ r.d }}</code>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font:500 15px Geist;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span style="{{ r.as }}">{{ r.a }}</span></div><div style="height:6px;border-radius:3px;background:var(--sf4);position:relative"><div style="{{ r.bar }}"></div><span style="position:absolute;left:24%;top:-2px;width:2px;height:10px;background:var(--fail)"></span></div></div>
+<span style="font:500 13px Geist;color:var(--mu);font-variant-numeric:tabular-nums;width:52px;text-align:right;flex:none">{{ r.after }}</span>
+</div>
+</sc-for>
+<div style="margin:8px 16px 16px;display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:var(--penc);align-items:flex-start"><i style="font:22px/1 'Material Symbols Rounded';color:var(--pen)">warning</i><span style="flex:1;font:400 14px/20px Geist">Em 28/10 a reserva fica abaixo de {{ v.c1500 }}. <b style="font-weight:600">Transferir {{ v.t1000 }} antes?</b></span></div>
+<div style="flex:1"></div>
+<div style="height:24px;display:grid;place-items:center;flex:none"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div></div>
+
+</div></div>
+</sc-for>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;killSwitch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Global state&quot;},&quot;hideAmounts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Global state&quot;}}">
+const P={bg:[[.985,.004,262],[.17,.012,262]],sf1:[[1,0,0],[.14,.01,262]],sf2:[[.97,.005,262],[.205,.013,262]],sf3:[[.955,.006,262],[.235,.014,262]],sf4:[[.93,.008,262],[.275,.015,262]],on:[[.22,.015,262],[.94,.006,262]],mu:[[.46,.016,262],[.75,.012,262]],ol:[[.64,.012,262],[.56,.012,262]],olv:[[.9,.008,262],[.33,.014,262]],pr:[[.52,.16,262],[.76,.11,262]],onpr:[[.99,.003,262],[.22,.07,262]],prc:[[.93,.04,262],[.34,.09,262]],onprc:[[.32,.12,262],[.91,.04,262]],inv:[[.28,.015,262],[.92,.006,262]],oninv:[[.96,.004,262],[.22,.015,262]]};
+const MONEY=[['inc','Receita','south_west',155,.13],['exp','Despesa','north_east',355,.14],['trf','Entre contas','sync_alt',262,.025],['pen','Pendente','schedule',75,.12],['sch','Agendado','event',225,.11],['apr','Aprovar no banco','approval',310,.14],['paid','Pago','check_circle',150,.12],['fail','Falhou','error',27,.17],['ovd','Vencido','event_busy',50,.15],['pf','Pessoal','person',262,.16],['pj','Empresa','work',185,.09],['all','Consolidado','stacks',262,.025]];
+function hx(l,c,h){const a=c*Math.cos(h*Math.PI/180),b=c*Math.sin(h*Math.PI/180);const L=(l+.3963377774*a+.2158037573*b)**3,M=(l-.1055613458*a-.0638541728*b)**3,S=(l-.0894841775*a-1.291485548*b)**3;const f=x=>{x=Math.max(0,Math.min(1,x));x=x<=.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-.055;return Math.round(x*255).toString(16).padStart(2,'0')};return '#'+(f(4.0767416621*L-3.3077115913*M+.2309699292*S)+f(-1.2684380046*L+2.6097574011*M-.3413193965*S)+f(-.0041960863*L-.7034186147*M+1.707614701*S)).toUpperCase()}
+function vars(i){const v={'--board':i?'#0B0D12':'#DDE0E6'};for(const k in P)v['--'+k]=hx(...P[k][i]);MONEY.forEach(([k,,,h,c])=>{v['--'+k]=hx(...(i?[.8,c*.8,h]:[.5,c,h]));v['--'+k+'c']=hx(...(i?[.3,Math.min(c,.05),h]:[.945,Math.min(c,.045),h]))});return v}
+const THEMES=[{name:'Light',vars:vars(0)},{name:'Dark',vars:vars(1)}];
+const ML=Object.fromEntries(MONEY.map(m=>[m[0],[m[1],m[2]]]));
+const pill=(k,l,ic)=>({st:{display:'inline-flex',alignItems:'center',gap:4,height:24,padding:'0 8px 0 6px',borderRadius:12,background:`var(--${k}c)`,color:`var(--${k})`,font:'600 12px Geist',whiteSpace:'nowrap',flex:'none',alignSelf:'flex-start',boxSizing:'border-box'},l:l||ML[k][0],ic:ic||ML[k][1]});
+const num=n=>Math.abs(n).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const aSt=k=>({font:'600 15px Geist',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap',color:k?`var(--${k})`:'var(--on)'});
+const radioBox=(on,dis)=>({display:'flex',alignItems:'center',gap:12,minHeight:64,padding:on?'8px 13px':'8px 14px',borderRadius:12,border:on?'2px solid var(--pr)':'1px solid var(--olv)',opacity:dis?.55:1,background:on?'var(--prc)':'transparent'});
+const seg=(n,d)=>Array.from({length:n},(_,i)=>({flex:1,height:4,borderRadius:2,background:i<d?'var(--pr)':'var(--sf4)'}));
+function line(seed,n,base,amp){const s=[];let v=base;for(let i=0;i<n;i++){v+=Math.sin(i*1.7+seed)*amp+(i===5?3800:0)-(i%7===3?900:0);s.push(v)}const mx=Math.max(...s),mn=Math.min(...s);const pts=s.map((x,i)=>(i*328/(n-1)).toFixed(1)+','+(8+(mx-x)/(mx-mn)*124).toFixed(1)).join(' ');return {line:pts,area:'0,140 '+pts+' 328,140'}}
+const dots=ks=>ks.map(k=>({width:5,height:5,borderRadius:3,background:`var(--${k})`}));
+function calendar(){const ev={6:['ovd'],10:['paid'],12:['sch'],15:['pr'],20:['sch'],28:['sch'],2:['paid'],5:['paid']};const out=[];for(let i=0;i<35;i++){const d=i-3;const inM=d>=1&&d<=31;const today=d===8,sel=d===15,range=d>=8;out.push({d:inM?d:(d<1?27+i:d-31),dots:inM&&ev[d]?dots(ev[d]):[],st:{width:32,height:32,borderRadius:16,display:'grid',placeItems:'center',font:(today||sel?'600 ':'500 ')+'14px Geist',fontVariantNumeric:'tabular-nums',color:!inM?'var(--ol)':sel?'var(--onpr)':range?'var(--on)':'var(--mu)',background:sel?'var(--pr)':'transparent',border:today?'2px solid var(--pr)':'none',boxSizing:'border-box'}})}return out}
+class Component extends DCLogic {
+  renderVals() {
+    const hide = this.props.hideAmounts ?? false, paused = this.props.killSwitch ?? false;
+    const m = (n, plus) => hide ? 'R$ ••••' : (n < 0 ? '−' : plus ? '+' : '') + 'R$ ' + num(n);
+    const tx = (ic,t,s,n,k,extra) => ({ic,t,s,a:k==='trf'?(hide?'R$ ••••':'R$ '+num(n)):m(n,n>0),as:aSt(n>0&&k!=='trf'?'inc':k==='trf'?'trf':null),...extra});
+    let res = 6200;
+    const resUse = [['10/10','Internet Fibra Sul',-119.9],['12/10','Energia Lumina',-287.4],['15/10','Aluguel',-2400],['20/10','Condomínio Jardim',-780],['28/10','Fatura Aurora Gold',-1830.44],['05/11','Do salário para a reserva',3000]].map(([d,t,n]) => { res += n; const low = res < 1500; return { d, t, a: n>0 ? m(n,true) : m(n), as: aSt(n>0?'trf':null), after: hide ? '••••' : (res/1000).toFixed(1).replace('.',',') + ' mil', bar: { position:'absolute', left:0, top:0, height:'100%', borderRadius:3, width: (res/6200*100).toFixed(0)+'%', background: low ? 'var(--pen)' : 'var(--pr)' } }; });
+    return {
+      themes: THEMES, paused,
+      v: { fund:m(287.4), billsMonth:m(4912.3), aluguel:m(2400), resStart:m(6200), c1500:m(1500), t1000:m(1000), merc:m(-214.37), s1:m(180), s2:m(34.37), zero:m(0), used:m(4230), lim:'de '+m(12000), free:m(7770), fatura:m(1830.44), condo:m(780), manual:m(3860) },
+      inst: [{m:'BA',n:'Banco Aurora',s:'3 contas · cartão',p:pill('paid','Conectado','check_circle')},{m:'NP',n:'Nuvem Pagamentos',s:'Aguardando o banco…',p:pill('sch','Conectando','sync')},{m:'BT',n:'Banco Atlântico',s:'Open Finance',btn:true},{m:'CS',n:'Cooperativa Serra',s:'Open Finance',btn:true},{m:'CP',n:'Corretora Prisma',s:'Investimentos',btn:true}],
+      reserveOpts: [{n:'Reserva Aurora',s:'CDB liquidez diária · 101% CDI',a:m(6200),on:1},{n:'Corrente Aurora',s:'Sem rendimento',a:m(5412.18)},{n:'Nuvem Pagamentos',s:'Rende 100% CDI',a:m(2130.12)},{n:'Banco Tradicional',s:'Manual, não paga contas',a:m(3860),dis:1}].map(r=>({...r,box:radioBox(r.on,r.dis),ric:r.on?'radio_button_checked':'radio_button_unchecked',radio:{font:"24px/1 'Material Symbols Rounded'",color:r.on?'var(--pr)':'var(--mu)',fontVariationSettings:r.on?"'FILL' 1":"'FILL' 0"}})),
+      rails: [{step:'1',n:'Pix via API',s:'Corrente Aurora · pagadora',p:pill('paid','Ativo','check_circle')},{step:'1',n:'Boleto via API',s:'Corrente Aurora · pagadora',p:pill('paid','Ativo','check_circle')},{step:'2',n:'Aprovação no banco',s:'Só para Empresa',p:pill('trf','Indisponível','block')},{step:'3',n:'Assistido',s:'Código ou Pix copia e cola',p:pill('pf','Sempre','verified_user')}],
+      caps: [{ic:'payments',n:'Por pagamento',v:hide?'R$ ••••':'R$ 1.500'},{ic:'today',n:'Por dia',v:hide?'R$ ••••':'R$ 3.000'},{ic:'calendar_month',n:'Por mês',v:hide?'R$ ••••':'R$ 12.000'}],
+      capSw: [{n:'Novo beneficiário',s:'Primeiro pagamento pede confirmação no app'},{n:'Valor fora do normal',s:'30% acima do habitual pede confirmação no app'},{n:'Pagar no vencimento',s:'Nunca antes do dia'}],
+      txSum: { in: m(7800, true), out: m(-4318.42) },
+      txGroups: [
+        {d:'Hoje · qua, 08/10',tot:m(-273.27),rows:[tx('shopping_cart','Mercado Bom Preço','Mercado · Aurora',-214.37),tx('local_pharmacy','Farmácia Vida','Saúde · Cartão Aurora',-58.9,null,{p:pill('pen')}),tx('sync_alt','Corrente → Reserva','Entre contas · fora do total',1000,'trf')]},
+        {d:'Ontem · ter, 07/10',tot:m(7690.2,true),rows:[tx('payments','Estúdio Vento Sul','Pró-labore · Aurora',7800),tx('cloud','Tessera Cloud','Assinaturas · Cartão',-109.8,null,{a:hide?'US$ ••••':'−US$ 20,00',sub:hide?'':'≈ −R$ 109,80'})]},
+        {d:'seg, 06/10',tot:m(-32.5),rows:[tx('local_taxi','Rota Táxi','Transporte · Nuvem',-32.5)]}
+      ],
+      accTotal: m(18742.3),
+      accGroups: [
+        {m:'BA',n:'Banco Aurora',sync:'Sincronizado há 4 min',ic:'cloud_done',k:'paid',rows:[{n:'Conta corrente',s:'CC ••4410',a:m(5412.18)},{n:'Reserva',tag:'RESERVA',s:'CDB · 101% CDI',a:m(6200)},{n:'Cartão Aurora Gold',s:'Fatura aberta · vence 28/10',a:m(-1830.44)}]},
+        {m:'NP',n:'Nuvem Pagamentos',sync:'Sincronizando…',ic:'sync',k:'sch',syncing:true,rows:[{n:'Conta',s:'Última: 09:12',a:m(2130.12)}]},
+        {m:'CS',n:'Cooperativa Serra',sync:'Consentimento expirou 05/10',ic:'sync_problem',k:'fail',act:'Reconectar',rows:[{n:'Poupança',s:'Saldo de 05/10',a:m(940)}]},
+        {m:'BT',n:'Banco Tradicional',sync:'Manual · extrato de 30/09',ic:'upload_file',k:'trf',act:'Importar',rows:[{n:'Conta corrente',s:'Atualizado à mão',a:m(3860)}]}
+      ].map(g=>({...g,ss:{display:'flex',alignItems:'center',gap:4,font:'500 14px Geist',color:`var(--${g.k})`}})),
+      acc: { bal: m(5412.18), ...line(1,31,4200,260), rows:[tx('shopping_cart','Mercado Bom Preço','Hoje · Mercado',-214.37),tx('sync_alt','Para Reserva','Hoje · Entre contas',1000,'trf'),tx('payments','Estúdio Vento Sul','Ontem · Pró-labore',7800)] },
+      installments: [{ic:'laptop_mac',t:'Notebook Arco',a:m(412),n:'4 de 10',seg:seg(10,4)},{ic:'chair',t:'Sofá Lume',a:m(318.5),n:'2 de 6',seg:seg(6,2)}],
+      ccRows: [tx('local_pharmacy','Farmácia Vida','Hoje · Saúde',-58.9),tx('cloud','Tessera Cloud','Ontem · Assinaturas',-109.8,null,{a:hide?'US$ ••••':'−US$ 20,00',sub:hide?'':'≈ −R$ 109,80 · IOF incl.'}),tx('restaurant','Cantina Oliva','04/10 · Restaurantes',-146)],
+      importLines: [
+        {t:'Supermercado Ideal',d:'29/09',c:'Mercado',ci:'shopping_cart',a:m(-312.4)},
+        {t:'Transf. recebida L. Moreira',d:'27/09',c:'Receita',ci:'payments',a:m(1200,true),k:'inc'},
+        {t:'Posto Avenida',d:'26/09',c:'Transporte',ci:'local_gas_station',a:m(-1820),p:pill('pen','Conferir valor','visibility')},
+        {t:'Tarifa pacote',d:'25/09',c:'Bancos',ci:'account_balance',a:m(-34.9)},
+        {t:'Supermercado Ideal',d:'22/09',c:'Mercado',ci:'shopping_cart',a:m(-312.4),p:pill('trf','Duplicada?','content_copy'),off:true},
+        {t:'Padaria Trigo',d:'21/09',c:'Restaurantes',ci:'bakery_dining',a:m(-27.5)}
+      ].map(r=>({...r,as:aSt(r.k),cbi:r.off?'':'check',row:{display:'flex',alignItems:'center',gap:12,minHeight:64,padding:'8px 16px',opacity:r.off?.6:1},cb:{width:20,height:20,borderRadius:4,flex:'none',display:'grid',placeItems:'center',boxSizing:'border-box',background:r.off?'transparent':'var(--pr)',color:'var(--onpr)',border:r.off?'2px solid var(--ol)':'none'}})),
+      extracted: [{l:'Beneficiário',v:'Escola Pequeno Sábio',ok:1},{l:'Valor',v:hide?'R$ ••••':'R$ 1.150,00',ok:1,num:1},{l:'Vencimento',v:'10/11/2026',ok:1},{l:'Linha digitável',v:'00190.00009 02950.152007…',ok:1,mono:1},{l:'Multa e juros',v:'2% + 1% ao mês',ok:0}].map(f=>({...f,ic:f.ok?'check_circle':'visibility',vs:{font:f.mono?"500 14px 'Geist Mono'":'500 16px Geist',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},ics:{color:f.ok?'var(--paid)':'var(--pen)',width:24,display:'grid',placeItems:'center'}})),
+      inbox: [
+        {ic:'bolt',t:'Energia Lumina',a:m(287.4),d:'Vence 12/10 · cód. cliente 4471',src:'E-mail',si:'mail',p:pill('sch','Agendar auto','event')},
+        {ic:'apartment',t:'Condomínio Jardim',a:m(780),d:'Vence 20/10',src:'Câmera',si:'photo_camera',p:pill('pen','Revisar','visibility')},
+        {ic:'school',t:'Escola Pequeno Sábio',a:m(1150),d:'Vence 10/11',src:'Chat',si:'forum',p:pill('pen','Revisar','visibility')},
+        {ic:'home',t:'Aluguel',a:m(2400),d:'Vence 15/10 · pague com o código',src:'E-mail',si:'mail',p:pill('pr','Passo 3 · código pronto','verified_user')},
+        {ic:'wifi',t:'Internet Fibra Sul',a:m(119.9),d:'Venceu 06/10 · código pronto',src:'Arquivo',si:'attach_file',p:pill('ovd','Vencido · pagar','event_busy')}
+      ],
+      cal: calendar(), resUse
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 8px 0 4px;border-radius:20px;background:var(--sf3);border:1px solid var(--olv);font:600 15px Geist,sans-serif;color:var(--on);box-sizing:border-box">
+<sc-if value="{{ pf }}"><span style="width:32px;height:32px;border-radius:16px;background:var(--pfc);color:var(--pf);display:grid;place-items:center;font-size:12px;font-weight:700">PF</span><span>Pessoal</span></sc-if>
+<sc-if value="{{ pj }}"><span style="width:32px;height:32px;border-radius:16px;background:var(--pjc);color:var(--pj);display:grid;place-items:center;font-size:12px;font-weight:700">PJ</span><span>Empresa</span></sc-if>
+<sc-if value="{{ all }}"><span style="width:32px;height:32px;border-radius:16px;background:var(--allc);color:var(--all);display:grid;place-items:center"><i style="font:18px/1 'Material Symbols Rounded'">stacks</i></span><span>Consolidado</span></sc-if>
+<i style="font:20px/1 'Material Symbols Rounded';color:var(--mu)">expand_more</i>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:180,&quot;height&quot;:40},&quot;e&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pf&quot;,&quot;pj&quot;,&quot;all&quot;],&quot;default&quot;:&quot;pf&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() { const e = this.props.e ?? 'pf'; return { pf: e === 'pf', pj: e === 'pj', all: e === 'all' }; }
+}
+</script>
+</body>
+</html>

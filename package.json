@@ -1,0 +1,57 @@
+{
+  "name": "cashdeck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cashdeck: an open-source, self-hosted personal and small business finance app built with clean architecture.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml}\"",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "depcruise": "depcruise packages apps/api/src --config .dependency-cruiser.cjs",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run format:check && pnpm run depcruise && pnpm run test:coverage",
+    "prepare": "simple-git-hooks"
+  },
+  "devDependencies": {
+    "@cashdeck/config": "workspace:*",
+    "@commitlint/cli": "19.6.1",
+    "@commitlint/config-conventional": "19.6.0",
+    "@types/node": "22.10.2",
+    "dependency-cruiser": "18.2.0",
+    "lint-staged": "15.3.0",
+    "prettier": "3.8.1",
+    "simple-git-hooks": "2.11.1",
+    "turbo": "2.3.3",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/node": "22.10.2",
+      "vite": "8.2.0"
+    }
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged",
+    "commit-msg": "pnpm exec commitlint --edit \"$1\"",
+    "pre-push": "pnpm run typecheck && pnpm run test"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

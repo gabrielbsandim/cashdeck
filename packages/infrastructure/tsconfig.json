@@ -1,0 +1,17 @@
+{
+  "extends": "@cashdeck/config/tsconfig/library.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] },
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "tsup.config.ts",
+    "prisma.config.ts",
+    "prisma/seed.ts"
+  ]
+}

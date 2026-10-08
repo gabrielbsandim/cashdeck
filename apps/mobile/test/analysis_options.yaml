@@ -1,0 +1,6 @@
+include: ../analysis_options.yaml
+
+linter:
+  rules:
+    # Arrange, act and assert read better as separate statements on a container.
+    cascade_invocations: false

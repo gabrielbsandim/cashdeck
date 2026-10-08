@@ -1,0 +1,517 @@
+// Every table carries tenant_id and every query is scoped by it, so a
+// self-hosted deployment can become multi-tenant without a data migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EntityKind {
+  PF
+  PJ
+}
+
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  MEI
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT_CARD
+  INVESTMENT
+  WALLET
+}
+
+enum AccountOrigin {
+  CONNECTED
+  MANUAL
+}
+
+enum BillKind {
+  BOLETO
+  PIX_KEY
+  PIX_QR
+  TAX_BARCODE
+  DARF_NO_BARCODE
+}
+
+enum BillStatus {
+  OPEN
+  NEEDS_CONFIRMATION
+  PROCESSING
+  AWAITING_BANK_APPROVAL
+  ASSISTED
+  PAID
+  CANCELLED
+}
+
+enum BillSource {
+  GMAIL
+  SHARE
+  CAMERA
+  CHAT
+  DDA
+  MANUAL
+}
+
+enum PaidBy {
+  RAIL
+  USER
+}
+
+enum RailId {
+  MERCADO_PAGO_PAYOUTS
+  ASAAS
+  INTER_EMPRESAS
+  C6_EMPRESAS
+  ASSISTED
+}
+
+enum StepMode {
+  AUTOMATIC
+  BANK_APPROVAL
+  ASSISTED
+}
+
+enum AttemptOutcome {
+  PAID
+  SUBMITTED
+  PENDING_APPROVAL
+  ASSISTED
+  FAILED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PROCESSING
+  ISSUED
+  REJECTED
+  CANCELLED
+}
+
+enum CardBillStatus {
+  OPEN
+  CLOSED
+  PAID
+}
+
+model Tenant {
+  id        String   @id
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id
+  tenantId     String   @map("tenant_id")
+  email        String
+  passwordHash String?  @map("password_hash")
+  locale       String   @default("pt-BR")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model FinancialEntity {
+  id        String     @id
+  tenantId  String     @map("tenant_id")
+  kind      EntityKind
+  name      String
+  taxId     String     @map("tax_id")
+  taxRegime TaxRegime? @map("tax_regime")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  accounts Account[]
+  bills    Bill[]
+
+  @@unique([tenantId, taxId])
+  @@map("financial_entities")
+}
+
+model Institution {
+  id       String  @id
+  tenantId String  @map("tenant_id")
+  name     String
+  code     String?
+  manual   Boolean @default(false)
+
+  @@index([tenantId])
+  @@map("institutions")
+}
+
+model Connection {
+  id            String    @id
+  tenantId      String    @map("tenant_id")
+  institutionId String    @map("institution_id")
+  provider      String
+  itemId        String    @map("item_id")
+  status        String
+  lastSyncAt    DateTime? @map("last_sync_at")
+
+  @@unique([tenantId, provider, itemId])
+  @@map("connections")
+}
+
+model Account {
+  id            String        @id
+  tenantId      String        @map("tenant_id")
+  entityId      String        @map("entity_id")
+  institutionId String        @map("institution_id")
+  connectionId  String?       @map("connection_id")
+  externalId    String?       @map("external_id")
+  name          String
+  type          AccountType
+  origin        AccountOrigin
+  isReserve     Boolean       @default(false) @map("is_reserve")
+  balanceCents  BigInt        @default(0) @map("balance_cents")
+  currency      String        @default("BRL") @db.Char(3)
+
+  entity       FinancialEntity @relation(fields: [entityId], references: [id])
+  transactions Transaction[]
+
+  @@index([tenantId, entityId])
+  @@map("accounts")
+}
+
+model Transaction {
+  id              String   @id
+  tenantId        String   @map("tenant_id")
+  accountId       String   @map("account_id")
+  externalId      String?  @map("external_id")
+  amountCents     BigInt   @map("amount_cents")
+  currency        String   @db.Char(3)
+  bookedOn        DateTime @map("booked_on") @db.Date
+  description     String
+  categoryId      String?  @map("category_id")
+  transferGroupId String?  @map("transfer_group_id")
+  note            String?
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([tenantId, accountId, externalId])
+  @@index([tenantId, bookedOn])
+  @@map("transactions")
+}
+
+model Category {
+  id       String  @id
+  tenantId String  @map("tenant_id")
+  name     String
+  parentId String? @map("parent_id")
+  icon     String?
+
+  @@unique([tenantId, name])
+  @@map("categories")
+}
+
+model CategoryRule {
+  id         String @id
+  tenantId   String @map("tenant_id")
+  pattern    String
+  categoryId String @map("category_id")
+  priority   Int    @default(0)
+
+  @@index([tenantId])
+  @@map("category_rules")
+}
+
+model Budget {
+  id          String  @id
+  tenantId    String  @map("tenant_id")
+  entityId    String  @map("entity_id")
+  categoryId  String  @map("category_id")
+  month       String  @db.Char(7)
+  limitCents  BigInt  @map("limit_cents")
+  rollover    Boolean @default(false)
+
+  @@unique([tenantId, entityId, categoryId, month])
+  @@map("budgets")
+}
+
+model Recurrence {
+  id            String   @id
+  tenantId      String   @map("tenant_id")
+  entityId      String   @map("entity_id")
+  description   String
+  amountCents   BigInt   @map("amount_cents")
+  dayOfMonth    Int      @map("day_of_month")
+  confirmed     Boolean  @default(false)
+  lastSeenOn    DateTime? @map("last_seen_on") @db.Date
+
+  @@index([tenantId, entityId])
+  @@map("recurrences")
+}
+
+model CreditCardBill {
+  id          String         @id
+  tenantId    String         @map("tenant_id")
+  accountId   String         @map("account_id")
+  closingDate DateTime       @map("closing_date") @db.Date
+  dueDate     DateTime       @map("due_date") @db.Date
+  totalCents  BigInt         @map("total_cents")
+  status      CardBillStatus
+
+  @@unique([tenantId, accountId, closingDate])
+  @@map("credit_card_bills")
+}
+
+model Holding {
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  accountId  String   @map("account_id")
+  ticker     String?
+  name       String
+  quantity   Decimal  @db.Decimal(20, 8)
+  valueCents BigInt   @map("value_cents")
+  asOf       DateTime @map("as_of")
+
+  @@index([tenantId, accountId])
+  @@map("holdings")
+}
+
+model Goal {
+  id          String    @id
+  tenantId    String    @map("tenant_id")
+  entityId    String    @map("entity_id")
+  name        String
+  targetCents BigInt    @map("target_cents")
+  deadline    DateTime? @db.Date
+  accountId   String?   @map("account_id")
+
+  @@index([tenantId, entityId])
+  @@map("goals")
+}
+
+model Bill {
+  id          String     @id
+  tenantId    String     @map("tenant_id")
+  entityId    String     @map("entity_id")
+  kind        BillKind
+  status      BillStatus
+  source      BillSource
+  payee       String?
+  amountCents BigInt     @map("amount_cents")
+  currency    String     @default("BRL") @db.Char(3)
+  dueDate     DateTime   @map("due_date") @db.Date
+  code        String?
+  createdAt   DateTime   @map("created_at")
+  paidAt      DateTime?  @map("paid_at")
+  paidBy      PaidBy?    @map("paid_by")
+
+  entity   FinancialEntity  @relation(fields: [entityId], references: [id])
+  plan     PaymentPlan?
+  attempts PaymentAttempt[]
+
+  @@index([tenantId, entityId, status])
+  @@index([tenantId, entityId, code])
+  @@map("bills")
+}
+
+model PaymentPlan {
+  billId      String @id @map("bill_id")
+  tenantId    String @map("tenant_id")
+  steps       Json
+  currentStep Int    @map("current_step")
+
+  bill Bill @relation(fields: [billId], references: [id])
+
+  @@index([tenantId])
+  @@map("payment_plans")
+}
+
+model PaymentAttempt {
+  id             String         @id
+  tenantId       String         @map("tenant_id")
+  billId         String         @map("bill_id")
+  stepIndex      Int            @map("step_index")
+  rail           RailId
+  mode           StepMode
+  amountCents    BigInt         @map("amount_cents")
+  outcome        AttemptOutcome
+  reason         String?
+  externalId     String?        @map("external_id")
+  idempotencyKey String         @map("idempotency_key")
+  at             DateTime
+
+  bill Bill @relation(fields: [billId], references: [id])
+
+  @@index([tenantId, billId])
+  @@index([tenantId, rail, at])
+  @@map("payment_attempts")
+}
+
+model Payee {
+  tenantId String   @map("tenant_id")
+  entityId String   @map("entity_id")
+  key      String
+  firstAt  DateTime @default(now()) @map("first_at")
+
+  @@id([tenantId, entityId, key])
+  @@map("payees")
+}
+
+model PaymentSettings {
+  tenantId          String  @map("tenant_id")
+  entityId          String  @map("entity_id")
+  killSwitch        Boolean @default(false) @map("kill_switch")
+  enabledRails      RailId[] @map("enabled_rails")
+  dailyCapCents     Json    @default("{}") @map("daily_cap_cents")
+  confirmAboveCents BigInt? @map("confirm_above_cents")
+
+  @@id([tenantId, entityId])
+  @@map("payment_settings")
+}
+
+model InvoiceClient {
+  id       String  @id
+  tenantId String  @map("tenant_id")
+  entityId String  @map("entity_id")
+  name     String
+  taxId    String? @map("tax_id")
+  country  String  @default("BR") @db.Char(2)
+  email    String?
+
+  @@index([tenantId, entityId])
+  @@map("invoice_clients")
+}
+
+model InvoiceTemplate {
+  id          String  @id
+  tenantId    String  @map("tenant_id")
+  entityId    String  @map("entity_id")
+  clientId    String  @map("client_id")
+  serviceCode String  @map("service_code")
+  description String
+  amountCents BigInt  @map("amount_cents")
+  currency    String  @db.Char(3)
+  dayOfMonth  Int     @map("day_of_month")
+  active      Boolean @default(true)
+
+  @@index([tenantId, entityId])
+  @@map("invoice_templates")
+}
+
+model Invoice {
+  id           String        @id
+  tenantId     String        @map("tenant_id")
+  entityId     String        @map("entity_id")
+  clientId     String        @map("client_id")
+  templateId   String?       @map("template_id")
+  issuer       String
+  externalId   String?       @map("external_id")
+  number       String?
+  status       InvoiceStatus
+  amountCents  BigInt        @map("amount_cents")
+  currency     String        @db.Char(3)
+  fxRate       Decimal?      @map("fx_rate") @db.Decimal(18, 8)
+  isExport     Boolean       @default(false) @map("is_export")
+  competence   String        @db.Char(7)
+  pdfUrl       String?       @map("pdf_url")
+  xmlUrl       String?       @map("xml_url")
+  cancelReason String?       @map("cancel_reason")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([tenantId, entityId, competence])
+  @@map("invoices")
+}
+
+model TaxGuide {
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  entityId   String   @map("entity_id")
+  kind       String
+  competence String   @db.Char(7)
+  dueDate    DateTime @map("due_date") @db.Date
+  billId     String?  @map("bill_id")
+
+  @@unique([tenantId, entityId, kind, competence])
+  @@map("tax_guides")
+}
+
+model Alert {
+  id        String    @id
+  tenantId  String    @map("tenant_id")
+  type      String
+  title     String
+  body      String
+  data      Json      @default("{}")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("alerts")
+}
+
+model AuditEvent {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  actor     String
+  action    String
+  subjectId String   @map("subject_id")
+  rail      RailId?
+  result    String
+  details   Json     @default("{}")
+  at        DateTime
+
+  @@index([tenantId, subjectId])
+  @@map("audit_events")
+}
+
+model IdempotencyRecord {
+  tenantId  String   @map("tenant_id")
+  key       String
+  scope     String
+  result    Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([tenantId, key])
+  @@map("idempotency_records")
+}
+
+model Secret {
+  tenantId  String   @map("tenant_id")
+  name      String
+  sealed    String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([tenantId, name])
+  @@map("secrets")
+}
+
+model ChatThread {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  messages ChatMessage[]
+
+  @@index([tenantId])
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  threadId  String   @map("thread_id")
+  role      String
+  content   String
+  toolCalls Json?    @map("tool_calls")
+  embedding Unsupported("vector(768)")?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread ChatThread @relation(fields: [threadId], references: [id])
+
+  @@index([tenantId, threadId])
+  @@map("chat_messages")
+}

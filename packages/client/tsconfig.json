@@ -1,0 +1,10 @@
+{
+  "extends": "@cashdeck/config/tsconfig/library.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] },
+    "noEmit": true
+  },
+  "include": ["src", "vitest.config.ts", "tsup.config.ts"]
+}

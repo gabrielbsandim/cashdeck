@@ -1,0 +1,56 @@
+{
+  "name": "@cashdeck/infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "postinstall": "prisma generate",
+    "build": "prisma generate && tsup",
+    "dev": "tsup --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "lint": "eslint .",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/gateway": "3.0.133",
+    "@ai-sdk/provider": "3.0.10",
+    "@cashdeck/application": "workspace:*",
+    "@cashdeck/domain": "workspace:*",
+    "@neondatabase/serverless": "1.0.2",
+    "@prisma/adapter-neon": "7.9.1",
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "@prisma/driver-adapter-utils": "7.9.1",
+    "ai": "6.0.208"
+  },
+  "devDependencies": {
+    "@cashdeck/config": "workspace:*",
+    "@vitest/coverage-v8": "4.1.7",
+    "eslint": "9.39.4",
+    "prisma": "7.9.1",
+    "tsup": "8.5.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.7"
+  }
+}
