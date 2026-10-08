@@ -1,7 +1,9 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
+import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 final class FakeCaptureRepository implements CaptureRepository {
@@ -85,5 +87,35 @@ final class FakeCaptureRepository implements CaptureRepository {
           ),
     ];
     return _current();
+  }
+
+  final List<LocalFile> submitted = [];
+
+  @override
+  Future<Result<Uri>> mailboxAuthorizationUrl(EntityKind owner) async {
+    await Future<void>.delayed(latency);
+    return Ok(
+      Uri.https('accounts.example.com', '/o/oauth2/auth', {
+        'scope': 'mail.readonly',
+        'state': owner.name,
+      }),
+    );
+  }
+
+  @override
+  Future<Result<void>> submitFile(LocalFile file, EntityKind owner) async {
+    await Future<void>.delayed(latency);
+    if (file.bytes.isEmpty) return const Err(ValidationFailure('empty file'));
+    submitted.add(file);
+    return const Ok(null);
+  }
+
+  final List<ScannedCode> codes = [];
+
+  @override
+  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner) async {
+    await Future<void>.delayed(latency);
+    codes.add(code);
+    return const Ok(null);
   }
 }

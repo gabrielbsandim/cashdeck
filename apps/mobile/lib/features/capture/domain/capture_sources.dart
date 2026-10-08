@@ -1,4 +1,6 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
 
@@ -16,7 +18,9 @@ final class Mailbox extends Equatable {
   final String id;
   final String address;
   final EntityKind owner;
-  final DateTime lastReadAt;
+
+  /// Null until the first read.
+  final DateTime? lastReadAt;
   final int billsFound;
   final int emailsScanned;
 
@@ -43,7 +47,9 @@ final class DdaEnrollment extends Equatable {
 
   final EntityKind owner;
   final String bank;
-  final DateTime lastBatchAt;
+
+  /// Null until the bank sends the first batch.
+  final DateTime? lastBatchAt;
   final int boletos;
   final bool enabled;
 
@@ -69,4 +75,14 @@ abstract interface class CaptureRepository {
   Future<Result<CaptureSources>> disconnect(String mailboxId);
 
   Future<Result<CaptureSources>> setDda(EntityKind owner, {required bool on});
+
+  /// The provider's consent page for a read-only mailbox grant; the server
+  /// finishes the OAuth flow and the mailbox shows up in [sources].
+  Future<Result<Uri>> mailboxAuthorizationUrl(EntityKind owner);
+
+  /// A bill PDF or photo the user shared into the app, for the server to read.
+  Future<Result<void>> submitFile(LocalFile file, EntityKind owner);
+
+  /// A code read by the camera; the server builds the bill from it.
+  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner);
 }

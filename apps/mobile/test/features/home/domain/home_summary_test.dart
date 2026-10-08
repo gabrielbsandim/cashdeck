@@ -157,7 +157,7 @@ void main() {
     expect(personal().props, hasLength(6));
     expect(company().props, hasLength(8));
     expect(reserve.props, hasLength(6));
-    expect(budget.props, hasLength(3));
+    expect(budget.props, hasLength(4));
     expect(company().drafts.single.props, hasLength(5));
     expect(company().unbilled.single.props, hasLength(4));
     expect(

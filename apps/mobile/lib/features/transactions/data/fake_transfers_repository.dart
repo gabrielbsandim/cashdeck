@@ -1,5 +1,8 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/files/plain_pdf.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -58,6 +61,26 @@ final class FakeTransfersRepository implements TransfersRepository {
         ),
       ),
       _ => const Err(NotFoundFailure()),
+    };
+  }
+
+  @override
+  Future<Result<LocalFile>> document(String id) async {
+    final detail = await transfer(id);
+    return switch (detail) {
+      Ok(:final value) when value.document != null => Ok(
+        LocalFile(
+          name: value.document!,
+          mimeType: 'application/pdf',
+          bytes: plainPdf([
+            value.document!,
+            '${value.from.holder} -> ${value.to.holder}',
+            MoneyFormat.format(value.amount),
+          ]),
+        ),
+      ),
+      Ok() => const Err(NotFoundFailure()),
+      Err(:final failure) => Err(failure),
     };
   }
 }

@@ -6,10 +6,13 @@ import 'package:dio/dio.dart';
 typedef StubHandler = StubResponse Function(RequestOptions options);
 
 final class StubResponse {
-  const new(this.statusCode, [this.body]);
+  const new(this.statusCode, [this.body, this.headers = const {}]);
 
   final int statusCode;
+
+  /// JSON, or raw bytes when it is a [Uint8List].
   final Object? body;
+  final Map<String, List<String>> headers;
 }
 
 final class StubHttpAdapter implements HttpClientAdapter {
@@ -26,6 +29,14 @@ final class StubHttpAdapter implements HttpClientAdapter {
   ) async {
     requests.add(options);
     final response = _handler(options);
+    final body = response.body;
+    if (body is Uint8List) {
+      return ResponseBody.fromBytes(
+        body,
+        response.statusCode,
+        headers: response.headers,
+      );
+    }
     return ResponseBody.fromString(
       jsonEncode(response.body),
       response.statusCode,

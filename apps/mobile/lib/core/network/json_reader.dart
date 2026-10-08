@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 
 typedef JsonMap = Map<String, dynamic>;
@@ -18,6 +19,39 @@ int readInt(JsonMap json, String key) {
   final value = json[key];
   if (value is int) return value;
   throw FormatException('Expected an integer at "$key"', json);
+}
+
+int? readOptionalInt(JsonMap json, String key) {
+  final value = json[key];
+  if (value == null || value is int) return value as int?;
+  throw FormatException('Expected an integer or null at "$key"', json);
+}
+
+bool readBool(JsonMap json, String key) {
+  final value = json[key];
+  if (value is bool) return value;
+  throw FormatException('Expected a boolean at "$key"', json);
+}
+
+Money readMoney(JsonMap json, String key) => moneyFromJson(readMap(json, key));
+
+Money moneyFromJson(JsonMap json) =>
+    Money(readInt(json, 'cents'), currency: readString(json, 'currency'));
+
+/// Maps a wire enum through [table]; a value the app does not know is a
+/// format error, so a new server value needs the app updated first.
+T readEnum<T>(JsonMap json, String key, Map<String, T> table) =>
+    lookupValue(table, readString(json, key));
+
+T lookupValue<T>(Map<String, T> table, String raw) {
+  final match = table[raw];
+  if (match != null) return match;
+  throw FormatException('Unknown value', raw);
+}
+
+JsonMap? readOptionalMap(JsonMap json, String key) {
+  if (json[key] == null) return null;
+  return readMap(json, key);
 }
 
 JsonMap readMap(JsonMap json, String key) {
@@ -47,6 +81,16 @@ List<String> readStringList(JsonMap json, String key) {
 
 CalendarDate readDate(JsonMap json, String key) =>
     CalendarDate.parse(readString(json, key));
+
+CalendarDate? readOptionalDate(JsonMap json, String key) {
+  if (json[key] == null) return null;
+  return readDate(json, key);
+}
+
+DateTime? readOptionalDateTime(JsonMap json, String key) {
+  if (json[key] == null) return null;
+  return readDateTime(json, key);
+}
 
 DateTime readDateTime(JsonMap json, String key) {
   final value = DateTime.tryParse(readString(json, key));

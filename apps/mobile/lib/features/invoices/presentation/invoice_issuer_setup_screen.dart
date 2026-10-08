@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
@@ -11,6 +12,7 @@ import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
+import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
@@ -93,6 +95,36 @@ class _IssuerFormState extends ConsumerState<_IssuerForm> {
     });
   }
 
+  Future<void> _upload() async {
+    final l10n = AppLocalizations.of(context);
+    final file = await ref.read(fileChooserProvider).choose(const [
+      'pfx',
+      'p12',
+    ]);
+    if (file == null || !mounted) return;
+    final secret = await showCdBottomSheet<(String, CalendarDate)>(
+      context,
+      title: l10n.certificatePasswordTitle,
+      builder: (_) => const _PasswordSheet(),
+    );
+    if (secret == null || !mounted) return;
+    final (password, expiresOn) = secret;
+    final result = await ref
+        .read(issuerRepositoryProvider)
+        .uploadCertificate(file, password, expiresOn);
+    if (!mounted) return;
+    if (result case Ok(:final value)) {
+      setState(() {
+        _setup = value;
+        _remindLater = false;
+      });
+    }
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.certificateUploadedToast(file.name));
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
@@ -155,6 +187,7 @@ class _IssuerFormState extends ConsumerState<_IssuerForm> {
           today: today,
           remindLater: _remindLater,
           onRemind: () => setState(() => _remindLater = true),
+          onUpload: _upload,
         ),
         const SizedBox(height: AppSpacing.lg),
         CdTextField(
@@ -256,32 +289,21 @@ class _CertificateCard extends StatelessWidget {
     required this.today,
     required this.remindLater,
     required this.onRemind,
+    required this.onUpload,
   });
 
   final IssuerSetup setup;
   final CalendarDate today;
   final bool remindLater;
   final VoidCallback onRemind;
+  final VoidCallback onUpload;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
-    final state = certificateStateOf(setup.certificateExpiresOn, today);
-    final days = today.daysUntil(setup.certificateExpiresOn);
-    final date = setup.certificateExpiresOn.display;
-    final (tone, label) = switch (state) {
-      CertificateState.valid => (MoneyTone.paid, l10n.validUntil(date)),
-      CertificateState.expiringSoon => (
-        MoneyTone.pending,
-        l10n.certificateExpiresIn(days, date),
-      ),
-      CertificateState.expired => (
-        MoneyTone.failed,
-        l10n.certificateExpired(date),
-      ),
-    };
-    final urgent = state != CertificateState.valid && !remindLater;
+    final (tone, label, valid) = _badge(l10n);
+    final urgent = !valid && !remindLater;
     return CdCard(
       tone: urgent ? context.tone(tone) : null,
       child: Column(
@@ -306,7 +328,7 @@ class _CertificateCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      setup.certificateName,
+                      setup.certificateName ?? l10n.noCertificateYet,
                       style: AppTextStyles.code.copyWith(
                         fontSize: 13,
                         color: palette.onSurfaceVariant,
@@ -334,11 +356,7 @@ class _CertificateCard extends StatelessWidget {
                   dense: true,
                   icon: Symbols.upload_rounded,
                   label: l10n.uploadNewButton,
-                  onPressed: () => showCdToast(
-                    context,
-                    icon: Symbols.upload_file_rounded,
-                    message: l10n.filePickerSoon,
-                  ),
+                  onPressed: onUpload,
                 ),
                 CdButton.text(
                   key: InvoiceIssuerSetupScreen.remindKey,
@@ -351,6 +369,84 @@ class _CertificateCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+extension on _CertificateCard {
+  (MoneyTone, String, bool) _badge(AppLocalizations l10n) {
+    final expiresOn = setup.certificateExpiresOn;
+    if (expiresOn == null) {
+      return (MoneyTone.pending, l10n.noCertificateYet, false);
+    }
+    final days = today.daysUntil(expiresOn);
+    final date = expiresOn.display;
+    return switch (certificateStateOf(expiresOn, today)) {
+      CertificateState.valid => (MoneyTone.paid, l10n.validUntil(date), true),
+      CertificateState.expiringSoon => (
+        MoneyTone.pending,
+        l10n.certificateExpiresIn(days, date),
+        false,
+      ),
+      CertificateState.expired => (
+        MoneyTone.failed,
+        l10n.certificateExpired(date),
+        false,
+      ),
+    };
+  }
+}
+
+class _PasswordSheet extends StatefulWidget {
+  const new();
+
+  static const fieldKey = Key('issuer-certificate-password');
+  static const validUntilKey = Key('issuer-certificate-valid-until');
+  static const confirmKey = Key('issuer-certificate-confirm');
+
+  @override
+  State<_PasswordSheet> createState() => _PasswordSheetState();
+}
+
+class _PasswordSheetState extends State<_PasswordSheet> {
+  var _password = '';
+  CalendarDate? _expiresOn;
+
+  VoidCallback? get _confirm {
+    final expiresOn = _expiresOn;
+    if (_password.isEmpty || expiresOn == null) return null;
+    return () => Navigator.of(context).pop((_password, expiresOn));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CdTextField(
+          key: _PasswordSheet.fieldKey,
+          label: l10n.pfxPasswordLabel,
+          secret: true,
+          onChanged: (value) => setState(() => _password = value),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        CdTextField(
+          key: _PasswordSheet.validUntilKey,
+          label: l10n.certificateValidUntilLabel,
+          hintText: l10n.dateHint,
+          keyboardType: TextInputType.datetime,
+          onChanged: (value) =>
+              setState(() => _expiresOn = CalendarDate.tryParseDisplay(value)),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        CdButton.filled(
+          key: _PasswordSheet.confirmKey,
+          expand: true,
+          label: l10n.sendCertificateButton,
+          onPressed: _confirm,
+        ),
+      ],
     );
   }
 }

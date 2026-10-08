@@ -1,172 +1,115 @@
+import 'package:cashdeck/core/config/app_config.dart';
+import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
-import 'package:cashdeck/features/auth/application/account_use_cases.dart';
+import 'package:cashdeck/core/session/server_credentials.dart';
+import 'package:cashdeck/features/auth/application/sign_in.dart';
 import 'package:cashdeck/features/auth/auth_providers.dart';
-import 'package:cashdeck/features/auth/data/fake_account_repository.dart';
-import 'package:cashdeck/features/auth/domain/account.dart';
-import 'package:cashdeck/features/auth/presentation/account_providers.dart';
+import 'package:cashdeck/features/auth/data/api_server_access_repository.dart';
+import 'package:cashdeck/features/auth/data/fake_server_access_repository.dart';
+import 'package:cashdeck/features/auth/domain/server_access.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/stub_http_adapter.dart';
+
 void main() {
-  test('password strength grows with length and variety', () {
-    expect(passwordStrengthOf('abc'), PasswordStrength.weak);
-    expect(passwordStrengthOf('abcdefgh'), PasswordStrength.fair);
-    expect(passwordStrengthOf('abcdefghijkl'), PasswordStrength.fair);
-    expect(passwordStrengthOf('Abcdefghijk1'), PasswordStrength.strong);
-    expect(passwordStrengthOf('abcdefghij1!'), PasswordStrength.strong);
+  test('flags an invalid address and an empty token', () {
+    expect(signInErrorsOf(serverUrl: 'cashdeck.casa', token: 't'), isEmpty);
+    expect(signInErrorsOf(serverUrl: 'ftp://x.casa', token: ' '), {
+      SignInField.serverUrl,
+      SignInField.token,
+    });
   });
 
-  test('a sign-up form names every field it cannot send', () {
-    expect(
-      signUpErrorsOf(
-        name: ' ',
-        email: 'sem-arroba',
-        password: 'curta',
-        confirmation: 'outra',
-      ),
-      SignUpField.values.toSet(),
-    );
-    expect(
-      signUpErrorsOf(
-        name: 'Pessoa Exemplo',
-        email: 'pessoa@exemplo.com',
-        password: 'senha-segura',
-        confirmation: 'senha-segura',
-      ),
-      isEmpty,
-    );
-  });
+  group('SignIn', () {
+    final fake = FakeServerAccessRepository(latency: Duration.zero);
+    final signIn = SignIn(fake);
 
-  test('a session greets by first name and compares by value', () {
-    const session = UserSession(name: '  Pessoa Exemplo', email: 'p@e.com');
-    const server = ServerInfo(host: 'casa.local', hasUsers: false);
+    test('refuses an invalid form without calling the server', () async {
+      final result = await signIn(serverUrl: '', token: '');
 
-    expect(session.firstName, 'Pessoa');
-    expect(session.props, ['  Pessoa Exemplo', 'p@e.com']);
-    expect(server.props, ['casa.local', false]);
-  });
-
-  group('the fake server', () {
-    late FakeAccountRepository repository;
-    late SignUp signUp;
-
-    setUp(() {
-      repository = FakeAccountRepository(latency: Duration.zero);
-      signUp = SignUp(repository);
+      expect(
+        result,
+        const Err<ServerCredentials>(ValidationFailure('serverUrl, token')),
+      );
     });
 
-    test('refuses a bad form before calling the server', () async {
-      final result = await signUp(
-        name: '',
-        email: 'x',
-        password: 'a',
-        confirmation: 'b',
+    test('normalizes the address and trims the token', () async {
+      final result = await signIn(
+        serverUrl: 'cashdeck.casa/',
+        token: ' token-1234 ',
       );
 
       expect(
         result,
-        const Err<UserSession>(
-          ValidationFailure('name, email, password, confirmation'),
-        ),
-      );
-      expect(await repository.server(), isA<Ok<ServerInfo>>());
-      expect(
-        (await repository.server() as Ok<ServerInfo>).value.hasUsers,
-        isFalse,
-      );
-    });
-
-    test('creates the first user once, then signs in and unlocks', () async {
-      expect(
-        (await repository.session() as Ok<UserSession>).value.firstName,
-        'Marina',
-      );
-      expect(await repository.unlock('qualquer'), isA<Ok<UserSession>>());
-      expect(
-        await repository.unlock(''),
-        const Err<UserSession>(UnauthorizedFailure()),
-      );
-      expect(
-        await repository.signIn(email: 'a@b.com', password: 'x'),
-        const Err<UserSession>(UnauthorizedFailure()),
-      );
-
-      final created = await signUp(
-        name: ' Pessoa Exemplo ',
-        email: 'pessoa@exemplo.com',
-        password: 'senha-segura',
-        confirmation: 'senha-segura',
-      );
-      expect(
-        created,
         const Ok(
-          UserSession(name: 'Pessoa Exemplo', email: 'pessoa@exemplo.com'),
+          ServerCredentials(
+            baseUrl: 'https://cashdeck.casa',
+            token: 'token-1234',
+          ),
         ),
       );
-      expect(
-        await repository.signUp(
-          name: 'Outra',
-          email: 'outra@exemplo.com',
-          password: 'senha-segura',
-        ),
-        const Err<UserSession>(ForbiddenFailure()),
-      );
-      expect(
-        (await repository.server() as Ok<ServerInfo>).value.hasUsers,
-        isTrue,
-      );
-      expect(
-        await repository.signIn(
-          email: 'pessoa@exemplo.com',
-          password: 'senha-segura',
-        ),
-        isA<Ok<UserSession>>(),
-      );
-      expect(
-        await repository.signIn(
-          email: 'pessoa@exemplo.com',
-          password: 'errada',
-        ),
-        const Err<UserSession>(UnauthorizedFailure()),
-      );
-      expect(
-        await repository.unlock('errada'),
-        const Err<UserSession>(UnauthorizedFailure()),
-      );
-      expect(await repository.unlock('senha-segura'), isA<Ok<UserSession>>());
-      expect(
-        (await repository.session() as Ok<UserSession>).value.firstName,
-        'Pessoa',
-      );
+    });
+
+    test('passes on what the server says', () async {
+      final result = await signIn(serverUrl: 'cashdeck.casa', token: 'short');
+
+      expect(result, const Err<ServerCredentials>(UnauthorizedFailure()));
     });
   });
 
-  test('both backends read the fake account and expose it', () async {
-    final container = ProviderContainer(
-      overrides: [
-        accountRepositoryProvider.overrideWithValue(
-          FakeAccountRepository(latency: Duration.zero),
-        ),
-      ],
+  group('ApiServerAccessRepository', () {
+    const credentials = ServerCredentials(
+      baseUrl: 'https://home.test',
+      token: 'token-1234',
     );
-    addTearDown(container.dispose);
 
-    expect(container.read(signUpProvider), isA<SignUp>());
-    expect(
-      (await container.read(serverInfoProvider.future)).host,
-      FakeAccountRepository.host,
-    );
-    expect((await container.read(sessionProvider.future)).firstName, 'Marina');
+    test('asks the given server with the given token', () async {
+      final dio = stubDio(
+        (_) => const StubResponse(200, {
+          'data': {'ok': true},
+        }),
+      );
+
+      final result = await ApiServerAccessRepository(dio).check(credentials);
+
+      expect(result, isA<Ok<void>>());
+      final request = adapterOf(dio).requests.single;
+      expect(request.uri.toString(), 'https://home.test/api/v1/auth/check');
+      expect(request.headers['Authorization'], 'Bearer token-1234');
+    });
+
+    test('maps a refused token', () async {
+      final dio = stubDio((_) => const StubResponse(401));
+
+      final result = await ApiServerAccessRepository(dio).check(credentials);
+
+      expect(result, const Err<void>(UnauthorizedFailure()));
+    });
   });
 
-  test('the default provider is the fake', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+  test('picks the repository for the backend', () {
+    ProviderContainer on(Backend backend) {
+      final container = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(
+            AppConfig(backend: backend, apiBaseUrl: 'https://x.test'),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
 
     expect(
-      container.read(accountRepositoryProvider),
-      isA<FakeAccountRepository>(),
+      on(Backend.fake).read(serverAccessRepositoryProvider),
+      isA<FakeServerAccessRepository>(),
+    );
+    expect(on(Backend.api).read(signInProvider), isA<SignIn>());
+    expect(
+      on(Backend.api).read(serverAccessRepositoryProvider),
+      isA<ApiServerAccessRepository>(),
     );
   });
 }

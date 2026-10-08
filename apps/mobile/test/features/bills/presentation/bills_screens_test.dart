@@ -8,7 +8,9 @@ import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/bills/bills_providers.dart';
+import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
@@ -150,6 +152,56 @@ void main() {
 
       expect(find.text(l10n.ladderJumped(3, '07:00')), findsOneWidget);
       expect(find.text(l10n.ladderStateUnavailable), findsOneWidget);
+    });
+
+    testWidgets('a bolepix offers the Pix first, then the barcode', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-internet'));
+
+      expect(find.textContaining(l10n.billKindBolepix), findsOneWidget);
+      final pix = tester.getTopLeft(find.byKey(PaymentLadderView.copyPixKey));
+      final barcode = tester.getTopLeft(find.byKey(PaymentLadderView.copyKey));
+      expect(pix.dy, lessThan(barcode.dy));
+      expect(
+        find.textContaining(
+          l10n.attemptVia(l10n.paymentMethodPix, 'Pagador PF'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          l10n.attemptVia(l10n.paymentMethodBoleto, 'Pagador PF'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a bolepix before step 3 shows both codes on top', (
+      tester,
+    ) async {
+      final bills = FakeBillsRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+      await pumpRoute(
+        tester,
+        AppRoutes.bill('bill-1'),
+        overrides: [
+          billsRepositoryProvider.overrideWithValue(
+            _Single(
+              testBill(
+                plan: const [LadderStep.automatic, LadderStep.assisted],
+                pixCode: '000201pix',
+              ),
+              bills,
+            ),
+          ),
+        ],
+      );
+
+      expect(find.byKey(BillDetailScreen.copyPixKey), findsOneWidget);
+      expect(find.byKey(BillDetailScreen.copyCodeKey), findsOneWidget);
     });
   });
 
@@ -372,4 +424,23 @@ void main() {
       expect(find.text(testBill().payee), findsOneWidget);
     });
   });
+}
+
+final class _Single implements BillsRepository {
+  const new(this.bill, this.inner);
+
+  final Bill bill;
+  final BillsRepository inner;
+
+  @override
+  Future<Result<List<Bill>>> list() async => Ok([bill]);
+
+  @override
+  Future<Result<Bill>> get(String id) async => Ok(bill);
+
+  @override
+  Future<Result<Bill>> markPaid(String id) => inner.markPaid(id);
+
+  @override
+  Future<Result<Bill>> confirmPayment(String id) => inner.confirmPayment(id);
 }

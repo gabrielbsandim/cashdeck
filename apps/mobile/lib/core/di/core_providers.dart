@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/network/dio_factory.dart';
+import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,12 @@ final appConfigProvider = Provider<AppConfig>(
 );
 
 final dioProvider = Provider<Dio>((ref) {
-  final dio = createApiDio(ref.watch(appConfigProvider));
+  final dio = createApiDio(
+    ref.watch(appConfigProvider),
+    session: ref.watch(serverSessionProvider),
+    onUnauthorized: () =>
+        ref.read(serverSessionProvider.notifier).signOut().ignore(),
+  );
   ref.onDispose(dio.close);
   return dio;
 });

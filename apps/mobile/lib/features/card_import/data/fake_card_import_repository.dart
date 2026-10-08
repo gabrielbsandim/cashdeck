@@ -17,6 +17,7 @@ final class FakeCardImportRepository implements CardImportRepository {
     final today = CalendarDate.brazilToday(_clock.now());
     return Ok(
       CardStatement(
+        id: 'statement-viagem',
         card: 'Cartão Viagem',
         issuer: 'Banco Tradicional',
         closing: today.addDays(-3),
@@ -51,9 +52,10 @@ final class FakeCardImportRepository implements CardImportRepository {
   @override
   Future<Result<String>> createBill(
     CardStatement statement,
-    Money total,
+    Set<String> lineIds,
   ) async {
     await Future<void>.delayed(latency);
+    final total = StatementTotals.of(statement, lineIds).total;
     if (total.cents <= 0) return const Err(ValidationFailure('total'));
     return const Ok('bill-card-viagem');
   }

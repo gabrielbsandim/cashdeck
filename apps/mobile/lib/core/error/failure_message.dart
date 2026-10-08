@@ -12,6 +12,7 @@ extension FailureMessage on AppFailure {
       RateLimitedFailure() => l10n.errorRateLimited,
       ServerFailure() => l10n.errorServer,
       UnexpectedFailure() => l10n.errorUnexpected,
+      UnsupportedFailure() => l10n.errorUnsupported,
     };
   }
 }

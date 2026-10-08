@@ -1,9 +1,13 @@
+import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/features/receipts/data/api_receipts_repository.dart';
 import 'package:cashdeck/features/receipts/data/fake_receipts_repository.dart';
 import 'package:cashdeck/features/receipts/domain/receipt.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// No receipt endpoint yet, so both backends read the fake.
-final receiptsRepositoryProvider = Provider<ReceiptsRepository>(
-  (ref) => FakeReceiptsRepository(ref.watch(clockProvider)),
-);
+final receiptsRepositoryProvider = Provider<ReceiptsRepository>((ref) {
+  return switch (ref.watch(appConfigProvider).backend) {
+    Backend.fake => FakeReceiptsRepository(ref.watch(clockProvider)),
+    Backend.api => ApiReceiptsRepository(ref.watch(dioProvider)),
+  };
+});

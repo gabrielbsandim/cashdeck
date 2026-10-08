@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:equatable/equatable.dart';
@@ -38,10 +39,22 @@ final class IssuerSetup extends Equatable {
     required this.serviceCode,
   });
 
+  /// What a company with no issuer saved yet starts from.
+  static const blank = IssuerSetup(
+    kind: IssuerKind.national,
+    city: '',
+    certificateName: null,
+    certificateExpiresOn: null,
+    municipalRegistration: '',
+    serviceCode: ServiceCode('', ''),
+  );
+
   final IssuerKind kind;
   final String city;
-  final String certificateName;
-  final CalendarDate certificateExpiresOn;
+
+  /// Both null until the first certificate is sent.
+  final String? certificateName;
+  final CalendarDate? certificateExpiresOn;
   final String municipalRegistration;
   final ServiceCode serviceCode;
 
@@ -87,4 +100,12 @@ abstract interface class IssuerRepository {
   Future<Result<IssuerSetup>> save(IssuerSetup setup);
 
   Future<Result<TestEmission>> emitTest(IssuerSetup setup);
+
+  /// Sends the A1 certificate, its password and its expiry date, which a
+  /// .pfx does not let the server read; the server seals the secrets.
+  Future<Result<IssuerSetup>> uploadCertificate(
+    LocalFile file,
+    String password,
+    CalendarDate expiresOn,
+  );
 }

@@ -1,4 +1,6 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/files/plain_pdf.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -104,5 +106,18 @@ final class FakeAccountantExportRepository
     );
     _sent.add(record);
     return Ok(record);
+  }
+
+  @override
+  Future<Result<LocalFile>> archive(ExportRecord record) async {
+    await Future<void>.delayed(latency);
+    final month = record.month.iso.substring(0, 7);
+    return Ok(
+      LocalFile(
+        name: 'contador-$month.pdf',
+        mimeType: 'application/pdf',
+        bytes: plainPdf(['Pacote do contador', month, ?record.to]),
+      ),
+    );
   }
 }

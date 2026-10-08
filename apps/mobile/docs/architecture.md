@@ -107,3 +107,20 @@ Tests replace a port with `ProviderScope(overrides: [...])`.
 Flutter, Dio, Riverpod or another layer; an `application` file imports Flutter,
 Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
 `core` file imports a feature; or any file uses a relative import.
+
+## Platform setup
+
+- Android: `MainActivity` extends `FlutterFragmentActivity` and the launch
+  theme is AppCompat, both required by `local_auth`. The manifest receives a
+  shared PDF or image (`ACTION_SEND`) and the `cashdeck://capture` link the
+  mailbox OAuth callback redirects to. `compileSdk` is at least 37 for
+  `receive_sharing_intent`.
+- iOS: `Info.plist` carries the Face ID and camera usage strings and the
+  `cashdeck` URL scheme. Receiving a shared file needs a Share Extension
+  target, which only Xcode can add: follow the iOS section of the
+  `receive_sharing_intent` README (extension target, shared App Group,
+  `AppGroupId` in both `Info.plist` files). Until then iOS opens files only
+  through the file picker.
+- Icon and splash come from `assets/brand/`, rendered from `CdMarkPainter`.
+  Regenerate with `dart run flutter_launcher_icons` and
+  `dart run flutter_native_splash:create` after changing them.

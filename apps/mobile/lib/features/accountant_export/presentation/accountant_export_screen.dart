@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
@@ -69,6 +70,19 @@ class _AccountantExportScreenState
       Ok() => null,
       Err(:final failure) => failure,
     }, success: l10n.exportSentToast);
+  }
+
+  Future<void> _share(ExportRecord record) async {
+    final result = await ref
+        .read(accountantExportRepositoryProvider)
+        .archive(record);
+    switch (result) {
+      case Ok(:final value):
+        await ref.read(fileSharerProvider).shareFile(value);
+      case Err(:final failure):
+        if (!mounted) return;
+        await showOutcomeToast(context, failure, success: '');
+    }
   }
 
   @override
@@ -184,7 +198,15 @@ class _AccountantExportScreenState
                 capitalized(monthName(context, record.month)),
                 '${record.month.year}',
               ),
-              subtitle: l10n.exportSentLine(record.sentOn.dayMonth, record.to),
+              subtitle: switch (record.to) {
+                null => record.sentOn.dayMonth,
+                final to => l10n.exportSentLine(record.sentOn.dayMonth, to),
+              },
+              trailing: Icon(
+                Symbols.share_rounded,
+                color: context.palette.onSurfaceVariant,
+              ),
+              onTap: () => _share(record),
             ),
         ],
       ],

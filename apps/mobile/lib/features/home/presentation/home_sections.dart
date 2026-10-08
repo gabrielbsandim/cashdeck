@@ -144,8 +144,24 @@ class BalanceHeader extends ConsumerWidget {
   }
 }
 
-String syncAgo(WidgetRef ref, SyncInfo sync) =>
-    '${ref.watch(clockProvider).now().difference(sync.syncedAt).inMinutes}';
+String syncLineOf(
+  AppLocalizations l10n,
+  WidgetRef ref,
+  SyncInfo sync, {
+  bool company = false,
+}) {
+  final syncedAt = sync.syncedAt;
+  if (syncedAt == null) {
+    return company
+        ? l10n.syncLineCompanyNever(sync.accountCount)
+        : l10n.syncLineNever(sync.accountCount);
+  }
+  final minutes =
+      '${ref.watch(clockProvider).now().difference(syncedAt).inMinutes}';
+  return company
+      ? l10n.syncLineCompany(sync.accountCount, minutes)
+      : l10n.syncLine(sync.accountCount, minutes);
+}
 
 /// Bills due in the next seven days, overdue ones included, in one card.
 class DueSoonSection extends StatelessWidget {
@@ -267,13 +283,13 @@ class HomeAlertRow extends ConsumerWidget {
         Symbols.verified_user_rounded,
         MoneyTone.assisted,
         l10n.alertAssistedTitle(payee),
-        (bool _) => reason,
+        (bool _) => failureReasonLabel(l10n, reason),
         () => context.go(AppRoutes.bill(billId)),
       ),
       BudgetExceededAlert(:final budget) => (
         Symbols.error_rounded,
         MoneyTone.failed,
-        l10n.alertBudgetTitle(budgetCategoryLabel(l10n, budget.category)),
+        l10n.alertBudgetTitle(budgetCategoryLabel(l10n, budget)),
         (bool hide) => l10n.alertBudgetBody(
           MoneyFormat.whole(budget.spent, hide: hide),
           MoneyFormat.whole(budget.limit, hide: hide),

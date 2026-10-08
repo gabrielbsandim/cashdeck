@@ -112,6 +112,28 @@ String billKindLabel(AppLocalizations l10n, BillKind kind) => switch (kind) {
   BillKind.darfNoBarcode => l10n.billKindDarfNoBarcode,
 };
 
+/// What the detail line calls a bill: a boleto that also carries a Pix BR
+/// Code reads as one.
+String billKindLabelOf(AppLocalizations l10n, Bill bill) =>
+    bill.isBolepix ? l10n.billKindBolepix : billKindLabel(l10n, bill.kind);
+
+String paymentMethodLabel(AppLocalizations l10n, PaymentMethod method) =>
+    switch (method) {
+      PaymentMethod.pix => l10n.paymentMethodPix,
+      PaymentMethod.boleto => l10n.paymentMethodBoleto,
+    };
+
+/// The ladder's failure codes read as a sentence; a rail's own message
+/// passes through as the server wrote it.
+String failureReasonLabel(AppLocalizations l10n, String reason) =>
+    switch (reason) {
+      'NOT_CONFIGURED' => l10n.reasonNotConfigured,
+      'DAILY_CAP_EXCEEDED' => l10n.reasonDailyCap,
+      'RAIL_UNAVAILABLE' => l10n.reasonRailUnavailable,
+      'CONFIRMATION_DECLINED' => l10n.reasonConfirmationDeclined,
+      _ => reason,
+    };
+
 String billSourceLabel(AppLocalizations l10n, BillSource source) =>
     switch (source) {
       BillSource.email => l10n.billSourceEmail,

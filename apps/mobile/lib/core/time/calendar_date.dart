@@ -22,6 +22,20 @@ final class CalendarDate extends Equatable implements Comparable<CalendarDate> {
     );
   }
 
+  /// Reads what a person types, DD/MM/YYYY; null for anything else,
+  /// impossible days such as 31/02 included.
+  static CalendarDate? tryParseDisplay(String text) {
+    final match = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(text.trim());
+    if (match == null) return null;
+    final date = CalendarDate(
+      int.parse(match[3]!),
+      int.parse(match[2]!),
+      int.parse(match[1]!),
+    );
+    final normalized = CalendarDate.fromDateTime(date._utc);
+    return normalized == date ? date : null;
+  }
+
   final int year;
   final int month;
   final int day;

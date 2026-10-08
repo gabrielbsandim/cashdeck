@@ -1,11 +1,16 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/app/shell/tabs_shell.dart';
+import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/security/app_lock.dart';
+import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/accountant_export/presentation/accountant_export_screen.dart';
-import 'package:cashdeck/features/auth/presentation/server_sign_up_screen.dart';
+import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
+import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
+import 'package:cashdeck/features/capture/presentation/shared_file_screen.dart';
 import 'package:cashdeck/features/card_import/presentation/manual_card_bill_import_screen.dart';
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
@@ -37,12 +42,47 @@ GoRoute _page(String path, Widget screen) =>
 /// The part of [full] below the tab root [root], as a child route path.
 String _below(String full, String root) => full.substring(root.length + 1);
 
+/// Where [path] must go instead: sign-in without a session, the lock screen
+/// while locked, and home from either once they no longer apply.
+String? gateRedirect(
+  String path, {
+  required bool signedIn,
+  required bool locked,
+}) {
+  final gate = switch ((signedIn, locked)) {
+    (false, _) => AppRoutes.signIn,
+    (true, true) => AppRoutes.unlock,
+    (true, false) => null,
+  };
+  if (gate != null) return path == gate ? null : gate;
+  final atGate = path == AppRoutes.signIn || path == AppRoutes.unlock;
+  return atGate ? AppRoutes.home : null;
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final gateChanged = ValueNotifier<int>(0);
+  ref
+    ..listen(serverSessionProvider, (_, _) => gateChanged.value++)
+    ..listen(appLockProvider, (_, _) => gateChanged.value++)
+    ..onDispose(gateChanged.dispose);
   final router = GoRouter(
     initialLocation: AppRoutes.home,
+    refreshListenable: gateChanged,
+    redirect: (_, state) => gateRedirect(
+      state.uri.path,
+      signedIn: ref.read(serverSessionProvider) != null,
+      locked: ref.read(appLockProvider),
+    ),
     routes: [
-      _page(AppRoutes.signUp, const ServerSignUpScreen()),
+      _page(AppRoutes.signIn, const ServerSignInScreen()),
       _page(AppRoutes.unlock, const UnlockScreen()),
+      GoRoute(
+        path: AppRoutes.sharedFile,
+        redirect: (_, state) =>
+            state.extra is LocalFile ? null : AppRoutes.home,
+        builder: (_, state) =>
+            SharedFileScreen(file: state.extra! as LocalFile),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (_, state, shell) =>
             TabsShell(navigationShell: shell, location: state.uri.path),
@@ -73,9 +113,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ]),
           _tab(AppRoutes.chat, const ChatScreen()),
           _tab(AppRoutes.more, const MoreScreen(), [
-            _page(
-              _below(AppRoutes.captureSources, AppRoutes.more),
-              const CaptureSourcesScreen(),
+            GoRoute(
+              path: _below(AppRoutes.captureSources, AppRoutes.more),
+              builder: (_, _) => const CaptureSourcesScreen(),
+              routes: [_page('scan', const ScanBillScreen())],
             ),
             GoRoute(
               path: _below(AppRoutes.rails, AppRoutes.more),

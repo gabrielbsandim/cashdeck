@@ -252,7 +252,19 @@ void main() {
     expect(monthShort(context, testToday), startsWith('out'));
     expect(capitalized(''), '');
     expect(
-      BudgetCategory.values.map((c) => budgetCategoryLabel(l10n, c)).toSet(),
+      BudgetCategory.values
+          .map(
+            (c) => budgetCategoryLabel(
+              l10n,
+              BudgetSummary(
+                category: c,
+                spent: const Money(0),
+                limit: const Money(0),
+                name: 'pets',
+              ),
+            ),
+          )
+          .toSet(),
       hasLength(BudgetCategory.values.length),
     );
   });

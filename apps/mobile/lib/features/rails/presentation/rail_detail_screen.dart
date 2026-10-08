@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
@@ -32,6 +33,10 @@ class RailDetailScreen extends ConsumerStatefulWidget {
   static const testKey = Key('rail-test');
   static const removeKey = Key('rail-remove');
   static const replaceKey = Key('rail-replace');
+  static const passwordKey = Key('rail-pfx-password');
+  static const validUntilKey = Key('rail-pfx-valid-until');
+  static const crtKey = Key('rail-upload-crt');
+  static const keyFileKey = Key('rail-upload-key');
 
   final String railId;
   final PaymentRail? rail;
@@ -43,6 +48,8 @@ class RailDetailScreen extends ConsumerStatefulWidget {
 class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
   List<RailCheck>? _checks;
   var _testing = false;
+  var _pfxPassword = '';
+  var _pfxValidUntil = '';
 
   Future<void> _test() async {
     setState(() => _testing = true);
@@ -74,13 +81,24 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
     if (failure == null && context.canPop()) context.pop();
   }
 
-  void _soon() {
+  Future<void> _upload(List<String> extensions) async {
     final l10n = AppLocalizations.of(context);
-    showCdToast(
-      context,
-      icon: Symbols.upload_file_rounded,
-      message: l10n.filePickerSoon,
-    ).ignore();
+    final file = await ref.read(fileChooserProvider).choose(extensions);
+    if (file == null) return;
+    final result = await ref
+        .read(railsRepositoryProvider)
+        .uploadCredential(
+          widget.railId,
+          file,
+          password: _pfxPassword,
+          validUntil: CalendarDate.tryParseDisplay(_pfxValidUntil),
+        );
+    if (!mounted) return;
+    ref.invalidate(railCredentialsProvider(widget.railId));
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.certificateUploadedToast(file.name));
   }
 
   @override
@@ -131,17 +149,18 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          value.certificateName,
+                          value.certificateName ?? l10n.noCertificateYet,
                           style: AppTextStyles.code.copyWith(
                             color: palette.onSurface,
                           ),
                         ),
-                        Text(
-                          l10n.validUntil(value.certificateValidUntil.display),
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: palette.onSurfaceVariant,
+                        if (value.certificateValidUntil case final until?)
+                          Text(
+                            l10n.validUntil(until.display),
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: palette.onSurfaceVariant,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -149,13 +168,26 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
                     key: RailDetailScreen.replaceKey,
                     dense: true,
                     label: l10n.replaceButton,
-                    onPressed: _soon,
+                    onPressed: () => _upload(const ['pfx', 'p12']),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            CdTextField(label: l10n.pfxPasswordLabel, secret: true),
+            CdTextField(
+              key: RailDetailScreen.passwordKey,
+              label: l10n.pfxPasswordLabel,
+              secret: true,
+              onChanged: (value) => _pfxPassword = value,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            CdTextField(
+              key: RailDetailScreen.validUntilKey,
+              label: l10n.certificateValidUntilLabel,
+              hintText: l10n.dateHint,
+              keyboardType: TextInputType.datetime,
+              onChanged: (value) => _pfxValidUntil = value,
+            ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
@@ -168,14 +200,16 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
                   ),
                 ),
                 CdFilterChip(
+                  key: RailDetailScreen.crtKey,
                   label: '.crt',
                   icon: Symbols.upload_rounded,
-                  onTap: _soon,
+                  onTap: () => _upload(const ['crt', 'pem', 'cer']),
                 ),
                 CdFilterChip(
+                  key: RailDetailScreen.keyFileKey,
                   label: '.key',
                   icon: Symbols.upload_rounded,
-                  onTap: _soon,
+                  onTap: () => _upload(const ['key', 'pem']),
                 ),
               ],
             ),
@@ -186,7 +220,10 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
               label: l10n.apiKeyLabel,
               monospace: true,
               secret: true,
-              initialValue: 'ak_live_••••••••${value.apiKeyHint}',
+              initialValue: switch (value.apiKeyHint) {
+                null => '',
+                final hint => '••••••••$hint',
+              },
             ),
             const SizedBox(height: AppSpacing.xl),
             CdSectionHeader(

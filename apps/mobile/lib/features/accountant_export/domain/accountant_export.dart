@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:equatable/equatable.dart';
@@ -57,14 +58,22 @@ final class ExportPlan extends Equatable {
 }
 
 final class ExportRecord extends Equatable {
-  const new({required this.month, required this.sentOn, required this.to});
+  const new({
+    required this.month,
+    required this.sentOn,
+    required this.to,
+    this.id = '',
+  });
 
+  final String id;
   final CalendarDate month;
   final CalendarDate sentOn;
-  final String to;
+
+  /// Null when the ZIP was only generated, not sent to anyone.
+  final String? to;
 
   @override
-  List<Object?> get props => [month, sentOn, to];
+  List<Object?> get props => [id, month, sentOn, to];
 }
 
 abstract interface class AccountantExportRepository {
@@ -76,4 +85,7 @@ abstract interface class AccountantExportRepository {
     ExportPeriod period,
     Set<ExportItemKind> items,
   );
+
+  /// The ZIP of a past export, to share again from the device.
+  Future<Result<LocalFile>> archive(ExportRecord record);
 }

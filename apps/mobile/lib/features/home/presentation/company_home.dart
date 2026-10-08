@@ -65,10 +65,7 @@ class CompanyHome extends ConsumerWidget {
         BalanceHeader(
           label: l10n.companyCash,
           balance: summary.cash,
-          syncLine: l10n.syncLineCompany(
-            summary.sync.accountCount,
-            syncAgo(ref, summary.sync),
-          ),
+          syncLine: syncLineOf(l10n, ref, summary.sync, company: true),
         ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -123,9 +124,9 @@ final class FakeRailsRepository implements RailsRepository {
     return Ok(
       RailCredentials(
         certificateName: _rails[index].owner == EntityKind.personal
-            ? 'aurora-pf.pfx'
-            : 'aurora-pj.pfx',
-        certificateValidUntil: const CalendarDate(2027, 3, 2),
+            ? _certificateName ?? 'aurora-pf.pfx'
+            : _certificateName ?? 'aurora-pj.pfx',
+        certificateValidUntil: _validUntil ?? const CalendarDate(2027, 3, 2),
         apiKeyHint: '3f9a',
         lastTestAt:
             _lastTest ??
@@ -154,5 +155,26 @@ final class FakeRailsRepository implements RailsRepository {
     if (index < 0) return const Err(NotFoundFailure());
     _rails.removeAt(index);
     return const Ok(null);
+  }
+
+  String? _certificateName;
+
+  CalendarDate? _validUntil;
+
+  @override
+  Future<Result<RailCredentials>> uploadCredential(
+    String id,
+    LocalFile file, {
+    String? password,
+    CalendarDate? validUntil,
+  }) async {
+    final needsPassword = file.extension == 'pfx' || file.extension == 'p12';
+    if (needsPassword && (password ?? '').isEmpty) {
+      await _wait();
+      return const Err(ValidationFailure('password'));
+    }
+    _certificateName = file.name;
+    _validUntil = validUntil ?? _validUntil;
+    return await credentials(id);
   }
 }

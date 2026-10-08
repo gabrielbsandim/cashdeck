@@ -1,8 +1,34 @@
 # API contract
 
-What the app expects from the Cashdeck API (`apps/api`). The server's OpenAPI
-document is the source of truth; when the two disagree, align this file and the
-DTOs in the same change.
+What the app expects from the Cashdeck API (`apps/api`). The full v1 contract
+is `docs/api.md` in the API repository and its OpenAPI document at
+`/api/v1/openapi`; when the app and the contract disagree, align the DTOs in
+the same change.
+
+## Auth
+
+The server has one access token (`CASHDECK_API_TOKEN`). The app stores the
+server URL and the token in secure storage, sends `Authorization: Bearer
+<token>` on every request and checks them with `GET /api/v1/auth/check` at
+sign in. A 401 anywhere signs the user out.
+
+## Repositories
+
+Every feature has an `Api*Repository` in its `data/` folder, selected by
+`Backend.api`, and a fake selected by `Backend.fake`. Uploads are JSON with a
+base64 payload (`core/network/file_transfer.dart`); downloads read the raw
+body and the `Content-Disposition` file name.
+
+Where the contract has no route yet, the repository answers
+`UnsupportedFailure` instead of guessing:
+
+- Sharing a bill PDF or photo into the app (capture `submitFile`).
+- The bank proof as a PDF: the receipt shares its first attachment instead.
+- Downloading a transfer's document.
+
+Codes the camera reads go to `POST /bills` with the entity id from
+`GET /entities`. Certificate uploads (rails and invoice issuer) ask for the
+expiry date, since a .pfx does not let the server read it.
 
 ## Envelope
 

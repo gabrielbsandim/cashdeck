@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -50,4 +51,7 @@ final class TransferDetail extends Equatable {
 
 abstract interface class TransfersRepository {
   Future<Result<TransferDetail>> transfer(String id);
+
+  /// The file attached to the transfer, such as the distribution minutes.
+  Future<Result<LocalFile>> document(String id);
 }

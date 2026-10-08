@@ -25,6 +25,10 @@ enum LadderStep { automatic, bankApproval, assisted }
 
 enum AttemptOutcome { succeeded, failed, waiting }
 
+/// How an attempt tried to pay: most boletos now carry a Pix BR Code, and the
+/// ladder tries it before the barcode.
+enum PaymentMethod { pix, boleto }
+
 /// Who settled a paid bill: a rail on its own, or the user by hand.
 enum PaidBy { rail, user }
 
@@ -35,6 +39,7 @@ final class PaymentAttempt extends Equatable {
     required this.at,
     required this.outcome,
     this.reason,
+    this.method,
   });
 
   final LadderStep step;
@@ -42,9 +47,10 @@ final class PaymentAttempt extends Equatable {
   final DateTime at;
   final AttemptOutcome outcome;
   final String? reason;
+  final PaymentMethod? method;
 
   @override
-  List<Object?> get props => [step, rail, at, outcome, reason];
+  List<Object?> get props => [step, rail, at, outcome, reason, method];
 }
 
 final class Bill extends Equatable {
@@ -59,6 +65,7 @@ final class Bill extends Equatable {
     required this.source,
     required this.plan,
     this.paymentCode,
+    this.pixCode,
     this.attempts = const [],
     this.paidAt,
     this.paidBy,
@@ -79,10 +86,15 @@ final class Bill extends Equatable {
   /// The boleto line or the Pix payload, absent for a Pix key payment.
   final String? paymentCode;
 
+  /// The Pix BR Code printed on a boleto that has one (a bolepix).
+  final String? pixCode;
+
   /// Oldest first.
   final List<PaymentAttempt> attempts;
   final DateTime? paidAt;
   final PaidBy? paidBy;
+
+  bool get isBolepix => kind == BillKind.boleto && pixCode != null;
 
   bool get isTax =>
       kind == BillKind.taxBarcode || kind == BillKind.darfNoBarcode;
@@ -99,6 +111,7 @@ final class Bill extends Equatable {
     source: source,
     plan: plan,
     paymentCode: paymentCode,
+    pixCode: pixCode,
     attempts: attempts,
     paidAt: at,
     paidBy: PaidBy.user,
@@ -121,6 +134,7 @@ final class Bill extends Equatable {
     source,
     plan,
     paymentCode,
+    pixCode,
     attempts,
     paidAt,
     paidBy,

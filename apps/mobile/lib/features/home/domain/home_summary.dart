@@ -7,7 +7,9 @@ final class SyncInfo extends Equatable {
   const new({required this.accountCount, required this.syncedAt});
 
   final int accountCount;
-  final DateTime syncedAt;
+
+  /// Null until the first sync.
+  final DateTime? syncedAt;
 
   @override
   List<Object?> get props => [accountCount, syncedAt];
@@ -29,7 +31,9 @@ final class ReserveSummary extends Equatable {
   final Money balance;
   final Money monthYield;
   final int coverDays;
-  final int cdiPercent;
+
+  /// Null when the reserve does not follow the CDI.
+  final int? cdiPercent;
 
   @override
   List<Object?> get props => [
@@ -42,19 +46,28 @@ final class ReserveSummary extends Equatable {
   ];
 }
 
-enum BudgetCategory { transport, groceries, restaurants }
+/// The categories the app labels itself; [other] is one the user created.
+enum BudgetCategory { transport, groceries, restaurants, other }
 
 final class BudgetSummary extends Equatable {
-  const new({required this.category, required this.spent, required this.limit});
+  const new({
+    required this.category,
+    required this.spent,
+    required this.limit,
+    this.name = '',
+  });
 
   final BudgetCategory category;
   final Money spent;
   final Money limit;
 
+  /// The server's category name, shown for [BudgetCategory.other].
+  final String name;
+
   bool get exceeded => spent.cents > limit.cents;
 
   @override
-  List<Object?> get props => [category, spent, limit];
+  List<Object?> get props => [category, spent, limit, name];
 }
 
 /// One balance a day from [from], lowest point and safety floor included.
@@ -151,7 +164,9 @@ final class PersonalSummary extends HomeSummary {
 
   final Money balance;
   final SyncInfo sync;
-  final ReserveSummary reserve;
+
+  /// Null while no account is marked as the reserve.
+  final ReserveSummary? reserve;
   final CashForecast forecast;
   final List<BudgetSummary> budgets;
   final List<HomeAlert> alerts;

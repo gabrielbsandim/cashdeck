@@ -44,12 +44,10 @@ class PersonalHome extends ConsumerWidget {
         BalanceHeader(
           label: l10n.totalBalance,
           balance: summary.balance,
-          syncLine: l10n.syncLine(
-            summary.sync.accountCount,
-            syncAgo(ref, summary.sync),
-          ),
+          syncLine: syncLineOf(l10n, ref, summary.sync),
         ),
-        _ReserveCard(reserve: summary.reserve, today: today),
+        if (summary.reserve case final reserve?)
+          _ReserveCard(reserve: reserve, today: today),
         DueSoonSection(bills: billsDueWithin(bills, today, 7), today: today),
         _ForecastSection(forecast: summary.forecast),
         Column(
@@ -64,7 +62,7 @@ class PersonalHome extends ConsumerWidget {
                     if (index > 0) const SizedBox(height: AppSpacing.lg),
                     CdBudgetBar(
                       icon: budgetCategoryIcon(budget.category),
-                      name: budgetCategoryLabel(l10n, budget.category),
+                      name: budgetCategoryLabel(l10n, budget),
                       spent: budget.spent,
                       limit: budget.limit,
                     ),
@@ -168,10 +166,10 @@ class _ReserveCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            l10n.reserveCovers(reserve.coverDays, reserve.cdiPercent),
-            style: secondary,
-          ),
+          Text(switch (reserve.cdiPercent) {
+            null => l10n.reserveCoversDays(reserve.coverDays),
+            final cdi => l10n.reserveCovers(reserve.coverDays, cdi),
+          }, style: secondary),
         ],
       ),
     );

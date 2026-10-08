@@ -104,12 +104,12 @@ class _ReviewState extends ConsumerState<_Review> {
   };
   var _creating = false;
 
-  Future<void> _create(StatementTotals totals) async {
+  Future<void> _create() async {
     final l10n = AppLocalizations.of(context);
     setState(() => _creating = true);
     final result = await ref
         .read(cardImportRepositoryProvider)
-        .createBill(widget.statement, totals.total);
+        .createBill(widget.statement, _selected);
     if (!mounted) return;
     setState(() => _creating = false);
     final failure = switch (result) {
@@ -261,7 +261,7 @@ class _ReviewState extends ConsumerState<_Review> {
           expand: true,
           loading: _creating,
           label: l10n.cardCreateBillButton,
-          onPressed: _selected.isEmpty ? null : () => _create(totals),
+          onPressed: _selected.isEmpty ? null : _create,
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(

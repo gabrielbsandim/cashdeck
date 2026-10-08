@@ -43,3 +43,8 @@ final class ServerFailure extends AppFailure {
 final class UnexpectedFailure extends AppFailure {
   const new();
 }
+
+/// The connected server has no endpoint for this yet.
+final class UnsupportedFailure extends AppFailure {
+  const new();
+}

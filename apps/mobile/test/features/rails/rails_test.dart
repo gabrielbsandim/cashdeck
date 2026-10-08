@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
@@ -13,6 +17,7 @@ import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_labels.dart';
 import 'package:cashdeck/features/rails/rails_providers.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/app_harness.dart';
@@ -55,6 +60,19 @@ final class _FlakyRails implements RailsRepository {
   }
 
   @override
+  Future<Result<RailCredentials>> uploadCredential(
+    String id,
+    LocalFile file, {
+    String? password,
+    CalendarDate? validUntil,
+  }) => _inner.uploadCredential(
+    id,
+    file,
+    password: password,
+    validUntil: validUntil,
+  );
+
+  @override
   Future<Result<void>> remove(String id) async {
     if (failRemove) return const Err(NetworkFailure());
     return await _inner.remove(id);
@@ -92,7 +110,6 @@ void main() {
       certificateName: 'cert.pfx',
       certificateValidUntil: CalendarDate(2027, 1, 1),
       apiKeyHint: 'abcd',
-      lastTestAt: null,
     );
     const check = RailCheck(kind: RailCheckKind.scope, passed: true);
 
@@ -255,16 +272,46 @@ void main() {
       expect(find.text(l10n.millis(210)), findsOneWidget);
       expect(find.text('-'), findsOneWidget);
 
+      final chooser = app.read(fileChooserProvider) as FakeFileChooser;
       await tester.tap(find.byKey(RailDetailScreen.replaceKey));
       await settle(tester);
-      expect(find.text(l10n.filePickerSoon), findsOneWidget);
+      expect(chooser.requests.single, ['pfx', 'p12']);
+
+      chooser.next = LocalFile(name: 'nova-pf.pfx', bytes: Uint8List(4));
+      await tester.tap(find.byKey(RailDetailScreen.replaceKey));
+      await settle(tester);
+      expect(find.text('password'), findsOneWidget);
       await waitForToast(tester);
-      await tester.tap(find.text('.crt'));
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(RailDetailScreen.passwordKey),
+          matching: find.byType(TextField),
+        ),
+        'senha-do-pfx',
+      );
+      await tester.tap(find.byKey(RailDetailScreen.replaceKey));
+      await settle(tester);
+      expect(
+        find.text(l10n.certificateUploadedToast('nova-pf.pfx')),
+        findsOneWidget,
+      );
+      expect(find.text('nova-pf.pfx'), findsOneWidget);
+      await waitForToast(tester);
+
+      chooser.next = LocalFile(name: 'cliente.crt', bytes: Uint8List(4));
+      await tester.tap(find.byKey(RailDetailScreen.crtKey));
       await settle(tester);
       await waitForToast(tester);
-      await tester.tap(find.text('.key'));
+      chooser.next = LocalFile(name: 'cliente.key', bytes: Uint8List(4));
+      await tester.tap(find.byKey(RailDetailScreen.keyFileKey));
       await settle(tester);
+      expect(
+        find.text(l10n.certificateUploadedToast('cliente.key')),
+        findsOneWidget,
+      );
       await waitForToast(tester);
+      expect(chooser.requests.last, ['key', 'pem']);
 
       await tester.tap(find.byKey(RailDetailScreen.removeKey));
       await settle(tester);

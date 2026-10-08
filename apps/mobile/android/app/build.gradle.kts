@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "io.cashdeck.app"
-    compileSdk = flutter.compileSdkVersion
+    // receive_sharing_intent 1.9 compiles against API 37.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -46,4 +47,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.1")
 }

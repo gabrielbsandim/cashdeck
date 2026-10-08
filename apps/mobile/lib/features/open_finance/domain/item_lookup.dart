@@ -34,7 +34,9 @@ final class ItemFound extends ItemLookup {
   });
 
   final String institution;
-  final CalendarDate consentUntil;
+
+  /// Null when the aggregator does not say.
+  final CalendarDate? consentUntil;
   final List<FoundAccount> accounts;
 
   @override

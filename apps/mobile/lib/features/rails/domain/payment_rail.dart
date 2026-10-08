@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -56,20 +57,22 @@ final class PaymentRail extends Equatable {
 }
 
 /// The mTLS certificate and key of an API rail. Secrets never come back:
-/// only what identifies them.
+/// only what identifies them, each null until it is sent.
 final class RailCredentials extends Equatable {
   const new({
-    required this.certificateName,
-    required this.certificateValidUntil,
-    required this.apiKeyHint,
-    required this.lastTestAt,
+    this.certificateName,
+    this.certificateValidUntil,
+    this.apiKeyHint,
+    this.lastTestAt,
   });
 
-  final String certificateName;
-  final CalendarDate certificateValidUntil;
+  static const none = RailCredentials();
+
+  final String? certificateName;
+  final CalendarDate? certificateValidUntil;
 
   /// The last four characters, the rest masked by the server.
-  final String apiKeyHint;
+  final String? apiKeyHint;
   final DateTime? lastTestAt;
 
   @override
@@ -104,4 +107,14 @@ abstract interface class RailsRepository {
   Future<Result<List<RailCheck>>> test(String id);
 
   Future<Result<void>> remove(String id);
+
+  /// Sends a client certificate (.pfx with its [password] and [validUntil],
+  /// or a .crt and a .key one at a time); the server seals it and answers
+  /// what identifies it.
+  Future<Result<RailCredentials>> uploadCredential(
+    String id,
+    LocalFile file, {
+    String? password,
+    CalendarDate? validUntil,
+  });
 }

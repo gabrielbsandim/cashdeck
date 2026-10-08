@@ -38,8 +38,10 @@ final class CardStatement extends Equatable {
     required this.rate,
     required this.iofBps,
     required this.lines,
+    this.id = '',
   });
 
+  final String id;
   final String card;
   final String issuer;
   final CalendarDate closing;
@@ -51,7 +53,16 @@ final class CardStatement extends Equatable {
   Money brlOf(Money foreign) => Money((foreign.cents * rate / 10000).round());
 
   @override
-  List<Object?> get props => [card, issuer, closing, due, rate, iofBps, lines];
+  List<Object?> get props => [
+    id,
+    card,
+    issuer,
+    closing,
+    due,
+    rate,
+    iofBps,
+    lines,
+  ];
 }
 
 /// The bill that the selected lines add up to: foreign subtotal, its BRL
@@ -87,6 +98,10 @@ final class StatementTotals extends Equatable {
 abstract interface class CardImportRepository {
   Future<Result<CardStatement>> statement();
 
-  /// Creates the bill for [total] due on the statement's date; returns its id.
-  Future<Result<String>> createBill(CardStatement statement, Money total);
+  /// Creates the bill for the [lineIds] picked, due on the statement's date;
+  /// the server computes the total. Returns the bill id.
+  Future<Result<String>> createBill(
+    CardStatement statement,
+    Set<String> lineIds,
+  );
 }

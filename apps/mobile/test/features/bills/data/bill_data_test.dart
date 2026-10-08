@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/bills/data/api_bills_repository.dart';
@@ -51,6 +52,54 @@ void main() {
 
     test('a missing attempts list is empty', () {
       expect(billFromJson(billJson()).attempts, isEmpty);
+      final bolepix = billFromJson({
+        ...billJson(
+          attempts: [
+            {
+              'id': 'a',
+              'stepIndex': 0,
+              'mode': 'AUTOMATIC',
+              'rail': 'ASAAS',
+              'method': 'PIX',
+              'outcome': 'FAILED',
+              'at': '2026-10-08T10:00:00.000Z',
+            },
+            {
+              'id': 'b',
+              'stepIndex': 0,
+              'mode': 'AUTOMATIC',
+              'rail': 'ASAAS',
+              'method': 'BOLETO',
+              'outcome': 'SUBMITTED',
+              'at': '2026-10-08T10:01:00.000Z',
+            },
+          ],
+        ),
+        'pixCode': '000201abc',
+      });
+      expect(bolepix.isBolepix, isTrue);
+      expect(bolepix.markedPaid(testNow).pixCode, '000201abc');
+      expect(bolepix.attempts.map((attempt) => attempt.method), [
+        PaymentMethod.pix,
+        PaymentMethod.boleto,
+      ]);
+      expect(billFromJson(billJson()).isBolepix, isFalse);
+      expect(
+        () => billFromJson(
+          billJson(
+            attempts: [
+              {
+                'mode': 'AUTOMATIC',
+                'rail': 'ASAAS',
+                'method': 'TED',
+                'outcome': 'FAILED',
+                'at': '2026-10-08T10:00:00.000Z',
+              },
+            ],
+          ),
+        ),
+        throwsFormatException,
+      );
     });
 
     test('a bill without a plan yet has no ladder steps', () {
@@ -108,7 +157,9 @@ void main() {
 
     test('reads money in cents', () {
       expect(
-        moneyFromJson({'cents': 100, 'currency': 'USD'}),
+        readMoney({
+          'amount': {'cents': 100, 'currency': 'USD'},
+        }, 'amount'),
         const Money(100, currency: 'USD'),
       );
     });

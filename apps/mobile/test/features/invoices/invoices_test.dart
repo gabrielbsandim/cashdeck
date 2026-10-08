@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -38,6 +42,13 @@ final class _Flaky implements IssuerRepository {
   @override
   Future<Result<TestEmission>> emitTest(IssuerSetup setup) async =>
       const Err(NetworkFailure());
+
+  @override
+  Future<Result<IssuerSetup>> uploadCertificate(
+    LocalFile file,
+    String password,
+    CalendarDate expiresOn,
+  ) async => const Err(NetworkFailure());
 }
 
 void main() {
@@ -117,8 +128,7 @@ void main() {
 
     await tester.tap(find.byKey(InvoiceIssuerSetupScreen.uploadKey));
     await settle(tester);
-    expect(find.text(l10n.filePickerSoon), findsOneWidget);
-    await waitForToast(tester);
+    expect(find.text(l10n.certificatePasswordTitle), findsNothing);
     await tester.tap(find.byKey(InvoiceIssuerSetupScreen.remindKey));
     await settle(tester);
     expect(find.byKey(InvoiceIssuerSetupScreen.uploadKey), findsNothing);
@@ -206,5 +216,64 @@ void main() {
     await settle(tester);
 
     expect(find.textContaining('2026-000184'), findsNothing);
+  });
+
+  testWidgets('uploads a new A1 with its password', (tester) async {
+    final chooser = FakeFileChooser(
+      LocalFile(name: 'novo-a1.pfx', bytes: Uint8List(4)),
+    );
+    await pumpRoute(
+      tester,
+      AppRoutes.invoiceIssuer,
+      overrides: [fileChooserProvider.overrideWithValue(chooser)],
+    );
+
+    await tester.tap(find.byKey(InvoiceIssuerSetupScreen.uploadKey));
+    await settle(tester);
+    expect(find.text(l10n.certificatePasswordTitle), findsOneWidget);
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('issuer-certificate-password')),
+        matching: find.byType(TextField),
+      ),
+      'senha-a1',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('issuer-certificate-valid-until')),
+        matching: find.byType(TextField),
+      ),
+      '01/01/2028',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('issuer-certificate-confirm')));
+    await settle(tester);
+
+    expect(
+      find.text(l10n.certificateUploadedToast('novo-a1.pfx')),
+      findsOneWidget,
+    );
+    expect(find.text('novo-a1.pfx'), findsOneWidget);
+    expect(find.byKey(InvoiceIssuerSetupScreen.uploadKey), findsNothing);
+    await waitForToast(tester);
+  });
+
+  testWidgets('closing the password sheet uploads nothing', (tester) async {
+    final chooser = FakeFileChooser(
+      LocalFile(name: 'novo-a1.pfx', bytes: Uint8List(4)),
+    );
+    await pumpRoute(
+      tester,
+      AppRoutes.invoiceIssuer,
+      overrides: [fileChooserProvider.overrideWithValue(chooser)],
+    );
+
+    await tester.tap(find.byKey(InvoiceIssuerSetupScreen.uploadKey));
+    await settle(tester);
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
+
+    expect(find.text('novo-a1.pfx'), findsNothing);
   });
 }

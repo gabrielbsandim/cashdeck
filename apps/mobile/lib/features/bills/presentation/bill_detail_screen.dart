@@ -33,6 +33,7 @@ class BillDetailScreen extends ConsumerWidget {
   const new({required this.billId, super.key});
 
   static const copyCodeKey = Key('bill-copy-code');
+  static const copyPixKey = Key('bill-copy-pix');
 
   final String billId;
 
@@ -117,6 +118,7 @@ class _BillDetail extends ConsumerWidget {
     final palette = context.palette;
     final (label, tone) = billStatusOf(l10n, bill, today);
     final code = bill.paymentCode;
+    final pix = bill.pixCode;
     final showsCode =
         code != null &&
         !bill.isSettled &&
@@ -161,13 +163,22 @@ class _BillDetail extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           l10n.billKindAndSource(
-            billKindLabel(l10n, bill.kind),
+            billKindLabelOf(l10n, bill),
             billSourceLabel(l10n, bill.source),
           ),
           style: secondary,
         ),
-        if (showsCode) ...[
+        if (showsCode && pix != null) ...[
           const SizedBox(height: AppSpacing.xl),
+          CdCopyField(
+            code: pix,
+            label: l10n.pixCopyPasteLabel,
+            valid: true,
+            buttonKey: BillDetailScreen.copyPixKey,
+          ),
+        ],
+        if (showsCode) ...[
+          SizedBox(height: pix == null ? AppSpacing.xl : AppSpacing.md),
           CdCopyField(
             code: code,
             label: bill.kind == BillKind.pixQr

@@ -1,6 +1,8 @@
+import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
@@ -19,10 +21,13 @@ import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class CaptureController extends AsyncNotifier<CaptureSources> {
@@ -65,6 +70,7 @@ class CaptureSourcesScreen extends ConsumerWidget {
   static Key readKey(String id) => Key('capture-read-$id');
   static Key disconnectKey(String id) => Key('capture-disconnect-$id');
   static const connectKey = Key('capture-connect');
+  static const scanKey = Key('capture-scan');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,6 +95,29 @@ class _Sources extends ConsumerWidget {
 
   final CaptureSources sources;
 
+  /// Opens the provider's consent page; the mailbox appears after the
+  /// server receives the grant and the list is refreshed.
+  Future<void> _connect(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final owner = switch (ref.read(entityScopeProvider)) {
+      EntityScope.company => EntityKind.company,
+      EntityScope.personal || EntityScope.consolidated => EntityKind.personal,
+    };
+    final url = await ref
+        .read(captureRepositoryProvider)
+        .mailboxAuthorizationUrl(owner);
+    final opened = switch (url) {
+      Ok(:final value) => await ref.read(linkOpenerProvider).open(value),
+      Err() => false,
+    };
+    if (opened || !context.mounted) return;
+    await showCdToast(
+      context,
+      icon: Symbols.mail_rounded,
+      message: l10n.captureConnectFailed,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -99,13 +128,20 @@ class _Sources extends ConsumerWidget {
         Symbols.ios_share_rounded,
         l10n.captureShareTitle,
         l10n.captureShareBody,
+        null,
       ),
       (
         Symbols.photo_camera_rounded,
         l10n.captureCameraTitle,
         l10n.captureCameraBody,
+        () => context.push(AppRoutes.scanBill).ignore(),
       ),
-      (Symbols.forum_rounded, l10n.captureChatTitle, l10n.captureChatBody),
+      (
+        Symbols.forum_rounded,
+        l10n.captureChatTitle,
+        l10n.captureChatBody,
+        null,
+      ),
     ];
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -144,11 +180,7 @@ class _Sources extends ConsumerWidget {
           leading: Icon(Symbols.add_rounded, color: palette.primary),
           title: l10n.captureConnectMailbox,
           subtitle: l10n.captureConnectMailboxHint,
-          onTap: () => showCdToast(
-            context,
-            icon: Symbols.mail_rounded,
-            message: l10n.captureConnectSoon,
-          ),
+          onTap: () => _connect(context, ref),
         ),
         _Header(l10n.captureDda),
         for (final dda in sources.dda)
@@ -156,23 +188,28 @@ class _Sources extends ConsumerWidget {
             key: Key('capture-dda-${dda.owner.name}'),
             leading: EntityKindBadge(kind: dda.owner),
             title: l10n.captureDdaTitle(entityKindLabel(l10n, dda.owner)),
-            subtitle: l10n.captureDdaBody(
-              dda.bank,
-              CalendarDate.brazilToday(dda.lastBatchAt).dayMonth,
-              brazilTime(dda.lastBatchAt),
-              dda.boletos,
-            ),
+            subtitle: switch (dda.lastBatchAt) {
+              null => l10n.captureDdaWaiting(dda.bank),
+              final at => l10n.captureDdaBody(
+                dda.bank,
+                CalendarDate.brazilToday(at).dayMonth,
+                brazilTime(at),
+                dda.boletos,
+              ),
+            },
             trailing: Switch(
               value: dda.enabled,
               onChanged: (on) => controller.setDda(dda, on: on),
             ),
           ),
         _Header(l10n.captureAlwaysOn),
-        for (final (icon, title, body) in always)
+        for (final (icon, title, body, onTap) in always)
           CdListRow(
+            key: onTap == null ? null : CaptureSourcesScreen.scanKey,
             icon: icon,
             title: title,
             subtitle: body,
+            onTap: onTap,
             trailing: Icon(
               Symbols.check_circle_rounded,
               color: context.money.paid,
@@ -218,10 +255,7 @@ class _MailboxCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
-    final readDay = CalendarDate.brazilToday(mailbox.lastReadAt);
-    final readLabel = readDay == today
-        ? l10n.todayAt(brazilTime(mailbox.lastReadAt))
-        : readDay.dayMonth;
+    final readLabel = _readLabel(l10n, mailbox.lastReadAt, today);
     Widget stat(String label, String value) => Expanded(
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -316,4 +350,10 @@ class _MailboxCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _readLabel(AppLocalizations l10n, DateTime? at, CalendarDate today) {
+  if (at == null) return l10n.captureNotReadYet;
+  final day = CalendarDate.brazilToday(at);
+  return day == today ? l10n.todayAt(brazilTime(at)) : day.dayMonth;
 }
