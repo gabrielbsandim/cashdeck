@@ -21,6 +21,8 @@ import {
   type Notifier,
   type OpenFinanceProvider,
   type ProviderAccount,
+  type ProviderCheck,
+  type ProviderItem,
   type ProviderTransaction,
   type SecretVault,
   type StatementDraft,
@@ -65,13 +67,26 @@ export class FakePaymentRail implements PaymentRail {
     }
     return next
   }
+
+  async check(): Promise<ProviderCheck> {
+    return { ok: true, message: null }
+  }
 }
 
 export class FakeOpenFinanceProvider implements OpenFinanceProvider {
   constructor(
     private readonly accounts: ProviderAccount[] = [],
     private readonly transactions: ProviderTransaction[] = [],
+    private readonly items: ProviderItem[] = [],
   ) {}
+
+  async getItem(itemId: string): Promise<ProviderItem> {
+    const item = this.items.find(candidate => candidate.itemId === itemId)
+    if (!item) {
+      throw new Error(`Item ${itemId} was not found.`)
+    }
+    return item
+  }
 
   async listAccounts(): Promise<ProviderAccount[]> {
     return this.accounts
@@ -153,6 +168,10 @@ export class FakeInvoiceIssuer implements InvoiceIssuer {
     }
     this.issued.set(externalId, cancelled)
     return cancelled
+  }
+
+  async check(): Promise<ProviderCheck> {
+    return { ok: true, message: null }
   }
 }
 

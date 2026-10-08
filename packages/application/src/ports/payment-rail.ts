@@ -6,6 +6,7 @@ import {
   type RailId,
   type StepMode,
 } from '@cashdeck/domain'
+import { type ProviderCheck } from '@/ports/providers'
 
 export type PaymentRequest = {
   bill: Bill
@@ -31,4 +32,5 @@ export interface PaymentRail {
   readonly id: RailId
   supports(kind: BillKind, entityKind: EntityKind): boolean
   pay(request: PaymentRequest): Promise<RailResult>
+  check(): Promise<ProviderCheck>
 }

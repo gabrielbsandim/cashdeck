@@ -22,7 +22,24 @@ export type ProviderTransaction = {
   description: string
 }
 
+export type ProviderCheck = { ok: boolean; message: string | null }
+
+export type ProviderItemStatus =
+  | 'UPDATED'
+  | 'UPDATING'
+  | 'LOGIN_ERROR'
+  | 'OUTDATED'
+  | 'WAITING_USER_INPUT'
+
+export type ProviderItem = {
+  itemId: string
+  institutionName: string
+  status: ProviderItemStatus
+  lastUpdatedAt: string | null
+}
+
 export interface OpenFinanceProvider {
+  getItem(itemId: string): Promise<ProviderItem>
   listAccounts(connection: OpenFinanceConnection): Promise<ProviderAccount[]>
   listTransactions(
     connection: OpenFinanceConnection,
@@ -48,6 +65,8 @@ export interface StatementImporter {
 export type CapturedBill = {
   externalId: string
   paymentCode: string | null
+  // Most boletos now print a Pix BR Code too; the ladder prefers it when set.
+  pixCode?: string | null
   payee: string | null
   amountCents: number | null
   dueDate: string | null
@@ -72,6 +91,8 @@ export type InvoiceDraft = {
   description: string
   amountCents: number
   currency: string
+  // Issuers report in BRL; a foreign currency invoice carries its converted total.
+  brlAmountCents?: number | null
   export: boolean
 }
 
@@ -88,6 +109,7 @@ export interface InvoiceIssuer {
   issue(draft: InvoiceDraft, idempotencyKey: string): Promise<IssuedInvoice>
   get(externalId: string): Promise<IssuedInvoice>
   cancel(externalId: string, reason: string): Promise<IssuedInvoice>
+  check(): Promise<ProviderCheck>
 }
 
 export type Notification = {
