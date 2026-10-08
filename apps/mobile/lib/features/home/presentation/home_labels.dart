@@ -5,17 +5,22 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-String budgetCategoryLabel(AppLocalizations l10n, BudgetCategory category) =>
-    switch (category) {
+String budgetCategoryLabel(AppLocalizations l10n, BudgetSummary budget) =>
+    switch (budget.category) {
       BudgetCategory.transport => l10n.categoryTransport,
       BudgetCategory.groceries => l10n.categoryGroceries,
       BudgetCategory.restaurants => l10n.categoryRestaurants,
+      BudgetCategory.other => _capitalized(budget.name),
     };
+
+String _capitalized(String name) =>
+    name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 
 IconData budgetCategoryIcon(BudgetCategory category) => switch (category) {
   BudgetCategory.transport => Symbols.directions_car_rounded,
   BudgetCategory.groceries => Symbols.shopping_cart_rounded,
   BudgetCategory.restaurants => Symbols.restaurant_rounded,
+  BudgetCategory.other => Symbols.category_rounded,
 };
 
 /// hoje, ontem or dd/MM.

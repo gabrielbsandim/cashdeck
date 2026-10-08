@@ -116,7 +116,7 @@ final class FakeAccountantExportRepository
       LocalFile(
         name: 'contador-$month.pdf',
         mimeType: 'application/pdf',
-        bytes: plainPdf(['Pacote do contador', month, record.to]),
+        bytes: plainPdf(['Pacote do contador', month, ?record.to]),
       ),
     );
   }

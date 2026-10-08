@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/bills/data/api_bills_repository.dart';
@@ -156,7 +157,9 @@ void main() {
 
     test('reads money in cents', () {
       expect(
-        moneyFromJson({'cents': 100, 'currency': 'USD'}),
+        readMoney({
+          'amount': {'cents': 100, 'currency': 'USD'},
+        }, 'amount'),
         const Money(100, currency: 'USD'),
       );
     });

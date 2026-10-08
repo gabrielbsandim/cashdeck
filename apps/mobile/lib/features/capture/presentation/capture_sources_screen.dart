@@ -188,12 +188,15 @@ class _Sources extends ConsumerWidget {
             key: Key('capture-dda-${dda.owner.name}'),
             leading: EntityKindBadge(kind: dda.owner),
             title: l10n.captureDdaTitle(entityKindLabel(l10n, dda.owner)),
-            subtitle: l10n.captureDdaBody(
-              dda.bank,
-              CalendarDate.brazilToday(dda.lastBatchAt).dayMonth,
-              brazilTime(dda.lastBatchAt),
-              dda.boletos,
-            ),
+            subtitle: switch (dda.lastBatchAt) {
+              null => l10n.captureDdaWaiting(dda.bank),
+              final at => l10n.captureDdaBody(
+                dda.bank,
+                CalendarDate.brazilToday(at).dayMonth,
+                brazilTime(at),
+                dda.boletos,
+              ),
+            },
             trailing: Switch(
               value: dda.enabled,
               onChanged: (on) => controller.setDda(dda, on: on),
@@ -252,10 +255,7 @@ class _MailboxCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
-    final readDay = CalendarDate.brazilToday(mailbox.lastReadAt);
-    final readLabel = readDay == today
-        ? l10n.todayAt(brazilTime(mailbox.lastReadAt))
-        : readDay.dayMonth;
+    final readLabel = _readLabel(l10n, mailbox.lastReadAt, today);
     Widget stat(String label, String value) => Expanded(
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -350,4 +350,10 @@ class _MailboxCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _readLabel(AppLocalizations l10n, DateTime? at, CalendarDate today) {
+  if (at == null) return l10n.captureNotReadYet;
+  final day = CalendarDate.brazilToday(at);
+  return day == today ? l10n.todayAt(brazilTime(at)) : day.dayMonth;
 }

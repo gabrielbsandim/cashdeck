@@ -87,8 +87,9 @@ void main() {
   test('the A1 upload needs its password and renews the expiry', () async {
     final issuer = FakeIssuerRepository(clock, latency: Duration.zero);
 
-    expect(await issuer.uploadCertificate(pfx, ''), isA<Err<Object?>>());
-    final setup = await issuer.uploadCertificate(pfx, 'senha');
+    const until = CalendarDate(2028, 1, 1);
+    expect(await issuer.uploadCertificate(pfx, '', until), isA<Err<Object?>>());
+    final setup = await issuer.uploadCertificate(pfx, 'senha', until);
     expect((setup as Ok<IssuerSetup>).value.certificateName, 'novo.pfx');
   });
 

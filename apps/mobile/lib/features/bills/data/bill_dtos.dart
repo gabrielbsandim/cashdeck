@@ -1,7 +1,6 @@
-import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
-import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/data/entity_dtos.dart';
 
 const Map<String, BillKind> _kinds = {
   'BOLETO': BillKind.boleto,
@@ -9,11 +8,6 @@ const Map<String, BillKind> _kinds = {
   'PIX_QR': BillKind.pixQr,
   'TAX_BARCODE': BillKind.taxBarcode,
   'DARF_NO_BARCODE': BillKind.darfNoBarcode,
-};
-
-const Map<String, EntityKind> _owners = {
-  'PF': EntityKind.personal,
-  'PJ': EntityKind.company,
 };
 
 /// The server statuses folded into what the app shows: a bill waiting for the
@@ -58,24 +52,15 @@ const Map<String, PaymentMethod> _methods = {
 
 const Map<String, PaidBy> _paidBy = {'RAIL': PaidBy.rail, 'USER': PaidBy.user};
 
-T _lookup<T>(Map<String, T> table, String raw) {
-  final match = table[raw];
-  if (match != null) return match;
-  throw FormatException('Unknown value', raw);
-}
-
-Money moneyFromJson(JsonMap json) =>
-    Money(readInt(json, 'cents'), currency: readString(json, 'currency'));
-
 PaymentAttempt attemptFromJson(JsonMap json) => PaymentAttempt(
-  step: _lookup(_steps, readString(json, 'mode')),
+  step: lookupValue(_steps, readString(json, 'mode')),
   rail: readString(json, 'rail'),
   at: readDateTime(json, 'at'),
-  outcome: _lookup(_outcomes, readString(json, 'outcome')),
+  outcome: lookupValue(_outcomes, readString(json, 'outcome')),
   reason: readOptionalString(json, 'reason'),
   method: switch (readOptionalString(json, 'method')) {
     null => null,
-    final raw => _lookup(_methods, raw),
+    final raw => lookupValue(_methods, raw),
   },
 );
 
@@ -88,7 +73,7 @@ List<LadderStep> planFromJson(Object? plan) {
   }
   final modes = {
     for (final step in readMapList(plan, 'steps'))
-      _lookup(_steps, readString(step, 'mode')),
+      lookupValue(_steps, readString(step, 'mode')),
   };
   return modes.toList();
 }
@@ -96,24 +81,19 @@ List<LadderStep> planFromJson(Object? plan) {
 Bill billFromJson(JsonMap json) => Bill(
   id: readString(json, 'id'),
   payee: readOptionalString(json, 'payee') ?? '',
-  amount: moneyFromJson(readMap(json, 'amount')),
+  amount: readMoney(json, 'amount'),
   dueDate: readDate(json, 'dueDate'),
-  kind: _lookup(_kinds, readString(json, 'kind')),
-  owner: _lookup(_owners, readString(json, 'entityKind')),
-  status: _lookup(_statuses, readString(json, 'status')),
-  source: _lookup(_sources, readString(json, 'source')),
+  kind: lookupValue(_kinds, readString(json, 'kind')),
+  owner: readEntityKind(json, 'entityKind'),
+  status: lookupValue(_statuses, readString(json, 'status')),
+  source: lookupValue(_sources, readString(json, 'source')),
   plan: planFromJson(json['plan']),
   paymentCode: readOptionalString(json, 'code'),
   pixCode: readOptionalString(json, 'pixCode'),
   attempts: readMapList(json, 'attempts').map(attemptFromJson).toList(),
-  paidAt: _optionalMoment(json, 'paidAt'),
+  paidAt: readOptionalDateTime(json, 'paidAt'),
   paidBy: switch (readOptionalString(json, 'paidBy')) {
     null => null,
-    final raw => _lookup(_paidBy, raw),
+    final raw => lookupValue(_paidBy, raw),
   },
 );
-
-DateTime? _optionalMoment(JsonMap json, String key) {
-  if (json[key] == null) return null;
-  return readDateTime(json, key);
-}

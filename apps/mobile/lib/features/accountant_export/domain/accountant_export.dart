@@ -58,14 +58,22 @@ final class ExportPlan extends Equatable {
 }
 
 final class ExportRecord extends Equatable {
-  const new({required this.month, required this.sentOn, required this.to});
+  const new({
+    required this.month,
+    required this.sentOn,
+    required this.to,
+    this.id = '',
+  });
 
+  final String id;
   final CalendarDate month;
   final CalendarDate sentOn;
-  final String to;
+
+  /// Null when the ZIP was only generated, not sent to anyone.
+  final String? to;
 
   @override
-  List<Object?> get props => [month, sentOn, to];
+  List<Object?> get props => [id, month, sentOn, to];
 }
 
 abstract interface class AccountantExportRepository {

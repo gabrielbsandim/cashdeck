@@ -220,7 +220,10 @@ class _LookupLine extends StatelessWidget {
       ItemFound(:final institution, :final consentUntil) => (
         Symbols.check_circle_rounded,
         money.paid,
-        l10n.itemFoundLine(institution, consentUntil.display),
+        switch (consentUntil) {
+          null => l10n.itemFoundLineNoConsent(institution),
+          final until => l10n.itemFoundLine(institution, until.display),
+        },
       ),
       ItemNotFound() => (
         Symbols.error_rounded,

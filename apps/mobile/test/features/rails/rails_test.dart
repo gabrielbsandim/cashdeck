@@ -64,7 +64,13 @@ final class _FlakyRails implements RailsRepository {
     String id,
     LocalFile file, {
     String? password,
-  }) => _inner.uploadCredential(id, file, password: password);
+    CalendarDate? validUntil,
+  }) => _inner.uploadCredential(
+    id,
+    file,
+    password: password,
+    validUntil: validUntil,
+  );
 
   @override
   Future<Result<void>> remove(String id) async {
@@ -104,7 +110,6 @@ void main() {
       certificateName: 'cert.pfx',
       certificateValidUntil: CalendarDate(2027, 1, 1),
       apiKeyHint: 'abcd',
-      lastTestAt: null,
     );
     const check = RailCheck(kind: RailCheckKind.scope, passed: true);
 

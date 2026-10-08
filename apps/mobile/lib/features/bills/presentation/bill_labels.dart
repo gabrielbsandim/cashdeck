@@ -123,6 +123,17 @@ String paymentMethodLabel(AppLocalizations l10n, PaymentMethod method) =>
       PaymentMethod.boleto => l10n.paymentMethodBoleto,
     };
 
+/// The ladder's failure codes read as a sentence; a rail's own message
+/// passes through as the server wrote it.
+String failureReasonLabel(AppLocalizations l10n, String reason) =>
+    switch (reason) {
+      'NOT_CONFIGURED' => l10n.reasonNotConfigured,
+      'DAILY_CAP_EXCEEDED' => l10n.reasonDailyCap,
+      'RAIL_UNAVAILABLE' => l10n.reasonRailUnavailable,
+      'CONFIRMATION_DECLINED' => l10n.reasonConfirmationDeclined,
+      _ => reason,
+    };
+
 String billSourceLabel(AppLocalizations l10n, BillSource source) =>
     switch (source) {
       BillSource.email => l10n.billSourceEmail,

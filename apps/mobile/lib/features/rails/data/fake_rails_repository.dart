@@ -126,7 +126,7 @@ final class FakeRailsRepository implements RailsRepository {
         certificateName: _rails[index].owner == EntityKind.personal
             ? _certificateName ?? 'aurora-pf.pfx'
             : _certificateName ?? 'aurora-pj.pfx',
-        certificateValidUntil: const CalendarDate(2027, 3, 2),
+        certificateValidUntil: _validUntil ?? const CalendarDate(2027, 3, 2),
         apiKeyHint: '3f9a',
         lastTestAt:
             _lastTest ??
@@ -159,11 +159,14 @@ final class FakeRailsRepository implements RailsRepository {
 
   String? _certificateName;
 
+  CalendarDate? _validUntil;
+
   @override
   Future<Result<RailCredentials>> uploadCredential(
     String id,
     LocalFile file, {
     String? password,
+    CalendarDate? validUntil,
   }) async {
     final needsPassword = file.extension == 'pfx' || file.extension == 'p12';
     if (needsPassword && (password ?? '').isEmpty) {
@@ -171,6 +174,7 @@ final class FakeRailsRepository implements RailsRepository {
       return const Err(ValidationFailure('password'));
     }
     _certificateName = file.name;
+    _validUntil = validUntil ?? _validUntil;
     return await credentials(id);
   }
 }

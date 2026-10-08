@@ -443,5 +443,19 @@
   "scanUnknownCode": "This code is not from a bill. Try the Pix QR or the barcode.",
   "scanPixRead": "Pix QR read. The bill shows up in Bills.",
   "scanBoletoRead": "Barcode read. The bill shows up in Bills.",
-  "scanTaxRead": "Tax guide read. The bill shows up in Bills."
+  "scanTaxRead": "Tax guide read. The bill shows up in Bills.",
+  "errorUnsupported": "Your server does not offer this yet. Update Cashdeck on the server.",
+  "syncLineNever": "{count, plural, =1{1 account} other{{count} accounts}} · not synced yet",
+  "syncLineCompanyNever": "{count, plural, =1{1 PJ account} other{{count} PJ accounts}} · not synced yet",
+  "reserveCoversDays": "Covers the bills of the next {days} days",
+  "reasonNotConfigured": "No rail is set up to pay on its own",
+  "reasonDailyCap": "Above the rail's daily cap",
+  "reasonRailUnavailable": "The bank did not answer",
+  "reasonConfirmationDeclined": "Not confirmed in the app",
+  "noCertificateYet": "No certificate sent yet",
+  "certificateValidUntilLabel": "Certificate expiry",
+  "dateHint": "DD/MM/YYYY",
+  "captureNotReadYet": "Not read yet",
+  "captureDdaWaiting": "{bank} · waiting for the first batch",
+  "itemFoundLineNoConsent": "Valid · {institution}"
 }

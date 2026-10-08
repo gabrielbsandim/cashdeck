@@ -34,6 +34,7 @@ class RailDetailScreen extends ConsumerStatefulWidget {
   static const removeKey = Key('rail-remove');
   static const replaceKey = Key('rail-replace');
   static const passwordKey = Key('rail-pfx-password');
+  static const validUntilKey = Key('rail-pfx-valid-until');
   static const crtKey = Key('rail-upload-crt');
   static const keyFileKey = Key('rail-upload-key');
 
@@ -48,6 +49,7 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
   List<RailCheck>? _checks;
   var _testing = false;
   var _pfxPassword = '';
+  var _pfxValidUntil = '';
 
   Future<void> _test() async {
     setState(() => _testing = true);
@@ -85,7 +87,12 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
     if (file == null) return;
     final result = await ref
         .read(railsRepositoryProvider)
-        .uploadCredential(widget.railId, file, password: _pfxPassword);
+        .uploadCredential(
+          widget.railId,
+          file,
+          password: _pfxPassword,
+          validUntil: CalendarDate.tryParseDisplay(_pfxValidUntil),
+        );
     if (!mounted) return;
     ref.invalidate(railCredentialsProvider(widget.railId));
     await showOutcomeToast(context, switch (result) {
@@ -142,17 +149,18 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          value.certificateName,
+                          value.certificateName ?? l10n.noCertificateYet,
                           style: AppTextStyles.code.copyWith(
                             color: palette.onSurface,
                           ),
                         ),
-                        Text(
-                          l10n.validUntil(value.certificateValidUntil.display),
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: palette.onSurfaceVariant,
+                        if (value.certificateValidUntil case final until?)
+                          Text(
+                            l10n.validUntil(until.display),
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: palette.onSurfaceVariant,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -171,6 +179,14 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
               label: l10n.pfxPasswordLabel,
               secret: true,
               onChanged: (value) => _pfxPassword = value,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            CdTextField(
+              key: RailDetailScreen.validUntilKey,
+              label: l10n.certificateValidUntilLabel,
+              hintText: l10n.dateHint,
+              keyboardType: TextInputType.datetime,
+              onChanged: (value) => _pfxValidUntil = value,
             ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
@@ -204,7 +220,10 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
               label: l10n.apiKeyLabel,
               monospace: true,
               secret: true,
-              initialValue: 'ak_live_••••••••${value.apiKeyHint}',
+              initialValue: switch (value.apiKeyHint) {
+                null => '',
+                final hint => '••••••••$hint',
+              },
             ),
             const SizedBox(height: AppSpacing.xl),
             CdSectionHeader(

@@ -144,7 +144,10 @@ class PaymentLadderView extends StatelessWidget {
         summary: collapse
             ? l10n.ladderCollapsed(
                 lines.last.time ?? '',
-                status.attempts.last.reason ?? status.attempts.last.rail,
+                switch (status.attempts.last.reason) {
+                  null => status.attempts.last.rail,
+                  final reason => failureReasonLabel(l10n, reason),
+                },
                 status.attempts.length,
               )
             : null,
@@ -321,5 +324,6 @@ String _attemptLine(AppLocalizations l10n, PaymentAttempt attempt) {
       ? attempt.rail
       : l10n.attemptVia(paymentMethodLabel(l10n, method), attempt.rail);
   final reason = attempt.reason;
-  return reason == null ? how : '$how, $reason';
+  if (reason == null) return how;
+  return '$how, ${failureReasonLabel(l10n, reason)}';
 }

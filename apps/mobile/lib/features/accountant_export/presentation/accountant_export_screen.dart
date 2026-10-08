@@ -198,7 +198,10 @@ class _AccountantExportScreenState
                 capitalized(monthName(context, record.month)),
                 '${record.month.year}',
               ),
-              subtitle: l10n.exportSentLine(record.sentOn.dayMonth, record.to),
+              subtitle: switch (record.to) {
+                null => record.sentOn.dayMonth,
+                final to => l10n.exportSentLine(record.sentOn.dayMonth, to),
+              },
               trailing: Icon(
                 Symbols.share_rounded,
                 color: context.palette.onSurfaceVariant,

@@ -47,6 +47,7 @@ final class _Flaky implements IssuerRepository {
   Future<Result<IssuerSetup>> uploadCertificate(
     LocalFile file,
     String password,
+    CalendarDate expiresOn,
   ) async => const Err(NetworkFailure());
 }
 
@@ -237,6 +238,13 @@ void main() {
         matching: find.byType(TextField),
       ),
       'senha-a1',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('issuer-certificate-valid-until')),
+        matching: find.byType(TextField),
+      ),
+      '01/01/2028',
     );
     await tester.pump();
     await tester.tap(find.byKey(const Key('issuer-certificate-confirm')));

@@ -33,7 +33,7 @@ final class _Flaky implements CardImportRepository {
   @override
   Future<Result<String>> createBill(
     CardStatement statement,
-    Money total,
+    Set<String> lineIds,
   ) async => const Err(NetworkFailure());
 }
 
@@ -60,7 +60,7 @@ void main() {
     expect(all.total, const Money(263_311));
     expect(some.total, const Money(252_856));
     expect(all.props, hasLength(3));
-    expect(card.props, hasLength(7));
+    expect(card.props, hasLength(8));
     expect(card.lines.last.props, hasLength(5));
   });
 
@@ -82,11 +82,11 @@ void main() {
     final card = await statement();
 
     expect(
-      await repository.createBill(card, const Money(0)),
+      await repository.createBill(card, const {}),
       const Err<String>(ValidationFailure('total')),
     );
     expect(
-      await repository.createBill(card, const Money(1)),
+      await repository.createBill(card, {card.lines.first.id}),
       const Ok('bill-card-viagem'),
     );
   });

@@ -102,15 +102,16 @@ class _IssuerFormState extends ConsumerState<_IssuerForm> {
       'p12',
     ]);
     if (file == null || !mounted) return;
-    final password = await showCdBottomSheet<String>(
+    final secret = await showCdBottomSheet<(String, CalendarDate)>(
       context,
       title: l10n.certificatePasswordTitle,
       builder: (_) => const _PasswordSheet(),
     );
-    if (password == null || !mounted) return;
+    if (secret == null || !mounted) return;
+    final (password, expiresOn) = secret;
     final result = await ref
         .read(issuerRepositoryProvider)
-        .uploadCertificate(file, password);
+        .uploadCertificate(file, password, expiresOn);
     if (!mounted) return;
     if (result case Ok(:final value)) {
       setState(() {
@@ -301,21 +302,8 @@ class _CertificateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
-    final state = certificateStateOf(setup.certificateExpiresOn, today);
-    final days = today.daysUntil(setup.certificateExpiresOn);
-    final date = setup.certificateExpiresOn.display;
-    final (tone, label) = switch (state) {
-      CertificateState.valid => (MoneyTone.paid, l10n.validUntil(date)),
-      CertificateState.expiringSoon => (
-        MoneyTone.pending,
-        l10n.certificateExpiresIn(days, date),
-      ),
-      CertificateState.expired => (
-        MoneyTone.failed,
-        l10n.certificateExpired(date),
-      ),
-    };
-    final urgent = state != CertificateState.valid && !remindLater;
+    final (tone, label, valid) = _badge(l10n);
+    final urgent = !valid && !remindLater;
     return CdCard(
       tone: urgent ? context.tone(tone) : null,
       child: Column(
@@ -340,7 +328,7 @@ class _CertificateCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      setup.certificateName,
+                      setup.certificateName ?? l10n.noCertificateYet,
                       style: AppTextStyles.code.copyWith(
                         fontSize: 13,
                         color: palette.onSurfaceVariant,
@@ -385,10 +373,35 @@ class _CertificateCard extends StatelessWidget {
   }
 }
 
+extension on _CertificateCard {
+  (MoneyTone, String, bool) _badge(AppLocalizations l10n) {
+    final expiresOn = setup.certificateExpiresOn;
+    if (expiresOn == null) {
+      return (MoneyTone.pending, l10n.noCertificateYet, false);
+    }
+    final days = today.daysUntil(expiresOn);
+    final date = expiresOn.display;
+    return switch (certificateStateOf(expiresOn, today)) {
+      CertificateState.valid => (MoneyTone.paid, l10n.validUntil(date), true),
+      CertificateState.expiringSoon => (
+        MoneyTone.pending,
+        l10n.certificateExpiresIn(days, date),
+        false,
+      ),
+      CertificateState.expired => (
+        MoneyTone.failed,
+        l10n.certificateExpired(date),
+        false,
+      ),
+    };
+  }
+}
+
 class _PasswordSheet extends StatefulWidget {
   const new();
 
   static const fieldKey = Key('issuer-certificate-password');
+  static const validUntilKey = Key('issuer-certificate-valid-until');
   static const confirmKey = Key('issuer-certificate-confirm');
 
   @override
@@ -397,6 +410,13 @@ class _PasswordSheet extends StatefulWidget {
 
 class _PasswordSheetState extends State<_PasswordSheet> {
   var _password = '';
+  CalendarDate? _expiresOn;
+
+  VoidCallback? get _confirm {
+    final expiresOn = _expiresOn;
+    if (_password.isEmpty || expiresOn == null) return null;
+    return () => Navigator.of(context).pop((_password, expiresOn));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -411,13 +431,20 @@ class _PasswordSheetState extends State<_PasswordSheet> {
           onChanged: (value) => setState(() => _password = value),
         ),
         const SizedBox(height: AppSpacing.md),
+        CdTextField(
+          key: _PasswordSheet.validUntilKey,
+          label: l10n.certificateValidUntilLabel,
+          hintText: l10n.dateHint,
+          keyboardType: TextInputType.datetime,
+          onChanged: (value) =>
+              setState(() => _expiresOn = CalendarDate.tryParseDisplay(value)),
+        ),
+        const SizedBox(height: AppSpacing.md),
         CdButton.filled(
           key: _PasswordSheet.confirmKey,
           expand: true,
           label: l10n.sendCertificateButton,
-          onPressed: _password.isEmpty
-              ? null
-              : () => Navigator.of(context).pop(_password),
+          onPressed: _confirm,
         ),
       ],
     );

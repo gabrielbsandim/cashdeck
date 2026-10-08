@@ -68,6 +68,7 @@ final class FakeIssuerRepository implements IssuerRepository {
   Future<Result<IssuerSetup>> uploadCertificate(
     LocalFile file,
     String password,
+    CalendarDate expiresOn,
   ) async {
     if (password.isEmpty) {
       await _wait();
@@ -81,7 +82,7 @@ final class FakeIssuerRepository implements IssuerRepository {
       kind: current.kind,
       city: current.city,
       certificateName: file.name,
-      certificateExpiresOn: CalendarDate.brazilToday(_clock.now()).addDays(365),
+      certificateExpiresOn: expiresOn,
       municipalRegistration: current.municipalRegistration,
       serviceCode: current.serviceCode,
     );

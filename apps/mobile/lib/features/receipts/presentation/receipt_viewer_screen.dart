@@ -70,7 +70,7 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
         : l10n.receiptShareProof(
             proof.receiver,
             MoneyFormat.format(proof.amount),
-            proof.transactionId,
+            proof.transactionId ?? '-',
           );
     await ref.read(fileSharerProvider).shareText(text);
   }
@@ -315,8 +315,10 @@ class _ProofCard extends ConsumerWidget {
           ),
           row(l10n.receiptPayer, proof.payer),
           row(l10n.receiptReceiver, proof.receiver),
-          row(l10n.receiptTransactionId, proof.transactionId, mono: true),
-          row(l10n.receiptAuthentication, proof.authentication, mono: true),
+          if (proof.transactionId case final id?)
+            row(l10n.receiptTransactionId, id, mono: true),
+          if (proof.authentication case final code?)
+            row(l10n.receiptAuthentication, code, mono: true),
         ],
       ),
     );

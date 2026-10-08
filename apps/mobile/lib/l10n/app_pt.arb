@@ -1240,5 +1240,54 @@
   "scanUnknownCode": "Este código não é de uma conta. Tente o QR Pix ou o código de barras.",
   "scanPixRead": "QR Pix lido. A conta aparece em A pagar.",
   "scanBoletoRead": "Código de barras lido. A conta aparece em A pagar.",
-  "scanTaxRead": "Guia lida. A conta aparece em A pagar."
+  "scanTaxRead": "Guia lida. A conta aparece em A pagar.",
+  "errorUnsupported": "Seu servidor ainda não oferece isso. Atualize o Cashdeck no servidor.",
+  "syncLineNever": "{count, plural, =1{1 conta} other{{count} contas}} · ainda não sincronizado",
+  "@syncLineNever": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncLineCompanyNever": "{count, plural, =1{1 conta PJ} other{{count} contas PJ}} · ainda não sincronizado",
+  "@syncLineCompanyNever": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reserveCoversDays": "Cobre as contas dos próximos {days} dias",
+  "@reserveCoversDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reasonNotConfigured": "Nenhum trilho configurado para pagar sozinho",
+  "reasonDailyCap": "Acima do limite diário do trilho",
+  "reasonRailUnavailable": "O banco não respondeu",
+  "reasonConfirmationDeclined": "Sem confirmação no app",
+  "noCertificateYet": "Nenhum certificado enviado",
+  "certificateValidUntilLabel": "Validade do certificado",
+  "dateHint": "DD/MM/AAAA",
+  "captureNotReadYet": "Ainda não lido",
+  "captureDdaWaiting": "{bank} · aguardando o primeiro lote",
+  "@captureDdaWaiting": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "itemFoundLineNoConsent": "Válido · {institution}",
+  "@itemFoundLineNoConsent": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  }
 }

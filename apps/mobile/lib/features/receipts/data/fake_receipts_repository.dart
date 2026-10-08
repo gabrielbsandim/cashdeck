@@ -56,7 +56,7 @@ final class FakeReceiptsRepository implements ReceiptsRepository {
           proof.receiver,
           MoneyFormat.format(proof.amount),
           proof.paidAt.toIso8601String(),
-          proof.transactionId,
+          ?proof.transactionId,
         ]),
       ),
     );

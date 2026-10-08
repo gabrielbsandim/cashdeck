@@ -18,7 +18,9 @@ final class Mailbox extends Equatable {
   final String id;
   final String address;
   final EntityKind owner;
-  final DateTime lastReadAt;
+
+  /// Null until the first read.
+  final DateTime? lastReadAt;
   final int billsFound;
   final int emailsScanned;
 
@@ -45,7 +47,9 @@ final class DdaEnrollment extends Equatable {
 
   final EntityKind owner;
   final String bank;
-  final DateTime lastBatchAt;
+
+  /// Null until the bank sends the first batch.
+  final DateTime? lastBatchAt;
   final int boletos;
   final bool enabled;
 

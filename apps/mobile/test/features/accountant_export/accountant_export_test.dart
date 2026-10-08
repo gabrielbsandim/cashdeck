@@ -92,7 +92,7 @@ void main() {
       to: FakeAccountantExportRepository.accountant,
     );
     expect(sent, const Ok(record));
-    expect(record.props, hasLength(3));
+    expect(record.props, hasLength(4));
     expect((await repository.history() as Ok<List<ExportRecord>>).value, [
       record,
       const ExportRecord(

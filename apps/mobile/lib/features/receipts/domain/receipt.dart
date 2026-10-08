@@ -20,8 +20,10 @@ final class BankProof extends Equatable {
   final DateTime paidAt;
   final String payer;
   final String receiver;
-  final String transactionId;
-  final String authentication;
+
+  /// Null when the rail does not return one.
+  final String? transactionId;
+  final String? authentication;
 
   @override
   List<Object?> get props => [
