@@ -65,6 +65,8 @@ export interface StatementImporter {
 export type CapturedBill = {
   externalId: string
   paymentCode: string | null
+  // Most boletos now print a Pix BR Code too; the ladder prefers it when set.
+  pixCode?: string | null
   payee: string | null
   amountCents: number | null
   dueDate: string | null
@@ -89,6 +91,8 @@ export type InvoiceDraft = {
   description: string
   amountCents: number
   currency: string
+  // Issuers report in BRL; a foreign currency invoice carries its converted total.
+  brlAmountCents?: number | null
   export: boolean
 }
 
