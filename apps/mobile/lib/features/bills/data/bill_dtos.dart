@@ -51,6 +51,11 @@ const Map<String, AttemptOutcome> _outcomes = {
   'FAILED': AttemptOutcome.failed,
 };
 
+const Map<String, PaymentMethod> _methods = {
+  'PIX': PaymentMethod.pix,
+  'BOLETO': PaymentMethod.boleto,
+};
+
 const Map<String, PaidBy> _paidBy = {'RAIL': PaidBy.rail, 'USER': PaidBy.user};
 
 T _lookup<T>(Map<String, T> table, String raw) {
@@ -68,6 +73,10 @@ PaymentAttempt attemptFromJson(JsonMap json) => PaymentAttempt(
   at: readDateTime(json, 'at'),
   outcome: _lookup(_outcomes, readString(json, 'outcome')),
   reason: readOptionalString(json, 'reason'),
+  method: switch (readOptionalString(json, 'method')) {
+    null => null,
+    final raw => _lookup(_methods, raw),
+  },
 );
 
 /// The server plan lists one step per rail; the app shows one per mode, so
@@ -95,6 +104,7 @@ Bill billFromJson(JsonMap json) => Bill(
   source: _lookup(_sources, readString(json, 'source')),
   plan: planFromJson(json['plan']),
   paymentCode: readOptionalString(json, 'code'),
+  pixCode: readOptionalString(json, 'pixCode'),
   attempts: readMapList(json, 'attempts').map(attemptFromJson).toList(),
   paidAt: _optionalMoment(json, 'paidAt'),
   paidBy: switch (readOptionalString(json, 'paidBy')) {

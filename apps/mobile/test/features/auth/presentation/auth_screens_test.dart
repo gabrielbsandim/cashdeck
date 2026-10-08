@@ -1,154 +1,81 @@
 import 'package:cashdeck/app/router/app_routes.dart';
-import 'package:cashdeck/core/error/app_failure.dart';
-import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
-import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
-import 'package:cashdeck/features/auth/auth_providers.dart';
-import 'package:cashdeck/features/auth/data/fake_account_repository.dart';
-import 'package:cashdeck/features/auth/domain/account.dart';
+import 'package:cashdeck/core/session/credential_store.dart';
+import 'package:cashdeck/core/session/server_credentials.dart';
+import 'package:cashdeck/core/session/server_session.dart';
+import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
+import 'package:cashdeck/features/settings/presentation/more_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/app_harness.dart';
 import '../../../support/pump_app.dart';
 
-final class _BrokenServer implements AccountRepository {
-  final _inner = FakeAccountRepository(latency: Duration.zero);
-  bool broken = true;
-
-  @override
-  Future<Result<ServerInfo>> server() async {
-    if (broken) return const Err(NetworkFailure());
-    return await _inner.server();
-  }
-
-  @override
-  Future<Result<UserSession>> signUp({
-    required String name,
-    required String email,
-    required String password,
-  }) => _inner.signUp(name: name, email: email, password: password);
-
-  @override
-  Future<Result<UserSession>> signIn({
-    required String email,
-    required String password,
-  }) => _inner.signIn(email: email, password: password);
-
-  @override
-  Future<Result<UserSession>> session() => _inner.session();
-
-  @override
-  Future<Result<UserSession>> unlock(String password) =>
-      _inner.unlock(password);
-}
-
 void main() {
-  Future<void> type(WidgetTester tester, String key, String text) async {
+  Future<void> type(WidgetTester tester, Key key, String text) async {
     await tester.enterText(
-      find.descendant(
-        of: find.byKey(Key(key)),
-        matching: find.byType(TextField),
-      ),
+      find.descendant(of: find.byKey(key), matching: find.byType(TextField)),
       text,
     );
     await tester.pump();
   }
 
-  testWidgets('creates the first user after the form is valid', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.signUp);
-    expect(find.text(l10n.signUpTitle), findsOneWidget);
-    expect(find.text(FakeAccountRepository.host), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('sign-up-submit')));
-    await settle(tester);
-    expect(find.text(l10n.errorNameRequired), findsOneWidget);
-    expect(find.text(l10n.errorEmailInvalid), findsOneWidget);
-    expect(find.text(l10n.errorPasswordWeak), findsOneWidget);
-
-    await type(tester, 'sign-up-name', 'Pessoa Exemplo');
-    await type(tester, 'sign-up-email', 'pessoa@exemplo.com');
-    await type(tester, 'sign-up-password', 'curta');
-    expect(
-      find.text(l10n.passwordStrengthLine(l10n.passwordWeak, 5)),
-      findsOneWidget,
-    );
-    await type(tester, 'sign-up-password', 'senhasegura');
-    expect(
-      find.text(l10n.passwordStrengthLine(l10n.passwordFair, 11)),
-      findsOneWidget,
-    );
-    await type(tester, 'sign-up-password', 'Senha-Segura-1');
-    expect(
-      find.text(l10n.passwordStrengthLine(l10n.passwordStrong, 14)),
-      findsOneWidget,
-    );
-    await type(tester, 'sign-up-confirmation', 'outra');
-    await tester.tap(find.byKey(const Key('sign-up-submit')));
-    await settle(tester);
-    expect(find.text(l10n.errorPasswordMismatch), findsOneWidget);
-
-    await type(tester, 'sign-up-confirmation', 'Senha-Segura-1');
-    await tester.tap(find.byKey(const Key('sign-up-submit')));
-    await settle(tester);
-
-    expect(app.location, AppRoutes.home);
-  });
-
-  testWidgets('a server with users signs in instead', (tester) async {
-    final repository = FakeAccountRepository(latency: Duration.zero);
-    await tester.runAsync(
-      () => repository.signUp(
-        name: 'Pessoa Exemplo',
-        email: 'pessoa@exemplo.com',
-        password: 'Senha-Segura-1',
-      ),
-    );
+  testWidgets('signed out, the app opens on sign-in and connects', (
+    tester,
+  ) async {
+    final store = InMemoryCredentialStore();
     final app = await pumpRoute(
       tester,
-      AppRoutes.signUp,
-      overrides: [accountRepositoryProvider.overrideWithValue(repository)],
+      AppRoutes.home,
+      overrides: [
+        initialCredentialsProvider.overrideWithValue(null),
+        credentialStoreProvider.overrideWithValue(store),
+      ],
     );
-    expect(find.text(l10n.signInTitle), findsWidgets);
-    expect(find.byKey(const Key('sign-up-name')), findsNothing);
+    expect(app.location, AppRoutes.signIn);
+    expect(find.text(l10n.signInTitle), findsOneWidget);
 
-    await type(tester, 'sign-up-email', 'pessoa@exemplo.com');
-    await type(tester, 'sign-up-password', 'Senha-Errada-1');
-    await tester.tap(find.byKey(const Key('sign-up-submit')));
+    await type(tester, ServerSignInScreen.urlKey, 'ftp://');
+    await tester.tap(find.byKey(ServerSignInScreen.submitKey));
+    await settle(tester);
+    expect(find.text(l10n.errorServerUrlInvalid), findsOneWidget);
+    expect(find.text(l10n.errorTokenRequired), findsOneWidget);
+
+    await type(tester, ServerSignInScreen.urlKey, 'cashdeck.casa');
+    await type(tester, ServerSignInScreen.tokenKey, 'curto');
+    await tester.tap(find.byKey(ServerSignInScreen.submitKey));
     await settle(tester);
     expect(find.text(l10n.errorSessionExpired), findsOneWidget);
+    expect(app.location, AppRoutes.signIn);
 
-    await type(tester, 'sign-up-password', 'Senha-Segura-1');
-    await tester.tap(find.byKey(const Key('sign-up-submit')));
+    await type(tester, ServerSignInScreen.tokenKey, 'token-de-teste');
+    await tester.tap(find.byKey(ServerSignInScreen.submitKey));
     await settle(tester);
     expect(app.location, AppRoutes.home);
-  });
-
-  testWidgets('an unreachable server offers a retry', (tester) async {
-    final repository = _BrokenServer();
-    await pumpRoute(
-      tester,
-      AppRoutes.signUp,
-      overrides: [accountRepositoryProvider.overrideWithValue(repository)],
+    expect(
+      await store.read(),
+      const ServerCredentials(
+        baseUrl: 'https://cashdeck.casa',
+        token: 'token-de-teste',
+      ),
     );
-    expect(find.text(l10n.errorNetwork), findsOneWidget);
-
-    repository.broken = false;
-    await tester.tap(find.byKey(CdErrorState.retryKey));
-    await settle(tester);
-    expect(find.text(l10n.signUpTitle), findsOneWidget);
+    await waitForToast(tester);
   });
 
-  testWidgets('unlocks with the device check', (tester) async {
+  testWidgets('a locked app unlocks with the device check', (tester) async {
     final biometrics = FakeBiometricAuthenticator(approve: false);
     final app = await pumpRoute(
       tester,
-      AppRoutes.unlock,
-      overrides: [biometricAuthenticatorProvider.overrideWithValue(biometrics)],
+      AppRoutes.home,
+      overrides: [
+        initiallyLockedProvider.overrideWithValue(true),
+        biometricAuthenticatorProvider.overrideWithValue(biometrics),
+      ],
     );
-    expect(find.text(l10n.unlockTitle('Marina')), findsOneWidget);
-    expect(find.text(FakeAccountRepository.host), findsOneWidget);
+    expect(app.location, AppRoutes.unlock);
+    expect(find.text(ServerCredentials.demo.host), findsOneWidget);
 
     await tester.tap(find.byKey(UnlockScreen.sensorKey));
     await settle(tester);
@@ -161,35 +88,35 @@ void main() {
     expect(biometrics.reasons, hasLength(2));
   });
 
-  testWidgets('unlocks with the password', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.unlock);
-
-    await tester.tap(find.byKey(UnlockScreen.passwordToggleKey));
-    await settle(tester);
-    await tester.tap(find.byKey(UnlockScreen.submitKey));
-    await settle(tester);
-    expect(find.text(l10n.errorSessionExpired), findsOneWidget);
-
-    await tester.enterText(
-      find.descendant(
-        of: find.byKey(UnlockScreen.passwordKey),
-        matching: find.byType(TextField),
-      ),
-      'qualquer',
+  testWidgets('signs out from the lock screen', (tester) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      overrides: [initiallyLockedProvider.overrideWithValue(true)],
     );
-    await tester.tap(find.byKey(UnlockScreen.submitKey));
+
+    await tester.tap(find.byKey(UnlockScreen.signOutKey));
     await settle(tester);
-    expect(app.location, AppRoutes.home);
+
+    expect(app.location, AppRoutes.signIn);
+    expect(app.read(serverSessionProvider), isNull);
   });
 
-  testWidgets('switches back to the sensor', (tester) async {
-    await pumpRoute(tester, AppRoutes.unlock);
+  testWidgets('More locks the app and signs out', (tester) async {
+    final app = await pumpRoute(tester, AppRoutes.more);
 
-    await tester.tap(find.byKey(UnlockScreen.passwordToggleKey));
+    await tester.tap(find.byKey(MoreScreen.rowKey(AppRoutes.unlock)));
     await settle(tester);
-    expect(find.byKey(UnlockScreen.sensorKey), findsNothing);
-    await tester.tap(find.byKey(UnlockScreen.passwordToggleKey));
+    expect(app.location, AppRoutes.unlock);
+
+    app.read(appLockProvider.notifier).unlock();
     await settle(tester);
-    expect(find.byKey(UnlockScreen.sensorKey), findsOneWidget);
+    expect(app.location, AppRoutes.home);
+
+    app.router.go(AppRoutes.more);
+    await settle(tester);
+    await tester.tap(find.byKey(MoreScreen.signOutKey));
+    await settle(tester);
+    expect(app.location, AppRoutes.signIn);
   });
 }

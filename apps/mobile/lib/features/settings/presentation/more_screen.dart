@@ -1,6 +1,8 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
+import 'package:cashdeck/core/security/app_lock.dart';
+import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
@@ -18,6 +20,7 @@ class MoreScreen extends ConsumerWidget {
 
   static const themeSelectorKey = Key('more-theme');
   static const hideAmountsKey = Key('more-hide-amounts');
+  static const signOutKey = Key('more-sign-out');
   static const pauseKey = Key('more-pause');
 
   static Key rowKey(String route) => Key('more-row-$route');
@@ -148,7 +151,13 @@ class MoreScreen extends ConsumerWidget {
             key: rowKey(AppRoutes.unlock),
             icon: Symbols.lock_rounded,
             title: l10n.lockNowSetting,
-            onTap: () => context.push(AppRoutes.unlock),
+            onTap: () => ref.read(appLockProvider.notifier).lock(),
+          ),
+          CdListRow(
+            key: signOutKey,
+            icon: Symbols.logout_rounded,
+            title: l10n.signOutButton,
+            onTap: () => ref.read(serverSessionProvider.notifier).signOut(),
           ),
         ],
       ),

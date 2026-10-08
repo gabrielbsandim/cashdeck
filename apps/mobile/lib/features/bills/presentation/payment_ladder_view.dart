@@ -45,6 +45,7 @@ class PaymentLadderView extends StatelessWidget {
   static const approvedKey = Key('ladder-approved');
   static const confirmKey = Key('ladder-confirm');
   static const copyKey = Key('ladder-copy');
+  static const copyPixKey = Key('ladder-copy-pix');
 
   final Bill bill;
   final CalendarDate today;
@@ -105,12 +106,7 @@ class PaymentLadderView extends StatelessWidget {
     );
     final lines = [
       for (final attempt in status.attempts)
-        CdLadderLine(
-          attempt.reason == null
-              ? attempt.rail
-              : '${attempt.rail}, ${attempt.reason}',
-          time: brazilTime(attempt.at),
-        ),
+        CdLadderLine(_attemptLine(l10n, attempt), time: brazilTime(attempt.at)),
     ];
     return switch (status.state) {
       LadderStepState.unavailable => CdLadderStep(
@@ -196,6 +192,7 @@ class PaymentLadderView extends StatelessWidget {
     List<CdLadderLine> lines,
   ) {
     final code = bill.paymentCode;
+    final pix = bill.pixCode;
     return switch (status.step) {
       LadderStep.assisted => CdLadderStep(
         number: base.number,
@@ -208,8 +205,20 @@ class PaymentLadderView extends StatelessWidget {
             ? l10n.ladderReadyPixKey(bill.dueDate.dayMonth)
             : l10n.ladderReadyBody(bill.dueDate.dayMonth),
         actions: [
+          if (pix != null)
+            CdCopyField(
+              code: pix,
+              label: l10n.pixCopyPasteLabel,
+              compact: true,
+              buttonKey: copyPixKey,
+            ),
           if (code != null)
-            CdCopyField(code: code, compact: true, buttonKey: copyKey),
+            CdCopyField(
+              code: code,
+              label: pix == null ? null : l10n.paymentCodeLabel,
+              compact: true,
+              buttonKey: copyKey,
+            ),
           Row(
             children: [
               Expanded(
@@ -302,4 +311,15 @@ class PaymentLadderView extends StatelessWidget {
       ),
     };
   }
+}
+
+/// The rail, with the method first when the server says which one it tried,
+/// then the reason it stopped.
+String _attemptLine(AppLocalizations l10n, PaymentAttempt attempt) {
+  final method = attempt.method;
+  final how = method == null
+      ? attempt.rail
+      : l10n.attemptVia(paymentMethodLabel(l10n, method), attempt.rail);
+  final reason = attempt.reason;
+  return reason == null ? how : '$how, $reason';
 }

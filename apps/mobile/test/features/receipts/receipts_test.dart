@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/bills/bills_providers.dart';
@@ -30,6 +35,14 @@ final class _Attached implements ReceiptsRepository {
       ),
     );
   }
+
+  @override
+  Future<Result<LocalFile>> document(String billId) async =>
+      const Err(NotFoundFailure());
+
+  @override
+  Future<Result<Receipt>> attach(String billId, LocalFile file) async =>
+      const Err(NetworkFailure());
 }
 
 void main() {
@@ -71,19 +84,17 @@ void main() {
     expect(find.text('05/10/2026 · 07:02:14'), findsOneWidget);
     expect(find.text(l10n.attachAnotherButton), findsOneWidget);
 
-    for (final key in [
-      ReceiptViewerScreen.shareKey,
-      ReceiptViewerScreen.pdfKey,
-    ]) {
-      await tester.tap(find.byKey(key));
-      await settle(tester);
-      expect(find.text(l10n.shareSoon), findsOneWidget);
-      await waitForToast(tester);
-    }
+    final sharer = app.read(fileSharerProvider) as FakeFileSharer;
+    await tester.tap(find.byKey(ReceiptViewerScreen.shareKey));
+    await settle(tester);
+    await tester.tap(find.byKey(ReceiptViewerScreen.pdfKey));
+    await settle(tester);
     await tester.tap(find.byTooltip(l10n.shareButton));
     await settle(tester);
-    expect(find.text(l10n.shareSoon), findsOneWidget);
-    await waitForToast(tester);
+    expect(sharer.texts, hasLength(2));
+    expect(sharer.texts.first, contains('E12345678202610050702a9c4f3d1'));
+    expect(sharer.files.single.name, 'comprovante-bill-condo.pdf');
+    expect(String.fromCharCodes(sharer.files.single.bytes.take(5)), '%PDF-');
 
     await tester.tap(find.byKey(ReceiptViewerScreen.attachmentsTabKey));
     await settle(tester);
@@ -102,10 +113,16 @@ void main() {
       latency: Duration.zero,
     );
     await tester.runAsync(() => bills.markPaid('bill-internet'));
-    await pumpRoute(
+    final chooser = FakeFileChooser(
+      LocalFile(name: 'recibo.pdf', bytes: Uint8List(8)),
+    );
+    final app = await pumpRoute(
       tester,
       AppRoutes.billReceipt('bill-internet'),
-      overrides: [billsRepositoryProvider.overrideWithValue(bills)],
+      overrides: [
+        billsRepositoryProvider.overrideWithValue(bills),
+        fileChooserProvider.overrideWithValue(chooser),
+      ],
     );
 
     expect(find.text(l10n.receiptPaidByYou), findsOneWidget);
@@ -115,9 +132,25 @@ void main() {
     await settle(tester);
     expect(find.text(l10n.receiptNoProofTitle), findsOneWidget);
 
+    await tester.tap(find.byTooltip(l10n.shareButton));
+    await settle(tester);
+    expect(
+      (app.read(fileSharerProvider) as FakeFileSharer).texts.single,
+      contains('Internet Fibra Sul'),
+    );
+
     await tester.tap(find.byKey(ReceiptViewerScreen.attachKey));
     await settle(tester);
-    expect(find.text(l10n.filePickerSoon), findsOneWidget);
+    expect(find.text(l10n.attachedToast('recibo.pdf')), findsOneWidget);
+    await waitForToast(tester);
+    await tester.tap(find.byKey(ReceiptViewerScreen.attachmentsTabKey));
+    await settle(tester);
+    expect(find.text('recibo.pdf'), findsOneWidget);
+
+    chooser.next = null;
+    await tester.tap(find.byKey(ReceiptViewerScreen.attachKey));
+    await settle(tester);
+    expect(chooser.requests, hasLength(2));
   });
 
   testWidgets('lists the files of an unpaid bill', (tester) async {

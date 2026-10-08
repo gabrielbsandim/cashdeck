@@ -1,7 +1,10 @@
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
+import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
@@ -58,12 +61,46 @@ class ReceiptViewerScreen extends ConsumerStatefulWidget {
 class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
   _Tab? _tab;
 
-  void _soon(String message) {
-    showCdToast(
-      context,
-      icon: Symbols.ios_share_rounded,
-      message: message,
-    ).ignore();
+  static const attachable = ['pdf', 'jpg', 'jpeg', 'png'];
+
+  Future<void> _shareText(Bill bill, BankProof? proof) async {
+    final l10n = AppLocalizations.of(context);
+    final text = proof == null
+        ? l10n.receiptShareLine(bill.payee, MoneyFormat.format(bill.amount))
+        : l10n.receiptShareProof(
+            proof.receiver,
+            MoneyFormat.format(proof.amount),
+            proof.transactionId,
+          );
+    await ref.read(fileSharerProvider).shareText(text);
+  }
+
+  Future<void> _sharePdf() async {
+    final result = await ref
+        .read(receiptsRepositoryProvider)
+        .document(widget.billId);
+    switch (result) {
+      case Ok(:final value):
+        await ref.read(fileSharerProvider).shareFile(value);
+      case Err(:final failure):
+        if (!mounted) return;
+        await showOutcomeToast(context, failure, success: '');
+    }
+  }
+
+  Future<void> _attach() async {
+    final l10n = AppLocalizations.of(context);
+    final file = await ref.read(fileChooserProvider).choose(attachable);
+    if (file == null) return;
+    final result = await ref
+        .read(receiptsRepositoryProvider)
+        .attach(widget.billId, file);
+    if (!mounted) return;
+    ref.invalidate(receiptProvider(widget.billId));
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.attachedToast(file.name));
   }
 
   @override
@@ -83,7 +120,11 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
           IconButton(
             tooltip: l10n.shareButton,
             icon: const Icon(Symbols.share_rounded),
-            onPressed: () => _soon(l10n.shareSoon),
+            onPressed: switch ((bill, receipt)) {
+              (AsyncData(value: final b), AsyncData(value: final r)) =>
+                () => _shareText(b, r.proof),
+              _ => null,
+            },
           ),
         ],
       ),
@@ -201,7 +242,7 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
                   expand: true,
                   icon: Symbols.share_rounded,
                   label: l10n.shareButton,
-                  onPressed: () => _soon(l10n.shareSoon),
+                  onPressed: () => _shareText(bill, proof),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -211,7 +252,7 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
                   expand: true,
                   icon: Symbols.download_rounded,
                   label: l10n.pdfButton,
-                  onPressed: () => _soon(l10n.shareSoon),
+                  onPressed: _sharePdf,
                 ),
               ),
             ],
@@ -225,7 +266,7 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
             label: proof == null
                 ? l10n.attachFileButton
                 : l10n.attachAnotherButton,
-            onPressed: () => _soon(l10n.filePickerSoon),
+            onPressed: _attach,
           ),
         ),
       ],

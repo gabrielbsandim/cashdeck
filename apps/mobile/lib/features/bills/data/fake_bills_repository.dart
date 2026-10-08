@@ -16,6 +16,13 @@ final class FakeBillsRepository implements BillsRepository {
   final Duration latency;
   final Map<String, Bill> _changed = {};
 
+  /// A fictional BR Code from the internet bill, a boleto that also pays by
+  /// Pix.
+  static const bolepixCode =
+      '00020101021226860014br.gov.bcb.pix2564pix.exemplo.com.br/qr/v2/cobv/'
+      '5f0c2a8e-61b2-4c1d-9a7e-3d2b8c1e4f50520400005303986540511990'
+      '5802BR5917INTERNET FIBRA SUL6013FLORIANOPOLIS62070503***63041D3A';
+
   static const List<LadderStep> _personalPlan = [
     LadderStep.automatic,
     LadderStep.assisted,
@@ -45,13 +52,23 @@ final class FakeBillsRepository implements BillsRepository {
         source: BillSource.email,
         plan: _personalPlan,
         paymentCode: '23793.38128 60000.000003 00000.000400 1 98760000011990',
+        pixCode: bolepixCode,
         attempts: [
           PaymentAttempt(
             step: LadderStep.automatic,
-            rail: 'Pix via API',
+            rail: 'Pagador PF',
             at: _morning(today.addDays(-2)),
             outcome: AttemptOutcome.failed,
             reason: 'Saldo insuficiente na reserva',
+            method: PaymentMethod.pix,
+          ),
+          PaymentAttempt(
+            step: LadderStep.automatic,
+            rail: 'Pagador PF',
+            at: _morning(today.addDays(-2)),
+            outcome: AttemptOutcome.failed,
+            reason: 'Saldo insuficiente na reserva',
+            method: PaymentMethod.boleto,
           ),
         ],
       ),
@@ -255,6 +272,7 @@ final class FakeBillsRepository implements BillsRepository {
         source: value.source,
         plan: value.plan,
         paymentCode: value.paymentCode,
+        pixCode: value.pixCode,
         attempts: value.attempts,
       );
       _changed[id] = confirmed;

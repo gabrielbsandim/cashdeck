@@ -1,11 +1,14 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/data/fake_capture_repository.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
+import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +43,18 @@ final class _FlakyCapture implements CaptureRepository {
   @override
   Future<Result<CaptureSources>> setDda(EntityKind owner, {required bool on}) =>
       _inner.setDda(owner, on: on);
+
+  @override
+  Future<Result<Uri>> mailboxAuthorizationUrl(EntityKind owner) async =>
+      const Err(NetworkFailure());
+
+  @override
+  Future<Result<void>> submitFile(LocalFile file, EntityKind owner) async =>
+      const Err(NetworkFailure());
+
+  @override
+  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner) async =>
+      const Err(NetworkFailure());
 }
 
 void main() {
@@ -95,7 +110,7 @@ void main() {
   testWidgets('reads a mailbox now, toggles the DDA and disconnects', (
     tester,
   ) async {
-    await pumpRoute(tester, AppRoutes.captureSources);
+    final app = await pumpRoute(tester, AppRoutes.captureSources);
     expect(find.text('marina.souza@exemplo.com'), findsOneWidget);
     expect(find.text(l10n.todayAt('09:00')), findsOneWidget);
     expect(find.text(l10n.captureBillsOf(3, 214)), findsOneWidget);
@@ -117,8 +132,10 @@ void main() {
 
     await tester.tap(find.byKey(CaptureSourcesScreen.connectKey));
     await settle(tester);
-    expect(find.text(l10n.captureConnectSoon), findsOneWidget);
-    await waitForToast(tester);
+    expect(
+      (app.read(linkOpenerProvider) as FakeLinkOpener).opened.single.host,
+      'accounts.example.com',
+    );
 
     await tester.tap(find.byKey(CaptureSourcesScreen.disconnectKey(personal)));
     await settle(tester);

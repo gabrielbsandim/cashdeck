@@ -1,5 +1,6 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -36,6 +37,10 @@ final class _Flaky implements AccountantExportRepository {
     ExportPeriod period,
     Set<ExportItemKind> items,
   ) async => const Err(NetworkFailure());
+
+  @override
+  Future<Result<LocalFile>> archive(ExportRecord record) async =>
+      const Err(NetworkFailure());
 }
 
 void main() {

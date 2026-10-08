@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -104,4 +105,12 @@ abstract interface class RailsRepository {
   Future<Result<List<RailCheck>>> test(String id);
 
   Future<Result<void>> remove(String id);
+
+  /// Sends a client certificate (.pfx with its [password], or a .crt and a
+  /// .key one at a time); the server seals it and answers what identifies it.
+  Future<Result<RailCredentials>> uploadCredential(
+    String id,
+    LocalFile file, {
+    String? password,
+  });
 }

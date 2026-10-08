@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
@@ -61,5 +62,30 @@ final class FakeIssuerRepository implements IssuerRepository {
         elapsed: Duration(milliseconds: 1800),
       ),
     );
+  }
+
+  @override
+  Future<Result<IssuerSetup>> uploadCertificate(
+    LocalFile file,
+    String password,
+  ) async {
+    if (password.isEmpty) {
+      await _wait();
+      return const Err(ValidationFailure('password'));
+    }
+    final current = switch (await setup()) {
+      Ok(:final value) => value,
+      Err(:final failure) => throw StateError('$failure'),
+    };
+    final next = IssuerSetup(
+      kind: current.kind,
+      city: current.city,
+      certificateName: file.name,
+      certificateExpiresOn: CalendarDate.brazilToday(_clock.now()).addDays(365),
+      municipalRegistration: current.municipalRegistration,
+      serviceCode: current.serviceCode,
+    );
+    _saved = next;
+    return Ok(next);
   }
 }

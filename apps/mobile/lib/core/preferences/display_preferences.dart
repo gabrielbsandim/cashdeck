@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/preferences/key_value_store.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,14 +20,33 @@ final class DisplayPreferences extends Equatable {
   List<Object?> get props => [themeMode, hideAmounts];
 }
 
+/// Reads the saved choice at start and writes every change back.
 class DisplayPreferencesController extends Notifier<DisplayPreferences> {
+  static const themeKey = 'theme_mode';
+  static const hideAmountsKey = 'hide_amounts';
+
+  KeyValueStore get _store => ref.read(keyValueStoreProvider);
+
   @override
-  DisplayPreferences build() => const DisplayPreferences();
+  DisplayPreferences build() {
+    final theme = _store.getString(themeKey);
+    return DisplayPreferences(
+      themeMode:
+          ThemeMode.values.where((mode) => mode.name == theme).firstOrNull ??
+          ThemeMode.system,
+      hideAmounts: _store.getBool(hideAmountsKey) ?? false,
+    );
+  }
 
-  void setThemeMode(ThemeMode mode) => state = state.copyWith(themeMode: mode);
+  void setThemeMode(ThemeMode mode) {
+    state = state.copyWith(themeMode: mode);
+    _store.setString(themeKey, mode.name).ignore();
+  }
 
-  void toggleHideAmounts() =>
-      state = state.copyWith(hideAmounts: !state.hideAmounts);
+  void toggleHideAmounts() {
+    state = state.copyWith(hideAmounts: !state.hideAmounts);
+    _store.setBool(hideAmountsKey, value: state.hideAmounts).ignore();
+  }
 }
 
 final displayPreferencesProvider =

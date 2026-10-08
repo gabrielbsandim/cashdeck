@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:equatable/equatable.dart';
@@ -76,4 +77,7 @@ abstract interface class AccountantExportRepository {
     ExportPeriod period,
     Set<ExportItemKind> items,
   );
+
+  /// The ZIP of a past export, to share again from the device.
+  Future<Result<LocalFile>> archive(ExportRecord record);
 }

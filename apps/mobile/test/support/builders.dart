@@ -18,6 +18,7 @@ Bill testBill({
   BillSource source = BillSource.email,
   List<LadderStep> plan = LadderStep.values,
   String? paymentCode = '12345.67890',
+  String? pixCode,
   List<PaymentAttempt> attempts = const [],
 }) => Bill(
   id: id,
@@ -30,6 +31,7 @@ Bill testBill({
   source: source,
   plan: plan,
   paymentCode: paymentCode,
+  pixCode: pixCode,
   attempts: attempts,
 );
 

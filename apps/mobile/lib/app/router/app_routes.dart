@@ -5,10 +5,12 @@ abstract final class AppRoutes {
   static const chat = '/chat';
   static const more = '/more';
 
-  static const signUp = '/sign-up';
+  static const signIn = '/sign-in';
   static const unlock = '/unlock';
+  static const sharedFile = '/shared-file';
 
   static const captureSources = '$more/capture';
+  static const scanBill = '$more/capture/scan';
   static const rails = '$more/rails';
   static const connectItemId = '$more/open-finance/item-id';
   static const cardImport = '$more/card-import';

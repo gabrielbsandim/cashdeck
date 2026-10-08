@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:equatable/equatable.dart';
@@ -87,4 +88,11 @@ abstract interface class IssuerRepository {
   Future<Result<IssuerSetup>> save(IssuerSetup setup);
 
   Future<Result<TestEmission>> emitTest(IssuerSetup setup);
+
+  /// Sends the A1 certificate and its password; the server seals both and
+  /// reads the expiry date from the certificate.
+  Future<Result<IssuerSetup>> uploadCertificate(
+    LocalFile file,
+    String password,
+  );
 }

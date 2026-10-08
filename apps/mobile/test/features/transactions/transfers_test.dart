@@ -1,7 +1,9 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/transactions/data/fake_transfers_repository.dart';
@@ -27,6 +29,9 @@ final class _Flaky implements TransfersRepository {
     if (fail) return const Err(NetworkFailure());
     return await _inner.transfer(id);
   }
+
+  @override
+  Future<Result<LocalFile>> document(String id) => _inner.document(id);
 }
 
 void main() {
@@ -70,7 +75,10 @@ void main() {
   testWidgets('a distribution shows each view as neutral and its minutes', (
     tester,
   ) async {
-    await pumpRoute(tester, AppRoutes.transfer('transfer-distribution'));
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.transfer('transfer-distribution'),
+    );
 
     expect(find.text(l10n.transferProfitDistribution), findsNWidgets(2));
     expect(find.textContaining('10:15'), findsOneWidget);
@@ -81,7 +89,10 @@ void main() {
 
     await tester.tap(find.byKey(TransferDetailScreen.documentKey));
     await settle(tester);
-    expect(find.text(l10n.shareSoon), findsOneWidget);
+    expect(
+      (app.read(fileSharerProvider) as FakeFileSharer).files.single.name,
+      'ata-distribuicao-set.pdf',
+    );
   });
 
   testWidgets('a pro-labore counts on both sides', (tester) async {

@@ -165,8 +165,6 @@
   "confirmStepReview": "Revisar",
   "confirmStepConfirm": "Confirmar",
   "confirmDenied": "Não confirmamos que é você. Tente novamente.",
-  "filePickerSoon": "Escolher arquivos chega com o acesso a arquivos do aparelho.",
-  "shareSoon": "Compartilhar chega com o menu de compartilhamento do aparelho.",
   "relativeToday": "hoje",
   "relativeTodayTitle": "Hoje",
   "relativeYesterday": "ontem",
@@ -704,48 +702,18 @@
   "morePayrollHint": "Alimenta o Fator R",
   "moreExportHint": "ZIP com extratos, notas e guias",
   "lockNowSetting": "Bloquear agora",
-  "signUpTitle": "Criar o primeiro usuário",
-  "signUpBody": "Este servidor ainda não tem contas. Você será o administrador.",
-  "signInTitle": "Entrar",
-  "signInBody": "Este servidor já tem contas. Entre com seu e-mail e senha.",
-  "fieldName": "Nome",
-  "fieldEmail": "E-mail",
-  "fieldPassword": "Senha",
-  "fieldConfirmPassword": "Confirmar senha",
-  "errorNameRequired": "Diga seu nome.",
-  "errorEmailInvalid": "Confira o e-mail.",
-  "errorPasswordWeak": "Use pelo menos 8 caracteres.",
-  "errorPasswordMismatch": "As senhas não são iguais.",
-  "passwordWeak": "Fraca",
-  "passwordFair": "Razoável",
-  "passwordStrong": "Forte",
-  "passwordStrengthLine": "{label} · {count} caracteres",
-  "@passwordStrengthLine": {
-    "placeholders": {
-      "label": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "signUpButton": "Criar conta e entrar",
-  "signInButton": "Entrar",
-  "unlockTitle": "Olá, {name}",
-  "@unlockTitle": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
+  "signInTitle": "Conectar ao servidor",
+  "signInBody": "Informe o endereço do seu servidor Cashdeck e o token de acesso configurado nele.",
+  "fieldServerUrl": "Endereço do servidor",
+  "fieldAccessToken": "Token de acesso",
+  "accessTokenHint": "É o valor de CASHDECK_API_TOKEN no servidor.",
+  "errorServerUrlInvalid": "Confira o endereço, por exemplo cashdeck.suacasa.com.br.",
+  "errorTokenRequired": "Cole o token de acesso.",
+  "signInButton": "Conectar",
+  "signOutButton": "Sair deste servidor",
   "unlockTitleAnonymous": "Olá",
   "unlockSensor": "Toque no sensor para desbloquear",
   "unlockReason": "Desbloquear o Cashdeck",
-  "unlockButton": "Desbloquear",
-  "usePassword": "Usar senha",
-  "useSensorButton": "Usar o sensor",
   "unlockIdleNote": "Bloqueado após 5 min sem uso",
   "itemIdTitle": "Conectar pelo item id",
   "itemIdIntro": "No plano gratuito do agregador não há conexão dentro do app. Conecte o banco no painel do agregador e cole o item id aqui.",
@@ -920,7 +888,6 @@
   "captureDisconnectedToast": "Caixa desconectada",
   "captureConnectMailbox": "Conectar outra caixa",
   "captureConnectMailboxHint": "Google, Microsoft ou IMAP",
-  "captureConnectSoon": "Conectar caixas chega com o login pelo provedor.",
   "captureDda": "DDA",
   "captureDdaTitle": "DDA · {entity}",
   "@captureDdaTitle": {
@@ -1197,5 +1164,81 @@
       }
     }
   },
-  "exportSentToast": "ZIP gerado e enviado ao contador"
+  "exportSentToast": "ZIP gerado e enviado ao contador",
+  "captureConnectFailed": "Não foi possível abrir a página de autorização do e-mail.",
+  "receiptShareLine": "{payee} · {amount}",
+  "@receiptShareLine": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptShareProof": "Pagamento para {receiver} · {amount} · ID {id}",
+  "@receiptShareProof": {
+    "placeholders": {
+      "receiver": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "attachedToast": "{name} anexado",
+  "@attachedToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "certificateUploadedToast": "{name} enviado e guardado no servidor",
+  "@certificateUploadedToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "certificatePasswordTitle": "Senha do certificado",
+  "sendCertificateButton": "Enviar certificado",
+  "sharedFileTitle": "Conta recebida",
+  "sharedFileBody": "De quem é esta conta? O servidor lê o código e a coloca em A pagar.",
+  "sharedFileSend": "Enviar para o servidor",
+  "sharedFileSentToast": "Arquivo enviado. A conta aparece em A pagar quando a leitura terminar.",
+  "fileSizeKb": "{count} KB",
+  "@fileSizeKb": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billKindBolepix": "Boleto com Pix",
+  "paymentMethodPix": "Pix",
+  "paymentMethodBoleto": "Boleto",
+  "attemptVia": "{method} via {rail}",
+  "@attemptVia": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      },
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "scanTitle": "Escanear conta",
+  "scanHint": "Aponte para o QR Pix ou para o código de barras do boleto.",
+  "scanUnknownCode": "Este código não é de uma conta. Tente o QR Pix ou o código de barras.",
+  "scanPixRead": "QR Pix lido. A conta aparece em A pagar.",
+  "scanBoletoRead": "Código de barras lido. A conta aparece em A pagar.",
+  "scanTaxRead": "Guia lida. A conta aparece em A pagar."
 }

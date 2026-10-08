@@ -1,4 +1,6 @@
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -56,13 +58,26 @@ class TransferDetailScreen extends ConsumerWidget {
   }
 }
 
-class _Detail extends StatelessWidget {
+class _Detail extends ConsumerWidget {
   const new({required this.transfer});
 
   final TransferDetail transfer;
 
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    final result = await ref
+        .read(transfersRepositoryProvider)
+        .document(transfer.id);
+    switch (result) {
+      case Ok(:final value):
+        await ref.read(fileSharerProvider).shareFile(value);
+      case Err(:final failure):
+        if (!context.mounted) return;
+        await showOutcomeToast(context, failure, success: '');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final local = transfer.at.toUtc().subtract(const Duration(hours: 3));
@@ -213,11 +228,7 @@ class _Detail extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           CdCard(
             key: TransferDetailScreen.documentKey,
-            onTap: () => showCdToast(
-              context,
-              icon: Symbols.picture_as_pdf_rounded,
-              message: l10n.shareSoon,
-            ),
+            onTap: () => _share(context, ref),
             child: Row(
               children: [
                 const CdIconTile(Symbols.picture_as_pdf_rounded, circle: false),

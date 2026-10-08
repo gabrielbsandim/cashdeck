@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:equatable/equatable.dart';
@@ -59,4 +60,9 @@ final class Receipt extends Equatable {
 
 abstract interface class ReceiptsRepository {
   Future<Result<Receipt>> receipt(String billId);
+
+  /// The bank's proof as a PDF, ready for the share sheet.
+  Future<Result<LocalFile>> document(String billId);
+
+  Future<Result<Receipt>> attach(String billId, LocalFile file);
 }
