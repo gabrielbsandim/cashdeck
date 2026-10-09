@@ -18,6 +18,7 @@ import 'package:cashdeck/features/card_import/presentation/manual_card_bill_impo
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
 import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
+import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
 import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_screen.dart';
@@ -113,7 +114,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state, shell) =>
             TabsShell(navigationShell: shell, location: state.uri.path),
         branches: [
-          _tab(AppRoutes.home, const HomeScreen()),
+          _tab(AppRoutes.home, const HomeScreen(), [
+            _page(
+              _below(AppRoutes.balances, AppRoutes.home),
+              const BalancesScreen(),
+            ),
+          ]),
           _tab(AppRoutes.transactions, const TransactionsScreen(), [
             GoRoute(
               path: 'transfer/:transferId',

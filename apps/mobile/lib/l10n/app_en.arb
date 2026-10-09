@@ -135,6 +135,7 @@
   "billTitleWithEntity": "{payee} · {entity}",
   "billsGroupNeedsYou": "Need you",
   "billsGroupUpcoming": "Upcoming",
+  "billsGroupAwaitingDebit": "Waiting for the bank debit",
   "billsGroupSettled": "Paid",
   "billMarkedPaidToast": "{payee} marked as paid",
   "billConfirmedToast": "Confirmed. The payment goes out on step 1.",
@@ -690,5 +691,12 @@
   "alertTextInvoiceNumber": "Invoice {number}",
   "alertTextCardClosedTitle": "Card bill closed",
   "alertTextCardClosedBody": "{card}: closed on {closing}, due {dueDate}.",
-  "alertTextSourceEmail": "email"
+  "alertTextSourceEmail": "email",
+  "balancesTitle": "Balance by account",
+  "balancesEmpty": "No account connected yet",
+  "balancesInAccounts": "Available in {count, plural, =1{1 account} other{{count} accounts}}",
+  "balancesShare": "{percent}% of the total",
+  "balancesAvailable": "Available",
+  "balancesReserve": "Reserve",
+  "balancesOther": "Cards and investments"
 }

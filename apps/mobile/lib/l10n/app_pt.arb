@@ -288,6 +288,7 @@
   },
   "billsGroupNeedsYou": "Precisam de você",
   "billsGroupUpcoming": "Próximas",
+  "billsGroupAwaitingDebit": "Aguardando o débito do banco",
   "billsGroupSettled": "Pagas",
   "billMarkedPaidToast": "{payee} marcada como paga",
   "@billMarkedPaidToast": {
@@ -1708,5 +1709,26 @@
       }
     }
   },
-  "alertTextSourceEmail": "e-mail"
+  "alertTextSourceEmail": "e-mail",
+  "balancesTitle": "Saldo por conta",
+  "balancesEmpty": "Nenhuma conta conectada ainda",
+  "balancesInAccounts": "Disponível em {count, plural, =1{1 conta} other{{count} contas}}",
+  "@balancesInAccounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "balancesShare": "{percent}% do total",
+  "@balancesShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "balancesAvailable": "Disponível",
+  "balancesReserve": "Reserva",
+  "balancesOther": "Cartões e investimentos"
 }

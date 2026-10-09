@@ -92,7 +92,8 @@ class PausedBanner extends ConsumerWidget {
   }
 }
 
-/// The big balance, what feeds it and how fresh it is.
+/// The big balance, what feeds it and how fresh it is. Tapping it opens the
+/// balance of each account.
 class BalanceHeader extends ConsumerWidget {
   const new({
     required this.label,
@@ -100,6 +101,8 @@ class BalanceHeader extends ConsumerWidget {
     required this.syncLine,
     super.key,
   });
+
+  static const openKey = Key('home-balance-open');
 
   final String label;
   final Money balance;
@@ -109,12 +112,23 @@ class BalanceHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = context.palette;
     final syncLine = this.syncLine;
-    return Column(
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMd.copyWith(color: palette.onSurfaceVariant),
+        Row(
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: palette.onSurfaceVariant,
+              ),
+            ),
+            Icon(
+              Symbols.chevron_right_rounded,
+              size: 18,
+              color: palette.onSurfaceVariant,
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.xs),
         CdAmount(balance, size: CdAmountSize.xl, textAlign: TextAlign.start),
@@ -140,6 +154,15 @@ class BalanceHeader extends ConsumerWidget {
           ),
         ],
       ],
+    );
+    return Semantics(
+      button: true,
+      child: InkWell(
+        key: openKey,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: () => context.push(AppRoutes.balances),
+        child: content,
+      ),
     );
   }
 }
