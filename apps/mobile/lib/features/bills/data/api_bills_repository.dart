@@ -70,6 +70,14 @@ final class ApiBillsRepository implements BillsRepository {
   });
 
   @override
+  Future<Result<Bill>> markUnpaid(String id) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      '$path/${Uri.encodeComponent(id)}/mark-unpaid',
+    );
+    return billFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
   Future<Result<Bill>> pay(String id, {required bool confirmed}) =>
       guardRequest(() async {
         final response = await _dio.post<Object?>(

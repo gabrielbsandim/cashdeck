@@ -62,6 +62,14 @@ final class MarkBillPaid {
   Future<Result<Bill>> call(String id) => _repository.markPaid(id);
 }
 
+final class MarkBillUnpaid {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<Result<Bill>> call(String id) => _repository.markUnpaid(id);
+}
+
 /// Runs the payment ladder for one bill.
 final class PayBill {
   const new(this._repository);

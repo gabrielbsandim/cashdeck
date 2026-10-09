@@ -95,6 +95,9 @@ void main() {
       Ok(later.markedPaid(testNow)),
     );
     expect(await PayBill(repository).call('later', confirmed: true), Ok(later));
+    when(() => repository.markUnpaid('later'))
+        .thenAnswer((_) async => Ok(later));
+    expect(await MarkBillUnpaid(repository).call('later'), Ok(later));
   });
 
   test('the bills needing the user are the ones it has to act on', () {

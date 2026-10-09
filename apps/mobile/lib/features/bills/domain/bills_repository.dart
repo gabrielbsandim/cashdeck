@@ -22,8 +22,11 @@ abstract interface class BillsRepository {
 
   Future<Result<Bill>> get(String id);
 
-  /// The user paid it outside the app, from step 3.
+  /// The user paid it outside the app.
   Future<Result<Bill>> markPaid(String id);
+
+  /// Undoes [markPaid]: the bill is open again and the ladder may pay it.
+  Future<Result<Bill>> markUnpaid(String id);
 
   /// Runs the ladder; [confirmed] is true only after the user confirmed in
   /// the app, which is what a capped or new payee payment waits for.

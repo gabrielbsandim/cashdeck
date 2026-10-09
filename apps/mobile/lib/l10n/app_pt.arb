@@ -298,6 +298,35 @@
       }
     }
   },
+  "billMenuTooltip": "Mais ações",
+  "billMarkPaidAction": "Marcar como paga",
+  "billMarkPaidConfirmTitle": "Já pagou esta conta?",
+  "billMarkPaidConfirmBody": "Marque se você pagou {payee} fora do Cashdeck, por outra conta ou pelo app do banco. O pagamento automático deixa esta conta de lado; as dos próximos meses seguem normalmente.",
+  "@billMarkPaidConfirmBody": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "billMarkUnpaidAction": "Marcar como não paga",
+  "billMarkUnpaidConfirmTitle": "Desfazer o pagamento?",
+  "billMarkUnpaidConfirmBody": "{payee} volta para as contas a pagar e o pagamento automático pode pagá-la.",
+  "@billMarkUnpaidConfirmBody": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "billMarkedUnpaidToast": "{payee} voltou para as contas a pagar",
+  "@billMarkedUnpaidToast": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
   "billConfirmedToast": "Confirmado. O pagamento sai no passo 1.",
   "openBankToast": "Abra o app do banco para aprovar o pagamento.",
   "approvalCheckToast": "Vamos conferir com o banco e atualizar a conta.",

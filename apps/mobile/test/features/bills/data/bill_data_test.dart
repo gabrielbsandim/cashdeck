@@ -292,6 +292,7 @@ void main() {
       final repository = ApiBillsRepository(dio);
 
       final paid = (await repository.markPaid('bill-1') as Ok<Bill>).value;
+      await repository.markUnpaid('bill-1');
       await repository.pay('bill-1', confirmed: false);
       await repository.pay('bill-1', confirmed: true);
 
@@ -300,11 +301,12 @@ void main() {
       final requests = adapterOf(dio).requests;
       expect(requests.map((request) => request.path), [
         '/api/v1/bills/bill-1/mark-paid',
+        '/api/v1/bills/bill-1/mark-unpaid',
         '/api/v1/bills/bill-1/pay',
         '/api/v1/bills/bill-1/pay',
       ]);
-      expect(requests[1].data, {'confirmed': false});
-      expect(requests[2].data, {'confirmed': true});
+      expect(requests[2].data, {'confirmed': false});
+      expect(requests[3].data, {'confirmed': true});
     });
 
     test('turns auto debit on and reads it back', () async {
@@ -412,6 +414,23 @@ void main() {
       );
       expect(
         await local.pay('missing', confirmed: true),
+        const Err<Bill>(NotFoundFailure()),
+      );
+    });
+
+    test('undoing a hand mark sticks, a rail payment stays', () async {
+      final local = FakeBillsRepository(FixedClock(testNow));
+
+      await local.markPaid('bill-rent');
+      final open = (await local.markUnpaid('bill-rent') as Ok<Bill>).value;
+      final condo = (await local.markUnpaid('bill-condo') as Ok<Bill>).value;
+
+      expect(open.status, BillStatus.pending);
+      expect(open.paidBy, isNull);
+      expect(await local.get('bill-rent'), Ok(open));
+      expect(condo.paidBy, PaidBy.rail);
+      expect(
+        await local.markUnpaid('missing'),
         const Err<Bill>(NotFoundFailure()),
       );
     });

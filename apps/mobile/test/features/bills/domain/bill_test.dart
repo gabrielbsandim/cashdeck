@@ -40,6 +40,25 @@ void main() {
     expect(paid.paymentCode, bill.paymentCode);
   });
 
+  test(
+    'only a hand payment is undone, and only a bill in no rail is marked',
+    () {
+      final paid = testBill().markedPaid(testNow);
+      final open = paid.markedUnpaid();
+
+      expect(open.status, BillStatus.pending);
+      expect(open.paidAt, isNull);
+      expect(open.paidBy, isNull);
+      expect(open.paymentCode, paid.paymentCode);
+      expect(paid.canMarkUnpaid, isTrue);
+      expect(paid.canMarkPaid, isFalse);
+      expect(open.canMarkPaid, isTrue);
+      expect(open.canMarkUnpaid, isFalse);
+      expect(testBill(status: BillStatus.scheduled).canMarkPaid, isFalse);
+      expect(testBill(status: BillStatus.paid).canMarkUnpaid, isFalse);
+    },
+  );
+
   test('tax guides are taxes', () {
     expect(testBill(kind: BillKind.taxBarcode).isTax, isTrue);
     expect(testBill(kind: BillKind.darfNoBarcode).isTax, isTrue);

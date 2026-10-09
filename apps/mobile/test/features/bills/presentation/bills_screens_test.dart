@@ -109,6 +109,77 @@ void main() {
       expect(find.text(l10n.ladderSettled, findRichText: true), findsNothing);
     });
 
+    testWidgets('marks a bill paid by hand from the menu and undoes it', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-gym'));
+      expect(find.text(l10n.billStatusPaid), findsNothing);
+
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await settle(tester);
+      expect(find.byKey(BillDetailScreen.markUnpaidKey), findsNothing);
+      await tester.tap(find.byKey(BillDetailScreen.markPaidKey));
+      await settle(tester);
+      expect(find.text(l10n.billMarkPaidConfirmTitle), findsOneWidget);
+      expect(
+        find.text(l10n.billMarkPaidConfirmBody('Academia Ritmo')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(BillDetailScreen.confirmKey));
+      await settle(tester);
+      expect(
+        find.text(l10n.billMarkedPaidToast('Academia Ritmo')),
+        findsOneWidget,
+      );
+      await waitForToast(tester);
+      expect(find.text(l10n.billStatusPaid), findsOneWidget);
+
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await settle(tester);
+      expect(find.byKey(BillDetailScreen.markPaidKey), findsNothing);
+      await tester.tap(find.byKey(BillDetailScreen.markUnpaidKey));
+      await settle(tester);
+      expect(
+        find.text(l10n.billMarkUnpaidConfirmBody('Academia Ritmo')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(BillDetailScreen.confirmKey));
+      await settle(tester);
+      expect(
+        find.text(l10n.billMarkedUnpaidToast('Academia Ritmo')),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.billStatusPaid), findsNothing);
+    });
+
+    testWidgets('cancelling the mark from the menu changes nothing', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-gym'));
+
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await settle(tester);
+      await tester.tap(find.byKey(BillDetailScreen.markPaidKey));
+      await settle(tester);
+      await tester.tap(find.byKey(BillDetailScreen.cancelKey));
+      await settle(tester);
+
+      expect(find.text(l10n.billMarkPaidConfirmTitle), findsNothing);
+      expect(find.text(l10n.billStatusPaid), findsNothing);
+    });
+
+    testWidgets('no menu while a rail pays or after a rail paid', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-energy'));
+      expect(find.text(l10n.billStatusScheduled), findsWidgets);
+      expect(find.byKey(BillDetailScreen.menuKey), findsNothing);
+
+      await pumpRoute(tester, AppRoutes.bill('bill-condo'));
+      expect(find.text(l10n.billStatusPaid), findsOneWidget);
+      expect(find.byKey(BillDetailScreen.menuKey), findsNothing);
+    });
+
     testWidgets('the receipt button opens the receipt of the bill', (
       tester,
     ) async {
@@ -462,6 +533,32 @@ void main() {
       verify(() => repository.markPaid('bill-1')).called(1);
     });
 
+    testWidgets('a failed undo keeps the bill paid and says why', (
+      tester,
+    ) async {
+      final bill = testBill().markedPaid(testNow);
+      when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
+      when(() => repository.markUnpaid('bill-1'))
+          .thenAnswer((_) async => const Err(ServerFailure()));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+
+      await tester.pumpApp(
+        const BillDetailScreen(billId: 'bill-1'),
+        overrides: overrides(),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(BillDetailScreen.markUnpaidKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(BillDetailScreen.confirmKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.errorServer), findsOneWidget);
+      expect(find.text(l10n.billStatusPaid), findsOneWidget);
+      verify(() => repository.markUnpaid('bill-1')).called(1);
+    });
+
     Answer<Future<Result<BillPage>>> pages(
       Map<String?, Future<Result<BillPage>> Function()> byCursor,
     ) =>
@@ -677,6 +774,9 @@ final class _Single implements BillsRepository {
 
   @override
   Future<Result<Bill>> markPaid(String id) => inner.markPaid(id);
+
+  @override
+  Future<Result<Bill>> markUnpaid(String id) => inner.markUnpaid(id);
 
   @override
   Future<Result<Bill>> pay(String id, {required bool confirmed}) =>

@@ -104,7 +104,7 @@ class BillDetailController extends AsyncNotifier<Bill> {
   }
 
   /// Shows the bill as paid right away and sends it once [undone] resolves
-  /// false; the API has no undo, so the request waits for the toast.
+  /// false; the request waits for the toast, so an undo there sends nothing.
   Future<AppFailure?> markPaid({required Future<bool> undone}) async {
     final bill = state.value;
     if (bill == null) return null;
@@ -123,6 +123,12 @@ class BillDetailController extends AsyncNotifier<Bill> {
     } finally {
       link.close();
     }
+  }
+
+  Future<AppFailure?> markUnpaid() async {
+    final result = await ref.read(markBillUnpaidProvider).call(billId);
+    ref.invalidate(billsControllerProvider);
+    return _apply(result);
   }
 
   /// Runs the ladder; [confirmed] is the answer the user gave in the sheet.

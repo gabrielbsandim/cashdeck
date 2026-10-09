@@ -118,7 +118,12 @@ final class Bill extends Equatable {
   bool get isTax =>
       kind == BillKind.taxBarcode || kind == BillKind.darfNoBarcode;
 
+  /// Paid outside the app: anything the ladder is not sending right now.
+  bool get canMarkPaid => !isSettled && status != BillStatus.scheduled;
+
   /// Paid by hand, the only payment that can be undone.
+  bool get canMarkUnpaid => status == BillStatus.paid && paidBy == PaidBy.user;
+
   Bill markedPaid(DateTime at) => Bill(
     id: id,
     payee: payee,
@@ -134,6 +139,23 @@ final class Bill extends Equatable {
     attempts: attempts,
     paidAt: at,
     paidBy: PaidBy.user,
+    confirmationReason: confirmationReason,
+    autoDebit: autoDebit,
+  );
+
+  Bill markedUnpaid() => Bill(
+    id: id,
+    payee: payee,
+    amount: amount,
+    dueDate: dueDate,
+    kind: kind,
+    owner: owner,
+    status: BillStatus.pending,
+    source: source,
+    plan: plan,
+    paymentCode: paymentCode,
+    pixCode: pixCode,
+    attempts: attempts,
     confirmationReason: confirmationReason,
     autoDebit: autoDebit,
   );

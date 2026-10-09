@@ -26,6 +26,7 @@ void main() {
     expect(container.read(listBillsProvider), isNotNull);
     expect(container.read(getBillProvider), isNotNull);
     expect(container.read(markBillPaidProvider), isNotNull);
+    expect(container.read(markBillUnpaidProvider), isNotNull);
     expect(container.read(payBillProvider), isNotNull);
   });
 

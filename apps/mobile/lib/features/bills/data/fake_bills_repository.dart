@@ -279,6 +279,17 @@ final class FakeBillsRepository implements BillsRepository {
     return found;
   }
 
+  @override
+  Future<Result<Bill>> markUnpaid(String id) async {
+    final found = await get(id);
+    if (found case Ok(:final value) when value.canMarkUnpaid) {
+      final open = value.markedUnpaid();
+      _changed[id] = open;
+      return Ok(open);
+    }
+    return found;
+  }
+
   /// Without [confirmed] a bill waiting for the user stays waiting, as the
   /// server keeps it; with it the ladder schedules the payment.
   @override

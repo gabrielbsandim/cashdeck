@@ -13,6 +13,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
+import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
@@ -42,6 +43,11 @@ class BillDetailScreen extends ConsumerWidget {
   static const viewReceiptKey = Key('bill-view-receipt');
   static const shareReceiptKey = Key('bill-share-receipt');
   static const autoDebitKey = Key('bill-auto-debit');
+  static const menuKey = Key('bill-menu');
+  static const markPaidKey = Key('bill-menu-mark-paid');
+  static const markUnpaidKey = Key('bill-menu-mark-unpaid');
+  static const confirmKey = Key('bill-menu-confirm');
+  static const cancelKey = Key('bill-menu-cancel');
 
   final String billId;
 
@@ -53,7 +59,10 @@ class BillDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.billDetailTitle),
-        actions: const [PrivacyToggle()],
+        actions: [
+          if (bill case AsyncData(:final value)) _BillMenu(bill: value),
+          const PrivacyToggle(),
+        ],
       ),
       body: switch (bill) {
         AsyncData(:final value) => _BillDetail(bill: value, today: today),
@@ -67,29 +76,143 @@ class BillDetailScreen extends ConsumerWidget {
   }
 }
 
+Future<void> _markPaid(BuildContext context, WidgetRef ref, Bill bill) async {
+  final l10n = AppLocalizations.of(context);
+  final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+  final undone = showCdToast(
+    context,
+    icon: Symbols.task_alt_rounded,
+    message: l10n.billMarkedPaidToast(billPayeeOf(l10n, bill)),
+    actionLabel: l10n.undoButton,
+  ).then((reason) => reason == SnackBarClosedReason.action);
+  final failure = await notifier.markPaid(undone: undone);
+  if (failure == null || !context.mounted) return;
+  await showCdToast(
+    context,
+    icon: Symbols.error_rounded,
+    message: failure.userMessage(l10n),
+  );
+}
+
+enum _BillAction { markPaid, markUnpaid }
+
+/// Paid outside the app, or that hand payment undone; both ask first.
+class _BillMenu extends ConsumerWidget {
+  const new({required this.bill});
+
+  final Bill bill;
+
+  Future<void> _run(
+    BuildContext context,
+    WidgetRef ref,
+    _BillAction action,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final payee = billPayeeOf(l10n, bill);
+    final (title, body, label) = switch (action) {
+      _BillAction.markPaid => (
+        l10n.billMarkPaidConfirmTitle,
+        l10n.billMarkPaidConfirmBody(payee),
+        l10n.billMarkPaidAction,
+      ),
+      _BillAction.markUnpaid => (
+        l10n.billMarkUnpaidConfirmTitle,
+        l10n.billMarkUnpaidConfirmBody(payee),
+        l10n.billMarkUnpaidAction,
+      ),
+    };
+    final confirmed = await showCdBottomSheet<bool>(
+      context,
+      title: title,
+      builder: (sheet) => _ConfirmBody(body: body, confirmLabel: label),
+    );
+    if (confirmed != true || !context.mounted) return;
+    if (action == _BillAction.markPaid) {
+      await _markPaid(context, ref, bill);
+      return;
+    }
+    final failure = await ref
+        .read(billDetailControllerProvider(bill.id).notifier)
+        .markUnpaid();
+    if (!context.mounted) return;
+    await showOutcomeToast(
+      context,
+      failure,
+      success: l10n.billMarkedUnpaidToast(payee),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    if (!bill.canMarkPaid && !bill.canMarkUnpaid) return const SizedBox();
+    return PopupMenuButton<_BillAction>(
+      key: BillDetailScreen.menuKey,
+      icon: const Icon(Symbols.more_vert_rounded),
+      tooltip: l10n.billMenuTooltip,
+      onSelected: (action) => _run(context, ref, action),
+      itemBuilder: (_) => [
+        if (bill.canMarkPaid)
+          PopupMenuItem(
+            key: BillDetailScreen.markPaidKey,
+            value: _BillAction.markPaid,
+            child: Text(l10n.billMarkPaidAction),
+          ),
+        if (bill.canMarkUnpaid)
+          PopupMenuItem(
+            key: BillDetailScreen.markUnpaidKey,
+            value: _BillAction.markUnpaid,
+            child: Text(l10n.billMarkUnpaidAction),
+          ),
+      ],
+    );
+  }
+}
+
+class _ConfirmBody extends StatelessWidget {
+  const new({required this.body, required this.confirmLabel});
+
+  final String body;
+  final String confirmLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final navigator = Navigator.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          body,
+          style: AppTextStyles.bodyMd.copyWith(
+            color: context.palette.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        CdButton.filled(
+          key: BillDetailScreen.confirmKey,
+          expand: true,
+          label: confirmLabel,
+          onPressed: () => navigator.pop(true),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        CdButton.text(
+          key: BillDetailScreen.cancelKey,
+          expand: true,
+          label: l10n.cancelButton,
+          onPressed: () => navigator.pop(false),
+        ),
+      ],
+    );
+  }
+}
+
 class _BillDetail extends ConsumerWidget {
   const new({required this.bill, required this.today});
 
   final Bill bill;
   final CalendarDate today;
-
-  Future<void> _markPaid(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
-    final undone = showCdToast(
-      context,
-      icon: Symbols.task_alt_rounded,
-      message: l10n.billMarkedPaidToast(billPayeeOf(l10n, bill)),
-      actionLabel: l10n.undoButton,
-    ).then((reason) => reason == SnackBarClosedReason.action);
-    final failure = await notifier.markPaid(undone: undone);
-    if (failure == null || !context.mounted) return;
-    await showCdToast(
-      context,
-      icon: Symbols.error_rounded,
-      message: failure.userMessage(l10n),
-    );
-  }
 
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
@@ -269,7 +392,7 @@ class _BillDetail extends ConsumerWidget {
             bill: bill,
             today: today,
             actions: LadderActions(
-              onMarkPaid: () => _markPaid(context, ref),
+              onMarkPaid: () => _markPaid(context, ref, bill),
               onReceipt: () => context.push(AppRoutes.billReceipt(bill.id)),
               onOpenBank: () => showCdToast(
                 context,
