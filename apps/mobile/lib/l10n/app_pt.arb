@@ -2039,5 +2039,61 @@
     }
   },
   "cardsEmpty": "Conecte um cartão",
-  "cardsEmptyMessage": "Cartões conectados por Open Finance aparecem aqui."
+  "cardsEmptyMessage": "Cartões conectados por Open Finance aparecem aqui.",
+  "homeSpendTitle": "Gastos",
+  "homeSpendVsPrevious": "vs período anterior",
+  "homeSpendSemantics": "Gastos acumulados no período contra o anterior",
+  "homeTopMerchants": "Onde mais gastou",
+  "homeMerchantCount": "{count, plural, =1{1 compra} other{{count} compras}}",
+  "@homeMerchantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCategoryTitle": "Por categoria",
+  "homeCategorySemantics": "Gastos por categoria",
+  "homeFlowTitle": "Fluxo do período",
+  "homeFlowLeft": "Sobrou {amount}",
+  "@homeFlowLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeFlowShort": "Faltou {amount}",
+  "@homeFlowShort": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSummaryTitle": "Resumo",
+  "homeEditWidgets": "Editar widgets",
+  "homeEditWidgetsHint": "Arraste para reordenar, desligue para esconder.",
+  "homeWidgetCardBill": "Fatura atual",
+  "homeWidgetInstallments": "Parcelamentos",
+  "homeWidgetSubscriptions": "Assinaturas",
+  "homeWidgetCreditUsed": "Limite usado",
+  "homeWidgetBillsDue": "Contas a pagar",
+  "homeWidgetReserve": "Reserva",
+  "homeBillsDueCaption": "{count} em {days} dias",
+  "@homeBillsDueCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeNextMonth": "Próximo mês",
+  "homeReserveCaption": "Fora do saldo total",
+  "homeOtherInstitutions": "Outras",
+  "homeInstitutionsSemantics": "Saldo por instituição",
+  "homeSectionFailed": "Não foi possível carregar"
 }

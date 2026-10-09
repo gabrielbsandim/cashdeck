@@ -26,11 +26,18 @@ import '../../../support/builders.dart';
 import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
+/// Início stacks the insight cards above the bills, budgets and alerts.
+const double _homeHeight = 4200;
+
 void main() {
   testWidgets('Início Pessoal shows balance, reserve, forecast and alerts', (
     tester,
   ) async {
-    final app = await pumpRoute(tester, AppRoutes.home);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+    );
 
     expect(find.byType(PersonalHome), findsOneWidget);
     expect(find.text(l10n.reserveTitle), findsOneWidget);
@@ -69,7 +76,7 @@ void main() {
   testWidgets('privacy hides the figures inside alerts and labels', (
     tester,
   ) async {
-    await pumpRoute(tester, AppRoutes.home);
+    await pumpRoute(tester, AppRoutes.home, screenHeight: _homeHeight);
     expect(find.textContaining('600'), findsWidgets);
 
     await tester.tap(find.byKey(PrivacyToggle.buttonKey));
@@ -81,7 +88,11 @@ void main() {
   });
 
   testWidgets('the due list and a due bill lead to A pagar', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.home);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+    );
 
     await tester.tap(find.byKey(const Key('home-bill-bill-energy')));
     await settle(tester);
@@ -97,7 +108,7 @@ void main() {
   testWidgets('Início Empresa approves a draft and invoices a Pix', (
     tester,
   ) async {
-    await pumpRoute(tester, AppRoutes.home);
+    await pumpRoute(tester, AppRoutes.home, screenHeight: _homeHeight);
     await pickScope(tester, EntityScope.company);
 
     expect(find.byType(CompanyHome), findsOneWidget);
@@ -119,7 +130,11 @@ void main() {
   testWidgets('Início Consolidado splits the total and opens a transfer', (
     tester,
   ) async {
-    final app = await pumpRoute(tester, AppRoutes.home);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+    );
     await pickScope(tester, EntityScope.consolidated);
 
     expect(find.byType(ConsolidatedHome), findsOneWidget);
@@ -135,7 +150,11 @@ void main() {
   });
 
   testWidgets('the paused banner resumes payments', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.home);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+    );
     final pausing = app
         .read(automationControllerProvider.notifier)
         .setPaused(paused: true);
@@ -158,6 +177,7 @@ void main() {
     await pumpRoute(
       tester,
       AppRoutes.home,
+      screenHeight: _homeHeight,
       overrides: [automationRepositoryProvider.overrideWithValue(automation)],
     );
 
@@ -191,6 +211,7 @@ void main() {
     final app = await pumpRoute(
       tester,
       AppRoutes.home,
+      screenHeight: _homeHeight,
       overrides: [homeRepositoryProvider.overrideWithValue(home)],
     );
 
@@ -212,6 +233,7 @@ void main() {
     await pumpRoute(
       tester,
       AppRoutes.home,
+      screenHeight: _homeHeight,
       overrides: [homeRepositoryProvider.overrideWithValue(home)],
     );
     expect(find.text(l10n.errorServer), findsOneWidget);

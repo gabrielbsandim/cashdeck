@@ -17,6 +17,7 @@ import 'package:cashdeck/core/widgets/money/cd_budget_bar.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/presentation/home_insights.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
@@ -45,13 +46,24 @@ class PersonalHome extends ConsumerWidget {
     return HomeScroll(
       children: [
         const PausedBanner(),
-        BalanceHeader(
-          label: l10n.totalBalance,
-          balance: summary.balance,
-          syncLine: syncLineOf(l10n, ref, summary.sync),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BalanceHeader(
+              label: l10n.totalBalance,
+              balance: summary.balance,
+              syncLine: syncLineOf(l10n, ref, summary.sync),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const InstitutionBar(),
+          ],
         ),
         if (summary.reserve case final reserve?)
           _ReserveCard(reserve: reserve, today: today),
+        const HomeSpendCard(),
+        const HomeCategoryCard(),
+        const HomeFlowCard(),
+        HomeSummaryGrid(reserve: summary.reserve?.balance),
         DueSoonSection(bills: billsDueWithin(bills, today, 7), today: today),
         _ForecastSection(forecast: summary.forecast),
         Column(

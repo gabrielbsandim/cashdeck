@@ -1,17 +1,25 @@
 import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/theme/app_chart_colors.dart';
+import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
+import 'package:cashdeck/core/theme/money_tone.dart';
+import 'package:cashdeck/core/widgets/insights/cd_entity_glow.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/company_home.dart';
 import 'package:cashdeck/features/home/presentation/consolidated_home.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/features/home/presentation/personal_home.dart';
+import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
+import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,28 +32,56 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(homeControllerProvider);
+    final palette = context.palette;
+    final top = MediaQuery.paddingOf(context).top + TabAppBar.height;
+    final tone = switch (ref.watch(entityScopeProvider)) {
+      EntityScope.personal => EntityTone.personal,
+      EntityScope.company => EntityTone.company,
+      EntityScope.consolidated => EntityTone.consolidated,
+    };
     return Scaffold(
-      appBar: const TabAppBar(),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref
-            ..invalidate(homeControllerProvider)
-            ..invalidate(billsControllerProvider)
-            ..invalidate(unreadAlertsProvider);
-          await ref.read(homeControllerProvider.future);
-        },
-        child: switch (summary) {
-          AsyncData(:final value) => switch (value) {
-            PersonalSummary() => PersonalHome(summary: value),
-            CompanySummary() => CompanyHome(summary: value),
-            ConsolidatedSummary() => ConsolidatedHome(summary: value),
-          },
-          AsyncError(:final error) => CdErrorState(
-            failure: failureOf(error),
-            onRetry: () => ref.invalidate(homeControllerProvider),
+      extendBodyBehindAppBar: true,
+      appBar: TabAppBar(
+        background: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.scrolledUnder)
+              ? palette.surface
+              : palette.surface.withValues(alpha: 0),
+        ),
+      ),
+      body: Stack(
+        children: [
+          CdEntityGlow(colors: context.glow.of(tone)),
+          RefreshIndicator(
+            edgeOffset: top,
+            onRefresh: () async {
+              ref
+                ..invalidate(homeControllerProvider)
+                ..invalidate(billsControllerProvider)
+                ..invalidate(unreadAlertsProvider)
+                ..invalidate(insightsOverviewProvider)
+                ..invalidate(transactionAccountsProvider);
+              await ref.read(homeControllerProvider.future);
+            },
+            child: switch (summary) {
+              AsyncData(:final value) => switch (value) {
+                PersonalSummary() => PersonalHome(summary: value),
+                CompanySummary() => CompanyHome(summary: value),
+                ConsolidatedSummary() => ConsolidatedHome(summary: value),
+              },
+              AsyncError(:final error) => Padding(
+                padding: EdgeInsets.only(top: top),
+                child: CdErrorState(
+                  failure: failureOf(error),
+                  onRetry: () => ref.invalidate(homeControllerProvider),
+                ),
+              ),
+              _ => Padding(
+                padding: EdgeInsets.only(top: top),
+                child: const CdSkeleton(),
+              ),
+            },
           ),
-          _ => const CdSkeleton(),
-        },
+        ],
       ),
     );
   }

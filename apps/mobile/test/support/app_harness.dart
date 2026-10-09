@@ -19,11 +19,12 @@ Future<ProviderContainer> pumpRoute(
   String location, {
   List<Override> overrides = const [],
   Object? extra,
+  double screenHeight = 2000,
 }) async {
   final dispatcher = tester.binding.platformDispatcher;
   dispatcher.localesTestValue = const [Locale('pt', 'BR')];
   addTearDown(dispatcher.clearLocalesTestValue);
-  tester.useTallScreen();
+  tester.useTallScreen(height: screenHeight);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [

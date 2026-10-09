@@ -8,10 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 final AppLocalizations l10n = lookupAppLocalizations(const Locale('pt'));
 
 extension PumpApp on WidgetTester {
-  /// A 400 by 2000 phone, so long screens build without scrolling.
-  void useTallScreen() {
+  /// A 400 wide phone, 2000 tall by default, so long screens build without
+  /// scrolling.
+  void useTallScreen({double height = 2000}) {
     view
-      ..physicalSize = const Size(1200, 6000)
+      ..physicalSize = Size(1200, height * 3)
       ..devicePixelRatio = 3;
     addTearDown(view.reset);
   }

@@ -15,6 +15,7 @@ import 'package:material_symbols_icons/symbols.dart';
 class TabAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const new({this.background, super.key});
 
+  static const double height = kToolbarHeight + 8;
   static const settingsKey = Key('tab-settings');
   static const alertsKey = Key('tab-alerts');
 
@@ -22,7 +23,7 @@ class TabAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final Color? background;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+  Size get preferredSize => const Size.fromHeight(height);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +32,7 @@ class TabAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final unread = ref.watch(unreadAlertsProvider).value ?? 0;
     return AppBar(
       backgroundColor: background,
-      toolbarHeight: kToolbarHeight + 8,
+      toolbarHeight: height,
       titleSpacing: AppSpacing.sm,
       title: Row(
         children: [

@@ -40,9 +40,9 @@ class HomeScroll extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.screenGutter,
-        AppSpacing.sm,
+        AppSpacing.sm + MediaQuery.paddingOf(context).top,
         AppSpacing.screenGutter,
         AppSpacing.xxl,
       ),
