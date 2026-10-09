@@ -2,6 +2,7 @@ import {
   type DocumentTextReader,
   type LlmAttachment,
   type LlmProvider,
+  LlmProviderError,
   type LlmToolParameter,
 } from '@cashdeck/application'
 import {
@@ -148,7 +149,23 @@ export class BillExtractor {
     return findPaymentCodes(text ?? '', today)
   }
 
+  // A document the model refuses (an encrypted PDF, say) loses only its own
+  // answer; key, model and quota errors still fail the whole read.
   private async ask(attachment: LlmAttachment): Promise<LlmAnswer> {
+    try {
+      return await this.request(attachment)
+    } catch (error) {
+      if (
+        error instanceof LlmProviderError &&
+        error.code === 'request_rejected'
+      ) {
+        return {}
+      }
+      throw error
+    }
+  }
+
+  private async request(attachment: LlmAttachment): Promise<LlmAnswer> {
     const result = await this.llm.chat({
       system: SYSTEM,
       messages: [

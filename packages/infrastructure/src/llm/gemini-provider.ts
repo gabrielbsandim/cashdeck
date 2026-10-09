@@ -113,7 +113,7 @@ export class GeminiProvider implements LlmProvider {
       const text = await response.text().catch(() => '')
       throw new LlmProviderError(
         `Gemini API rejected the request: ${response.status} ${text}`,
-        'chat_failed',
+        response.status === 400 ? 'request_rejected' : 'chat_failed',
       )
     }
     const data = (await response.json()) as GeminiResponse

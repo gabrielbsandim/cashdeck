@@ -176,6 +176,17 @@ describe('GeminiProvider: chat', () => {
     await expect(provider.chat(baseParams)).rejects.toThrow(LlmProviderError)
   })
 
+  it('marks a 400 as a rejected request and other failures as chat_failed', async () => {
+    const rejected = vi.fn(async () => new Response('bad', { status: 400 }))
+    await expect(
+      makeProvider(rejected as unknown as typeof fetch).chat(baseParams),
+    ).rejects.toMatchObject({ code: 'request_rejected' })
+    const failed = vi.fn(async () => new Response('oops', { status: 500 }))
+    await expect(
+      makeProvider(failed as unknown as typeof fetch).chat(baseParams),
+    ).rejects.toMatchObject({ code: 'chat_failed' })
+  })
+
   it('still throws when reading the error body fails', async () => {
     const brokenResponse = new Response('', { status: 500 })
     Object.defineProperty(brokenResponse, 'text', {

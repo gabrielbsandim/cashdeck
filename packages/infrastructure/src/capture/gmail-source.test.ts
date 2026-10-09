@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { FakeDocumentTextReader, FakeLlmProvider } from '@cashdeck/application'
+import {
+  FakeDocumentTextReader,
+  FakeLlmProvider,
+  type LlmProvider,
+  LlmProviderError,
+} from '@cashdeck/application'
 import { findPaymentCodes as findCodesInText } from '@cashdeck/domain'
 import { BillExtractor, toExtracted } from '@/capture/bill-extractor'
 import { GmailBillSource } from '@/capture/gmail-source'
@@ -135,6 +140,27 @@ describe('BillExtractor', () => {
     expect(text.reads[0]?.mimeType).toBe('application/pdf')
     expect(Buffer.from(text.reads[0]?.bytes ?? []).toString('base64')).toBe(
       'JVBERi0=',
+    )
+  })
+
+  it('keeps the text layer codes when the model rejects the document', async () => {
+    const failing = (code: string): LlmProvider => ({
+      name: 'failing',
+      modelId: 'failing',
+      chat: async () => {
+        throw new LlmProviderError('rejected', code)
+      },
+    })
+    const text = new FakeDocumentTextReader(`Linha ${SPACED_LINE}`)
+    const attachment = { mimeType: 'application/pdf', dataBase64: 'JVBERi0=' }
+    const rejected = new BillExtractor(failing('request_rejected'), text)
+    expect(await rejected.fromAttachment(attachment, TODAY)).toMatchObject({
+      barcode: BOLETO_LINE,
+      payee: null,
+    })
+    const broken = new BillExtractor(failing('chat_failed'), text)
+    await expect(broken.fromAttachment(attachment, TODAY)).rejects.toThrow(
+      'rejected',
     )
   })
 })
