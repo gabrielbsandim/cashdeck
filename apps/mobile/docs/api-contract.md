@@ -42,6 +42,17 @@ first) and, for `PJ` only, `taxRegime`.
 - Money is `{ "cents": 12345, "currency": "BRL" }`. Dates without time are
   `YYYY-MM-DD`; moments are ISO 8601 in UTC.
 
+## Alerts and push
+
+`GET /api/v1/alerts` pages the inbox newest first (`unread=true` filters),
+`GET /alerts/unread-count` feeds the bell badge, `POST /alerts/{id}/read` and
+`POST /alerts/read-all` mark reads, and `GET`/`PATCH /alerts/settings` mute a
+type. An unknown alert type maps to `AlertKind.other`. After sign-in the app
+sends its FCM token to `POST /api/v1/devices` with `ANDROID`, `IOS` or `WEB`.
+A push carries `billId` in its data; tapping it opens `/bills/{billId}`. Push
+needs the Firebase config files (see `docs/deploy.md` at the repository root);
+without them `FirebasePushMessaging.start` returns false and the app runs as is.
+
 ## Bills
 
 The shapes below mirror `packages/client/openapi.json`, generated from the

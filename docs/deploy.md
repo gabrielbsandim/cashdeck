@@ -123,6 +123,31 @@ the crons do the same work on their schedule. For each provider you use:
 The provider-specific details and what is still unconfirmed are in
 [providers.md](providers.md#webhooks).
 
+## Push notifications
+
+Alerts always land in the in-app inbox; push is an extra that stays off until
+both sides below are configured. Without them the API stores alerts and skips
+the send, and the app runs with push disabled.
+
+1. In the Firebase console, create a project (or add Firebase to an existing
+   Google Cloud project) and enable Cloud Messaging.
+2. Server: under Project settings, Service accounts, generate a new private key.
+   Paste the whole JSON file, on one line, as `FCM_SERVICE_ACCOUNT_JSON` in the
+   Vercel project. The API sends through the HTTP v1 API with that account.
+3. Android: add an Android app with package name `io.cashdeck.app`, download
+   `google-services.json` and place it at `apps/mobile/android/app/`. The file
+   is git ignored; the Gradle build applies the Google services plugin only when
+   it is present, so builds without it keep working.
+4. iOS (not wired yet): add an iOS app, place `GoogleService-Info.plist` in
+   `apps/mobile/ios/Runner/`, upload an APNs key in Cloud Messaging and enable
+   the Push Notifications capability in Xcode.
+
+The app asks for notification permission and registers its token with
+`POST /api/v1/devices` after sign-in. Tokens FCM reports as unregistered are
+deleted on the next send. The `/api/cron/alerts` cron (daily, 12:00 UTC) emits
+the due-soon and low reserve balance alerts. Alerts and device tokens need
+the migration `20261013120000_alerts_and_devices`.
+
 ## After the first deploy
 
 1. `curl -H "Authorization: Bearer $CASHDECK_API_TOKEN" https://<api domain>/api/v1/auth/check`

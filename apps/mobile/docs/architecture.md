@@ -40,6 +40,7 @@ lib/
     money/                  Money (integer cents + currency), MoneyFormat
     network/                Dio factory, error mapping, guardRequest, JSON reading
     preferences/            theme mode and the privacy toggle (hide amounts)
+    push/                   PushMessaging port, disabled default, Firebase adapter
     time/                   Clock port, CalendarDate, Brazil local time
     theme/                  tokens (AppPalette, spacing, radius, motion, type)
     widgets/                design system components, see design.md
@@ -47,6 +48,7 @@ lib/
     entities/               PF, PJ, consolidated scope and the switcher
     bills/                  bills list, bill detail, the payment ladder
     home/ transactions/ chat/   tab placeholders until the design lands
+    alerts/                 inbox, mute settings, push listener and token registration
     settings/               the Mais tab: theme and privacy
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
 tool/
