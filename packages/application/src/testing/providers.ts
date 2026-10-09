@@ -232,6 +232,10 @@ export class FakeInvoiceIssuer implements InvoiceIssuer {
     return cancelled
   }
 
+  async download(url: string): Promise<Uint8Array> {
+    return new TextEncoder().encode(`document:${url}`)
+  }
+
   async check(): Promise<ProviderCheck> {
     return { ok: true, message: null }
   }

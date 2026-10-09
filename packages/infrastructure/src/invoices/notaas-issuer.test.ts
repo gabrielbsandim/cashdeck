@@ -211,6 +211,29 @@ describe('NotaasIssuer', () => {
   })
 })
 
+describe('NotaasIssuer documents', () => {
+  it('downloads its own documents with the key and others without', async () => {
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0xff])
+    const scripted = new ScriptedTransport()
+      .on('GET', `${NOTAAS_URL}/invoices/inv-1/pdf`, { bytes: pdf })
+      .on('GET', 'https://cdn.test/inv-1.xml', { text: '<nfse/>' })
+      .on('GET', 'https://cdn.test/gone.pdf', { status: 404 })
+    const nfse = issuer(scripted)
+    expect(await nfse.download(`${NOTAAS_URL}/invoices/inv-1/pdf`)).toEqual(pdf)
+    expect(
+      scripted.last('GET', `${NOTAAS_URL}/invoices/inv-1/pdf`).headers,
+    ).toEqual({ 'x-api-key': 'nk' })
+    const xml = await nfse.download('https://cdn.test/inv-1.xml')
+    expect(new TextDecoder().decode(xml)).toBe('<nfse/>')
+    expect(scripted.last('GET', 'https://cdn.test/inv-1.xml').headers).toEqual(
+      {},
+    )
+    await expect(nfse.download('https://cdn.test/gone.pdf')).rejects.toThrow(
+      'Notaas answered 404: download refused',
+    )
+  })
+})
+
 describe('verifyNotaasSignature', () => {
   it('accepts only the HMAC of the raw body', () => {
     const body = '{"event":"nfse.issued","data":{"invoiceId":"inv-1"}}'

@@ -826,6 +826,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/invoices/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a draft, or an issued invoice at the issuer */
+        post: operations["cancelInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PDF of an issued invoice */
+        get: operations["downloadInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/{id}/xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** XML of an issued invoice */
+        get: operations["downloadInvoiceXml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recurring invoice templates */
+        get: operations["listInvoiceTemplates"];
+        put?: never;
+        /** Create a recurring invoice template */
+        post: operations["createInvoiceTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One recurring invoice template */
+        get: operations["getInvoiceTemplate"];
+        put?: never;
+        post?: never;
+        /** Delete a recurring invoice template */
+        delete: operations["deleteInvoiceTemplate"];
+        options?: never;
+        head?: never;
+        /** Change a recurring invoice template */
+        patch: operations["updateInvoiceTemplate"];
+        trace?: never;
+    };
     "/payroll": {
         parameters: {
             query?: never;
@@ -3777,6 +3865,413 @@ export interface operations {
                             code: string;
                             description: string;
                         }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    cancelInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Cancel a draft, or an issued invoice at the issuer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            status: "DRAFT" | "PROCESSING" | "ISSUED" | "REJECTED" | "CANCELLED";
+                            number: string | null;
+                            competence: string;
+                            issueOn: string;
+                            recurring: boolean;
+                            isExport: boolean;
+                            pdfUrl: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    downloadInvoiceXml: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listInvoiceTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recurring invoice templates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: {
+                                id: string;
+                                name: string;
+                                taxId: string | null;
+                                country: string;
+                            };
+                            description: string;
+                            serviceCode: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            billing: "FIXED" | "HOURLY";
+                            hours: number | null;
+                            cycleAmount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dayOfMonth: number;
+                            active: boolean;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createInvoiceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    client: {
+                        name: string;
+                        taxId?: string | null;
+                        country?: string;
+                    };
+                    description: string;
+                    serviceCode: string;
+                    amountCents: number;
+                    /** @default BRL */
+                    currency?: string;
+                    /**
+                     * @default FIXED
+                     * @enum {string}
+                     */
+                    billing?: "FIXED" | "HOURLY";
+                    /** @default null */
+                    hours?: number | null;
+                    dayOfMonth: number;
+                    /** @default true */
+                    active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Create a recurring invoice template */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: {
+                                id: string;
+                                name: string;
+                                taxId: string | null;
+                                country: string;
+                            };
+                            description: string;
+                            serviceCode: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            billing: "FIXED" | "HOURLY";
+                            hours: number | null;
+                            cycleAmount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dayOfMonth: number;
+                            active: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getInvoiceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One recurring invoice template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: {
+                                id: string;
+                                name: string;
+                                taxId: string | null;
+                                country: string;
+                            };
+                            description: string;
+                            serviceCode: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            billing: "FIXED" | "HOURLY";
+                            hours: number | null;
+                            cycleAmount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dayOfMonth: number;
+                            active: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    deleteInvoiceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delete a recurring invoice template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateInvoiceTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    client?: {
+                        name: string;
+                        taxId?: string | null;
+                        country?: string;
+                    };
+                    description?: string;
+                    serviceCode?: string;
+                    amountCents?: number;
+                    currency?: string;
+                    /** @enum {string} */
+                    billing?: "FIXED" | "HOURLY";
+                    hours?: number | null;
+                    dayOfMonth?: number;
+                    active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Change a recurring invoice template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: {
+                                id: string;
+                                name: string;
+                                taxId: string | null;
+                                country: string;
+                            };
+                            description: string;
+                            serviceCode: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            billing: "FIXED" | "HOURLY";
+                            hours: number | null;
+                            cycleAmount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dayOfMonth: number;
+                            active: boolean;
+                        };
                     };
                 };
             };

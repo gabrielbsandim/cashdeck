@@ -7,6 +7,7 @@ import {
   createPrismaRecords,
   invoiceFromRow,
   invoiceToRow,
+  templateToRow,
 } from '@/repositories/prisma-records'
 
 const TENANT = 't1'
@@ -23,6 +24,9 @@ const DELEGATES = [
   'category',
   'billAttachment',
   'document',
+  'invoiceFile',
+  'invoiceTemplate',
+  'webhookEvent',
 ] as const
 const METHODS = [
   'upsert',
@@ -76,6 +80,7 @@ const invoice: Invoice = {
   serviceCode: '01.01',
   pdfUrl: null,
   xmlUrl: null,
+  cancelReason: null,
   createdAt: NOW,
 }
 
@@ -384,6 +389,110 @@ describe('budgets, attachments and documents', () => {
     await repos.documents.delete(TENANT, 'issuer', 'pj')
     expect(db.document.deleteMany).toHaveBeenCalledWith({
       where: { tenantId: TENANT, collection: 'issuer', id: 'pj' },
+    })
+  })
+})
+
+describe('invoice documents and templates', () => {
+  it('finds by external id and stores the documents', async () => {
+    const { db, repos } = mockClient()
+    db.invoice.findFirst
+      .mockResolvedValueOnce(invoiceRow)
+      .mockResolvedValueOnce(null)
+    expect(await repos.invoices.findByExternalId(TENANT, 'ext')).toEqual(
+      invoice,
+    )
+    expect(db.invoice.findFirst.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      externalId: 'ext',
+    })
+    expect(await repos.invoices.findByExternalId(TENANT, 'x')).toBeNull()
+    const file = {
+      tenantId: TENANT,
+      invoiceId: 'i1',
+      kind: 'PDF' as const,
+      fileName: 'nfse-1.pdf',
+      mimeType: 'application/pdf',
+      size: 3,
+      bytes: new Uint8Array([1, 2, 3]),
+      createdAt: NOW,
+    }
+    await repos.invoices.saveFile(file)
+    expect(db.invoiceFile.upsert.mock.calls[0]?.[0].where).toEqual({
+      tenantId_invoiceId_kind: {
+        tenantId: TENANT,
+        invoiceId: 'i1',
+        kind: 'PDF',
+      },
+    })
+    db.invoiceFile.findUnique
+      .mockResolvedValueOnce({ ...file, bytes: Buffer.from([1, 2, 3]) })
+      .mockResolvedValueOnce(null)
+    expect(await repos.invoices.findFile(TENANT, 'i1', 'PDF')).toEqual(file)
+    expect(await repos.invoices.findFile(TENANT, 'i1', 'XML')).toBeNull()
+  })
+
+  it('saves, finds, lists and deletes templates', async () => {
+    const { db, repos } = mockClient()
+    const template = {
+      id: 't1',
+      tenantId: TENANT,
+      entityId: 'pj',
+      clientId: 'c1',
+      serviceCode: '01.01',
+      description: 'Development',
+      amount: Money.of(15000, 'USD'),
+      billing: 'HOURLY' as const,
+      hours: 120.5,
+      dayOfMonth: 5,
+      active: true,
+    }
+    await repos.invoices.saveTemplate(template)
+    expect(db.invoiceTemplate.upsert.mock.calls[0]?.[0].create).toMatchObject({
+      amountCents: 15000n,
+      currency: 'USD',
+      hours: 120.5,
+    })
+    const row = {
+      ...templateToRow(template),
+      hours: { toString: () => '120.5' },
+    }
+    db.invoiceTemplate.findFirst
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce(null)
+    expect(await repos.invoices.findTemplate(TENANT, 't1')).toEqual(template)
+    expect(await repos.invoices.findTemplate(TENANT, 'x')).toBeNull()
+    db.invoiceTemplate.findMany.mockResolvedValueOnce([
+      { ...row, hours: null, billing: 'FIXED' },
+    ])
+    expect(await repos.invoices.listTemplates(TENANT, 'pj')).toEqual([
+      { ...template, hours: null, billing: 'FIXED' },
+    ])
+    await repos.invoices.deleteTemplate(TENANT, 't1')
+    expect(db.invoiceTemplate.deleteMany.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      id: 't1',
+    })
+  })
+})
+
+describe('webhook events', () => {
+  it('remembers an event id once', async () => {
+    const { db, repos } = mockClient()
+    db.webhookEvent.createMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+    expect(await repos.webhookEvents.remember(TENANT, 'asaas', 'e1', NOW)).toBe(
+      true,
+    )
+    expect(await repos.webhookEvents.remember(TENANT, 'asaas', 'e1', NOW)).toBe(
+      false,
+    )
+    expect(db.webhookEvent.createMany.mock.calls[0]?.[0]).toEqual({
+      data: [
+        { tenantId: TENANT, provider: 'asaas', eventId: 'e1', receivedAt: NOW },
+      ],
+      skipDuplicates: true,
     })
   })
 })

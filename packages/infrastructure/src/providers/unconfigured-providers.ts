@@ -38,6 +38,10 @@ export class NotaasInvoiceIssuer implements InvoiceIssuer {
     throw new ProviderNotConfiguredError('Notaas')
   }
 
+  async download(): Promise<Uint8Array> {
+    throw new ProviderNotConfiguredError('Notaas')
+  }
+
   async check(): Promise<ProviderCheck> {
     return { ok: false, message: 'Notaas is not configured.' }
   }

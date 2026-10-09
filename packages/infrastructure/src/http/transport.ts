@@ -11,6 +11,8 @@ export type HttpResponse = {
   status: number
   headers: Record<string, string>
   text: string
+  // The raw body, for documents that are not text (an invoice PDF).
+  bytes?: Uint8Array
 }
 
 export type Transport = (request: HttpRequest) => Promise<HttpResponse>
@@ -26,7 +28,9 @@ export function fetchTransport(fetchImpl: typeof fetch = fetch): Transport {
     response.headers.forEach((value, key) => {
       headers[key] = value
     })
-    return { status: response.status, headers, text: await response.text() }
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    const text = new TextDecoder().decode(bytes)
+    return { status: response.status, headers, text, bytes }
   }
 }
 

@@ -53,6 +53,7 @@ describe('unconfigured providers', () => {
     await expect(notaas.issue()).rejects.toThrow('Notaas is not configured.')
     await expect(notaas.get()).rejects.toThrow(ProviderNotConfiguredError)
     await expect(notaas.cancel()).rejects.toThrow(ProviderNotConfiguredError)
+    await expect(notaas.download()).rejects.toThrow(ProviderNotConfiguredError)
     await expect(pluggy.getItem()).rejects.toThrow(ProviderNotConfiguredError)
     expect((await notaas.check()).ok).toBe(false)
   })

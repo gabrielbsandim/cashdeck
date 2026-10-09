@@ -34,7 +34,9 @@ import {
   InMemoryAccountRepository,
   InMemorySecretStore,
 } from '@/testing/repositories'
+import { type WebhookProvider, type WebhookReader } from '@/ports/webhooks'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
+import { InMemoryWebhookEventStore } from '@/testing/webhooks'
 import {
   FakeArchiveWriter,
   FakeCertificateInspector,
@@ -52,6 +54,7 @@ type Options = {
   pixLocations?: FakePixLocationResolver
   documentText?: FakeDocumentTextReader
   budgets?: InMemoryBudgetRepository
+  webhooks?: WebhookReader[]
 }
 
 export function fullDeps(options: Options = {}) {
@@ -80,6 +83,10 @@ export function fullDeps(options: Options = {}) {
     ),
     pixLocations: options.pixLocations ?? new FakePixLocationResolver(),
     documentText: options.documentText ?? new FakeDocumentTextReader(),
+    webhooks: new Map<WebhookProvider, WebhookReader>(
+      (options.webhooks ?? []).map(reader => [reader.provider, reader]),
+    ),
+    webhookEvents: new InMemoryWebhookEventStore(),
     mailboxAuthorizer: new FakeMailboxAuthorizer(),
     certificates: new FakeCertificateInspector(),
     archives: new FakeArchiveWriter(),

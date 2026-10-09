@@ -96,7 +96,8 @@ describe('runCronJob', () => {
   })
 })
 
-const V1 = fileURLToPath(new URL('../app/api/v1', import.meta.url))
+const API = fileURLToPath(new URL('../app/api', import.meta.url))
+const V1 = join(API, 'v1')
 
 function routeFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -130,5 +131,31 @@ describe('openapi', () => {
       .sort()
     expect(documented).toEqual(operations)
     expect(operations.length).toBeGreaterThan(50)
+  })
+})
+
+// Routes outside the bearer guard, each with its own proof of origin.
+const UNGUARDED: Record<string, RegExp> = {
+  'v1/health': /export function GET/,
+  'v1/openapi': /export function GET/,
+  'v1/capture/mailboxes/oauth/callback': /verifyState/,
+}
+
+describe('route guards', () => {
+  it('guards every route with the token, a cron secret or a webhook proof', () => {
+    const unguarded = routeFiles(API).filter(file => {
+      const path = relative(API, dirname(file))
+      const source = readFileSync(file, 'utf8')
+      if (path.startsWith('cron/')) {
+        return !source.includes('runCronJob(')
+      }
+      if (path.startsWith('webhooks/')) {
+        return !source.includes('webhookRoute(')
+      }
+      const exception = UNGUARDED[path]
+      const guard = exception ?? /\broute(<[^>]*>)?\(/
+      return !guard.test(source)
+    })
+    expect(unguarded).toEqual([])
   })
 })

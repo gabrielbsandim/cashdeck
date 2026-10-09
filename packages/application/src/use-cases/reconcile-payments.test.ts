@@ -7,6 +7,7 @@ import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import {
   IN_FLIGHT_GRACE_MS,
   makeReconcilePayments,
+  referenceMatches,
 } from '@/use-cases/reconcile-payments'
 
 const attempt = (
@@ -251,5 +252,34 @@ describe('reconcilePayments', () => {
       approvalCutoff: '08:00',
     })
     expect((await makeReconcilePayments(deps)(TENANT)).expired).toBe(1)
+  })
+
+  it('reconciles only the payment a webhook names', async () => {
+    const inter = new FakeRailStatusReader('INTER_EMPRESAS').willReport(
+      'pix:one',
+      reported('PAID'),
+    )
+    const deps = fullDeps({ railStatus: [inter] })
+    for (const id of ['one', 'two', 'none']) {
+      await deps.bills.save(bill({ id, entityId: 'pj', status: 'PROCESSING' }))
+    }
+    await deps.payments.addAttempt(TENANT, attempt({ billId: 'one' }))
+    await deps.payments.addAttempt(TENANT, attempt({ billId: 'two' }))
+    const reconcile = makeReconcilePayments(deps)
+    const missed = await reconcile(TENANT, { rail: 'ASAAS', reference: 'one' })
+    expect(missed.checked).toBe(0)
+    const result = await reconcile(TENANT, {
+      rail: 'INTER_EMPRESAS',
+      reference: 'one',
+    })
+    expect(result).toMatchObject({ checked: 1, paid: 1 })
+    expect(inter.asked).toEqual(['pix:one'])
+  })
+
+  it('matches provider ids against stored external ids', () => {
+    expect(referenceMatches('pix:abc', 'abc')).toBe(true)
+    expect(referenceMatches('pay-1/tx-2', 'pay-1')).toBe(true)
+    expect(referenceMatches('plain', 'plain')).toBe(true)
+    expect(referenceMatches('pix:abcd', 'abc')).toBe(false)
   })
 })

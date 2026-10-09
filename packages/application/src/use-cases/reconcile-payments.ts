@@ -8,6 +8,7 @@ import {
   latestAttempts,
   markBillPaid,
   type PaymentAttempt,
+  type RailId,
   transitionBill,
 } from '@cashdeck/domain'
 import { type Deps } from '@/use-cases/deps'
@@ -38,6 +39,16 @@ export type ReconcileResult = {
 }
 
 type Outcome = 'PAID' | 'FAILED' | 'EXPIRED' | null
+
+// A webhook names one payment by the provider's own id.
+export type ReconcileTarget = { rail: RailId; reference: string }
+
+// Stored ids carry a resource prefix (`pix:id`) or a pair (`payout/transaction`).
+export function referenceMatches(externalId: string, reference: string) {
+  return (
+    externalId === reference || externalId.split(/[:/]/).includes(reference)
+  )
+}
 
 const WAITING: readonly BillStatus[] = ['PROCESSING', 'AWAITING_BANK_APPROVAL']
 
@@ -236,8 +247,26 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
     return settled ?? expireApproval(tenantId, bill, open)
   }
 
+  async function targeted(
+    tenantId: string,
+    bills: Bill[],
+    target: ReconcileTarget,
+  ): Promise<Bill[]> {
+    const matching: Bill[] = []
+    for (const bill of bills) {
+      const attempts = await deps.payments.listAttempts(tenantId, bill.id)
+      const open = latestAttempts(attempts).filter(isOpenAttempt).at(-1)
+      const hit =
+        open?.rail === target.rail &&
+        referenceMatches(open.externalId as string, target.reference)
+      matching.push(...(hit ? [bill] : []))
+    }
+    return matching
+  }
+
   return async function reconcilePayments(
     tenantId: string,
+    target?: ReconcileTarget,
   ): Promise<ReconcileResult> {
     const result: ReconcileResult = {
       checked: 0,
@@ -246,7 +275,9 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
       expired: 0,
       failures: [],
     }
-    for (const bill of await waitingBills(tenantId)) {
+    const waiting = await waitingBills(tenantId)
+    const bills = target ? await targeted(tenantId, waiting, target) : waiting
+    for (const bill of bills) {
       result.checked += 1
       try {
         const outcome = await reconcileBill(tenantId, bill)

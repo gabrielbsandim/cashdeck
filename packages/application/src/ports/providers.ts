@@ -125,6 +125,8 @@ export interface InvoiceIssuer {
   issue(draft: InvoiceDraft, idempotencyKey: string): Promise<IssuedInvoice>
   get(externalId: string): Promise<IssuedInvoice>
   cancel(externalId: string, reason: string): Promise<IssuedInvoice>
+  // Fetches a document URL the issuer returned (PDF or XML of an invoice).
+  download(url: string): Promise<Uint8Array>
   check(): Promise<ProviderCheck>
 }
 

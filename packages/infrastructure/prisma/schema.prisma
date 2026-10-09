@@ -443,8 +443,11 @@ model InvoiceTemplate {
   description String
   amountCents BigInt  @map("amount_cents")
   currency    String  @db.Char(3)
-  dayOfMonth  Int     @map("day_of_month")
-  active      Boolean @default(true)
+  // FIXED bills amount_cents; HOURLY bills amount_cents per hour times hours.
+  billing     String   @default("FIXED")
+  hours       Decimal? @db.Decimal(8, 2)
+  dayOfMonth  Int      @map("day_of_month")
+  active      Boolean  @default(true)
 
   @@index([tenantId, entityId])
   @@map("invoice_templates")
@@ -474,7 +477,23 @@ model Invoice {
   createdAt    DateTime      @default(now()) @map("created_at")
 
   @@index([tenantId, entityId, competence])
+  @@index([tenantId, externalId])
   @@map("invoices")
+}
+
+// PDF and XML of an issued invoice, downloaded from the issuer once.
+model InvoiceFile {
+  tenantId  String   @map("tenant_id")
+  invoiceId String   @map("invoice_id")
+  kind      String
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  size      Int
+  bytes     Bytes
+  createdAt DateTime @map("created_at")
+
+  @@id([tenantId, invoiceId, kind])
+  @@map("invoice_files")
 }
 
 model TaxGuide {
@@ -561,6 +580,18 @@ model AuditEvent {
 
   @@index([tenantId, subjectId])
   @@map("audit_events")
+}
+
+// Provider event ids already received, so a replayed webhook is ignored.
+model WebhookEvent {
+  tenantId   String   @map("tenant_id")
+  provider   String
+  eventId    String   @map("event_id")
+  receivedAt DateTime @map("received_at")
+
+  @@id([tenantId, provider, eventId])
+  @@index([receivedAt])
+  @@map("webhook_events")
 }
 
 model IdempotencyRecord {

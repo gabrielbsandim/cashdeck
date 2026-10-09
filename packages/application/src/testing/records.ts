@@ -14,8 +14,11 @@ import {
   type InternalTransfer,
   type Invoice,
   type InvoiceClient,
+  type InvoiceFile,
+  type InvoiceFileKind,
   type InvoiceFilter,
   type InvoiceRepository,
+  type InvoiceTemplate,
   type TransactionFilter,
   type TransactionRepository,
   type TransferRepository,
@@ -163,6 +166,8 @@ export class InMemoryInvoiceRepository
   implements InvoiceRepository
 {
   private readonly clients = new Map<string, InvoiceClient>()
+  private readonly files = new Map<string, InvoiceFile>()
+  private readonly templates = new Map<string, InvoiceTemplate>()
 
   async list(
     tenantId: string,
@@ -204,6 +209,50 @@ export class InMemoryInvoiceRepository
 
   async saveClient(client: InvoiceClient): Promise<void> {
     this.clients.set(key(client.tenantId, client.id), client)
+  }
+
+  async findByExternalId(
+    tenantId: string,
+    externalId: string,
+  ): Promise<Invoice | null> {
+    const found = this.of(tenantId).find(row => row.externalId === externalId)
+    return found ?? null
+  }
+
+  async saveFile(file: InvoiceFile): Promise<void> {
+    this.files.set(key(file.tenantId, `${file.invoiceId}:${file.kind}`), file)
+  }
+
+  async findFile(
+    tenantId: string,
+    invoiceId: string,
+    kind: InvoiceFileKind,
+  ): Promise<InvoiceFile | null> {
+    return this.files.get(key(tenantId, `${invoiceId}:${kind}`)) ?? null
+  }
+
+  async saveTemplate(template: InvoiceTemplate): Promise<void> {
+    this.templates.set(key(template.tenantId, template.id), template)
+  }
+
+  async findTemplate(
+    tenantId: string,
+    id: string,
+  ): Promise<InvoiceTemplate | null> {
+    return this.templates.get(key(tenantId, id)) ?? null
+  }
+
+  async listTemplates(
+    tenantId: string,
+    entityId: string,
+  ): Promise<InvoiceTemplate[]> {
+    return [...this.templates.values()]
+      .filter(row => row.tenantId === tenantId && row.entityId === entityId)
+      .sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.id.localeCompare(b.id))
+  }
+
+  async deleteTemplate(tenantId: string, id: string): Promise<void> {
+    this.templates.delete(key(tenantId, id))
   }
 }
 

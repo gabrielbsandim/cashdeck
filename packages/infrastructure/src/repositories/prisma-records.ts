@@ -13,9 +13,15 @@ import {
   type InternalTransfer,
   type Invoice,
   type InvoiceClient,
+  type InvoiceFile,
+  type InvoiceFileKind,
   type InvoiceFilter,
   type InvoiceRepository,
   type InvoiceStatus,
+  type InvoiceTemplate,
+  type TemplateBilling,
+  type WebhookEventStore,
+  type WebhookProvider,
   type Page,
   type PageRequest,
   type TransactionFilter,
@@ -267,6 +273,7 @@ export function invoiceFromRow(row: InvoiceRow): Invoice {
     serviceCode: row.serviceCode,
     pdfUrl: row.pdfUrl,
     xmlUrl: row.xmlUrl,
+    cancelReason: row.cancelReason ?? null,
     createdAt: row.createdAt,
   }
 }
@@ -305,6 +312,38 @@ const clientFromRow = (row: ClientRow): InvoiceClient => ({
   taxId: row.taxId,
   country: row.country,
 })
+
+type TemplateRow = Omit<InvoiceTemplate, 'amount' | 'billing' | 'hours'> & {
+  amountCents: bigint
+  currency: string
+  billing: string
+  hours: { toString(): string } | null
+}
+
+export function templateFromRow(row: TemplateRow): InvoiceTemplate {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    entityId: row.entityId,
+    clientId: row.clientId,
+    serviceCode: row.serviceCode,
+    description: row.description,
+    amount: Money.of(Number(row.amountCents), row.currency),
+    billing: row.billing as TemplateBilling,
+    hours: row.hours === null ? null : Number(row.hours.toString()),
+    dayOfMonth: row.dayOfMonth,
+    active: row.active,
+  }
+}
+
+export function templateToRow(template: InvoiceTemplate) {
+  const { amount, ...rest } = template
+  return {
+    ...rest,
+    amountCents: BigInt(amount.cents),
+    currency: amount.currency,
+  }
+}
 
 export class PrismaInvoiceRepository implements InvoiceRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -377,6 +416,101 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       create: client,
       update: client,
     })
+  }
+
+  async findByExternalId(
+    tenantId: string,
+    externalId: string,
+  ): Promise<Invoice | null> {
+    const row = await this.db.invoice.findFirst({
+      where: { tenantId, externalId },
+      orderBy: { createdAt: 'desc' },
+    })
+    return row ? invoiceFromRow(row) : null
+  }
+
+  async saveFile(file: InvoiceFile): Promise<void> {
+    const data = { ...file, bytes: Uint8Array.from(file.bytes) }
+    await this.db.invoiceFile.upsert({
+      where: {
+        tenantId_invoiceId_kind: {
+          tenantId: file.tenantId,
+          invoiceId: file.invoiceId,
+          kind: file.kind,
+        },
+      },
+      create: data,
+      update: data,
+    })
+  }
+
+  async findFile(
+    tenantId: string,
+    invoiceId: string,
+    kind: InvoiceFileKind,
+  ): Promise<InvoiceFile | null> {
+    const row = await this.db.invoiceFile.findUnique({
+      where: { tenantId_invoiceId_kind: { tenantId, invoiceId, kind } },
+    })
+    return (
+      row && {
+        ...row,
+        kind: row.kind as InvoiceFileKind,
+        bytes: new Uint8Array(row.bytes),
+      }
+    )
+  }
+
+  async saveTemplate(template: InvoiceTemplate): Promise<void> {
+    const row = templateToRow(template)
+    await this.db.invoiceTemplate.upsert({
+      where: { id: row.id, tenantId: row.tenantId },
+      create: row,
+      update: row,
+    })
+  }
+
+  async findTemplate(
+    tenantId: string,
+    id: string,
+  ): Promise<InvoiceTemplate | null> {
+    const row = await this.db.invoiceTemplate.findFirst({
+      where: { tenantId, id },
+    })
+    return row ? templateFromRow(row) : null
+  }
+
+  async listTemplates(
+    tenantId: string,
+    entityId: string,
+  ): Promise<InvoiceTemplate[]> {
+    const rows = await this.db.invoiceTemplate.findMany({
+      where: { tenantId, entityId },
+      orderBy: [{ dayOfMonth: 'asc' }, { id: 'asc' }],
+    })
+    return rows.map(templateFromRow)
+  }
+
+  async deleteTemplate(tenantId: string, id: string): Promise<void> {
+    await this.db.invoiceTemplate.deleteMany({ where: { tenantId, id } })
+  }
+}
+
+export class PrismaWebhookEventStore implements WebhookEventStore {
+  constructor(private readonly db: PrismaClient) {}
+
+  // skipDuplicates turns a replay into a zero count instead of a P2002 error.
+  async remember(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    receivedAt: Date,
+  ): Promise<boolean> {
+    const result = await this.db.webhookEvent.createMany({
+      data: [{ tenantId, provider, eventId, receivedAt }],
+      skipDuplicates: true,
+    })
+    return result.count === 1
   }
 }
 
@@ -495,5 +629,6 @@ export function createPrismaRecords(db: PrismaClient) {
     budgets: new PrismaBudgetRepository(db),
     attachments: new PrismaAttachmentRepository(db),
     documents: new PrismaDocumentStore(db),
+    webhookEvents: new PrismaWebhookEventStore(db),
   }
 }

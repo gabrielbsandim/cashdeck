@@ -6,6 +6,7 @@ import {
   NotFoundError,
   ProviderError,
   ProviderNotConfiguredError,
+  UnauthorizedError,
 } from '@cashdeck/application'
 import { reportError } from '@/server/observability'
 
@@ -88,6 +89,10 @@ const RULES: ErrorRule[] = [
   {
     matches: error => error instanceof NotFoundError,
     respond: error => fail('NOT_FOUND', error.message, 404),
+  },
+  {
+    matches: error => error instanceof UnauthorizedError,
+    respond: error => fail('UNAUTHORIZED', error.message, 401),
   },
   {
     matches: error => error instanceof InvalidTransitionError,

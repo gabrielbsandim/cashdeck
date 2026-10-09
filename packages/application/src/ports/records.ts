@@ -118,7 +118,40 @@ export type Invoice = {
   serviceCode: string
   pdfUrl: string | null
   xmlUrl: string | null
+  cancelReason?: string | null
   createdAt: Date
+}
+
+export const INVOICE_FILE_KINDS = ['PDF', 'XML'] as const
+export type InvoiceFileKind = (typeof INVOICE_FILE_KINDS)[number]
+
+export type InvoiceFile = {
+  tenantId: string
+  invoiceId: string
+  kind: InvoiceFileKind
+  fileName: string
+  mimeType: string
+  size: number
+  bytes: Uint8Array
+  createdAt: Date
+}
+
+export const TEMPLATE_BILLING = ['FIXED', 'HOURLY'] as const
+export type TemplateBilling = (typeof TEMPLATE_BILLING)[number]
+
+// An hourly template stores the rate in `amount` and the hours of each cycle.
+export type InvoiceTemplate = {
+  id: string
+  tenantId: string
+  entityId: string
+  clientId: string
+  serviceCode: string
+  description: string
+  amount: Money
+  billing: TemplateBilling
+  hours: number | null
+  dayOfMonth: number
+  active: boolean
 }
 
 export type InvoiceFilter = {
@@ -144,6 +177,20 @@ export interface InvoiceRepository {
     name: string,
   ): Promise<InvoiceClient | null>
   saveClient(client: InvoiceClient): Promise<void>
+  findByExternalId(
+    tenantId: string,
+    externalId: string,
+  ): Promise<Invoice | null>
+  saveFile(file: InvoiceFile): Promise<void>
+  findFile(
+    tenantId: string,
+    invoiceId: string,
+    kind: InvoiceFileKind,
+  ): Promise<InvoiceFile | null>
+  saveTemplate(template: InvoiceTemplate): Promise<void>
+  findTemplate(tenantId: string, id: string): Promise<InvoiceTemplate | null>
+  listTemplates(tenantId: string, entityId: string): Promise<InvoiceTemplate[]>
+  deleteTemplate(tenantId: string, id: string): Promise<void>
 }
 
 export type BudgetLimit = {

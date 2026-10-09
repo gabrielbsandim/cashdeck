@@ -35,6 +35,7 @@ describe('transport helpers', () => {
         'x-request-id': 'r1',
       },
       text: '{"ok":true}',
+      bytes: new TextEncoder().encode('{"ok":true}'),
     })
   })
 

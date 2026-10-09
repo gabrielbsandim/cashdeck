@@ -11,6 +11,7 @@ import {
   type ReserveFunder,
   type SecretStore,
   type SecretVault,
+  type WebhookReader,
 } from '@cashdeck/application'
 import { type RailId } from '@cashdeck/domain'
 import { BillExtractor } from '@/capture/bill-extractor'
@@ -32,6 +33,7 @@ import {
 } from '@/rails/inter-empresas-rail'
 import { MercadoPagoPayoutsRail } from '@/rails/mercado-pago-rail'
 import { PixReserveFunder } from '@/rails/reserve-funder'
+import { createWebhookReaders } from '@/webhooks/webhook-readers'
 
 export type CreateProvidersInput = {
   env: Record<string, string | undefined>
@@ -59,6 +61,7 @@ export type Providers = {
   pixLocations: PixLocationResolver
   documentText: DocumentTextReader
   notifier: Notifier
+  webhooks: WebhookReader[]
 }
 
 // Every adapter resolves its credentials on each call, from a sealed secret
@@ -119,5 +122,6 @@ export function createProviders(input: CreateProvidersInput): Providers {
       deviceTokens: input.deviceTokens ?? (async () => []),
       onInvalidToken: input.onInvalidToken,
     }),
+    webhooks: createWebhookReaders({ credentials }),
   }
 }

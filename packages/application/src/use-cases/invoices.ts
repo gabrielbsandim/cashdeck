@@ -19,6 +19,7 @@ import { type Invoice } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
 import { credentialName, putCredential } from '@/use-cases/credentials'
 import { type Deps } from '@/use-cases/deps'
+import { makeInvoiceLifecycle } from '@/use-cases/invoice-lifecycle'
 import {
   decodeUpload,
   monthOf,
@@ -253,6 +254,7 @@ export function makeListInvoices(deps: Pick<Deps, 'entities' | 'invoices'>) {
 export function makeIssueInvoice(
   deps: Pick<Deps, 'invoices' | 'issuer' | 'audit' | 'clock' | 'ids'>,
 ) {
+  const lifecycle = makeInvoiceLifecycle(deps)
   return async function issueInvoice(
     tenantId: string,
     invoiceId: string,
@@ -304,6 +306,7 @@ export function makeIssueInvoice(
       details: { externalId: issued.externalId, issuer: deps.issuer.id },
       at: deps.clock.now(),
     })
+    await lifecycle.storeFiles(updated)
     return updated
   }
 }

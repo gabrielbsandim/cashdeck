@@ -9,6 +9,7 @@ export type ScriptedReply = {
   status?: number
   json?: unknown
   text?: string
+  bytes?: Uint8Array
   headers?: Record<string, string>
 }
 
@@ -62,5 +63,10 @@ export class ScriptedTransport {
 function toResponse(reply: ScriptedReply): HttpResponse {
   const text =
     reply.text ?? (reply.json === undefined ? '' : JSON.stringify(reply.json))
-  return { status: reply.status ?? 200, headers: reply.headers ?? {}, text }
+  return {
+    status: reply.status ?? 200,
+    headers: reply.headers ?? {},
+    text,
+    ...(reply.bytes ? { bytes: reply.bytes } : {}),
+  }
 }

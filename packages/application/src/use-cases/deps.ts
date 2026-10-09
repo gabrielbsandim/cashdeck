@@ -39,6 +39,11 @@ import {
   type PdfWriter,
 } from '@/ports/services'
 import { type Clock, type IdGenerator } from '@/ports/system'
+import {
+  type WebhookEventStore,
+  type WebhookProvider,
+  type WebhookReader,
+} from '@/ports/webhooks'
 import { type RailRegistry } from '@/use-cases/build-payment-plan'
 
 // Everything a use case may need; each factory picks its own slice.
@@ -70,6 +75,8 @@ export type Deps = {
   billSources: ReadonlyMap<string, BillSource>
   pixLocations: PixLocationResolver
   documentText: DocumentTextReader
+  webhooks: ReadonlyMap<WebhookProvider, WebhookReader>
+  webhookEvents: WebhookEventStore
   mailboxAuthorizer: MailboxAuthorizer
   certificates: CertificateInspector
   archives: ArchiveWriter

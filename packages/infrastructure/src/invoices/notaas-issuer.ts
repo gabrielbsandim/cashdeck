@@ -93,6 +93,18 @@ export class NotaasIssuer implements InvoiceIssuer {
     return this.get(externalId)
   }
 
+  // The API key goes only to the Notaas origin; a document URL elsewhere (a
+  // storage link) is fetched without it.
+  async download(url: string): Promise<Uint8Array> {
+    const own = new URL(url).origin === new URL(NOTAAS_URL).origin
+    const headers = own ? await this.authHeaders() : {}
+    const response = await this.deps.transport({ method: 'GET', url, headers })
+    if (!isSuccess(response)) {
+      throw new ProviderHttpError(PROVIDER, response.status, 'download refused')
+    }
+    return response.bytes ?? new TextEncoder().encode(response.text)
+  }
+
   async check(): Promise<ProviderCheck> {
     return checkWith(PROVIDER, async () => {
       await this.call<unknown>({
@@ -198,19 +210,25 @@ export class NotaasIssuer implements InvoiceIssuer {
     )
   }
 
-  private async call<T>(
-    request: Call,
+  private async authHeaders(
     scope: { tenantId?: string; entityId?: string } = {},
-  ): Promise<T> {
+  ): Promise<Record<string, string>> {
     const { NOTAAS_API_KEY } = await requireCredentials(
       this.deps.credentials,
       PROVIDER,
       ['NOTAAS_API_KEY'],
       scope,
     )
+    return { 'x-api-key': NOTAAS_API_KEY }
+  }
+
+  private async call<T>(
+    request: Call,
+    scope: { tenantId?: string; entityId?: string } = {},
+  ): Promise<T> {
     const response = await send(this.deps.transport, {
       ...request,
-      headers: { 'x-api-key': NOTAAS_API_KEY },
+      headers: await this.authHeaders(scope),
     })
     if (!isSuccess(response)) {
       const body = safeJson(response.text) as {

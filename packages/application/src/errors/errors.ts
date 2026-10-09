@@ -51,3 +51,12 @@ export class AmountRequiredError extends Error {
     this.name = 'AmountRequiredError'
   }
 }
+
+export class UnauthorizedError extends Error {
+  readonly code = 'UNAUTHORIZED'
+
+  constructor(message = 'The request could not be authenticated.') {
+    super(message)
+    this.name = 'UnauthorizedError'
+  }
+}
