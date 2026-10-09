@@ -6,6 +6,8 @@ import {
   type CertificateFacts,
   type CertificateFile,
   type CertificateInspector,
+  type DocumentFile,
+  type DocumentTextReader,
   type MailboxAuthorizer,
   type PdfRow,
   type PdfWriter,
@@ -62,5 +64,16 @@ export class FakePdfWriter implements PdfWriter {
   render(title: string, rows: readonly PdfRow[]): Uint8Array {
     const lines = rows.map(([label, value]) => `${label}: ${value}`)
     return new TextEncoder().encode([title, ...lines].join('\n'))
+  }
+}
+
+export class FakeDocumentTextReader implements DocumentTextReader {
+  readonly reads: DocumentFile[] = []
+
+  constructor(private readonly text: string | null = null) {}
+
+  async read(file: DocumentFile): Promise<string | null> {
+    this.reads.push(file)
+    return this.text
   }
 }

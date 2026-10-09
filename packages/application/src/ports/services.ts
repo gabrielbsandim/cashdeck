@@ -31,3 +31,10 @@ export type PdfRow = readonly [label: string, value: string]
 export interface PdfWriter {
   render(title: string, rows: readonly PdfRow[]): Uint8Array
 }
+
+export type DocumentFile = { mimeType: string; bytes: Uint8Array }
+
+export interface DocumentTextReader {
+  // Null when the file has no text layer the reader understands (a photo).
+  read(file: DocumentFile): Promise<string | null>
+}

@@ -3,7 +3,7 @@ import {
   type CapturedBill,
   type LlmAttachment,
 } from '@cashdeck/application'
-import { type LocalDate, toLocalDate } from '@cashdeck/domain'
+import { findPaymentCodes, type LocalDate, toLocalDate } from '@cashdeck/domain'
 import {
   type Credentials,
   requireCredentials,
@@ -18,7 +18,6 @@ import {
 import {
   type BillExtractor,
   type ExtractedBill,
-  findCodesInText,
   toExtracted,
 } from '@/capture/bill-extractor'
 
@@ -162,11 +161,12 @@ export class GmailBillSource implements BillSource {
       }
     }
     const text = parts.filter(isText).map(decodeBody).join('\n')
-    const fromText = toExtracted(findCodesInText(text, today), today, { payee })
-    if (fromText && !found.some(bill => sameBill(bill, fromText))) {
-      found.push(fromText)
-    }
-    return found.map((bill, index) => toCaptured(`${id}:${index}`, bill, payee))
+    const fromText = toExtracted(findPaymentCodes(text, today), today, {
+      payee,
+    })
+    return withBody(found, fromText, today).map((bill, index) =>
+      toCaptured(`${id}:${index}`, bill, payee),
+    )
   }
 
   private async readAttachment(
@@ -233,10 +233,46 @@ function sender(message: Message): string | null {
   )
 }
 
-function sameBill(a: ExtractedBill, b: ExtractedBill): boolean {
-  return (
-    (a.barcode !== null && a.barcode === b.barcode) ||
-    (a.pixCode !== null && a.pixCode === b.pixCode)
+const differ = (a: string | null, b: string | null) =>
+  a !== null && b !== null && a !== b
+
+function conflicts(a: ExtractedBill, b: ExtractedBill): boolean {
+  return differ(a.barcode, b.barcode) || differ(a.pixCode, b.pixCode)
+}
+
+function joined(
+  bill: ExtractedBill,
+  other: ExtractedBill,
+  today: LocalDate,
+): ExtractedBill {
+  const codes = {
+    barcode: bill.barcode ?? other.barcode,
+    pixCode: bill.pixCode ?? other.pixCode,
+  }
+  const hints = {
+    payee: bill.payee ?? other.payee,
+    amountCents: bill.amountCents ?? other.amountCents,
+    dueDate: bill.dueDate ?? other.dueDate,
+  }
+  return toExtracted(codes, today, hints) ?? bill
+}
+
+// A bolepix e-mail often attaches the PDF with the barcode and prints the Pix
+// copy and paste in the body: the body completes the first bill it fits.
+function withBody(
+  found: ExtractedBill[],
+  body: ExtractedBill | null,
+  today: LocalDate,
+): ExtractedBill[] {
+  if (!body) {
+    return found
+  }
+  const index = found.findIndex(bill => !conflicts(bill, body))
+  if (index === -1) {
+    return [...found, body]
+  }
+  return found.map((bill, at) =>
+    at === index ? joined(bill, body, today) : bill,
   )
 }
 

@@ -1,4 +1,5 @@
 import {
+  type DocumentTextReader,
   type LlmAttachment,
   type LlmProvider,
   type LlmToolParameter,
@@ -7,8 +8,11 @@ import {
   type BillKind,
   billKindFor,
   decodePaymentCode,
+  findPaymentCodes,
+  type FoundCodes,
   type LocalDate,
-  parseBrCode,
+  validBarcode,
+  validBrCode,
 } from '@cashdeck/domain'
 
 export type ExtractedBill = {
@@ -20,43 +24,9 @@ export type ExtractedBill = {
   kind: BillKind | null
 }
 
-const DIGIT_RUN = /\d[\d.\s-]{42,62}\d/g
-const BR_CODE = /000201[\x20-\x7E]+?6304[0-9A-Fa-f]{4}/g
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
-type Candidate = { barcode: string | null; pixCode: string | null }
-
-function validBarcode(raw: string, today: LocalDate): string | null {
-  const digits = raw.replace(/\D/g, '')
-  try {
-    const decoded = decodePaymentCode(digits, today)
-    return decoded.type === 'PIX' ? null : digits
-  } catch {
-    return null
-  }
-}
-
-// The checksum rejects a code the model misread, so a Pix code is only kept
-// when it is exact.
-function validPixCode(raw: string): string | null {
-  try {
-    return parseBrCode(raw.trim()).payload
-  } catch {
-    return null
-  }
-}
-
-export function findCodesInText(text: string, today: LocalDate): Candidate {
-  const flat = text.replace(/\r?\n/g, '')
-  const barcode =
-    (text.match(DIGIT_RUN) ?? [])
-      .map(run => validBarcode(run, today))
-      .find(code => code !== null) ?? null
-  const pixCode =
-    (flat.match(BR_CODE) ?? []).map(validPixCode).find(code => code !== null) ??
-    null
-  return { barcode, pixCode }
-}
+type Candidate = FoundCodes
 
 function kindOf(candidate: Candidate, today: LocalDate): BillKind | null {
   if (candidate.barcode) {
@@ -138,12 +108,47 @@ type LlmAnswer = {
 }
 
 export class BillExtractor {
-  constructor(private readonly llm: LlmProvider) {}
+  constructor(
+    private readonly llm: LlmProvider,
+    private readonly text?: DocumentTextReader,
+  ) {}
 
+  // Codes in the text layer are exact; the model only fills what it lacks, so
+  // a 150 character Pix code no longer depends on the model copying it.
   async fromAttachment(
     attachment: LlmAttachment,
     today: LocalDate,
   ): Promise<ExtractedBill | null> {
+    const local = await this.localCodes(attachment, today)
+    const answer = await this.ask(attachment)
+    const candidate = {
+      barcode:
+        local.barcode ??
+        (answer.barcode ? validBarcode(answer.barcode, today) : null),
+      pixCode:
+        local.pixCode ?? (answer.pixCode ? validBrCode(answer.pixCode) : null),
+    }
+    const amount = Number(answer.amount)
+    return toExtracted(candidate, today, {
+      payee: answer.payee,
+      amountCents:
+        Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null,
+      dueDate: answer.dueDate,
+    })
+  }
+
+  private async localCodes(
+    attachment: LlmAttachment,
+    today: LocalDate,
+  ): Promise<Candidate> {
+    const text = await this.text?.read({
+      mimeType: attachment.mimeType,
+      bytes: Buffer.from(attachment.dataBase64, 'base64'),
+    })
+    return findPaymentCodes(text ?? '', today)
+  }
+
+  private async ask(attachment: LlmAttachment): Promise<LlmAnswer> {
     const result = await this.llm.chat({
       system: SYSTEM,
       messages: [
@@ -159,17 +164,6 @@ export class BillExtractor {
       temperature: 0,
       responseSchema: SCHEMA,
     })
-    const answer = (result.object ?? {}) as LlmAnswer
-    const candidate = {
-      barcode: answer.barcode ? validBarcode(answer.barcode, today) : null,
-      pixCode: answer.pixCode ? validPixCode(answer.pixCode) : null,
-    }
-    const amount = Number(answer.amount)
-    return toExtracted(candidate, today, {
-      payee: answer.payee,
-      amountCents:
-        Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null,
-      dueDate: answer.dueDate,
-    })
+    return (result.object ?? {}) as LlmAnswer
   }
 }

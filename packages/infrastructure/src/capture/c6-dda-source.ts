@@ -4,17 +4,39 @@ import {
   decodePaymentCode,
   type BillKind,
   toLocalDate,
+  validBrCode,
 } from '@cashdeck/domain'
 import { type Credentials } from '@/credentials/credential-resolver'
 import { toCents } from '@/http/transport'
 import { BankClients } from '@/rails/bank-client'
 import { c6Call, c6Client } from '@/rails/c6-client'
 
+// The Pix field names are unconfirmed (docs/providers.md); each candidate is
+// kept only when its BR Code checksum holds.
+const PIX_FIELDS = [
+  'pix_qr_code',
+  'pix_copy_paste',
+  'pix_code',
+  'qr_code',
+  'emv',
+] as const
+
 type Bond = {
   amount?: number
   beneficiary_name?: string | null
   content?: string
   due_date?: string | null
+} & Partial<Record<(typeof PIX_FIELDS)[number], unknown>>
+
+function pixCodeOf(bond: Bond): string | null {
+  for (const field of PIX_FIELDS) {
+    const value = bond[field]
+    const pixCode = typeof value === 'string' ? validBrCode(value) : null
+    if (pixCode) {
+      return pixCode
+    }
+  }
+  return null
 }
 
 export type C6DdaSourceDeps = {
@@ -56,7 +78,7 @@ export class C6DdaBillSource implements BillSource {
     return {
       externalId: `dda:${code}`,
       paymentCode: code,
-      pixCode: null,
+      pixCode: pixCodeOf(bond),
       payee: bond.beneficiary_name ?? null,
       amountCents: cents > 0 ? cents : null,
       dueDate: bond.due_date ?? null,

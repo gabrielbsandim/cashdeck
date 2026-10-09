@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { FakeLlmProvider } from '@cashdeck/application'
-import {
-  BillExtractor,
-  findCodesInText,
-  toExtracted,
-} from '@/capture/bill-extractor'
+import { FakeDocumentTextReader, FakeLlmProvider } from '@cashdeck/application'
+import { findPaymentCodes as findCodesInText } from '@cashdeck/domain'
+import { BillExtractor, toExtracted } from '@/capture/bill-extractor'
 import { GmailBillSource } from '@/capture/gmail-source'
 import {
   BOLETO_LINE,
@@ -117,6 +114,28 @@ describe('BillExtractor', () => {
       stopReason: 'end',
     })
     expect(await extractor.fromAttachment(attachment, TODAY)).toBeNull()
+  })
+
+  it('takes the codes from the PDF text layer before the model answer', async () => {
+    const llm = new FakeLlmProvider().enqueueObject({
+      barcode: '123',
+      pixCode: STATIC_PIX.slice(0, 90),
+      payee: 'Energia Exemplo',
+    })
+    const text = new FakeDocumentTextReader(
+      `Linha ${SPACED_LINE}\nPix\n${STATIC_PIX.slice(0, 50)}\n${STATIC_PIX.slice(50)}`,
+    )
+    const extractor = new BillExtractor(llm, text)
+    const attachment = { mimeType: 'application/pdf', dataBase64: 'JVBERi0=' }
+    expect(await extractor.fromAttachment(attachment, TODAY)).toMatchObject({
+      barcode: BOLETO_LINE,
+      pixCode: STATIC_PIX,
+      payee: 'Energia Exemplo',
+    })
+    expect(text.reads[0]?.mimeType).toBe('application/pdf')
+    expect(Buffer.from(text.reads[0]?.bytes ?? []).toString('base64')).toBe(
+      'JVBERi0=',
+    )
   })
 })
 
@@ -293,5 +312,77 @@ describe('GmailBillSource', () => {
     await expect(unconfigured.fetch(TENANT, ENTITY, since)).rejects.toThrow(
       'Gmail is not configured.',
     )
+  })
+
+  it('pairs the barcode of the PDF with the Pix code of the body', async () => {
+    const scripted = new ScriptedTransport()
+      .on('POST', TOKEN, { json: { access_token: 'gtoken' } })
+      .on('GET', `${API}/messages?`, {
+        json: { messages: [{ id: 'm1' }, { id: 'm2' }] },
+      })
+      .on('GET', `${API}/messages/m1/attachments/att-1`, {
+        json: { data: b64('%PDF fake') },
+      })
+      .on('GET', `${API}/messages/m2/attachments/att-2`, {
+        json: { data: b64('%PDF fake') },
+      })
+      .on('GET', `${API}/messages/m1?format=full`, {
+        json: {
+          id: 'm1',
+          payload: {
+            mimeType: 'multipart/mixed',
+            parts: [
+              {
+                mimeType: 'text/html',
+                body: { data: b64(`<p>Pix copia e cola: ${STATIC_PIX}</p>`) },
+              },
+              {
+                mimeType: 'application/pdf',
+                body: { attachmentId: 'att-1', size: 1000 },
+              },
+            ],
+          },
+        },
+      })
+      .on('GET', `${API}/messages/m2?format=full`, {
+        json: {
+          id: 'm2',
+          payload: {
+            mimeType: 'multipart/mixed',
+            parts: [
+              { mimeType: 'text/plain', body: { data: b64(TAX_BARCODE) } },
+              {
+                mimeType: 'application/pdf',
+                body: { attachmentId: 'att-2', size: 1000 },
+              },
+            ],
+          },
+        },
+      })
+    const llm = new FakeLlmProvider()
+      .enqueueObject({ barcode: BOLETO_LINE, pixCode: '', payee: 'Energia' })
+      .enqueueObject({ barcode: BOLETO_LINE, pixCode: '' })
+    const source = new GmailBillSource({
+      credentials: gmailEnv(),
+      transport: scripted.transport,
+      extractor: new BillExtractor(llm),
+      now,
+    })
+    const bills = await source.fetch(TENANT, ENTITY, since)
+    expect(bills).toEqual([
+      expect.objectContaining({
+        externalId: 'm1:0',
+        paymentCode: BOLETO_LINE,
+        pixCode: STATIC_PIX,
+        payee: 'Energia',
+        kind: 'BOLETO',
+      }),
+      expect.objectContaining({ externalId: 'm2:0', paymentCode: BOLETO_LINE }),
+      expect.objectContaining({
+        externalId: 'm2:1',
+        paymentCode: TAX_BARCODE,
+        kind: 'TAX_BARCODE',
+      }),
+    ])
   })
 })

@@ -41,7 +41,8 @@
     "@prisma/adapter-pg": "7.9.1",
     "@prisma/client": "7.9.1",
     "@prisma/driver-adapter-utils": "7.9.1",
-    "ai": "6.0.208"
+    "ai": "6.0.208",
+    "unpdf": "1.6.2"
   },
   "devDependencies": {
     "@cashdeck/config": "workspace:*",
