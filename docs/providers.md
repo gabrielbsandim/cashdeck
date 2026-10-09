@@ -354,10 +354,10 @@ selects which secret to check against, so it grants nothing by itself.
 - Mercado Pago: the manifest template and `ts` units come from the published
   algorithm, not checked against a live delivery; which topic money-out
   (payouts) notifications use; whether `data.id` is the payout id.
-- Inter: the whole webhook contract. The registration endpoint
-  (`PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
-  `boleto-pagamento`), whether a query string survives in the registered URL,
-  and the payload fields were not confirmed in the reference. Inter calls over
+- Inter: the payload fields. Registration was confirmed live:
+  `PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
+  `boleto-pagamento` answers 204 under the `webhook-banking.write` scope, and
+  `GET` returns the URL with its query string intact. Inter calls over
   mTLS presenting its own certificate, which a Vercel function cannot verify,
   so the URL token is the only proof.
 - Pluggy: signs nothing; the documented alternative is allowlisting its source
