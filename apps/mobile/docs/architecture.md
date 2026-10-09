@@ -47,7 +47,9 @@ lib/
   features/
     entities/               PF, PJ, consolidated scope and the switcher
     bills/                  bills list, bill detail, the payment ladder
-    home/ transactions/ chat/   tab placeholders until the design lands
+    home/                   tab placeholder until the design lands
+    transactions/           list by day, filters, detail, category and note, transfers
+    chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
     settings/               the Mais tab: theme and privacy
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
@@ -87,9 +89,10 @@ test/                       mirrors lib/ one to one
 ## Navigation
 
 `app/router/app_router.dart` is a `StatefulShellRoute` with five branches:
-Início (`/home`), Transações (`/transactions`), Contas a pagar (`/bills`, with
-`/bills/:billId`), Chat (`/chat`) and Mais (`/more`). The bottom bar shows only
-on the tab roots (`AppRoutes.tabs`).
+Início (`/home`), Transações (`/transactions`, with
+`/transactions/:transactionId`), Contas a pagar (`/bills`, with
+`/bills/:billId`), Chat (`/chat`, with `/chat/:threadId`) and Mais (`/more`).
+The bottom bar shows only on the tab roots (`AppRoutes.tabs`).
 
 ## Composition root
 

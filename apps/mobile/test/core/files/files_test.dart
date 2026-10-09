@@ -38,6 +38,17 @@ void main() {
     expect(LocalFile(name: 'README', bytes: Uint8List(0)).extension, isEmpty);
   });
 
+  test('a voice note reads as audio', () {
+    expect(
+      LocalFile(name: 'voz.m4a', bytes: Uint8List(0)).contentType,
+      'audio/mp4',
+    );
+    expect(
+      LocalFile(name: 'voz.ogg', bytes: Uint8List(0)).contentType,
+      'audio/ogg',
+    );
+  });
+
   test('the platform chooser reads the picked file', () async {
     List<String>? asked;
     Future<PlatformFile?> pick({

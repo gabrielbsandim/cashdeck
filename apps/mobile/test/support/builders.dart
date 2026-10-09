@@ -1,7 +1,9 @@
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
 
 /// 2026-10-08 12:00 in Brazil.
 final testNow = DateTime.utc(2026, 10, 8, 15);
@@ -77,3 +79,108 @@ Map<String, dynamic> billJson({
   'plan': plan,
   'attempts': ?attempts,
 };
+
+Transaction testTransaction({
+  String id = 'tx-1',
+  String accountId = 'acc-1',
+  EntityKind owner = EntityKind.personal,
+  Money amount = const Money(-4_590),
+  CalendarDate bookedOn = testToday,
+  String description = 'Padaria Exemplo',
+  TransactionKind kind = TransactionKind.expense,
+  String? categoryId,
+  String? transferId,
+  String? note,
+  CategorySource? categorizedBy,
+  double? categoryConfidence,
+}) => Transaction(
+  id: id,
+  accountId: accountId,
+  owner: owner,
+  amount: amount,
+  bookedOn: bookedOn,
+  description: description,
+  kind: kind,
+  categoryId: categoryId,
+  transferId: transferId,
+  note: note,
+  categorizedBy: categorizedBy,
+  categoryConfidence: categoryConfidence,
+);
+
+Map<String, dynamic> transactionJson({
+  String id = 'tx-1',
+  String kind = 'EXPENSE',
+  String? categoryId = 'cat-groceries',
+  String? categorizedBy = 'AI',
+  Object? confidence = 0.8,
+}) => {
+  'id': id,
+  'accountId': 'acc-1',
+  'entityKind': 'PF',
+  'amount': {'cents': -4590, 'currency': 'BRL'},
+  'bookedOn': '2026-10-08',
+  'description': 'Padaria Exemplo',
+  'categoryId': categoryId,
+  'kind': kind,
+  'transferId': null,
+  'invoiceId': null,
+  'note': null,
+  'categorizedBy': categorizedBy,
+  'categoryConfidence': confidence,
+};
+
+ChatAction testAction({
+  String id = 'action-1',
+  String threadId = 'thread-1',
+  ChatTool tool = ChatTool.payBill,
+  ChatActionStatus status = ChatActionStatus.pending,
+  bool needsEntity = false,
+  ChatActionDetails details = const ChatActionDetails(
+    payee: 'Energia Exemplo',
+    amount: Money(28_740),
+    dueDate: testToday,
+  ),
+  String? error,
+}) => ChatAction(
+  id: id,
+  threadId: threadId,
+  tool: tool,
+  status: status,
+  needsEntity: needsEntity,
+  entity: needsEntity ? null : EntityKind.personal,
+  details: details,
+  error: error,
+  createdAt: testNow,
+);
+
+ChatMessage testMessage({
+  String id = 'msg-1',
+  String threadId = 'thread-1',
+  ChatRole role = ChatRole.assistant,
+  String text = 'Resposta de exemplo',
+  ChatNotice? notice,
+  List<ChatAttachment> attachments = const [],
+  List<ChatAction> actions = const [],
+}) => ChatMessage(
+  id: id,
+  threadId: threadId,
+  role: role,
+  text: text,
+  notice: notice,
+  attachments: attachments,
+  actions: actions,
+  createdAt: testNow,
+);
+
+ChatThread testThread({
+  String id = 'thread-1',
+  EntityScope scope = EntityScope.personal,
+  String? title = 'Conversa de exemplo',
+}) => ChatThread(
+  id: id,
+  scope: scope,
+  title: title,
+  createdAt: testNow,
+  updatedAt: testNow,
+);

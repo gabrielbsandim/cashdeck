@@ -1328,5 +1328,139 @@
         "type": "String"
       }
     }
-  }
+  },
+  "categoryFuel": "Combustível",
+  "categoryHousing": "Moradia",
+  "categoryUtilities": "Contas da casa",
+  "categoryHealth": "Saúde",
+  "categoryEducation": "Educação",
+  "categoryLeisure": "Lazer",
+  "categoryShopping": "Compras",
+  "categorySubscriptions": "Assinaturas",
+  "categoryTravel": "Viagens",
+  "categoryTaxes": "Impostos",
+  "categoryFees": "Tarifas",
+  "categorySalary": "Salário e pró-labore",
+  "categoryIncome": "Receitas",
+  "categoryInvestments": "Investimentos",
+  "categoryTransfers": "Transferências",
+  "categoryServices": "Serviços",
+  "categoryOther": "Outros",
+  "transactionUncategorized": "Sem categoria",
+  "transactionCategoryUnknown": "Categoria removida",
+  "categorySourceUser": "Escolhida por você",
+  "categorySourceRule": "Aplicada por uma regra sua",
+  "categorySourceAi": "Sugerida pela IA",
+  "categorySourceAiConfidence": "Sugerida pela IA · {percent}% de confiança",
+  "@categorySourceAiConfidence": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeYesterdayTitle": "Ontem",
+  "transactionsSearchHint": "Buscar por descrição ou observação",
+  "transactionsNoMatchTitle": "Nada encontrado",
+  "transactionsNoMatchMessage": "Tente outra busca ou limpe os filtros.",
+  "transactionsClearFilters": "Limpar filtros",
+  "transactionsEmptyTitle": "Nenhuma transação ainda",
+  "transactionsEmptyMessage": "Conecte uma conta pelo Open Finance para ver suas transações aqui.",
+  "transactionsFilterAccount": "Conta",
+  "transactionsAllAccounts": "Todas as contas",
+  "transactionsFilterCategory": "Categoria",
+  "transactionsAllCategories": "Todas as categorias",
+  "transactionsLoadMore": "Carregar mais",
+  "applyToSimilarTitle": "Aplicar a transações semelhantes?",
+  "applyToSimilarMessage": "A nova categoria vira uma regra para esta descrição. Ela também pode ir para as transações parecidas que você ainda não ajustou.",
+  "applyToSimilarYes": "Aplicar às semelhantes",
+  "applyToSimilarNo": "Só nesta",
+  "transactionNotFound": "Transação não encontrada",
+  "transactionPickCategory": "Escolher categoria",
+  "transactionNoteSaved": "Observação salva",
+  "transactionCategorySaved": "Categoria salva",
+  "transactionCategorySavedSimilar": "{count, plural, =1{Categoria salva aqui e em 1 transação semelhante} other{Categoria salva aqui e em {count} transações semelhantes}}",
+  "@transactionCategorySavedSimilar": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transactionAccountLabel": "Conta",
+  "transactionAccountUnknown": "Conta não encontrada",
+  "transactionCategoryHint": "Toque para escolher",
+  "transactionNoteLabel": "Observação",
+  "transactionNoteHint": "Algo para lembrar sobre esta transação",
+  "transactionSaveNote": "Salvar observação",
+  "transactionOpenTransfer": "Ver transferência",
+  "chatToolCreateBill": "Criar conta a pagar do arquivo",
+  "chatToolPayBill": "Pagar conta",
+  "chatToolCreateRule": "Criar regra de categoria",
+  "chatToolDraftInvoice": "Emitir nota fiscal",
+  "chatActionPending": "Aguardando você",
+  "chatActionConfirmed": "Confirmado",
+  "chatActionCancelled": "Cancelado",
+  "chatActionFailed": "Falhou",
+  "chatActionExpired": "Expirou",
+  "chatNoticeRoundLimit": "A resposta ficou incompleta: a pergunta pediu passos demais. Tente dividir em partes.",
+  "chatNoticeTimeBudget": "A resposta demorou demais e foi interrompida. Tente de novo.",
+  "chatNoticeEmpty": "O assistente não conseguiu responder. Reformule a pergunta.",
+  "chatNoticeError": "Algo deu errado ao responder. Tente de novo.",
+  "chatDraftEmpty": "Escreva uma mensagem ou anexe um arquivo.",
+  "chatDraftTooLong": "A mensagem passa de {max} caracteres.",
+  "@chatDraftTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "chatDraftTooManyFiles": "Anexe no máximo {max} arquivos.",
+  "@chatDraftTooManyFiles": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "chatDraftTooLarge": "Os anexos passam de 3 MB juntos.",
+  "chatDraftUnsupported": "Envie foto, PDF ou áudio.",
+  "chatNewThread": "Nova conversa",
+  "chatEmptyTitle": "Nenhuma conversa ainda",
+  "chatEmptyMessage": "Pergunte sobre gastos, contas e notas. O assistente lê os dados da entidade escolhida acima.",
+  "chatUntitledThread": "Nova conversa",
+  "chatThreadSubtitle": "{scope} · {date}, {time}",
+  "@chatThreadSubtitle": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "chatConversationEmptyTitle": "Como posso ajudar?",
+  "chatConversationEmptyMessage": "Pergunte quanto gastou, peça um resumo do mês ou envie um boleto para cadastrar.",
+  "chatThinking": "Pensando…",
+  "chatAttachTitle": "Anexar",
+  "chatAttachPhoto": "Foto",
+  "chatAttachPdf": "PDF",
+  "chatAttachFile": "Arquivo ou áudio",
+  "chatInputHint": "Pergunte algo",
+  "chatSend": "Enviar",
+  "chatActionDone": "Pronto, está feito.",
+  "chatActionWhichEntity": "Para qual entidade?",
+  "chatActionConfirm": "Confirmar",
+  "chatDetailPayee": "Recebedor",
+  "chatDetailAmount": "Valor",
+  "chatDetailDueDate": "Vencimento",
+  "chatDetailFile": "Arquivo",
+  "chatDetailPattern": "Descrição",
+  "chatDetailCategory": "Categoria",
+  "chatDetailPayer": "Pagador"
 }

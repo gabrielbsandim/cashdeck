@@ -31,5 +31,11 @@ abstract final class AppRoutes {
   static String transfer(String transferId) =>
       '$transactions/transfer/${Uri.encodeComponent(transferId)}';
 
+  static String transaction(String transactionId) =>
+      '$transactions/${Uri.encodeComponent(transactionId)}';
+
+  static String chatThread(String threadId) =>
+      '$chat/${Uri.encodeComponent(threadId)}';
+
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
 }

@@ -110,3 +110,36 @@ How the app reads it (`lib/features/bills/data/bill_dtos.dart`):
 
 An unknown enum value is a format error (`UnexpectedFailure`), so a new value
 on the server needs the app updated first.
+
+## Transactions and categories
+
+`GET /api/v1/transactions` takes `entity`, `accountId`, `categoryId`,
+`uncategorized=true`, `search`, `cursor` and `limit` (the app sends 30) and
+returns `{ "data": [Transaction], "nextCursor": "..." | null }`. A
+`Transaction` carries `categorizedBy` (`RULE | AI | USER | null`) and an
+optional `categoryConfidence` from 0 to 1. A `TRANSFER` row with a
+`transferId` opens the transfer.
+
+`PATCH /api/v1/transactions/{id}` takes `{ categoryId?, note?, applyToSimilar? }`
+and returns `{ "data": { "transaction": Transaction, "similarUpdated": 2 } }`.
+A blank note is sent as null. There is no read by id, so the detail screen
+uses the row it was opened from or the loaded list.
+
+`GET /api/v1/categories` returns `[{ id, key?, name, icon?, parentId? }]`. A
+built-in `key` is shown with its localized label, a custom category by `name`.
+Account filters read `id`, `name`, `entityKind` and `institution` from
+`GET /api/v1/accounts`.
+
+## Chat
+
+- `GET /api/v1/chat/threads` and `GET .../threads/{id}/messages` are paged;
+  the app reads every page (limit 100), messages oldest first.
+- `POST /api/v1/chat/threads` takes `{ scope: PF | PJ | ALL }` and returns 201.
+- `POST .../threads/{id}/messages` takes `{ text, attachments? }`, each
+  attachment `{ fileName, mimeType, base64 }`, at most 3 files and 3 MB in
+  all, checked in the app first. It returns `{ "data": { "messages": [...] } }`.
+  429, 409 and 503 show the server message.
+- A message carries `notice` (`ROUND_LIMIT | TIME_BUDGET | EMPTY | ERROR`),
+  `attachments` and `actions`. An action is a proposal the user confirms:
+  `POST /api/v1/chat/actions/{id}/confirm` with `{ entity }` only when
+  `needsEntity`, or `POST .../{id}/cancel`.

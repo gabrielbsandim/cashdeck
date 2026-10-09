@@ -15,6 +15,7 @@ import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
 import 'package:cashdeck/features/capture/presentation/shared_file_screen.dart';
 import 'package:cashdeck/features/card_import/presentation/manual_card_bill_import_screen.dart';
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
+import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
@@ -25,6 +26,8 @@ import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transfer_detail_screen.dart';
 import 'package:flutter/widgets.dart';
@@ -108,6 +111,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 transferId: state.pathParameters['transferId']!,
               ),
             ),
+            GoRoute(
+              path: ':transactionId',
+              builder: (_, state) => TransactionDetailScreen(
+                transactionId: state.pathParameters['transactionId']!,
+                initial: switch (state.extra) {
+                  final Transaction transaction => transaction,
+                  _ => null,
+                },
+              ),
+            ),
           ]),
           _tab(AppRoutes.bills, const BillsScreen(), [
             GoRoute(
@@ -124,7 +137,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ],
             ),
           ]),
-          _tab(AppRoutes.chat, const ChatScreen()),
+          _tab(AppRoutes.chat, const ChatScreen(), [
+            GoRoute(
+              path: ':threadId',
+              builder: (_, state) => ConversationScreen(
+                threadId: state.pathParameters['threadId']!,
+              ),
+            ),
+          ]),
           _tab(AppRoutes.more, const MoreScreen(), [
             _page(
               _below(AppRoutes.entityProfiles, AppRoutes.more),
