@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/insights/cd_column_bars.dart';
 import 'package:cashdeck/core/widgets/insights/cd_comparison_pill.dart';
+import 'package:cashdeck/core/widgets/insights/cd_flow_bars.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_row.dart';
 import 'package:cashdeck/core/widgets/insights/cd_institution_logo.dart';
@@ -198,6 +199,49 @@ void main() {
 
     expect(find.bySemanticsLabel('Saldo'), findsOneWidget);
     expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
+  });
+
+  testWidgets('CdSegmentBar fills each segment to the full height', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      const CdSegmentBar(
+        semanticsLabel: 'Saldo',
+        segments: [
+          CdBarSegment(3, Color(0xFF000000)),
+          CdBarSegment(1, Color(0xFFFFFFFF)),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fills = find.byType(FractionallySizedBox).evaluate().toList();
+    expect(fills, hasLength(2));
+    for (final fill in fills) {
+      expect(tester.getSize(find.byWidget(fill.widget)).height, greaterThan(0));
+    }
+  });
+
+  testWidgets('CdFlowBars fills both bars on one scale', (tester) async {
+    await tester.pumpApp(
+      const CdFlowBars(
+        income: 400,
+        expenses: 100,
+        incomeLabel: 'In',
+        expensesLabel: 'Out',
+        incomeAmount: Text('400'),
+        expensesAmount: Text('100'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fills = tester
+        .widgetList<FractionallySizedBox>(find.byType(FractionallySizedBox))
+        .toList();
+    expect(fills.map((fill) => fill.widthFactor), [1, 0.25]);
+    for (final fill in find.byType(FractionallySizedBox).evaluate()) {
+      expect(tester.getSize(find.byWidget(fill.widget)).height, 10);
+    }
   });
 
   testWidgets('CdColumnBars prints a caption under the label', (tester) async {

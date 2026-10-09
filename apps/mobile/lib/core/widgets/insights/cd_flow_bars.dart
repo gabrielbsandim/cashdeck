@@ -103,6 +103,7 @@ class _FlowRow extends StatelessWidget {
           ),
           child: FractionallySizedBox(
             widthFactor: fraction.clamp(0, 1),
+            heightFactor: 1,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: color,

@@ -2172,5 +2172,6 @@
   "cardsNoBills": "O banco ainda não mandou faturas deste cartão.",
   "cardsHistorySemantics": "Valor das últimas faturas",
   "cardsImportTitle": "Cartão sem Open Finance?",
-  "cardsImportMessage": "Importe a fatura em PDF ou CSV"
+  "cardsImportMessage": "Importe a fatura em PDF ou CSV",
+  "cardsNotSent": "O banco não enviou"
 }

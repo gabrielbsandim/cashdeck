@@ -222,6 +222,7 @@ class _Spend extends StatelessWidget {
           for (final merchant in spend.topMerchants)
             CdListRow(
               title: merchant.name,
+              titleMaxLines: 1,
               subtitle: l10n.homeMerchantCount(merchant.count),
               icon: Symbols.storefront_rounded,
               padding: EdgeInsets.zero,
@@ -414,7 +415,12 @@ class HomeSummaryGrid extends ConsumerWidget {
     void open(String route) => context.push(route).ignore();
     Widget amount(Money? value) => value == null
         ? const _Pending(height: 24)
-        : CdAmount(value, textAlign: TextAlign.start);
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: CdAmount(value, textAlign: TextAlign.start),
+          );
+    final usedPercent = cards?.usedPercent;
     return switch (widget) {
       HomeWidget.cardBill => CdWidgetTile(
         key: tileKey(widget),
@@ -452,13 +458,28 @@ class HomeSummaryGrid extends ConsumerWidget {
         caption: l10n.subscriptionsPerMonth,
         onTap: () => open(AppRoutes.subscriptions),
       ),
+      HomeWidget.creditUsed when overview != null && usedPercent == null =>
+        CdWidgetTile(
+          key: tileKey(widget),
+          icon: Symbols.donut_large_rounded,
+          colors: charts.at(3),
+          title: l10n.homeWidgetCreditUsed,
+          value: Text(
+            l10n.cardsNoLimit,
+            style: AppTextStyles.titleSm.copyWith(
+              color: context.palette.onSurface,
+            ),
+          ),
+          caption: l10n.cardsNotSent,
+          onTap: () => open(AppRoutes.cards),
+        ),
       HomeWidget.creditUsed => CdWidgetTile(
         key: tileKey(widget),
         icon: Symbols.donut_large_rounded,
         colors: charts.at(3),
         title: l10n.homeWidgetCreditUsed,
         value: Text(
-          l10n.insightsPercent(cards?.usedPercent ?? 0),
+          l10n.insightsPercent(usedPercent ?? 0),
           style: AppTextStyles.titleMd.copyWith(
             color: context.palette.onSurface,
           ),
@@ -467,8 +488,8 @@ class HomeSummaryGrid extends ConsumerWidget {
         visual: CdProgressRing(
           size: 36,
           stroke: 5,
-          semanticsLabel: l10n.cardsLimitSemantics(cards?.usedPercent ?? 0),
-          parts: [((cards?.usedPercent ?? 0) / 100, charts.at(3).fill)],
+          semanticsLabel: l10n.cardsLimitSemantics(usedPercent ?? 0),
+          parts: [((usedPercent ?? 0) / 100, charts.at(3).fill)],
         ),
         onTap: () => open(AppRoutes.cards),
       ),

@@ -11,6 +11,7 @@ class CdListRow extends StatelessWidget {
   const new({
     required this.title,
     this.subtitle,
+    this.titleMaxLines,
     this.icon,
     this.leading,
     this.trailing,
@@ -26,6 +27,7 @@ class CdListRow extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+  final int? titleMaxLines;
   final IconData? icon;
   final Widget? leading;
   final Widget? trailing;
@@ -70,6 +72,10 @@ class CdListRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: titleMaxLines,
+                      overflow: titleMaxLines == null
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: AppTextStyles.bodyLg.copyWith(
                         color: ink,
                         fontWeight: danger ? FontWeight.w600 : FontWeight.w500,

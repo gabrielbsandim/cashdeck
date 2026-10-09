@@ -211,5 +211,12 @@ void main() {
     expect(find.text('Pets'), findsOneWidget);
     expect(find.text(l10n.transactionUncategorized), findsOneWidget);
     expect(find.text(l10n.cardsNoDates), findsOneWidget);
+    expect(find.text(l10n.cardsNotSent), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(HomeSummaryGrid.tileKey(HomeWidget.creditUsed)),
+    );
+    await settle(tester);
+    expect(find.byType(CardsScreen), findsOneWidget);
   });
 }

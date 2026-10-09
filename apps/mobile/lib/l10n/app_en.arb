@@ -857,5 +857,6 @@
   "cardsNoBills": "The bank has not sent bills for this card yet.",
   "cardsHistorySemantics": "Amount of the latest bills",
   "cardsImportTitle": "Card without Open Finance?",
-  "cardsImportMessage": "Import the bill as PDF or CSV"
+  "cardsImportMessage": "Import the bill as PDF or CSV",
+  "cardsNotSent": "Not sent by the bank"
 }

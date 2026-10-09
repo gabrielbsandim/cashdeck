@@ -434,47 +434,48 @@ class _Limits extends ConsumerWidget {
     return ListView(
       padding: _listPadding,
       children: [
-        CdInsightCard(
-          child: Row(
-            children: [
-              CdProgressRing(
-                size: 96,
-                stroke: 10,
-                semanticsLabel: l10n.cardsLimitSemantics(percent),
-                parts: [
-                  for (final (index, card) in cards.indexed)
-                    if (card.credit case final credit? when limit > 0)
-                      (credit.used.cents / limit, charts.at(index).fill),
-                ],
-                center: Text(
-                  l10n.insightsPercent(percent),
-                  style: AppTextStyles.titleMd.copyWith(
-                    color: palette.onSurface,
+        if (lines.isNotEmpty)
+          CdInsightCard(
+            child: Row(
+              children: [
+                CdProgressRing(
+                  size: 96,
+                  stroke: 10,
+                  semanticsLabel: l10n.cardsLimitSemantics(percent),
+                  parts: [
+                    for (final (index, card) in cards.indexed)
+                      if (card.credit case final credit? when limit > 0)
+                        (credit.used.cents / limit, charts.at(index).fill),
+                  ],
+                  center: Text(
+                    l10n.insightsPercent(percent),
+                    style: AppTextStyles.titleMd.copyWith(
+                      color: palette.onSurface,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CdAmount(
-                      Money(used),
-                      size: CdAmountSize.lg,
-                      textAlign: TextAlign.start,
-                    ),
-                    Text(
-                      l10n.cardsUsedOfTotal,
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: palette.onSurfaceVariant,
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CdAmount(
+                        Money(used),
+                        size: CdAmountSize.lg,
+                        textAlign: TextAlign.start,
                       ),
-                    ),
-                  ],
+                      Text(
+                        l10n.cardsUsedOfTotal,
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: palette.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         for (final (index, card) in cards.indexed) ...[
           const SizedBox(height: AppSpacing.md),
           CdInsightCard(

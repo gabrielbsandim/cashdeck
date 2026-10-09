@@ -55,6 +55,7 @@ class CdSegmentBar extends StatelessWidget {
                 ),
                 curve: AppMotion.emphasizedDecelerate,
                 builder: (context, progress, _) => Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final (index, segment) in shown.indexed) ...[
                       if (index > 0) const SizedBox(width: _gap),

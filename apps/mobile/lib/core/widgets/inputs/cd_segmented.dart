@@ -13,6 +13,9 @@ final class CdSegment<T> {
   final Key? key;
 }
 
+/// Below this width the selected segment drops its check so the label fits.
+const double _checkFits = 72;
+
 /// 40 high, 48 hit; the selected segment fills with the primary container.
 class CdSegmented<T> extends StatelessWidget {
   const new({
@@ -95,25 +98,29 @@ class _Segment<T> extends StatelessWidget {
                   ? Border(left: BorderSide(color: palette.outline))
                   : null,
             ),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (selected) ...[
-                      Icon(Symbols.check_rounded, size: 18, color: ink),
-                      const SizedBox(width: AppSpacing.xs),
-                    ],
-                    Flexible(
-                      child: Text(
-                        segment.label,
-                        style: AppTextStyles.labelLg.copyWith(color: ink),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            child: LayoutBuilder(
+              builder: (context, constraints) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (selected && constraints.maxWidth >= _checkFits) ...[
+                        Icon(Symbols.check_rounded, size: 18, color: ink),
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
+                      Flexible(
+                        child: Text(
+                          segment.label,
+                          style: AppTextStyles.labelLg.copyWith(color: ink),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
