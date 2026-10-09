@@ -5,6 +5,8 @@ import {
   classifyFlow,
   type FlowLine,
   isCardBillPayment,
+  isInvestment,
+  namesOwner,
 } from '@/insights/money-flow'
 import { Money } from '@/money/money'
 
@@ -69,6 +71,56 @@ describe('money flow', () => {
       'pro-labore': 'NEUTRAL',
       broker: 'NEUTRAL',
       food: 'EXPENSE',
+    })
+  })
+
+  it('treats investments and Pix to the own name as moves', () => {
+    expect(isInvestment('APLICAÇÃO DE CDB')).toBe(true)
+    expect(isInvestment('Resgate Tesouro Selic')).toBe(true)
+    expect(isInvestment('Cdbx loja')).toBe(false)
+    const owners = ['Maria Exemplo Silva', 'Exemplo']
+    expect(namesOwner('Pix enviado para MARIA EXEMPLO SILVA', owners)).toBe(
+      true,
+    )
+    expect(namesOwner('JOANA MARIA EXEMPLO SILVA', owners)).toBe(true)
+    expect(namesOwner('Exemplo Comercio', owners)).toBe(false)
+    expect(namesOwner('MARIA EXEMPLO SILVANA', owners)).toBe(false)
+    const kinds = classifyFlow(
+      [
+        line('cdb-out', -50_000, { description: 'EMISSAO DE CDB' }),
+        line('cdb-in', 20_000, { description: 'RESGATE DE CDB' }),
+        line('own-out', -30_000, { description: 'MARIA EXEMPLO SILVA' }),
+        line('own-in', 9_000, {
+          description: 'Pix recebido de Maria Exemplo Silva',
+        }),
+        line('other', -4_000, { description: 'JOSE EXEMPLO SILVA' }),
+      ],
+      { ownNames: owners },
+    )
+    expect(Object.fromEntries(kinds)).toEqual({
+      'cdb-out': 'NEUTRAL',
+      'cdb-in': 'NEUTRAL',
+      'own-out': 'NEUTRAL',
+      'own-in': 'NEUTRAL',
+      other: 'EXPENSE',
+    })
+  })
+
+  it('pairs a card bill paid from checking with the credit on the card', () => {
+    const card = { accountId: 'card', accountType: 'CREDIT_CARD' as const }
+    const kinds = classifyFlow([
+      line('paid', -80_000, { description: 'BANCO EMISSOR' }),
+      line('credit', 80_000, { ...card, description: 'Inclusao Ciclo' }),
+      line('twice', 80_000, { ...card, description: 'Credito avulso' }),
+      line('buy', -80_000, { ...card, description: 'Loja' }),
+      line('rent', -70_000, { description: 'Aluguel' }),
+    ])
+    expect(Object.fromEntries(kinds)).toEqual({
+      paid: 'NEUTRAL',
+      credit: 'NEUTRAL',
+      twice: 'NEUTRAL',
+      buy: 'EXPENSE',
+      rent: 'EXPENSE',
     })
   })
 

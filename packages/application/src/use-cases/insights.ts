@@ -131,7 +131,7 @@ export async function insightScope(
 }
 
 export async function flowEntries(
-  deps: Pick<InsightsDeps, 'transactions'>,
+  deps: Pick<InsightsDeps, 'transactions' | 'entities'>,
   tenantId: string,
   accounts: readonly Account[],
   categories: ReadonlyMap<string, Category>,
@@ -145,12 +145,14 @@ export async function flowEntries(
     accountIds: accounts.map(account => account.id),
     ...range,
   })
+  const entities = await deps.entities.list(tenantId)
   const kinds = classifyFlow(
     transactions.map(transaction => ({
       transaction,
       accountType: types.get(transaction.accountId) as Account['type'],
       categoryKey: categories.get(transaction.categoryId ?? '')?.key ?? null,
     })),
+    { ownNames: entities.map(entity => entity.name) },
   )
   return transactions.map(transaction => ({
     transaction,
