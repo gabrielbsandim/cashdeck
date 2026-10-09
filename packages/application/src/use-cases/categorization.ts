@@ -20,6 +20,7 @@ import {
   type UpdateTransactionResult,
   type updateTransactionSchema,
 } from '@/dtos/finance'
+import { type SyncOptions } from '@/dtos/open-finance'
 import { LlmProviderError, type LlmToolParameter } from '@/ports/llm-provider'
 import { type Deps } from '@/use-cases/deps'
 import { toTransactionView } from '@/use-cases/finance'
@@ -417,7 +418,11 @@ export function makeCategorizeTransactions(deps: CategorizeDeps) {
 }
 
 type Syncing<R, A> = {
-  sync(tenantId: string, connectionId: string): Promise<R>
+  sync(
+    tenantId: string,
+    connectionId: string,
+    options?: SyncOptions,
+  ): Promise<R>
   syncAll(tenantId: string): Promise<A>
 }
 
@@ -431,8 +436,8 @@ export function categorizeAfterSync<R, A, T extends Syncing<R, A>>(
     categorizeTransactions(tenantId).catch(() => null)
   return {
     ...openFinance,
-    async sync(tenantId: string, connectionId: string) {
-      const result = await openFinance.sync(tenantId, connectionId)
+    async sync(tenantId: string, connectionId: string, options?: SyncOptions) {
+      const result = await openFinance.sync(tenantId, connectionId, options)
       await quietly(tenantId)
       return result
     },

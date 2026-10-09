@@ -11,6 +11,7 @@ import {
   type BillSource,
   type BillStatus,
   type CategorizedBy,
+  type CreditLine,
   type EntityKind,
   type FinancialEntity,
   type FundingStatus,
@@ -49,6 +50,12 @@ export type AccountRow = {
   connectionId: string | null
   externalId: string | null
   cdiPercent: number | null
+  numberSuffix: string | null
+  creditLimitCents: bigint | null
+  creditAvailableCents: bigint | null
+  creditClosesOn: Date | null
+  creditDueOn: Date | null
+  creditBrand: string | null
 }
 
 export type TransactionRow = {
@@ -66,6 +73,10 @@ export type TransactionRow = {
   note: string | null
   categorizedBy: CategorizedBy | null
   categoryConfidence: number | null
+  merchant: string | null
+  installmentNumber: number | null
+  installmentCount: number | null
+  purchaseOn: Date | null
 }
 
 export type BillRow = {
@@ -128,6 +139,34 @@ export function fromDbDate(value: Date): LocalDate {
   return value.toISOString().slice(0, 10)
 }
 
+const optionalDate = (value: Date | null) => (value ? fromDbDate(value) : null)
+
+const optionalDbDate = (day: LocalDate | null) => (day ? toDbDate(day) : null)
+
+function creditFromRow(row: AccountRow): CreditLine | null {
+  if (row.creditLimitCents === null) {
+    return null
+  }
+  return {
+    limit: Money.of(Number(row.creditLimitCents), row.currency),
+    available: Money.of(Number(row.creditAvailableCents ?? 0), row.currency),
+    closesOn: optionalDate(row.creditClosesOn),
+    dueOn: optionalDate(row.creditDueOn),
+    brand: row.creditBrand,
+  }
+}
+
+function installmentFromRow(row: TransactionRow) {
+  if (row.installmentNumber === null || row.installmentCount === null) {
+    return null
+  }
+  return {
+    number: row.installmentNumber,
+    count: row.installmentCount,
+    purchaseOn: optionalDate(row.purchaseOn),
+  }
+}
+
 export function entityFromRow(row: EntityRow): FinancialEntity {
   return createFinancialEntity(row)
 }
@@ -157,10 +196,13 @@ export function accountFromRow(row: AccountRow): Account {
     connectionId: row.connectionId,
     externalId: row.externalId,
     cdiPercent: row.cdiPercent,
+    numberSuffix: row.numberSuffix,
+    credit: creditFromRow(row),
   })
 }
 
 export function accountToRow(account: Account): AccountRow {
+  const credit = account.credit
   return {
     id: account.id,
     tenantId: account.tenantId,
@@ -175,6 +217,12 @@ export function accountToRow(account: Account): AccountRow {
     connectionId: account.connectionId,
     externalId: account.externalId,
     cdiPercent: account.cdiPercent,
+    numberSuffix: account.numberSuffix,
+    creditLimitCents: credit ? BigInt(credit.limit.cents) : null,
+    creditAvailableCents: credit ? BigInt(credit.available.cents) : null,
+    creditClosesOn: optionalDbDate(credit?.closesOn ?? null),
+    creditDueOn: optionalDbDate(credit?.dueOn ?? null),
+    creditBrand: credit?.brand ?? null,
   }
 }
 
@@ -193,6 +241,8 @@ export function transactionFromRow(row: TransactionRow): Transaction {
     note: row.note,
     categorizedBy: row.categorizedBy,
     categoryConfidence: row.categoryConfidence,
+    merchant: row.merchant,
+    installment: installmentFromRow(row),
   })
 }
 
@@ -212,6 +262,10 @@ export function transactionToRow(transaction: Transaction): TransactionRow {
     note: transaction.note,
     categorizedBy: transaction.categorizedBy,
     categoryConfidence: transaction.categoryConfidence,
+    merchant: transaction.merchant,
+    installmentNumber: transaction.installment?.number ?? null,
+    installmentCount: transaction.installment?.count ?? null,
+    purchaseOn: optionalDbDate(transaction.installment?.purchaseOn ?? null),
   }
 }
 

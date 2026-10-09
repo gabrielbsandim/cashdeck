@@ -157,6 +157,8 @@ describe('open finance', () => {
         return base.listAccounts()
       },
       listTransactions: async () => [],
+      listBills: async () => [],
+      listConnectors: async () => [],
     }
     const { deps, of } = setup(flaky)
     const { connectionId } = await of.connect(TENANT, {
@@ -188,5 +190,163 @@ describe('open finance', () => {
     })
     await expect(of.remove(TENANT, connectionId)).rejects.toThrow(NotFoundError)
     await expect(of.sync(TENANT, connectionId)).rejects.toThrow(NotFoundError)
+  })
+
+  it('names each aggregated account after its bank and keeps card details', async () => {
+    const aggregated = new FakeOpenFinanceProvider(
+      [
+        {
+          externalId: 'acc-1',
+          name: 'BANCO EXEMPLO S.A.',
+          type: 'CHECKING',
+          balanceCents: 1000,
+          currency: 'BRL',
+          numberSuffix: '0001',
+        },
+        {
+          externalId: 'card-1',
+          name: 'PRODUTO CARTAO',
+          type: 'CREDIT_CARD',
+          balanceCents: -500,
+          currency: 'BRL',
+          numberSuffix: '4321',
+          credit: {
+            limitCents: 10_000,
+            availableCents: 9_500,
+            closesOn: '2026-10-20',
+            dueOn: '2026-10-27',
+            brand: 'VISA',
+          },
+        },
+      ],
+      [
+        {
+          externalId: 'tx-1',
+          accountExternalId: 'card-1',
+          amountCents: -300,
+          currency: 'BRL',
+          bookedOn: '2026-10-01',
+          description: 'Loja 3/10',
+          merchant: 'Loja Exemplo',
+          installment: { number: 3, count: 10, purchaseOn: '2026-08-01' },
+        },
+      ],
+      [
+        {
+          ...item,
+          institutionName: 'MeuPluggy',
+          connector: {
+            id: 200,
+            name: 'MeuPluggy',
+            imageUrl: 'https://logo.example/meu.svg',
+            primaryColor: '00AA00',
+          },
+        },
+      ],
+    )
+    aggregated.connectors = [
+      {
+        id: 1,
+        name: 'Banco Exemplo',
+        imageUrl: 'https://logo.example/1.svg',
+        primaryColor: 'FF0000',
+      },
+    ]
+    aggregated.bills.set('card-1', [
+      {
+        externalId: 'bill-1',
+        closesOn: '2026-09-20',
+        dueOn: '2026-09-27',
+        totalCents: 4_200,
+        minimumCents: null,
+        currency: 'BRL',
+      },
+      {
+        externalId: 'bill-2',
+        closesOn: null,
+        dueOn: '2026-08-27',
+        totalCents: 3_100,
+        minimumCents: 500,
+        currency: 'BRL',
+      },
+    ])
+    const { deps, of } = setup(aggregated)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1', 'card-1'],
+    })
+    const stored = await deps.accounts.list(TENANT)
+    const checking = stored.find(a => a.type === 'CHECKING')
+    const card = stored.find(a => a.type === 'CREDIT_CARD')
+    const bank = await deps.institutions.findById(
+      TENANT,
+      checking?.institutionId ?? '',
+    )
+    expect(bank).toMatchObject({
+      name: 'Banco Exemplo',
+      connectorId: 1,
+      imageUrl: 'https://logo.example/1.svg',
+    })
+    const mirror = await deps.institutions.findById(
+      TENANT,
+      card?.institutionId ?? '',
+    )
+    expect(mirror).toMatchObject({ name: 'MeuPluggy', connectorId: 200 })
+    expect(card).toMatchObject({
+      numberSuffix: '4321',
+      credit: { brand: 'VISA', dueOn: '2026-10-27' },
+    })
+    expect(checking?.credit).toBeNull()
+
+    const synced = await of.sync(TENANT, connectionId, { days: 400 })
+    expect(synced.transactions).toBe(1)
+    const [purchase] = await deps.transactions.all(TENANT, {})
+    expect(purchase).toMatchObject({
+      merchant: 'Loja Exemplo',
+      installment: { number: 3, count: 10 },
+    })
+    const bills = await deps.cardBills.list(TENANT, [card?.id ?? ''])
+    expect(bills.map(b => [b.dueOn, b.total.cents, b.minimum?.cents])).toEqual([
+      ['2026-09-27', 4_200, undefined],
+      ['2026-08-27', 3_100, 500],
+    ])
+  })
+
+  it('keeps going when connectors, bills or the institution are missing', async () => {
+    const base = provider()
+    const broken: OpenFinanceProvider = {
+      getItem: async () => ({ ...item, institutionName: 'MeuPluggy' }),
+      listAccounts: () => base.listAccounts(),
+      listTransactions: (...args) => base.listTransactions(...args),
+      listBills: async () => {
+        throw new Error('bills unavailable')
+      },
+      listConnectors: async () => {
+        throw new Error('connectors unavailable')
+      },
+    }
+    const { deps, of } = setup(broken)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1', 'card-1'],
+    })
+    const connection = await deps.connections.findById(TENANT, connectionId)
+    const first = await of.sync(TENANT, connectionId)
+    expect(first.accounts).toBe(2)
+    await deps.connections.save({
+      ...(connection as NonNullable<typeof connection>),
+      institutionId: 'gone',
+    })
+    expect((await of.sync(TENANT, connectionId)).accounts).toBe(2)
+    const card = (await deps.accounts.list(TENANT)).find(
+      a => a.type === 'CREDIT_CARD',
+    )
+    await deps.accounts.save({
+      ...(card as NonNullable<typeof card>),
+      externalId: null,
+    })
+    expect((await of.sync(TENANT, connectionId)).accounts).toBe(2)
   })
 })

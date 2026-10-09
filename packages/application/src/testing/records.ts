@@ -10,6 +10,8 @@ import {
   type AttachmentRepository,
   type BudgetLimit,
   type BudgetRepository,
+  type CardBill,
+  type CardBillRepository,
   type CategoryRepository,
   type Connection,
   type ConnectionRepository,
@@ -62,11 +64,43 @@ export class InMemoryInstitutionRepository
     const existing = this.of(candidate.tenantId).find(
       row => row.name === candidate.name,
     )
-    if (existing) {
+    if (!existing) {
+      await this.save(candidate)
+      return candidate
+    }
+    if (!candidate.imageUrl) {
       return existing
     }
-    await this.save(candidate)
-    return candidate
+    const branded = {
+      ...existing,
+      connectorId: candidate.connectorId ?? null,
+      imageUrl: candidate.imageUrl,
+      primaryColor: candidate.primaryColor ?? null,
+    }
+    await this.save(branded)
+    return branded
+  }
+}
+
+export class InMemoryCardBillRepository implements CardBillRepository {
+  private readonly rows = new Map<string, CardBill>()
+
+  async saveAll(bills: readonly CardBill[]): Promise<void> {
+    for (const bill of bills) {
+      this.rows.set(`${bill.tenantId}:${bill.accountId}:${bill.dueOn}`, bill)
+    }
+  }
+
+  async list(
+    tenantId: string,
+    accountIds: readonly string[],
+  ): Promise<CardBill[]> {
+    return [...this.rows.values()]
+      .filter(
+        bill =>
+          bill.tenantId === tenantId && accountIds.includes(bill.accountId),
+      )
+      .sort((a, b) => b.dueOn.localeCompare(a.dueOn))
   }
 }
 
@@ -104,19 +138,26 @@ export class InMemoryTransactionRepository
   implements TransactionRepository
 {
   async saveNew(transactions: readonly Transaction[]): Promise<number> {
-    const fresh = transactions.filter(
-      candidate =>
-        !this.of(candidate.tenantId).some(
-          row =>
-            row.accountId === candidate.accountId &&
-            row.externalId !== null &&
-            row.externalId === candidate.externalId,
-        ),
-    )
-    for (const transaction of fresh) {
-      await this.save(transaction)
+    let inserted = 0
+    for (const candidate of transactions) {
+      const stored = this.of(candidate.tenantId).find(
+        row =>
+          row.accountId === candidate.accountId &&
+          row.externalId !== null &&
+          row.externalId === candidate.externalId,
+      )
+      if (!stored) {
+        await this.save(candidate)
+        inserted += 1
+        continue
+      }
+      await this.save({
+        ...stored,
+        merchant: stored.merchant ?? candidate.merchant,
+        installment: stored.installment ?? candidate.installment,
+      })
     }
-    return fresh.length
+    return inserted
   }
 
   async list(

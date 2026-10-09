@@ -39,6 +39,23 @@ export const accountViewSchema = z.object({
   balance: moneyViewSchema,
   cdiPercent: z.int().nullable(),
   connectionId: z.string().nullable(),
+  numberSuffix: z.string().nullable(),
+  logo: z
+    .object({ imageUrl: z.string(), color: z.string().nullable() })
+    .nullable(),
+  credit: z
+    .object({
+      limit: moneyViewSchema,
+      available: moneyViewSchema,
+      usedPercent: z.int().nullable(),
+      closesOn: isoDate.nullable(),
+      dueOn: isoDate.nullable(),
+      brand: z.string().nullable(),
+    })
+    .nullable(),
+  sync: z
+    .object({ status: z.string(), lastSyncAt: z.string().nullable() })
+    .nullable(),
 })
 
 export type AccountView = z.infer<typeof accountViewSchema>
@@ -81,6 +98,14 @@ export const transactionViewSchema = z.object({
   note: z.string().nullable(),
   categorizedBy: z.enum(CATEGORIZED_BY).nullable(),
   categoryConfidence: z.number().min(0).max(1).nullable(),
+  merchant: z.string().nullable(),
+  installment: z
+    .object({
+      number: z.int(),
+      count: z.int(),
+      purchaseOn: isoDate.nullable(),
+    })
+    .nullable(),
 })
 
 export type TransactionView = z.infer<typeof transactionViewSchema>

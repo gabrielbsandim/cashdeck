@@ -19,6 +19,7 @@ import { type ReserveFunder } from '@/ports/reserve-funder'
 import {
   type AttachmentRepository,
   type BudgetRepository,
+  type CardBillRepository,
   type CategoryRepository,
   type ConnectionRepository,
   type DocumentStore,
@@ -60,6 +61,7 @@ export type Deps = {
   accounts: AccountRepository
   institutions: InstitutionRepository
   transactions: TransactionRepository
+  cardBills: CardBillRepository
   connections: ConnectionRepository
   transfers: TransferRepository
   invoices: InvoiceRepository

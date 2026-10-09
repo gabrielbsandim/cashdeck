@@ -314,6 +314,8 @@ describe('provider fakes', () => {
     }
     const withItems = new FakeOpenFinanceProvider([], [], [item])
     expect(await withItems.getItem('item-1')).toBe(item)
+    expect(await withItems.listBills(connection, 'card')).toEqual([])
+    expect(await withItems.listConnectors()).toEqual([])
     await expect(withItems.getItem('nope')).rejects.toThrow('was not found')
   })
 

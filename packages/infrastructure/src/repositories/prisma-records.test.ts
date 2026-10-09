@@ -27,6 +27,7 @@ const DELEGATES = [
   'invoiceFile',
   'invoiceTemplate',
   'webhookEvent',
+  'creditCardBill',
 ] as const
 const METHODS = [
   'upsert',
@@ -36,6 +37,7 @@ const METHODS = [
   'create',
   'createMany',
   'deleteMany',
+  'updateMany',
 ] as const
 
 type Delegate = Record<(typeof METHODS)[number], ReturnType<typeof vi.fn>>
@@ -98,6 +100,9 @@ describe('institutions', () => {
       name: 'Bank',
       manual: false,
       code: null,
+      connectorId: null,
+      imageUrl: null,
+      primaryColor: null,
     }
     db.institution.findFirst
       .mockResolvedValueOnce(row)
@@ -107,6 +112,9 @@ describe('institutions', () => {
       tenantId: TENANT,
       name: 'Bank',
       manual: false,
+      connectorId: null,
+      imageUrl: null,
+      primaryColor: null,
     })
     expect(await repos.institutions.findById(TENANT, 'x')).toBeNull()
     db.institution.upsert.mockResolvedValueOnce(row)
@@ -119,6 +127,25 @@ describe('institutions', () => {
     expect(ensured.id).toBe('b')
     expect(db.institution.upsert.mock.calls[0]?.[0].where).toEqual({
       tenantId_name: { tenantId: TENANT, name: 'Bank' },
+    })
+    expect(db.institution.upsert.mock.calls[0]?.[0].update).toEqual({})
+    db.institution.upsert.mockResolvedValueOnce(row)
+    await repos.institutions.ensure({
+      id: 'n',
+      tenantId: TENANT,
+      name: 'Bank',
+      manual: false,
+      connectorId: 7,
+      imageUrl: 'https://logo.example/7.svg',
+    })
+    const branded = {
+      connectorId: 7,
+      imageUrl: 'https://logo.example/7.svg',
+      primaryColor: null,
+    }
+    expect(db.institution.upsert.mock.calls[1]?.[0]).toMatchObject({
+      create: { id: 'n', ...branded },
+      update: branded,
     })
   })
 })
@@ -194,6 +221,61 @@ describe('transactions', () => {
       categoryId: null,
       OR: undefined,
     })
+  })
+
+  it('fills the details a stored transaction lacks', async () => {
+    const { db, repos } = mockClient()
+    const detailed = createTransaction({
+      ...transaction,
+      merchant: 'Loja',
+      installment: { number: 2, count: 3, purchaseOn: '2026-08-01' },
+    })
+    const bare = createTransaction({ ...transaction, externalId: null })
+    db.transaction.createMany.mockResolvedValueOnce({ count: 0 })
+    expect(
+      await repos.transactions.saveNew([detailed, bare, transaction]),
+    ).toBe(0)
+    const calls = db.transaction.updateMany.mock.calls.map(call => call[0])
+    expect(calls).toEqual([
+      {
+        where: {
+          tenantId: TENANT,
+          accountId: 'a1',
+          externalId: 'e1',
+          merchant: null,
+        },
+        data: { merchant: 'Loja' },
+      },
+      {
+        where: {
+          tenantId: TENANT,
+          accountId: 'a1',
+          externalId: 'e1',
+          installmentNumber: null,
+        },
+        data: {
+          installmentNumber: 2,
+          installmentCount: 3,
+          purchaseOn: new Date('2026-08-01T00:00:00.000Z'),
+        },
+      },
+    ])
+    db.transaction.findFirst.mockResolvedValueOnce(transactionToRow(detailed))
+    expect(await repos.transactions.findById(TENANT, 'tx1')).toEqual(detailed)
+    db.transaction.findFirst.mockResolvedValueOnce({
+      ...transactionToRow(detailed),
+      purchaseOn: null,
+    })
+    expect(
+      (await repos.transactions.findById(TENANT, 'tx1'))?.installment,
+    ).toEqual({ number: 2, count: 3, purchaseOn: null })
+    db.transaction.findFirst.mockResolvedValueOnce({
+      ...transactionToRow(detailed),
+      installmentCount: null,
+    })
+    expect(
+      (await repos.transactions.findById(TENANT, 'tx1'))?.installment,
+    ).toBeNull()
   })
 
   it('maps the note and who categorized it', async () => {
@@ -527,6 +609,84 @@ describe('webhook events', () => {
         { tenantId: TENANT, provider: 'asaas', eventId: 'e1', receivedAt: NOW },
       ],
       skipDuplicates: true,
+    })
+  })
+})
+
+describe('card bills', () => {
+  it('upserts by due date and lists newest first', async () => {
+    const { db, repos } = mockClient()
+    const bill = {
+      id: 'b1',
+      tenantId: TENANT,
+      accountId: 'card',
+      externalId: 'x1',
+      closesOn: '2026-09-20',
+      dueOn: '2026-09-27',
+      total: Money.of(42_050),
+      minimum: Money.of(5_000),
+    }
+    await repos.cardBills.saveAll([
+      bill,
+      { ...bill, id: 'b2', closesOn: null, minimum: null },
+    ])
+    const [first, second] = db.creditCardBill.upsert.mock.calls.map(
+      call => call[0],
+    )
+    expect(first).toMatchObject({
+      where: {
+        tenantId_accountId_dueDate: {
+          tenantId: TENANT,
+          accountId: 'card',
+          dueDate: new Date('2026-09-27T00:00:00.000Z'),
+        },
+      },
+      create: { id: 'b1', totalCents: 42_050n, minimumCents: 5_000n },
+      update: { closingDate: new Date('2026-09-20T00:00:00.000Z') },
+    })
+    expect(second.update).toMatchObject({
+      closingDate: null,
+      minimumCents: null,
+    })
+    db.creditCardBill.findMany.mockResolvedValueOnce([
+      {
+        id: 'b1',
+        tenantId: TENANT,
+        accountId: 'card',
+        externalId: 'x1',
+        closingDate: new Date('2026-09-20T00:00:00.000Z'),
+        dueDate: new Date('2026-09-27T00:00:00.000Z'),
+        totalCents: 42_050n,
+        minimumCents: 5_000n,
+        currency: 'BRL',
+      },
+      {
+        id: 'b2',
+        tenantId: TENANT,
+        accountId: 'card',
+        externalId: null,
+        closingDate: null,
+        dueDate: new Date('2026-08-27T00:00:00.000Z'),
+        totalCents: 100n,
+        minimumCents: null,
+        currency: 'BRL',
+      },
+    ])
+    expect(await repos.cardBills.list(TENANT, ['card'])).toEqual([
+      bill,
+      {
+        ...bill,
+        id: 'b2',
+        externalId: null,
+        closesOn: null,
+        dueOn: '2026-08-27',
+        total: Money.of(100),
+        minimum: null,
+      },
+    ])
+    expect(db.creditCardBill.findMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, accountId: { in: ['card'] } },
+      orderBy: { dueDate: 'desc' },
     })
   })
 })

@@ -68,6 +68,7 @@ import {
   startMailboxSchema,
   statementBillSchema,
   statementBillViewSchema,
+  syncQuerySchema,
   syncResultSchema,
   threadViewSchema,
   transactionViewSchema,
@@ -397,7 +398,8 @@ const OPERATIONS: Operation[] = [
     method: 'post',
     path: '/open-finance/connections/{id}/sync',
     id: 'syncConnection',
-    summary: 'Sync a connection now',
+    summary: 'Sync a connection now; days refetches that much history',
+    query: syncQuerySchema,
     response: syncResultSchema,
   },
   {

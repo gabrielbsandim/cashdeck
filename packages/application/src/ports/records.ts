@@ -7,16 +7,23 @@ import {
 } from '@cashdeck/domain'
 import { type Page, type PageRequest } from '@/ports/repositories'
 
+export type InstitutionBranding = {
+  connectorId: number | null
+  imageUrl: string | null
+  primaryColor: string | null
+}
+
 export type Institution = {
   id: string
   tenantId: string
   name: string
   manual: boolean
-}
+} & Partial<InstitutionBranding>
 
 export interface InstitutionRepository {
   findById(tenantId: string, id: string): Promise<Institution | null>
-  // Returns the stored institution with that name, or saves the candidate.
+  // Returns the stored institution with that name, or saves the candidate;
+  // a candidate with a logo refreshes the stored branding.
   ensure(candidate: Institution): Promise<Institution>
 }
 
@@ -32,7 +39,8 @@ export type TransactionFilter = {
 
 export interface TransactionRepository {
   save(transaction: Transaction): Promise<void>
-  // Inserts the ones not stored yet, by account and external id; returns how many.
+  // Inserts the ones not stored yet, by account and external id, and returns
+  // how many; a stored one only takes the merchant and installment it lacks.
   saveNew(transactions: readonly Transaction[]): Promise<number>
   findById(tenantId: string, id: string): Promise<Transaction | null>
   list(
@@ -64,6 +72,24 @@ export interface ConnectionRepository {
   ): Promise<Connection | null>
   list(tenantId: string): Promise<Connection[]>
   delete(tenantId: string, id: string): Promise<void>
+}
+
+// A closed card bill; an issuer that reports none leaves the history empty.
+export type CardBill = {
+  id: string
+  tenantId: string
+  accountId: string
+  externalId: string | null
+  closesOn: LocalDate | null
+  dueOn: LocalDate
+  total: Money
+  minimum: Money | null
+}
+
+export interface CardBillRepository {
+  // One bill per card and due date; a known one is overwritten.
+  saveAll(bills: readonly CardBill[]): Promise<void>
+  list(tenantId: string, accountIds: readonly string[]): Promise<CardBill[]>
 }
 
 export const TRANSFER_KINDS = ['PROFIT_DISTRIBUTION', 'PRO_LABORE'] as const

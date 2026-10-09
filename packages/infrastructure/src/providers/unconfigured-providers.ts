@@ -3,7 +3,9 @@ import {
   type IssuedInvoice,
   type OpenFinanceProvider,
   type ProviderAccount,
+  type ProviderBill,
   type ProviderCheck,
+  type ProviderConnector,
   type ProviderItem,
   type ProviderTransaction,
   ProviderNotConfiguredError,
@@ -19,6 +21,14 @@ export class PluggyOpenFinanceProvider implements OpenFinanceProvider {
   }
 
   async listTransactions(): Promise<ProviderTransaction[]> {
+    throw new ProviderNotConfiguredError('Pluggy')
+  }
+
+  async listBills(): Promise<ProviderBill[]> {
+    throw new ProviderNotConfiguredError('Pluggy')
+  }
+
+  async listConnectors(): Promise<ProviderConnector[]> {
     throw new ProviderNotConfiguredError('Pluggy')
   }
 }

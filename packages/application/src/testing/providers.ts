@@ -23,7 +23,9 @@ import {
   type PixCharge,
   type PixLocationResolver,
   type ProviderAccount,
+  type ProviderBill,
   type ProviderCheck,
+  type ProviderConnector,
   type ProviderItem,
   type ProviderTransaction,
   type SecretVault,
@@ -119,11 +121,25 @@ export class FakePaymentRail implements PaymentRail {
 }
 
 export class FakeOpenFinanceProvider implements OpenFinanceProvider {
+  bills = new Map<string, ProviderBill[]>()
+  connectors: ProviderConnector[] = []
+
   constructor(
     private readonly accounts: ProviderAccount[] = [],
     private readonly transactions: ProviderTransaction[] = [],
     private readonly items: ProviderItem[] = [],
   ) {}
+
+  async listBills(
+    _connection: unknown,
+    accountExternalId: string,
+  ): Promise<ProviderBill[]> {
+    return this.bills.get(accountExternalId) ?? []
+  }
+
+  async listConnectors(): Promise<ProviderConnector[]> {
+    return this.connectors
+  }
 
   async getItem(itemId: string): Promise<ProviderItem> {
     const item = this.items.find(candidate => candidate.itemId === itemId)

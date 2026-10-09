@@ -30,6 +30,7 @@ import {
 import {
   InMemoryAttachmentRepository,
   InMemoryBudgetRepository,
+  InMemoryCardBillRepository,
   InMemoryCategoryRepository,
   InMemoryConnectionRepository,
   InMemoryDocumentStore,
@@ -72,6 +73,7 @@ export function fullDeps(options: Options = {}) {
     accounts: new InMemoryAccountRepository(),
     institutions: new InMemoryInstitutionRepository(),
     transactions: new InMemoryTransactionRepository(),
+    cardBills: new InMemoryCardBillRepository(),
     connections: new InMemoryConnectionRepository(),
     transfers: new InMemoryTransferRepository(),
     invoices: new InMemoryInvoiceRepository(),

@@ -161,11 +161,14 @@ model FinancialEntity {
 }
 
 model Institution {
-  id       String  @id
-  tenantId String  @map("tenant_id")
-  name     String
-  code     String?
-  manual   Boolean @default(false)
+  id           String  @id
+  tenantId     String  @map("tenant_id")
+  name         String
+  code         String?
+  manual       Boolean @default(false)
+  connectorId  Int?    @map("connector_id")
+  imageUrl     String? @map("image_url")
+  primaryColor String? @map("primary_color")
 
   @@unique([tenantId, name])
   @@map("institutions")
@@ -186,19 +189,26 @@ model Connection {
 }
 
 model Account {
-  id            String        @id
-  tenantId      String        @map("tenant_id")
-  entityId      String        @map("entity_id")
-  institutionId String        @map("institution_id")
-  connectionId  String?       @map("connection_id")
-  externalId    String?       @map("external_id")
-  name          String
-  type          AccountType
-  origin        AccountOrigin
-  isReserve     Boolean       @default(false) @map("is_reserve")
-  balanceCents  BigInt        @default(0) @map("balance_cents")
-  currency      String        @default("BRL") @db.Char(3)
-  cdiPercent    Int?          @map("cdi_percent")
+  id                   String        @id
+  tenantId             String        @map("tenant_id")
+  entityId             String        @map("entity_id")
+  institutionId        String        @map("institution_id")
+  connectionId         String?       @map("connection_id")
+  externalId           String?       @map("external_id")
+  name                 String
+  type                 AccountType
+  origin               AccountOrigin
+  isReserve            Boolean       @default(false) @map("is_reserve")
+  balanceCents         BigInt        @default(0) @map("balance_cents")
+  currency             String        @default("BRL") @db.Char(3)
+  cdiPercent           Int?          @map("cdi_percent")
+  numberSuffix         String?       @map("number_suffix")
+  // A card's credit line, all null on cash accounts.
+  creditLimitCents     BigInt?       @map("credit_limit_cents")
+  creditAvailableCents BigInt?       @map("credit_available_cents")
+  creditClosesOn       DateTime?     @map("credit_closes_on") @db.Date
+  creditDueOn          DateTime?     @map("credit_due_on") @db.Date
+  creditBrand          String?       @map("credit_brand")
 
   entity       FinancialEntity @relation(fields: [entityId], references: [id])
   transactions Transaction[]
@@ -222,6 +232,10 @@ model Transaction {
   note               String?
   categorizedBy      CategorizedBy? @map("categorized_by")
   categoryConfidence Float?         @map("category_confidence")
+  merchant           String?
+  installmentNumber  Int?           @map("installment_number")
+  installmentCount   Int?           @map("installment_count")
+  purchaseOn         DateTime?      @map("purchase_on") @db.Date
 
   account Account @relation(fields: [accountId], references: [id])
 
@@ -284,15 +298,18 @@ model Recurrence {
 }
 
 model CreditCardBill {
-  id          String         @id
-  tenantId    String         @map("tenant_id")
-  accountId   String         @map("account_id")
-  closingDate DateTime       @map("closing_date") @db.Date
-  dueDate     DateTime       @map("due_date") @db.Date
-  totalCents  BigInt         @map("total_cents")
-  status      CardBillStatus
+  id           String         @id
+  tenantId     String         @map("tenant_id")
+  accountId    String         @map("account_id")
+  externalId   String?        @map("external_id")
+  closingDate  DateTime?      @map("closing_date") @db.Date
+  dueDate      DateTime       @map("due_date") @db.Date
+  totalCents   BigInt         @map("total_cents")
+  minimumCents BigInt?        @map("minimum_cents")
+  currency     String         @default("BRL") @db.Char(3)
+  status       CardBillStatus @default(CLOSED)
 
-  @@unique([tenantId, accountId, closingDate])
+  @@unique([tenantId, accountId, dueDate])
   @@map("credit_card_bills")
 }
 
@@ -448,14 +465,14 @@ model InvoiceClient {
 }
 
 model InvoiceTemplate {
-  id          String  @id
-  tenantId    String  @map("tenant_id")
-  entityId    String  @map("entity_id")
-  clientId    String  @map("client_id")
-  serviceCode String  @map("service_code")
+  id          String   @id
+  tenantId    String   @map("tenant_id")
+  entityId    String   @map("entity_id")
+  clientId    String   @map("client_id")
+  serviceCode String   @map("service_code")
   description String
-  amountCents BigInt  @map("amount_cents")
-  currency    String  @db.Char(3)
+  amountCents BigInt   @map("amount_cents")
+  currency    String   @db.Char(3)
   // FIXED bills amount_cents; HOURLY bills amount_cents per hour times hours.
   billing     String   @default("FIXED")
   hours       Decimal? @db.Decimal(8, 2)

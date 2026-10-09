@@ -83,10 +83,90 @@ describe('entities and accounts', () => {
     ])
   })
 
+  it('shows the logo, the card line and the sync of each account', async () => {
+    const deps = fullDeps()
+    await deps.institutions.save({
+      id: 'branded',
+      tenantId: TENANT,
+      name: 'Banco Exemplo',
+      manual: false,
+      connectorId: 1,
+      imageUrl: 'https://logo.example/1.svg',
+      primaryColor: 'FF0000',
+    })
+    await deps.institutions.save({
+      id: 'plain',
+      tenantId: TENANT,
+      name: 'Banco Sem Cor',
+      manual: false,
+      imageUrl: 'https://logo.example/2.svg',
+    })
+    await deps.connections.save({
+      id: 'conn',
+      tenantId: TENANT,
+      entityId: 'pf',
+      institutionId: 'branded',
+      provider: 'pluggy',
+      itemId: 'item',
+      status: 'UPDATED',
+      lastSyncAt: NOW,
+    })
+    await deps.connections.save({
+      id: 'fresh',
+      tenantId: TENANT,
+      entityId: 'pf',
+      institutionId: 'branded',
+      provider: 'pluggy',
+      itemId: 'item-2',
+      status: 'UPDATING',
+      lastSyncAt: null,
+    })
+    await deps.accounts.save(
+      account({
+        id: 'card',
+        entityId: 'pf',
+        name: 'A card',
+        type: 'CREDIT_CARD',
+        institutionId: 'branded',
+        connectionId: 'conn',
+        numberSuffix: '4321',
+        credit: {
+          limit: Money.of(10_000),
+          available: Money.of(4_000),
+          closesOn: '2026-10-20',
+          dueOn: '2026-10-27',
+          brand: 'VISA',
+        },
+      }),
+    )
+    await deps.accounts.save(
+      account({
+        id: 'other',
+        entityId: 'pf',
+        name: 'B other',
+        institutionId: 'plain',
+        connectionId: 'fresh',
+      }),
+    )
+    const [card, other] = await makeListAccounts(deps)(TENANT)
+    expect(card).toMatchObject({
+      numberSuffix: '4321',
+      logo: { imageUrl: 'https://logo.example/1.svg', color: 'FF0000' },
+      credit: { usedPercent: 60, dueOn: '2026-10-27', brand: 'VISA' },
+      sync: { status: 'UPDATED', lastSyncAt: NOW.toISOString() },
+    })
+    expect(other).toMatchObject({
+      logo: { color: null },
+      credit: null,
+      sync: { status: 'UPDATING', lastSyncAt: null },
+    })
+  })
+
   it('shows an unknown institution as blank', async () => {
     const deps = fullDeps()
     await deps.accounts.save(account({ id: 'a', institutionId: 'gone' }))
-    expect((await makeListAccounts(deps)(TENANT))[0]?.institution).toBe('')
+    const [view] = await makeListAccounts(deps)(TENANT)
+    expect(view).toMatchObject({ institution: '', logo: null, sync: null })
   })
 
   it('fails when an account belongs to no known entity', async () => {

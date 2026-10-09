@@ -8,12 +8,28 @@ import { type DeviceLocale } from '@/ports/alerts'
 
 export type OpenFinanceConnection = { provider: string; itemId: string }
 
+export type ProviderCreditLine = {
+  limitCents: number
+  availableCents: number
+  closesOn: string | null
+  dueOn: string | null
+  brand: string | null
+}
+
 export type ProviderAccount = {
   externalId: string
   name: string
   type: 'CHECKING' | 'SAVINGS' | 'CREDIT_CARD' | 'INVESTMENT'
   balanceCents: number
   currency: string
+  numberSuffix?: string | null
+  credit?: ProviderCreditLine | null
+}
+
+export type ProviderInstallment = {
+  number: number
+  count: number
+  purchaseOn: string | null
 }
 
 export type ProviderTransaction = {
@@ -23,6 +39,26 @@ export type ProviderTransaction = {
   currency: string
   bookedOn: string
   description: string
+  merchant?: string | null
+  installment?: ProviderInstallment | null
+}
+
+// A closed card bill as the issuer reports it.
+export type ProviderBill = {
+  externalId: string
+  closesOn: string | null
+  dueOn: string
+  totalCents: number
+  minimumCents: number | null
+  currency: string
+}
+
+// The institution behind an item, with the logo the provider hosts.
+export type ProviderConnector = {
+  id: number
+  name: string
+  imageUrl: string | null
+  primaryColor: string | null
 }
 
 export type ProviderCheck = { ok: boolean; message: string | null }
@@ -39,6 +75,7 @@ export type ProviderItem = {
   institutionName: string
   status: ProviderItemStatus
   lastUpdatedAt: string | null
+  connector?: ProviderConnector | null
 }
 
 export interface OpenFinanceProvider {
@@ -49,6 +86,12 @@ export interface OpenFinanceProvider {
     accountExternalId: string,
     range: { from: string; to: string },
   ): Promise<ProviderTransaction[]>
+  listBills(
+    connection: OpenFinanceConnection,
+    accountExternalId: string,
+  ): Promise<ProviderBill[]>
+  // Every institution the provider can connect, to name aggregated accounts.
+  listConnectors(): Promise<ProviderConnector[]>
 }
 
 export type ImportFile = { name: string; mimeType: string; bytes: Uint8Array }

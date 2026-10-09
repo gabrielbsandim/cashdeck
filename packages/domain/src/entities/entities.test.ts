@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createFinancialEntity } from '@/entities/financial-entity'
-import { availableToPay, createAccount } from '@/entities/account'
+import {
+  availableToPay,
+  createAccount,
+  creditUsedPercent,
+} from '@/entities/account'
 import { createTransaction, transactionKind } from '@/entities/transaction'
 import { Money } from '@/money/money'
 
@@ -92,6 +96,36 @@ describe('createAccount', () => {
         .cents,
     ).toBe(0)
   })
+
+  it('keeps a credit line only on a card and reads the share in use', () => {
+    const credit = {
+      limit: Money.of(10_000),
+      available: Money.of(2_500),
+      closesOn: '2026-10-20',
+      dueOn: '2026-10-27',
+      brand: 'VISA',
+    }
+    const card = createAccount({
+      ...accountInput,
+      type: 'CREDIT_CARD',
+      credit,
+      numberSuffix: '1234',
+    })
+    expect(card).toMatchObject({ credit, numberSuffix: '1234' })
+    expect(createAccount(accountInput)).toMatchObject({
+      credit: null,
+      numberSuffix: null,
+    })
+    expect(() => createAccount({ ...accountInput, credit })).toThrow(
+      'Only a credit card has a credit line.',
+    )
+    expect(creditUsedPercent(credit)).toBe(75)
+    expect(creditUsedPercent({ ...credit, available: Money.of(-50) })).toBe(100)
+    expect(creditUsedPercent({ ...credit, available: Money.of(20_000) })).toBe(
+      0,
+    )
+    expect(creditUsedPercent({ ...credit, limit: Money.zero() })).toBeNull()
+  })
 })
 
 const txInput = {
@@ -121,5 +155,28 @@ describe('createTransaction', () => {
     expect(() =>
       createTransaction({ ...txInput, bookedOn: '08/10/2026' }),
     ).toThrow('ISO date')
+  })
+
+  it('keeps the merchant and a valid installment', () => {
+    const plain = createTransaction(txInput)
+    expect(plain).toMatchObject({ merchant: null, installment: null })
+    const installment = { number: 3, count: 10, purchaseOn: '2026-08-01' }
+    expect(
+      createTransaction({ ...txInput, merchant: '  Loja  ', installment }),
+    ).toMatchObject({ merchant: 'Loja', installment })
+    expect(createTransaction({ ...txInput, merchant: ' ' }).merchant).toBeNull()
+    for (const bad of [
+      { number: 0, count: 3 },
+      { number: 4, count: 3 },
+      { number: 1, count: 1 },
+      { number: 1.5, count: 3 },
+    ]) {
+      expect(() =>
+        createTransaction({
+          ...txInput,
+          installment: { ...bad, purchaseOn: null },
+        }),
+      ).toThrow('An installment is 1 to N of N')
+    }
   })
 })

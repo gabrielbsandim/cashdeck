@@ -2,6 +2,10 @@ import {
   type OpenFinanceConnection,
   type OpenFinanceProvider,
   type ProviderAccount,
+  type ProviderBill,
+  type ProviderConnector,
+  type ProviderCreditLine,
+  type ProviderInstallment,
   type ProviderItem,
   type ProviderItemStatus,
   type ProviderTransaction,
@@ -42,11 +46,26 @@ const ACCOUNT_TYPES: Record<string, ProviderAccount['type']> = {
   CREDIT_CARD: 'CREDIT_CARD',
 }
 
+type PluggyConnector = {
+  id?: number
+  name?: string
+  imageUrl?: string | null
+  primaryColor?: string | null
+}
+
 type PluggyItem = {
   id: string
   status?: string
   lastUpdatedAt?: string | null
-  connector?: { name?: string }
+  connector?: PluggyConnector
+}
+
+type PluggyCreditData = {
+  brand?: string | null
+  balanceCloseDate?: string | null
+  balanceDueDate?: string | null
+  availableCreditLimit?: number | null
+  creditLimit?: number | null
 }
 
 type PluggyAccount = {
@@ -54,8 +73,10 @@ type PluggyAccount = {
   type?: string
   subtype?: string
   name?: string
+  number?: string | null
   balance?: number
   currencyCode?: string
+  creditData?: PluggyCreditData | null
 }
 
 type PluggyTransaction = {
@@ -66,6 +87,21 @@ type PluggyTransaction = {
   date?: string
   currencyCode?: string
   type?: 'DEBIT' | 'CREDIT'
+  merchant?: { name?: string | null; businessName?: string | null } | null
+  creditCardMetadata?: {
+    installmentNumber?: number | null
+    totalInstallments?: number | null
+    purchaseDate?: string | null
+  } | null
+}
+
+type PluggyBill = {
+  id: string
+  dueDate?: string | null
+  billClosingDate?: string | null
+  totalAmount?: number | null
+  totalAmountCurrencyCode?: string | null
+  minimumPaymentAmount?: number | null
 }
 
 type Page<T> = { results?: T[]; page?: number; totalPages?: number }
@@ -93,23 +129,38 @@ export class PluggyProvider implements OpenFinanceProvider {
       institutionName: item.connector?.name ?? 'Unknown institution',
       status: status ?? 'OUTDATED',
       lastUpdatedAt: item.lastUpdatedAt ?? null,
+      connector: item.connector ? toConnector(item.connector) : null,
     }
   }
 
   async listAccounts(
     connection: OpenFinanceConnection,
   ): Promise<ProviderAccount[]> {
-    const accounts: PluggyAccount[] = []
-    for (let page = 1; ; page += 1) {
-      const answer = await this.get<Page<PluggyAccount>>(
-        `/accounts?itemId=${encodeURIComponent(connection.itemId)}&page=${page}`,
-      )
-      accounts.push(...(answer.results ?? []))
-      if (page >= (answer.totalPages ?? 1)) {
-        break
-      }
-    }
+    const accounts = await this.pages<PluggyAccount>(
+      `/accounts?itemId=${encodeURIComponent(connection.itemId)}`,
+    )
     return accounts.map(toAccount)
+  }
+
+  async listBills(
+    _connection: OpenFinanceConnection,
+    accountExternalId: string,
+  ): Promise<ProviderBill[]> {
+    const bills = await this.pages<PluggyBill>(
+      `/bills?accountId=${encodeURIComponent(accountExternalId)}`,
+    )
+    return bills.flatMap(toBill)
+  }
+
+  async listConnectors(): Promise<ProviderConnector[]> {
+    const connectors = await this.pages<PluggyConnector>(
+      '/connectors?countries=BR&sandbox=false',
+    )
+    return connectors.flatMap(connector =>
+      connector.id === undefined || !connector.name
+        ? []
+        : [toConnector(connector)],
+    )
   }
 
   async listTransactions(
@@ -136,6 +187,17 @@ export class PluggyProvider implements OpenFinanceProvider {
       after = cursorOf(answer.next)
     } while (after)
     return transactions.map(tx => toTransaction(tx, accountExternalId))
+  }
+
+  private async pages<T>(path: string): Promise<T[]> {
+    const rows: T[] = []
+    for (let page = 1; ; page += 1) {
+      const answer = await this.get<Page<T>>(`${path}&page=${page}`)
+      rows.push(...(answer.results ?? []))
+      if (page >= (answer.totalPages ?? 1)) {
+        return rows
+      }
+    }
   }
 
   private async get<T>(path: string): Promise<T> {
@@ -194,6 +256,42 @@ function cursorOf(next: string | null | undefined): string | null {
   return new URL(next).searchParams.get('after')
 }
 
+// Bill and purchase dates are calendar days sent as midnight timestamps;
+// converting them to the local zone would move them a day back.
+function calendarDay(value: string | null | undefined): string | null {
+  const day = value?.slice(0, 10) ?? ''
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null
+}
+
+function toConnector(connector: PluggyConnector): ProviderConnector {
+  return {
+    id: connector.id ?? 0,
+    name: connector.name ?? '',
+    imageUrl: connector.imageUrl || null,
+    primaryColor: connector.primaryColor || null,
+  }
+}
+
+function numberSuffix(number: string | null | undefined): string | null {
+  const digits = number?.replace(/\D/g, '') ?? ''
+  return digits === '' ? null : digits.slice(-4)
+}
+
+function toCreditLine(
+  data: PluggyCreditData | null | undefined,
+): ProviderCreditLine | null {
+  if (typeof data?.creditLimit !== 'number') {
+    return null
+  }
+  return {
+    limitCents: toCents(data.creditLimit),
+    availableCents: toCents(data.availableCreditLimit ?? 0),
+    closesOn: calendarDay(data.balanceCloseDate),
+    dueOn: calendarDay(data.balanceDueDate),
+    brand: data.brand || null,
+  }
+}
+
 function toAccount(account: PluggyAccount): ProviderAccount {
   const type =
     ACCOUNT_TYPES[account.subtype ?? ''] ??
@@ -206,7 +304,23 @@ function toAccount(account: PluggyAccount): ProviderAccount {
     // A card balance is what is owed, so it counts against net worth.
     balanceCents: type === 'CREDIT_CARD' ? -balance : balance,
     currency: account.currencyCode ?? 'BRL',
+    numberSuffix: numberSuffix(account.number),
+    credit: type === 'CREDIT_CARD' ? toCreditLine(account.creditData) : null,
   }
+}
+
+// A single charge also arrives as "1 of 1"; only a real split is kept.
+function toInstallment(
+  metadata: PluggyTransaction['creditCardMetadata'],
+): ProviderInstallment | null {
+  const number = metadata?.installmentNumber ?? 0
+  const count = metadata?.totalInstallments ?? 0
+  const valid =
+    Number.isInteger(number) && Number.isInteger(count) && number >= 1
+  if (!valid || count < 2 || number > count) {
+    return null
+  }
+  return { number, count, purchaseOn: calendarDay(metadata?.purchaseDate) }
 }
 
 function toTransaction(
@@ -221,5 +335,28 @@ function toTransaction(
     currency: tx.currencyCode ?? 'BRL',
     bookedOn: tx.date ? toLocalDate(new Date(tx.date)) : '',
     description: tx.description ?? '',
+    merchant: tx.merchant?.name || tx.merchant?.businessName || null,
+    installment: toInstallment(tx.creditCardMetadata),
   }
+}
+
+function toBill(bill: PluggyBill): ProviderBill[] {
+  const dueOn = calendarDay(bill.dueDate)
+  if (!dueOn) {
+    return []
+  }
+  const currency = bill.totalAmountCurrencyCode ?? 'BRL'
+  return [
+    {
+      externalId: bill.id,
+      closesOn: calendarDay(bill.billClosingDate),
+      dueOn,
+      totalCents: toCents(bill.totalAmount ?? 0),
+      minimumCents:
+        typeof bill.minimumPaymentAmount === 'number'
+          ? toCents(bill.minimumPaymentAmount)
+          : null,
+      currency,
+    },
+  ]
 }

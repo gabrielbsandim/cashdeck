@@ -5,6 +5,8 @@ import {
   type AttachmentRepository,
   type BudgetLimit,
   type BudgetRepository,
+  type CardBill,
+  type CardBillRepository,
   type Connection,
   type ConnectionRepository,
   type DocumentStore,
@@ -55,35 +57,54 @@ async function paged<T, R>(
   return { items, nextCursor: hasMore ? String(skip + items.length) : null }
 }
 
+type InstitutionRow = {
+  id: string
+  tenantId: string
+  name: string
+  manual: boolean
+  connectorId: number | null
+  imageUrl: string | null
+  primaryColor: string | null
+}
+
+const institutionFromRow = (row: InstitutionRow): Institution => ({
+  id: row.id,
+  tenantId: row.tenantId,
+  name: row.name,
+  manual: row.manual,
+  connectorId: row.connectorId,
+  imageUrl: row.imageUrl,
+  primaryColor: row.primaryColor,
+})
+
 export class PrismaInstitutionRepository implements InstitutionRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async findById(tenantId: string, id: string): Promise<Institution | null> {
     const row = await this.db.institution.findFirst({ where: { tenantId, id } })
-    return (
-      row && {
-        id: row.id,
-        tenantId: row.tenantId,
-        name: row.name,
-        manual: row.manual,
-      }
-    )
+    return row && institutionFromRow(row)
   }
 
   async ensure(candidate: Institution): Promise<Institution> {
+    const branding = {
+      connectorId: candidate.connectorId ?? null,
+      imageUrl: candidate.imageUrl ?? null,
+      primaryColor: candidate.primaryColor ?? null,
+    }
     const row = await this.db.institution.upsert({
       where: {
         tenantId_name: { tenantId: candidate.tenantId, name: candidate.name },
       },
-      create: candidate,
-      update: {},
+      create: {
+        id: candidate.id,
+        tenantId: candidate.tenantId,
+        name: candidate.name,
+        manual: candidate.manual,
+        ...branding,
+      },
+      update: branding.imageUrl ? branding : {},
     })
-    return {
-      id: row.id,
-      tenantId: row.tenantId,
-      name: row.name,
-      manual: row.manual,
-    }
+    return institutionFromRow(row)
   }
 }
 
@@ -131,7 +152,43 @@ export class PrismaTransactionRepository implements TransactionRepository {
       data: transactions.map(transactionToRow),
       skipDuplicates: true,
     })
+    if (result.count === transactions.length) {
+      return result.count
+    }
+    for (const transaction of transactions) {
+      await this.fillDetails(transaction)
+    }
     return result.count
+  }
+
+  // A row stored before the provider sent these details takes them now,
+  // without touching what the user edited.
+  private async fillDetails(transaction: Transaction): Promise<void> {
+    const row = transactionToRow(transaction)
+    if (!row.externalId) {
+      return
+    }
+    const where = {
+      tenantId: row.tenantId,
+      accountId: row.accountId,
+      externalId: row.externalId,
+    }
+    if (row.merchant) {
+      await this.db.transaction.updateMany({
+        where: { ...where, merchant: null },
+        data: { merchant: row.merchant },
+      })
+    }
+    if (row.installmentNumber !== null) {
+      await this.db.transaction.updateMany({
+        where: { ...where, installmentNumber: null },
+        data: {
+          installmentNumber: row.installmentNumber,
+          installmentCount: row.installmentCount,
+          purchaseOn: row.purchaseOn,
+        },
+      })
+    }
   }
 
   async findById(tenantId: string, id: string): Promise<Transaction | null> {
@@ -637,10 +694,67 @@ export class PrismaDocumentStore implements DocumentStore {
   }
 }
 
+export class PrismaCardBillRepository implements CardBillRepository {
+  constructor(private readonly db: PrismaClient) {}
+
+  async saveAll(bills: readonly CardBill[]): Promise<void> {
+    for (const bill of bills) {
+      const row = {
+        externalId: bill.externalId,
+        closingDate: bill.closesOn ? toDbDate(bill.closesOn) : null,
+        totalCents: BigInt(bill.total.cents),
+        minimumCents: bill.minimum ? BigInt(bill.minimum.cents) : null,
+        currency: bill.total.currency,
+      }
+      await this.db.creditCardBill.upsert({
+        where: {
+          tenantId_accountId_dueDate: {
+            tenantId: bill.tenantId,
+            accountId: bill.accountId,
+            dueDate: toDbDate(bill.dueOn),
+          },
+        },
+        create: {
+          id: bill.id,
+          tenantId: bill.tenantId,
+          accountId: bill.accountId,
+          dueDate: toDbDate(bill.dueOn),
+          ...row,
+        },
+        update: row,
+      })
+    }
+  }
+
+  async list(
+    tenantId: string,
+    accountIds: readonly string[],
+  ): Promise<CardBill[]> {
+    const rows = await this.db.creditCardBill.findMany({
+      where: { tenantId, accountId: { in: [...accountIds] } },
+      orderBy: { dueDate: 'desc' },
+    })
+    return rows.map(row => ({
+      id: row.id,
+      tenantId: row.tenantId,
+      accountId: row.accountId,
+      externalId: row.externalId,
+      closesOn: row.closingDate ? fromDbDate(row.closingDate) : null,
+      dueOn: fromDbDate(row.dueDate),
+      total: Money.of(Number(row.totalCents), row.currency),
+      minimum:
+        row.minimumCents === null
+          ? null
+          : Money.of(Number(row.minimumCents), row.currency),
+    }))
+  }
+}
+
 export function createPrismaRecords(db: PrismaClient) {
   return {
     institutions: new PrismaInstitutionRepository(db),
     transactions: new PrismaTransactionRepository(db),
+    cardBills: new PrismaCardBillRepository(db),
     connections: new PrismaConnectionRepository(db),
     transfers: new PrismaTransferRepository(db),
     invoices: new PrismaInvoiceRepository(db),

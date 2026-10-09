@@ -510,7 +510,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sync a connection now */
+        /** Sync a connection now; days refetches that much history */
         post: operations["syncConnection"];
         delete?: never;
         options?: never;
@@ -1963,6 +1963,29 @@ export interface operations {
                             };
                             cdiPercent: number | null;
                             connectionId: string | null;
+                            numberSuffix: string | null;
+                            logo: {
+                                imageUrl: string;
+                                color: string | null;
+                            } | null;
+                            credit: {
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                usedPercent: number | null;
+                                closesOn: string | null;
+                                dueOn: string | null;
+                                brand: string | null;
+                            } | null;
+                            sync: {
+                                status: string;
+                                lastSyncAt: string | null;
+                            } | null;
                         }[];
                     };
                 };
@@ -2028,6 +2051,29 @@ export interface operations {
                             };
                             cdiPercent: number | null;
                             connectionId: string | null;
+                            numberSuffix: string | null;
+                            logo: {
+                                imageUrl: string;
+                                color: string | null;
+                            } | null;
+                            credit: {
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                usedPercent: number | null;
+                                closesOn: string | null;
+                                dueOn: string | null;
+                                brand: string | null;
+                            } | null;
+                            sync: {
+                                status: string;
+                                lastSyncAt: string | null;
+                            } | null;
                         };
                     };
                 };
@@ -2087,6 +2133,29 @@ export interface operations {
                             };
                             cdiPercent: number | null;
                             connectionId: string | null;
+                            numberSuffix: string | null;
+                            logo: {
+                                imageUrl: string;
+                                color: string | null;
+                            } | null;
+                            credit: {
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                usedPercent: number | null;
+                                closesOn: string | null;
+                                dueOn: string | null;
+                                brand: string | null;
+                            } | null;
+                            sync: {
+                                status: string;
+                                lastSyncAt: string | null;
+                            } | null;
                         };
                     };
                 };
@@ -2148,6 +2217,12 @@ export interface operations {
                             /** @enum {string|null} */
                             categorizedBy: "RULE" | "AI" | "USER" | null;
                             categoryConfidence: number | null;
+                            merchant: string | null;
+                            installment: {
+                                number: number;
+                                count: number;
+                                purchaseOn: string | null;
+                            } | null;
                         }[];
                         nextCursor: string | null;
                     };
@@ -2212,6 +2287,12 @@ export interface operations {
                                 /** @enum {string|null} */
                                 categorizedBy: "RULE" | "AI" | "USER" | null;
                                 categoryConfidence: number | null;
+                                merchant: string | null;
+                                installment: {
+                                    number: number;
+                                    count: number;
+                                    purchaseOn: string | null;
+                                } | null;
                             };
                             similarUpdated: number;
                         };
@@ -3311,7 +3392,9 @@ export interface operations {
     };
     syncConnection: {
         parameters: {
-            query?: never;
+            query?: {
+                days?: number;
+            };
             header?: never;
             path: {
                 id: string;
@@ -3320,7 +3403,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Sync a connection now */
+            /** @description Sync a connection now; days refetches that much history */
             200: {
                 headers: {
                     [name: string]: unknown;

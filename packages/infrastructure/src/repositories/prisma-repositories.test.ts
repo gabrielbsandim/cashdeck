@@ -157,6 +157,45 @@ describe('PrismaAccountRepository', () => {
       entityId: 'company',
     })
   })
+
+  it('round trips a card credit line', async () => {
+    const { db, repos } = mockClient()
+    const card = createAccount({
+      ...account,
+      type: 'CREDIT_CARD',
+      numberSuffix: '4321',
+      credit: {
+        limit: Money.of(500_000),
+        available: Money.of(470_000),
+        closesOn: '2026-10-20',
+        dueOn: '2026-10-27',
+        brand: 'VISA',
+      },
+    })
+    await repos.accounts.save(card)
+    expect(db.account.upsert.mock.calls[0]?.[0].create).toMatchObject({
+      numberSuffix: '4321',
+      creditLimitCents: 500_000n,
+      creditAvailableCents: 470_000n,
+      creditClosesOn: new Date('2026-10-20T00:00:00.000Z'),
+      creditBrand: 'VISA',
+    })
+    db.account.findFirst.mockResolvedValueOnce(accountToRow(card))
+    expect(await repos.accounts.findById(TENANT, 'a1')).toEqual(card)
+    db.account.findFirst.mockResolvedValueOnce({
+      ...accountToRow(card),
+      creditAvailableCents: null,
+      creditClosesOn: null,
+      creditDueOn: null,
+    })
+    expect((await repos.accounts.findById(TENANT, 'a1'))?.credit).toEqual({
+      limit: Money.of(500_000),
+      available: Money.of(0),
+      closesOn: null,
+      dueOn: null,
+      brand: 'VISA',
+    })
+  })
 })
 
 describe('PrismaBillRepository', () => {

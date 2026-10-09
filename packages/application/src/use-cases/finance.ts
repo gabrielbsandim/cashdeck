@@ -4,6 +4,8 @@ import {
   createAccount,
   createFinancialEntity,
   createTransaction,
+  type CreditLine,
+  creditUsedPercent,
   type EntityKind,
   type FinancialEntity,
   Money,
@@ -22,7 +24,7 @@ import {
   type updateAccountSchema,
   type updateEntitySchema,
 } from '@/dtos/finance'
-import { type InternalTransfer } from '@/ports/records'
+import { type Institution, type InternalTransfer } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
 import { type Deps } from '@/use-cases/deps'
 import {
@@ -104,19 +106,47 @@ export function makeUpdateEntity(
   }
 }
 
+function creditView(credit: CreditLine | null): AccountView['credit'] {
+  if (!credit) {
+    return null
+  }
+  return {
+    limit: money(credit.limit),
+    available: money(credit.available),
+    usedPercent: creditUsedPercent(credit),
+    closesOn: credit.closesOn,
+    dueOn: credit.dueOn,
+    brand: credit.brand,
+  }
+}
+
+function logoView(institution: Institution | null): AccountView['logo'] {
+  if (!institution?.imageUrl) {
+    return null
+  }
+  return {
+    imageUrl: institution.imageUrl,
+    color: institution.primaryColor ?? null,
+  }
+}
+
 export function makeAccountViews(
-  deps: Pick<Deps, 'entities' | 'institutions'>,
+  deps: Pick<Deps, 'entities' | 'institutions' | 'connections'>,
 ) {
   return async function accountViews(
     tenantId: string,
     accounts: readonly Account[],
   ): Promise<AccountView[]> {
     const index = await entityIndex(deps, tenantId)
+    const connections = await deps.connections.list(tenantId)
     const views: AccountView[] = []
     for (const account of accounts) {
       const institution = await deps.institutions.findById(
         tenantId,
         account.institutionId,
+      )
+      const connection = connections.find(
+        candidate => candidate.id === account.connectionId,
       )
       views.push({
         id: account.id,
@@ -129,6 +159,15 @@ export function makeAccountViews(
         balance: money(account.balance),
         cdiPercent: account.cdiPercent,
         connectionId: account.connectionId,
+        numberSuffix: account.numberSuffix,
+        logo: logoView(institution),
+        credit: creditView(account.credit),
+        sync: connection
+          ? {
+              status: connection.status,
+              lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
+            }
+          : null,
       })
     }
     return views
@@ -148,7 +187,7 @@ async function accountsOf(
 }
 
 export function makeListAccounts(
-  deps: Pick<Deps, 'entities' | 'accounts' | 'institutions'>,
+  deps: Pick<Deps, 'entities' | 'accounts' | 'institutions' | 'connections'>,
 ) {
   const views = makeAccountViews(deps)
   return async function listAccounts(
@@ -181,7 +220,10 @@ async function releaseReserve(
 }
 
 export function makeCreateManualAccount(
-  deps: Pick<Deps, 'entities' | 'accounts' | 'institutions' | 'ids'>,
+  deps: Pick<
+    Deps,
+    'entities' | 'accounts' | 'institutions' | 'connections' | 'ids'
+  >,
 ) {
   const views = makeAccountViews(deps)
   return async function createManualAccount(
@@ -215,7 +257,7 @@ export function makeCreateManualAccount(
 }
 
 export function makeUpdateAccount(
-  deps: Pick<Deps, 'entities' | 'accounts' | 'institutions'>,
+  deps: Pick<Deps, 'entities' | 'accounts' | 'institutions' | 'connections'>,
 ) {
   const views = makeAccountViews(deps)
   return async function updateAccount(
@@ -268,6 +310,8 @@ export function toTransactionView(
     note: transaction.note,
     categorizedBy: transaction.categorizedBy,
     categoryConfidence: transaction.categoryConfidence,
+    merchant: transaction.merchant,
+    installment: transaction.installment,
   }
 }
 

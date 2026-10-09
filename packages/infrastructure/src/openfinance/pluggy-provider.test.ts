@@ -24,7 +24,12 @@ describe('PluggyProvider', () => {
           id: 'item-1',
           status: 'UPDATED',
           lastUpdatedAt: '2026-10-08T09:00:00.000Z',
-          connector: { name: 'Banco Exemplo' },
+          connector: {
+            id: 7,
+            name: 'Banco Exemplo',
+            imageUrl: 'https://logo.example/7.svg',
+            primaryColor: 'FF0000',
+          },
         },
       })
       .on('GET', `${PLUGGY_URL}/items/item-2`, {
@@ -36,12 +41,19 @@ describe('PluggyProvider', () => {
       institutionName: 'Banco Exemplo',
       status: 'UPDATED',
       lastUpdatedAt: '2026-10-08T09:00:00.000Z',
+      connector: {
+        id: 7,
+        name: 'Banco Exemplo',
+        imageUrl: 'https://logo.example/7.svg',
+        primaryColor: 'FF0000',
+      },
     })
     expect(await pluggy.getItem('item-2')).toEqual({
       itemId: 'item-2',
       institutionName: 'Unknown institution',
       status: 'OUTDATED',
       lastUpdatedAt: null,
+      connector: null,
     })
     expect(scripted.body('POST', `${PLUGGY_URL}/auth`)).toEqual({
       clientId: 'id',
@@ -67,6 +79,7 @@ describe('PluggyProvider', () => {
               type: 'BANK',
               subtype: 'CHECKING_ACCOUNT',
               name: 'Conta Corrente',
+              number: '0001/12345-6',
               balance: 1209.5,
               currencyCode: 'BRL',
             },
@@ -75,7 +88,15 @@ describe('PluggyProvider', () => {
               type: 'CREDIT',
               subtype: 'CREDIT_CARD',
               name: 'Cartão',
+              number: 'XXXX XXXX XXXX 4321',
               balance: 300,
+              creditData: {
+                brand: 'VISA',
+                creditLimit: 5000,
+                availableCreditLimit: 4700,
+                balanceCloseDate: '2026-10-20T00:00:00.000Z',
+                balanceDueDate: '2026-10-27T00:00:00',
+              },
             },
           ],
         },
@@ -86,7 +107,17 @@ describe('PluggyProvider', () => {
           totalPages: 2,
           results: [
             { id: 'a3', type: 'BANK', subtype: 'SAVINGS_ACCOUNT', balance: 1 },
-            { id: 'a4', type: 'CREDIT' },
+            {
+              id: 'a4',
+              type: 'CREDIT',
+              number: 'card',
+              creditData: { creditLimit: 100, balanceDueDate: 'soon' },
+            },
+            {
+              id: 'a6',
+              type: 'CREDIT',
+              creditData: { availableCreditLimit: 1 },
+            },
             { id: 'a5', type: 'BANK', subtype: 'OTHER' },
           ],
         },
@@ -99,6 +130,8 @@ describe('PluggyProvider', () => {
         type: 'CHECKING',
         balanceCents: 120950,
         currency: 'BRL',
+        numberSuffix: '3456',
+        credit: null,
       },
       {
         externalId: 'a2',
@@ -106,10 +139,30 @@ describe('PluggyProvider', () => {
         type: 'CREDIT_CARD',
         balanceCents: -30000,
         currency: 'BRL',
+        numberSuffix: '4321',
+        credit: {
+          limitCents: 500000,
+          availableCents: 470000,
+          closesOn: '2026-10-20',
+          dueOn: '2026-10-27',
+          brand: 'VISA',
+        },
       },
       expect.objectContaining({ type: 'SAVINGS', balanceCents: 100 }),
-      expect.objectContaining({ type: 'CREDIT_CARD', name: 'Account' }),
-      expect.objectContaining({ type: 'CHECKING' }),
+      expect.objectContaining({
+        type: 'CREDIT_CARD',
+        name: 'Account',
+        numberSuffix: null,
+        credit: {
+          limitCents: 10000,
+          availableCents: 0,
+          closesOn: null,
+          dueOn: null,
+          brand: null,
+        },
+      }),
+      expect.objectContaining({ externalId: 'a6', credit: null }),
+      expect.objectContaining({ type: 'CHECKING', numberSuffix: null }),
     ])
   })
 
@@ -141,8 +194,24 @@ describe('PluggyProvider', () => {
               type: 'DEBIT',
               date: '2026-10-02T03:00:00.000Z',
               currencyCode: 'BRL',
+              merchant: { name: 'Mercado Exemplo' },
+              creditCardMetadata: {
+                installmentNumber: 3,
+                totalInstallments: 10,
+                purchaseDate: '2026-08-01T00:00:00.000Z',
+              },
             },
-            { id: 't2', amount: 12, type: 'DEBIT', currencyCode: 'USD' },
+            {
+              id: 't2',
+              amount: 12,
+              type: 'DEBIT',
+              currencyCode: 'USD',
+              merchant: { businessName: 'Exemplo LTDA' },
+              creditCardMetadata: {
+                installmentNumber: 1,
+                totalInstallments: 1,
+              },
+            },
           ],
           next: `${PLUGGY_URL}/v2/transactions?accountId=a1&after=cursor-2`,
         },
@@ -160,6 +229,8 @@ describe('PluggyProvider', () => {
         currency: 'BRL',
         bookedOn: '2026-10-02',
         description: 'Mercado',
+        merchant: 'Mercado Exemplo',
+        installment: { number: 3, count: 10, purchaseOn: '2026-08-01' },
       },
       {
         externalId: 't2',
@@ -168,12 +239,107 @@ describe('PluggyProvider', () => {
         currency: 'USD',
         bookedOn: '',
         description: '',
+        merchant: 'Exemplo LTDA',
+        installment: null,
       },
       expect.objectContaining({
         externalId: 't3',
         amountCents: 100000,
         bookedOn: '2026-10-05',
+        merchant: null,
+        installment: null,
       }),
+    ])
+  })
+
+  it('keeps only real installments', async () => {
+    const url = `${PLUGGY_URL}/v2/transactions?accountId=a1&dateFrom=2026-10-01&dateTo=2026-10-31`
+    const tx = (id: string, metadata: object) => ({
+      id,
+      amount: 1,
+      type: 'DEBIT',
+      creditCardMetadata: metadata,
+    })
+    const scripted = new ScriptedTransport().on('GET', url, {
+      json: {
+        results: [
+          tx('zero', { installmentNumber: 0, totalInstallments: 3 }),
+          tx('over', { installmentNumber: 4, totalInstallments: 3 }),
+          tx('half', { installmentNumber: 1.5, totalInstallments: 3 }),
+          tx('none', {}),
+          tx('ok', { installmentNumber: 2, totalInstallments: 3 }),
+        ],
+      },
+    })
+    const listed = await provider(scripted).listTransactions(connection, 'a1', {
+      from: '2026-10-01',
+      to: '2026-10-31',
+    })
+    expect(listed.map(t => t.installment)).toEqual([
+      null,
+      null,
+      null,
+      null,
+      { number: 2, count: 3, purchaseOn: null },
+    ])
+  })
+
+  it('lists card bills and the connectors with their logos', async () => {
+    const scripted = new ScriptedTransport()
+      .on('GET', `${PLUGGY_URL}/bills?accountId=a2&page=1`, {
+        json: {
+          totalPages: 1,
+          results: [
+            {
+              id: 'b1',
+              dueDate: '2026-09-27T00:00:00',
+              billClosingDate: '2026-09-20T00:00:00',
+              totalAmount: 420.5,
+              totalAmountCurrencyCode: 'BRL',
+              minimumPaymentAmount: 50,
+            },
+            { id: 'b2', dueDate: '2026-08-27T00:00:00' },
+            { id: 'b3' },
+          ],
+        },
+      })
+      .on('GET', `${PLUGGY_URL}/connectors?countries=BR&sandbox=false&page=1`, {
+        json: {
+          results: [
+            { id: 1, name: 'Banco Exemplo', imageUrl: 'https://l.example/1' },
+            { id: 2, name: 'Sem Logo', imageUrl: '', primaryColor: '' },
+            { id: 3 },
+            { name: 'No id' },
+          ],
+        },
+      })
+    const pluggy = provider(scripted)
+    expect(await pluggy.listBills(connection, 'a2')).toEqual([
+      {
+        externalId: 'b1',
+        closesOn: '2026-09-20',
+        dueOn: '2026-09-27',
+        totalCents: 42050,
+        minimumCents: 5000,
+        currency: 'BRL',
+      },
+      {
+        externalId: 'b2',
+        closesOn: null,
+        dueOn: '2026-08-27',
+        totalCents: 0,
+        minimumCents: null,
+        currency: 'BRL',
+      },
+    ])
+    expect(await pluggy.listConnectors()).toEqual([
+      {
+        id: 1,
+        name: 'Banco Exemplo',
+        imageUrl: 'https://l.example/1',
+        primaryColor: null,
+      },
+      { id: 2, name: 'Sem Logo', imageUrl: null, primaryColor: null },
     ])
   })
 

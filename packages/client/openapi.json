@@ -1908,6 +1908,121 @@
                           "connectionId": {
                             "nullable": true,
                             "type": "string"
+                          },
+                          "numberSuffix": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "logo": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "imageUrl": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "imageUrl",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "credit": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "limit": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "available": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "usedPercent": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "closesOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "dueOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "brand": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "limit",
+                              "available",
+                              "usedPercent",
+                              "closesOn",
+                              "dueOn",
+                              "brand"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "sync": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string"
+                              },
+                              "lastSyncAt": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "status",
+                              "lastSyncAt"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -1920,7 +2035,11 @@
                           "isReserve",
                           "balance",
                           "cdiPercent",
-                          "connectionId"
+                          "connectionId",
+                          "numberSuffix",
+                          "logo",
+                          "credit",
+                          "sync"
                         ],
                         "additionalProperties": false
                       }
@@ -2103,6 +2222,121 @@
                         "connectionId": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "numberSuffix": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logo": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "imageUrl": {
+                              "type": "string"
+                            },
+                            "color": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "imageUrl",
+                            "color"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "credit": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "available": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "usedPercent": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "closesOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "dueOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "brand": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "available",
+                            "usedPercent",
+                            "closesOn",
+                            "dueOn",
+                            "brand"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "sync": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            },
+                            "lastSyncAt": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "lastSyncAt"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2115,7 +2349,11 @@
                         "isReserve",
                         "balance",
                         "cdiPercent",
-                        "connectionId"
+                        "connectionId",
+                        "numberSuffix",
+                        "logo",
+                        "credit",
+                        "sync"
                       ],
                       "additionalProperties": false
                     }
@@ -2279,6 +2517,121 @@
                         "connectionId": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "numberSuffix": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logo": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "imageUrl": {
+                              "type": "string"
+                            },
+                            "color": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "imageUrl",
+                            "color"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "credit": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "available": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "usedPercent": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "closesOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "dueOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "brand": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "available",
+                            "usedPercent",
+                            "closesOn",
+                            "dueOn",
+                            "brand"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "sync": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            },
+                            "lastSyncAt": {
+                              "nullable": true,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "lastSyncAt"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2291,7 +2644,11 @@
                         "isReserve",
                         "balance",
                         "cdiPercent",
-                        "connectionId"
+                        "connectionId",
+                        "numberSuffix",
+                        "logo",
+                        "credit",
+                        "sync"
                       ],
                       "additionalProperties": false
                     }
@@ -2521,6 +2878,37 @@
                             "type": "number",
                             "minimum": 0,
                             "maximum": 1
+                          },
+                          "merchant": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "installment": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "number": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "purchaseOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              }
+                            },
+                            "required": [
+                              "number",
+                              "count",
+                              "purchaseOn"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -2536,7 +2924,9 @@
                           "invoiceId",
                           "note",
                           "categorizedBy",
-                          "categoryConfidence"
+                          "categoryConfidence",
+                          "merchant",
+                          "installment"
                         ],
                         "additionalProperties": false
                       }
@@ -2717,6 +3107,37 @@
                               "type": "number",
                               "minimum": 0,
                               "maximum": 1
+                            },
+                            "merchant": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "installment": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "number": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "purchaseOn": {
+                                  "nullable": true,
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                }
+                              },
+                              "required": [
+                                "number",
+                                "count",
+                                "purchaseOn"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -2732,7 +3153,9 @@
                             "invoiceId",
                             "note",
                             "categorizedBy",
-                            "categoryConfidence"
+                            "categoryConfidence",
+                            "merchant",
+                            "installment"
                           ],
                           "additionalProperties": false
                         },
@@ -6145,7 +6568,7 @@
     "/open-finance/connections/{id}/sync": {
       "post": {
         "operationId": "syncConnection",
-        "summary": "Sync a connection now",
+        "summary": "Sync a connection now; days refetches that much history",
         "parameters": [
           {
             "name": "id",
@@ -6154,11 +6577,21 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Sync a connection now",
+            "description": "Sync a connection now; days refetches that much history",
             "content": {
               "application/json": {
                 "schema": {

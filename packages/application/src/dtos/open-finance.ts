@@ -45,6 +45,12 @@ export const connectionViewSchema = z.object({
 
 export type ConnectionView = z.infer<typeof connectionViewSchema>
 
+export const syncQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).optional(),
+})
+
+export type SyncOptions = z.infer<typeof syncQuerySchema>
+
 export const syncResultSchema = z.object({
   accounts: z.int(),
   transactions: z.int(),

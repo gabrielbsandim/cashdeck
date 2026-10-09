@@ -1,3 +1,4 @@
+import { type LocalDate } from '@/calendar/local-date'
 import { type Money } from '@/money/money'
 import { ValidationError } from '@/shared/domain-error'
 import { guard } from '@/shared/guard'
@@ -6,6 +7,13 @@ export type TransactionKind = 'INCOME' | 'EXPENSE' | 'TRANSFER'
 
 export const CATEGORIZED_BY = ['RULE', 'AI', 'USER'] as const
 export type CategorizedBy = (typeof CATEGORIZED_BY)[number]
+
+// One charge of a card purchase split over several bills.
+export type Installment = {
+  readonly number: number
+  readonly count: number
+  readonly purchaseOn: LocalDate | null
+}
 
 export type Transaction = {
   readonly id: string
@@ -22,6 +30,8 @@ export type Transaction = {
   readonly categorizedBy: CategorizedBy | null
   // 0 to 1; how sure the source was, so a weak AI guess can be told apart.
   readonly categoryConfidence: number | null
+  readonly merchant: string | null
+  readonly installment: Installment | null
 }
 
 export type CreateTransactionInput = Omit<
@@ -33,6 +43,8 @@ export type CreateTransactionInput = Omit<
   | 'note'
   | 'categorizedBy'
   | 'categoryConfidence'
+  | 'merchant'
+  | 'installment'
 > & {
   categoryId?: string | null
   transferGroupId?: string | null
@@ -41,6 +53,17 @@ export type CreateTransactionInput = Omit<
   note?: string | null
   categorizedBy?: CategorizedBy | null
   categoryConfidence?: number | null
+  merchant?: string | null
+  installment?: Installment | null
+}
+
+function checkInstallment(installment: Installment): Installment {
+  const { number, count } = installment
+  const whole = Number.isInteger(number) && Number.isInteger(count)
+  if (!whole || count < 2 || number < 1 || number > count) {
+    throw new ValidationError('An installment is 1 to N of N, with N >= 2.')
+  }
+  return installment
 }
 
 export function createTransaction(input: CreateTransactionInput): Transaction {
@@ -60,6 +83,8 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
     note: input.note ?? null,
     categorizedBy: input.categorizedBy ?? null,
     categoryConfidence: input.categoryConfidence ?? null,
+    merchant: input.merchant?.trim() || null,
+    installment: input.installment ? checkInstallment(input.installment) : null,
   }
 }
 
