@@ -15,6 +15,8 @@ void main() {
     expect(amount.isForeign, isFalse);
     expect(const Money(1, currency: 'USD').isForeign, isTrue);
     expect(const Money(100) + const Money(50), const Money(150));
+    expect(const Money(100) - const Money(150), const Money(-50));
+    expect(-const Money(7, currency: 'USD'), const Money(-7, currency: 'USD'));
     expect(const Money(100).compareTo(const Money(50)), greaterThan(0));
     expect(
       () => const Money(1) + const Money(1, currency: 'USD'),

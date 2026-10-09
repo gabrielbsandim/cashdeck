@@ -37,6 +37,8 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       institution: 'Banco Aurora',
       type: AccountType.checking,
       balance: Money(482_015),
+      numberSuffix: '4410',
+      sync: AccountSync(state: SyncState.updated),
     ),
     TransactionAccount(
       id: 'acc-pf-card',
@@ -45,6 +47,14 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       institution: 'Horizonte',
       type: AccountType.creditCard,
       balance: Money(-189_045),
+      numberSuffix: '9021',
+      credit: CreditLine(
+        limit: Money(800_000),
+        available: Money(610_955),
+        usedPercent: 24,
+        brand: 'VISA',
+      ),
+      sync: AccountSync(state: SyncState.updating),
     ),
     TransactionAccount(
       id: 'acc-pj-checking',
@@ -53,6 +63,8 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       institution: 'Banco Aurora',
       type: AccountType.checking,
       balance: Money(1_820_000),
+      numberSuffix: '7702',
+      sync: AccountSync(state: SyncState.needsAction),
     ),
   ];
 

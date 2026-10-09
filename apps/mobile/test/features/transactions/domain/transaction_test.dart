@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,7 +19,7 @@ void main() {
     );
     expect(testTransaction().isUncategorized, isTrue);
     expect(testTransaction(categoryId: 'cat').isUncategorized, isFalse);
-    expect(transfer.props, hasLength(13));
+    expect(transfer.props, hasLength(15));
   });
 
   test('a query maps the scope to the entity and knows when it filters', () {
@@ -130,7 +131,7 @@ void main() {
     );
 
     expect(category.props, hasLength(5));
-    expect(account.props, hasLength(7));
+    expect(account.props, hasLength(11));
     expect(page.hasMore, isTrue);
     expect(const TransactionPage(items: []).hasMore, isFalse);
     expect(page.props, hasLength(2));
@@ -139,5 +140,12 @@ void main() {
     expect(note.applyToSimilar, isFalse);
     expect(update.props, hasLength(3));
     expect(result.props, hasLength(2));
+    const logo = AccountLogo(imageUrl: 'https://cdn.test/logo.png');
+    const credit = CreditLine(limit: Money(100), available: Money(40));
+    const sync = AccountSync(state: SyncState.updating);
+    expect(logo.props, hasLength(2));
+    expect(credit.used, const Money(60));
+    expect(credit.props, hasLength(6));
+    expect(sync.props, hasLength(2));
   });
 }

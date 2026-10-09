@@ -24,6 +24,10 @@ final class Money extends Equatable implements Comparable<Money> {
     return Money(cents + other.cents, currency: currency);
   }
 
+  Money operator -(Money other) => this + -other;
+
+  Money operator -() => Money(-cents, currency: currency);
+
   @override
   int compareTo(Money other) => cents.compareTo(other.cents);
 

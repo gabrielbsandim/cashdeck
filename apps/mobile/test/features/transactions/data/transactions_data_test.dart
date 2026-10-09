@@ -2,7 +2,9 @@ import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/transactions/data/api_transactions_repository.dart';
@@ -20,6 +22,74 @@ T _ok<T>(Result<T> result) => (result as Ok<T>).value;
 
 void main() {
   group('dtos', () {
+    test('read the merchant and the installment of a card charge', () {
+      final charge = transactionFromJson({
+        ...transactionJson(),
+        'merchant': 'Loja Exemplo',
+        'installment': {'number': 3, 'count': 10, 'purchaseOn': '2026-08-02'},
+      });
+      expect(charge.displayName, 'Loja Exemplo');
+      expect(charge.installment?.label, '3/10');
+      expect(
+        charge.installment,
+        const TransactionInstallment(
+          number: 3,
+          count: 10,
+          purchaseOn: CalendarDate(2026, 8, 2),
+        ),
+      );
+      final plain = transactionFromJson(transactionJson());
+      expect(plain.displayName, 'Padaria Exemplo');
+      expect(plain.installment, isNull);
+    });
+
+    test('read a card with its logo, limit and sync status', () {
+      JsonMap card(String status) => {
+        'id': 'card',
+        'name': 'Aurora Platinum',
+        'entityKind': 'PF',
+        'institution': 'Banco Aurora',
+        'type': 'CREDIT_CARD',
+        'balance': {'cents': -25000, 'currency': 'BRL'},
+        'isReserve': false,
+        'numberSuffix': '4821',
+        'logo': {'imageUrl': 'https://cdn.test/aurora.png', 'color': '#3263C3'},
+        'credit': {
+          'limit': {'cents': 100000, 'currency': 'BRL'},
+          'available': {'cents': 75000, 'currency': 'BRL'},
+          'usedPercent': 25,
+          'closesOn': '2026-10-20',
+          'dueOn': '2026-10-27',
+          'brand': 'VISA',
+        },
+        'sync': {'status': status, 'lastSyncAt': '2026-10-08T12:00:00Z'},
+      };
+      final account = accountFromJson(card('UPDATED'));
+      expect(account.numberSuffix, '4821');
+      expect(account.logo?.color, '#3263C3');
+      expect(account.credit?.used, const Money(25000));
+      expect(account.credit?.dueOn, const CalendarDate(2026, 10, 27));
+      expect(account.sync?.state, SyncState.updated);
+      expect(
+        accountFromJson(card('LOGIN_ERROR')).sync?.state,
+        SyncState.needsAction,
+      );
+      expect(accountFromJson(card('PAUSED')).sync?.state, SyncState.outdated);
+      expect(
+        accountFromJson(card('UPDATING')),
+        isNot(accountFromJson(card('UPDATED'))),
+      );
+      final manual = accountFromJson({
+        ...card('UPDATED'),
+        'logo': null,
+        'credit': null,
+        'sync': null,
+      });
+      expect(manual.logo, isNull);
+      expect(manual.credit, isNull);
+      expect(manual.sync, isNull);
+    });
+
     test('read a transaction with its category source', () {
       final transaction = transactionFromJson(transactionJson());
 

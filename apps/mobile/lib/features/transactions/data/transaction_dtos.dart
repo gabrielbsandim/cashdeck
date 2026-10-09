@@ -40,7 +40,18 @@ Transaction transactionFromJson(JsonMap json) => Transaction(
   note: readOptionalString(json, 'note'),
   categorizedBy: _source(json),
   categoryConfidence: _confidence(json),
+  merchant: readOptionalString(json, 'merchant'),
+  installment: _installment(readOptionalMap(json, 'installment')),
 );
+
+TransactionInstallment? _installment(JsonMap? json) {
+  if (json == null) return null;
+  return TransactionInstallment(
+    number: readInt(json, 'number'),
+    count: readInt(json, 'count'),
+    purchaseOn: readOptionalDate(json, 'purchaseOn'),
+  );
+}
 
 Category categoryFromJson(JsonMap json) => Category(
   id: readString(json, 'id'),
@@ -66,7 +77,47 @@ TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   type: _accountTypes[readOptionalString(json, 'type')],
   balance: readMoney(json, 'balance'),
   isReserve: readBool(json, 'isReserve'),
+  numberSuffix: readOptionalString(json, 'numberSuffix'),
+  logo: _logo(readOptionalMap(json, 'logo')),
+  credit: _credit(readOptionalMap(json, 'credit')),
+  sync: _sync(readOptionalMap(json, 'sync')),
 );
+
+AccountLogo? _logo(JsonMap? json) {
+  if (json == null) return null;
+  return AccountLogo(
+    imageUrl: readString(json, 'imageUrl'),
+    color: readOptionalString(json, 'color'),
+  );
+}
+
+CreditLine? _credit(JsonMap? json) {
+  if (json == null) return null;
+  return CreditLine(
+    limit: readMoney(json, 'limit'),
+    available: readMoney(json, 'available'),
+    usedPercent: readOptionalInt(json, 'usedPercent'),
+    closesOn: readOptionalDate(json, 'closesOn'),
+    dueOn: readOptionalDate(json, 'dueOn'),
+    brand: readOptionalString(json, 'brand'),
+  );
+}
+
+/// A status this build does not know reads as outdated, never as fine.
+const Map<String, SyncState> _syncStates = {
+  'UPDATED': SyncState.updated,
+  'UPDATING': SyncState.updating,
+  'LOGIN_ERROR': SyncState.needsAction,
+  'WAITING_USER_INPUT': SyncState.needsAction,
+};
+
+AccountSync? _sync(JsonMap? json) {
+  if (json == null) return null;
+  return AccountSync(
+    state: _syncStates[readString(json, 'status')] ?? SyncState.outdated,
+    lastSyncAt: readOptionalDateTime(json, 'lastSyncAt'),
+  );
+}
 
 /// The query string of `GET /transactions`; empty filters are left out.
 Map<String, Object> transactionQueryToJson(

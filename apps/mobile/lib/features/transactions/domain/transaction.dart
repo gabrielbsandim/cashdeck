@@ -24,6 +24,8 @@ final class Transaction extends Equatable {
     this.note,
     this.categorizedBy,
     this.categoryConfidence,
+    this.merchant,
+    this.installment,
   });
 
   final String id;
@@ -41,6 +43,12 @@ final class Transaction extends Equatable {
 
   /// From 0 to 1, set when the model chose the category.
   final double? categoryConfidence;
+
+  /// The store as the bank names it, cleaner than [description].
+  final String? merchant;
+  final TransactionInstallment? installment;
+
+  String get displayName => merchant ?? description;
 
   bool get isUncategorized => categoryId == null;
 
@@ -63,7 +71,23 @@ final class Transaction extends Equatable {
     note,
     categorizedBy,
     categoryConfidence,
+    merchant,
+    installment,
   ];
+}
+
+/// One charge of a card purchase split in [count] parts.
+final class TransactionInstallment extends Equatable {
+  const new({required this.number, required this.count, this.purchaseOn});
+
+  final int number;
+  final int count;
+  final CalendarDate? purchaseOn;
+
+  String get label => '$number/$count';
+
+  @override
+  List<Object?> get props => [number, count, purchaseOn];
 }
 
 final class Category extends Equatable {
@@ -89,6 +113,63 @@ final class Category extends Equatable {
 
 enum AccountType { checking, savings, creditCard, investment, wallet }
 
+/// The bank's logo and brand colour, from the Open Finance connector.
+final class AccountLogo extends Equatable {
+  const new({required this.imageUrl, this.color});
+
+  final String imageUrl;
+
+  /// `#RRGGBB`, when the connector has one.
+  final String? color;
+
+  @override
+  List<Object?> get props => [imageUrl, color];
+}
+
+/// A card's limit and bill dates.
+final class CreditLine extends Equatable {
+  const new({
+    required this.limit,
+    required this.available,
+    this.usedPercent,
+    this.closesOn,
+    this.dueOn,
+    this.brand,
+  });
+
+  final Money limit;
+  final Money available;
+  final int? usedPercent;
+  final CalendarDate? closesOn;
+  final CalendarDate? dueOn;
+  final String? brand;
+
+  Money get used => limit - available;
+
+  @override
+  List<Object?> get props => [
+    limit,
+    available,
+    usedPercent,
+    closesOn,
+    dueOn,
+    brand,
+  ];
+}
+
+/// How an Open Finance account last synced.
+enum SyncState { updated, updating, needsAction, outdated }
+
+final class AccountSync extends Equatable {
+  const new({required this.state, this.lastSyncAt});
+
+  final SyncState state;
+  final DateTime? lastSyncAt;
+
+  @override
+  List<Object?> get props => [state, lastSyncAt];
+}
+
 /// An account a transaction can be filtered by.
 final class TransactionAccount extends Equatable {
   const new({
@@ -99,6 +180,10 @@ final class TransactionAccount extends Equatable {
     this.type,
     this.balance = const Money(0),
     this.isReserve = false,
+    this.numberSuffix,
+    this.logo,
+    this.credit,
+    this.sync,
   });
 
   final String id;
@@ -110,6 +195,14 @@ final class TransactionAccount extends Equatable {
   final AccountType? type;
   final Money balance;
   final bool isReserve;
+
+  /// The last digits of the account or card number.
+  final String? numberSuffix;
+  final AccountLogo? logo;
+  final CreditLine? credit;
+
+  /// Null for a manual account.
+  final AccountSync? sync;
 
   /// Counts toward the home balance, as the server's cash account types do.
   bool get isCash =>
@@ -130,6 +223,10 @@ final class TransactionAccount extends Equatable {
     type,
     balance,
     isReserve,
+    numberSuffix,
+    logo,
+    credit,
+    sync,
   ];
 }
 
