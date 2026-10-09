@@ -3339,7 +3339,7 @@
       },
       "post": {
         "operationId": "captureBill",
-        "summary": "Capture a bill; 200 when the same code already exists",
+        "summary": "Capture a bill; 200 when the same code already exists, 422 AMOUNT_REQUIRED when no amount is known",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3402,7 +3402,7 @@
         },
         "responses": {
           "201": {
-            "description": "Capture a bill; 200 when the same code already exists",
+            "description": "Capture a bill; 200 when the same code already exists, 422 AMOUNT_REQUIRED when no amount is known",
             "content": {
               "application/json": {
                 "schema": {
@@ -6769,7 +6769,7 @@
     "/capture/files": {
       "post": {
         "operationId": "captureFile",
-        "summary": "Capture a bill from a shared PDF or photo; 200 when known",
+        "summary": "Capture a bill from a shared PDF or photo; 200 when known, 422 AMOUNT_REQUIRED when no amount is known",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6798,6 +6798,15 @@
                       "PF",
                       "PJ"
                     ]
+                  },
+                  "amountCents": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   }
                 },
                 "required": [
@@ -6812,7 +6821,7 @@
         },
         "responses": {
           "201": {
-            "description": "Capture a bill from a shared PDF or photo; 200 when known",
+            "description": "Capture a bill from a shared PDF or photo; 200 when known, 422 AMOUNT_REQUIRED when no amount is known",
             "content": {
               "application/json": {
                 "schema": {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { InvalidTransitionError, ValidationError } from '@cashdeck/domain'
 import {
+  AmountRequiredError,
   NotFoundError,
   ProviderError,
   ProviderNotConfiguredError,
@@ -65,6 +66,16 @@ const RULES: ErrorRule[] = [
       fail('VALIDATION_ERROR', 'Invalid request payload.', 422, {
         issues: (error as ZodError).issues,
       }),
+  },
+  {
+    matches: error => error instanceof AmountRequiredError,
+    respond: error =>
+      fail(
+        'AMOUNT_REQUIRED',
+        error.message,
+        422,
+        (error as AmountRequiredError).details,
+      ),
   },
   {
     matches: error => error instanceof ValidationError,

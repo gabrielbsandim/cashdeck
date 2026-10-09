@@ -1,10 +1,12 @@
 import {
   type BillSource,
+  type DocumentTextReader,
   type InvoiceIssuer,
   type LlmProvider,
   type Notifier,
   type OpenFinanceProvider,
   type PaymentRail,
+  type PixLocationResolver,
   type RailStatusReader,
   type SecretStore,
   type SecretVault,
@@ -13,6 +15,8 @@ import { type RailId } from '@cashdeck/domain'
 import { BillExtractor } from '@/capture/bill-extractor'
 import { C6DdaBillSource } from '@/capture/c6-dda-source'
 import { GmailBillSource } from '@/capture/gmail-source'
+import { PdfTextReader } from '@/capture/pdf-text-reader'
+import { JwsPixLocationResolver } from '@/capture/pix-location-resolver'
 import { CredentialResolver } from '@/credentials/credential-resolver'
 import { type MtlsFactory, BankClients } from '@/rails/bank-client'
 import { fetchTransport, type Transport } from '@/http/transport'
@@ -49,6 +53,8 @@ export type Providers = {
   openFinance: OpenFinanceProvider
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
+  pixLocations: PixLocationResolver
+  documentText: DocumentTextReader
   notifier: Notifier
 }
 
@@ -65,6 +71,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
   const transport = input.transport ?? fetchTransport(input.fetch)
   const clients = new BankClients(input.mtls)
   const now = input.now ?? (() => new Date())
+  const documentText = new PdfTextReader()
   const rails = [
     new MercadoPagoPayoutsRail({ credentials, transport }),
     new AsaasRail({ credentials, transport }),
@@ -88,10 +95,14 @@ export function createProviders(input: CreateProvidersInput): Providers {
         credentials,
         transport,
         now,
-        extractor: input.llm ? new BillExtractor(input.llm) : undefined,
+        extractor: input.llm
+          ? new BillExtractor(input.llm, documentText)
+          : undefined,
       }),
       new C6DdaBillSource({ credentials, clients, now }),
     ],
+    pixLocations: new JwsPixLocationResolver({ transport }),
+    documentText,
     notifier: new FcmNotifier({
       credentials,
       transport,

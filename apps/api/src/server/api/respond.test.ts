@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { InvalidTransitionError, ValidationError } from '@cashdeck/domain'
 import {
+  AmountRequiredError,
   NotFoundError,
   ProviderNotConfiguredError,
 } from '@cashdeck/application'
@@ -53,6 +54,28 @@ describe('respond helpers', () => {
         code,
       ])
     }
+  })
+
+  it('answers AMOUNT_REQUIRED with what the client must prompt for', async () => {
+    const response = await body(
+      handleError(
+        new AmountRequiredError({
+          field: 'amountCents',
+          kind: 'PIX_QR',
+          payee: 'Store',
+        }),
+      ),
+    )
+    expect(response).toEqual({
+      status: 422,
+      json: {
+        error: {
+          code: 'AMOUNT_REQUIRED',
+          message: 'This bill needs an amount.',
+          details: { field: 'amountCents', kind: 'PIX_QR', payee: 'Store' },
+        },
+      },
+    })
   })
 
   it('reports anything else as an internal error', async () => {

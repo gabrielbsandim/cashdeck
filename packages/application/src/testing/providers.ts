@@ -20,6 +20,8 @@ import {
   type Notification,
   type Notifier,
   type OpenFinanceProvider,
+  type PixCharge,
+  type PixLocationResolver,
   type ProviderAccount,
   type ProviderCheck,
   type ProviderItem,
@@ -127,6 +129,23 @@ export class FakeBillSource implements BillSource {
 
   async fetch(): Promise<CapturedBill[]> {
     return this.bills
+  }
+}
+
+export class FakePixLocationResolver implements PixLocationResolver {
+  readonly resolved: string[] = []
+
+  constructor(
+    private readonly charges: Record<string, PixCharge | Error> = {},
+  ) {}
+
+  async resolve(location: string): Promise<PixCharge | null> {
+    this.resolved.push(location)
+    const charge = this.charges[location]
+    if (charge instanceof Error) {
+      throw charge
+    }
+    return charge ?? null
   }
 }
 

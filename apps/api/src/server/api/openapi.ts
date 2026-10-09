@@ -248,7 +248,8 @@ const OPERATIONS: Operation[] = [
     method: 'post',
     path: '/bills',
     id: 'captureBill',
-    summary: 'Capture a bill; 200 when the same code already exists',
+    summary:
+      'Capture a bill; 200 when the same code already exists, 422 AMOUNT_REQUIRED when no amount is known',
     body: captureBillSchema,
     status: '201',
     response: billViewSchema,
@@ -450,7 +451,8 @@ const OPERATIONS: Operation[] = [
     method: 'post',
     path: '/capture/files',
     id: 'captureFile',
-    summary: 'Capture a bill from a shared PDF or photo; 200 when known',
+    summary:
+      'Capture a bill from a shared PDF or photo; 200 when known, 422 AMOUNT_REQUIRED when no amount is known',
     body: captureFileSchema,
     status: '201',
     response: billViewSchema,

@@ -5,6 +5,7 @@ import {
   type EntityKind,
   type FinancialEntity,
   type LocalDate,
+  type Money,
   type PaymentAttempt,
   type PaymentPlan,
   type RailId,
@@ -24,6 +25,17 @@ export interface BillRepository {
     entityId: string,
     code: string,
   ): Promise<Bill | null>
+  findByPixCode(
+    tenantId: string,
+    entityId: string,
+    pixCode: string,
+  ): Promise<Bill | null>
+  // Bills not yet paid or cancelled, for pairing the two halves of a bolepix.
+  listUnsettledByAmount(
+    tenantId: string,
+    entityId: string,
+    amount: Money,
+  ): Promise<Bill[]>
   list(
     tenantId: string,
     filter: BillFilter,

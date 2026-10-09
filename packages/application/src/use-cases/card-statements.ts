@@ -96,6 +96,8 @@ type StatementDeps = Pick<
   | 'documents'
   | 'llm'
   | 'bills'
+  | 'audit'
+  | 'pixLocations'
   | 'payments'
   | 'settings'
   | 'rails'

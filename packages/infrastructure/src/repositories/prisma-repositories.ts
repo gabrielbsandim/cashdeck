@@ -21,6 +21,7 @@ import {
   type EntityKind,
   type FinancialEntity,
   type LocalDate,
+  type Money,
   type PaymentAttempt,
   type PaymentPlan,
   type PaymentStep,
@@ -142,6 +143,36 @@ export class PrismaBillRepository implements BillRepository {
       orderBy: { createdAt: 'asc' },
     })
     return row ? billFromRow(row) : null
+  }
+
+  async findByPixCode(
+    tenantId: string,
+    entityId: string,
+    pixCode: string,
+  ): Promise<Bill | null> {
+    const row = await this.db.bill.findFirst({
+      where: { tenantId, entityId, pixCode, status: { not: 'CANCELLED' } },
+      orderBy: { createdAt: 'asc' },
+    })
+    return row ? billFromRow(row) : null
+  }
+
+  async listUnsettledByAmount(
+    tenantId: string,
+    entityId: string,
+    amount: Money,
+  ): Promise<Bill[]> {
+    const rows = await this.db.bill.findMany({
+      where: {
+        tenantId,
+        entityId,
+        amountCents: BigInt(amount.cents),
+        currency: amount.currency,
+        status: { notIn: ['PAID', 'CANCELLED'] },
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+    return rows.map(billFromRow)
   }
 
   async list(

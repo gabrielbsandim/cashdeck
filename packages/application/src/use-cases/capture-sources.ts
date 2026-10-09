@@ -49,6 +49,8 @@ type CaptureDeps = Pick<
   | 'billSources'
   | 'mailboxAuthorizer'
   | 'bills'
+  | 'audit'
+  | 'pixLocations'
   | 'payments'
   | 'settings'
   | 'rails'

@@ -271,7 +271,7 @@ export interface paths {
         /** Bills by due date */
         get: operations["listBills"];
         put?: never;
-        /** Capture a bill; 200 when the same code already exists */
+        /** Capture a bill; 200 when the same code already exists, 422 AMOUNT_REQUIRED when no amount is known */
         post: operations["captureBill"];
         delete?: never;
         options?: never;
@@ -681,7 +681,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Capture a bill from a shared PDF or photo; 200 when known */
+        /** Capture a bill from a shared PDF or photo; 200 when known, 422 AMOUNT_REQUIRED when no amount is known */
         post: operations["captureFile"];
         delete?: never;
         options?: never;
@@ -2084,7 +2084,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Capture a bill; 200 when the same code already exists */
+            /** @description Capture a bill; 200 when the same code already exists, 422 AMOUNT_REQUIRED when no amount is known */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -3298,11 +3298,13 @@ export interface operations {
                     base64: string;
                     /** @enum {string} */
                     entity: "PF" | "PJ";
+                    amountCents?: number;
+                    dueDate?: string;
                 };
             };
         };
         responses: {
-            /** @description Capture a bill from a shared PDF or photo; 200 when known */
+            /** @description Capture a bill from a shared PDF or photo; 200 when known, 422 AMOUNT_REQUIRED when no amount is known */
             201: {
                 headers: {
                     [name: string]: unknown;

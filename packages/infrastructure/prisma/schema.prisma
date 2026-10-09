@@ -2,7 +2,8 @@
 // self-hosted deployment can become multi-tenant without a data migration.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -321,6 +322,8 @@ model Bill {
   plan     PaymentPlan?
   attempts PaymentAttempt[]
 
+  // One live bill per Pix code: a bolepix half that arrives later is attached, not added.
+  @@unique([tenantId, entityId, pixCode], where: raw("pix_code IS NOT NULL AND status <> 'CANCELLED'"))
   @@index([tenantId, entityId, status])
   @@index([tenantId, entityId, code])
   @@map("bills")

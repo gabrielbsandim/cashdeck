@@ -31,6 +31,13 @@ describe('createProviders', () => {
       'DDA',
     ])
     expect(providers.invoiceIssuer.id).toBe('notaas')
+    expect(await providers.pixLocations.resolve('localhost/qr')).toBeNull()
+    expect(
+      await providers.documentText.read({
+        mimeType: 'image/png',
+        bytes: new Uint8Array(),
+      }),
+    ).toBeNull()
     for (const rail of providers.rails) {
       expect((await rail.check()).ok).toBe(false)
     }

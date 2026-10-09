@@ -4,6 +4,7 @@ import {
   type BillSource,
   type InvoiceIssuer,
   type OpenFinanceProvider,
+  type PixLocationResolver,
   type SecretVault,
 } from '@/ports/providers'
 import { type RailStatusReader } from '@/ports/rail-status'
@@ -31,6 +32,7 @@ import {
 import {
   type ArchiveWriter,
   type CertificateInspector,
+  type DocumentTextReader,
   type MailboxAuthorizer,
   type PdfWriter,
 } from '@/ports/services'
@@ -62,6 +64,8 @@ export type Deps = {
   openFinance: OpenFinanceProvider
   issuer: InvoiceIssuer
   billSources: ReadonlyMap<string, BillSource>
+  pixLocations: PixLocationResolver
+  documentText: DocumentTextReader
   mailboxAuthorizer: MailboxAuthorizer
   certificates: CertificateInspector
   archives: ArchiveWriter

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { entityKindSchema, uploadSchema } from '@/dtos/common'
+import { entityKindSchema, isoDate, uploadSchema } from '@/dtos/common'
 
 export const captureSourcesViewSchema = z.object({
   mailboxes: z.array(
@@ -27,6 +27,9 @@ export type CaptureSourcesView = z.infer<typeof captureSourcesViewSchema>
 
 export const captureFileSchema = uploadSchema.extend({
   entity: entityKindSchema,
+  // Sent again with the same file after an AMOUNT_REQUIRED answer.
+  amountCents: z.int().positive().optional(),
+  dueDate: isoDate.optional(),
 })
 
 export const fileReadingSchema = z.object({

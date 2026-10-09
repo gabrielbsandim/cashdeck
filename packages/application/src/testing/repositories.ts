@@ -3,7 +3,9 @@ import {
   type Bill,
   type EntityKind,
   type FinancialEntity,
+  isSettled,
   type LocalDate,
+  type Money,
   type PaymentAttempt,
   type PaymentPlan,
   type RailId,
@@ -39,19 +41,42 @@ export class InMemoryBillRepository implements BillRepository {
     return this.rows.get(key(tenantId, id)) ?? null
   }
 
+  private owned(tenantId: string, entityId: string): Bill[] {
+    return [...this.rows.values()].filter(
+      bill => bill.tenantId === tenantId && bill.entityId === entityId,
+    )
+  }
+
   async findByCode(
     tenantId: string,
     entityId: string,
     code: string,
   ): Promise<Bill | null> {
-    const match = [...this.rows.values()].find(
-      bill =>
-        bill.tenantId === tenantId &&
-        bill.entityId === entityId &&
-        bill.code === code &&
-        bill.status !== 'CANCELLED',
+    const match = this.owned(tenantId, entityId).find(
+      bill => bill.code === code && bill.status !== 'CANCELLED',
     )
     return match ?? null
+  }
+
+  async findByPixCode(
+    tenantId: string,
+    entityId: string,
+    pixCode: string,
+  ): Promise<Bill | null> {
+    const match = this.owned(tenantId, entityId).find(
+      bill => bill.pixCode === pixCode && bill.status !== 'CANCELLED',
+    )
+    return match ?? null
+  }
+
+  async listUnsettledByAmount(
+    tenantId: string,
+    entityId: string,
+    amount: Money,
+  ): Promise<Bill[]> {
+    return this.owned(tenantId, entityId).filter(
+      bill => bill.amount.equals(amount) && !isSettled(bill),
+    )
   }
 
   async list(

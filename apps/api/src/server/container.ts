@@ -180,6 +180,8 @@ export function buildContainer(
     billSources: new Map<string, BillSource>(
       providers.billSources.map(billSource => [billSource.source, billSource]),
     ),
+    pixLocations: providers.pixLocations,
+    documentText: providers.documentText,
     mailboxAuthorizer: new GoogleMailboxAuthorizer(source, transport),
     certificates: new X509CertificateInspector(),
     archives: new StoredZipWriter(),

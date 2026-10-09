@@ -17,6 +17,7 @@ import {
   FakeInvoiceIssuer,
   FakeLlmProvider,
   FakeOpenFinanceProvider,
+  FakePixLocationResolver,
   FakeSecretVault,
 } from '@/testing/providers'
 import {
@@ -37,6 +38,7 @@ import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import {
   FakeArchiveWriter,
   FakeCertificateInspector,
+  FakeDocumentTextReader,
   FakeMailboxAuthorizer,
   FakePdfWriter,
 } from '@/testing/services'
@@ -47,6 +49,8 @@ type Options = {
   railStatus?: RailStatusReader[]
   billSources?: BillSource[]
   openFinance?: OpenFinanceProvider
+  pixLocations?: FakePixLocationResolver
+  documentText?: FakeDocumentTextReader
   budgets?: InMemoryBudgetRepository
 }
 
@@ -74,6 +78,8 @@ export function fullDeps(options: Options = {}) {
     billSources: new Map<string, BillSource>(
       (options.billSources ?? []).map(source => [source.source, source]),
     ),
+    pixLocations: options.pixLocations ?? new FakePixLocationResolver(),
+    documentText: options.documentText ?? new FakeDocumentTextReader(),
     mailboxAuthorizer: new FakeMailboxAuthorizer(),
     certificates: new FakeCertificateInspector(),
     archives: new FakeArchiveWriter(),

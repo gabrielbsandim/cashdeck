@@ -1,3 +1,5 @@
+import { type BillKind } from '@cashdeck/domain'
+
 export class NotFoundError extends Error {
   readonly code = 'NOT_FOUND'
 
@@ -31,5 +33,21 @@ export class ProviderError extends Error {
 export class NotConfiguredSource extends ProviderNotConfiguredError {
   constructor(source: string) {
     super(`The ${source} bill source`)
+  }
+}
+
+export type AmountRequiredDetails = {
+  field: 'amountCents'
+  kind: BillKind
+  payee: string | null
+}
+
+// The client prompts for the amount and sends the same capture again with it.
+export class AmountRequiredError extends Error {
+  readonly code = 'AMOUNT_REQUIRED'
+
+  constructor(readonly details: AmountRequiredDetails) {
+    super('This bill needs an amount.')
+    this.name = 'AmountRequiredError'
   }
 }

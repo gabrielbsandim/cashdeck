@@ -179,6 +179,41 @@ describe('PrismaBillRepository', () => {
     expect(await repos.bills.findByCode(TENANT, 'company', 'y')).toBeNull()
   })
 
+  it('dedupes by Pix code ignoring cancelled bills', async () => {
+    const { db, repos } = mockClient()
+    db.bill.findFirst.mockResolvedValueOnce(billToRow(bill))
+    expect(await repos.bills.findByPixCode(TENANT, 'company', 'p')).toEqual(
+      bill,
+    )
+    expect(db.bill.findFirst.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      entityId: 'company',
+      pixCode: 'p',
+      status: { not: 'CANCELLED' },
+    })
+    db.bill.findFirst.mockResolvedValueOnce(null)
+    expect(await repos.bills.findByPixCode(TENANT, 'company', 'q')).toBeNull()
+  })
+
+  it('lists unsettled bills of one amount for pairing', async () => {
+    const { db, repos } = mockClient()
+    db.bill.findMany.mockResolvedValueOnce([billToRow(bill)])
+    expect(
+      await repos.bills.listUnsettledByAmount(
+        TENANT,
+        'company',
+        Money.of(12345),
+      ),
+    ).toEqual([bill])
+    expect(db.bill.findMany.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      entityId: 'company',
+      amountCents: 12345n,
+      currency: 'BRL',
+      status: { notIn: ['PAID', 'CANCELLED'] },
+    })
+  })
+
   it('pages with an offset cursor', async () => {
     const { db, repos } = mockClient()
     const rows = [billToRow(bill), billToRow({ ...bill, id: 'b2' })]

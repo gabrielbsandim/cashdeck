@@ -1,6 +1,8 @@
 import {
   type BillKind,
   type BillSource as BillSourceKind,
+  type LocalDate,
+  type Money,
 } from '@cashdeck/domain'
 
 export type OpenFinanceConnection = { provider: string; itemId: string }
@@ -71,6 +73,20 @@ export type CapturedBill = {
   amountCents: number | null
   dueDate: string | null
   kind: BillKind | null
+}
+
+// The charge behind a dynamic BR Code, read from its location (field 26.25).
+export type PixCharge = {
+  amount: Money | null
+  dueDate: LocalDate | null
+  key: string | null
+  payee: string | null
+  txid: string | null
+}
+
+export interface PixLocationResolver {
+  // Null when the location answers nothing readable; never blocks a capture.
+  resolve(location: string): Promise<PixCharge | null>
 }
 
 export interface BillSource {
