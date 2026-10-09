@@ -86,10 +86,14 @@ class EntityChip extends ConsumerWidget {
                 children: [
                   EntityScopeBadge(scope: scope),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    entityScopeLabel(l10n, scope),
-                    style: AppTextStyles.titleSm.copyWith(
-                      color: palette.onSurface,
+                  Flexible(
+                    child: Text(
+                      entityScopeLabel(l10n, scope),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleSm.copyWith(
+                        color: palette.onSurface,
+                      ),
                     ),
                   ),
                   Icon(

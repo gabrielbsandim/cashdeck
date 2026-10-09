@@ -18,7 +18,7 @@ import 'package:cashdeck/features/alerts/presentation/alerts_screen.dart';
 import 'package:cashdeck/features/alerts/presentation/push_listener.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
-import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -341,9 +341,9 @@ void main() {
     expect(app.location, AppRoutes.bill('bill-energy'));
     expect(find.byType(BillDetailScreen), findsOneWidget);
 
-    app.router.go(AppRoutes.more);
+    app.router.go(AppRoutes.settings);
     await settle(tester);
-    await tester.tap(find.byKey(MoreScreen.rowKey(AppRoutes.alerts)));
+    await tester.tap(find.byKey(SettingsScreen.rowKey(AppRoutes.alerts)));
     await settle(tester);
     expect(find.byKey(AlertsScreen.unreadKey('alert-due')), findsNothing);
     await tester.tap(find.byKey(AlertsScreen.readAllKey));

@@ -1,4 +1,5 @@
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
@@ -10,7 +11,6 @@ import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
-import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
@@ -20,7 +20,6 @@ import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
-import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,10 +39,7 @@ class BillsScreen extends ConsumerWidget {
     final bills = ref.watch(billsControllerProvider);
     final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.billsTitle),
-        actions: const [PrivacyToggle()],
-      ),
+      appBar: const TabAppBar(),
       floatingActionButton: FloatingActionButton.extended(
         key: BillsScreen.pasteKey,
         icon: const Icon(Symbols.content_paste_rounded),
@@ -52,7 +48,6 @@ class BillsScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          const EntitySwitcher(),
           const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: switch (bills) {

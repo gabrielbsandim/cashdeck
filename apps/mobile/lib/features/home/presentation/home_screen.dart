@@ -1,13 +1,11 @@
-import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
-import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
-import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/company_home.dart';
 import 'package:cashdeck/features/home/presentation/consolidated_home.dart';
@@ -17,41 +15,17 @@ import 'package:cashdeck/features/home/presentation/personal_home.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class HomeScreen extends ConsumerWidget {
   const new({super.key});
 
-  static const alertsKey = Key('home-alerts');
+  static const Key alertsKey = TabAppBar.alertsKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
     final summary = ref.watch(homeControllerProvider);
-    final unread = ref.watch(unreadAlertsProvider).value ?? 0;
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: AppSpacing.md,
-        title: const Align(
-          alignment: Alignment.centerLeft,
-          child: EntityChip(),
-        ),
-        actions: [
-          const PrivacyToggle(),
-          IconButton(
-            key: alertsKey,
-            tooltip: l10n.alertsTitle,
-            onPressed: () => context.push(AppRoutes.alerts),
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              smallSize: 8,
-              child: const Icon(Symbols.notifications_rounded),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-        ],
-      ),
+      appBar: const TabAppBar(),
       body: RefreshIndicator(
         onRefresh: () async {
           ref

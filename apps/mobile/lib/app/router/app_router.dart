@@ -20,6 +20,10 @@ import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
+import 'package:cashdeck/features/insights/presentation/cards_screen.dart';
+import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
+import 'package:cashdeck/features/insights/presentation/installments_screen.dart';
+import 'package:cashdeck/features/insights/presentation/subscriptions_screen.dart';
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
 import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_screen.dart';
 import 'package:cashdeck/features/payroll/presentation/payroll_input_screen.dart';
@@ -27,7 +31,7 @@ import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
-import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_screen.dart';
@@ -110,6 +114,71 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           },
         ),
       ),
+      GoRoute(
+        path: AppRoutes.chat,
+        builder: (_, _) => const ChatScreen(),
+        routes: [
+          GoRoute(
+            path: ':threadId',
+            builder: (_, state) =>
+                ConversationScreen(threadId: state.pathParameters['threadId']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (_, _) => const SettingsScreen(),
+        routes: [
+          _page(
+            _below(AppRoutes.entityProfiles, AppRoutes.settings),
+            const EntityProfilesScreen(),
+          ),
+          GoRoute(
+            path: _below(AppRoutes.captureSources, AppRoutes.settings),
+            builder: (_, _) => const CaptureSourcesScreen(),
+            routes: [_page('scan', const ScanBillScreen())],
+          ),
+          GoRoute(
+            path: _below(AppRoutes.rails, AppRoutes.settings),
+            builder: (_, _) => const PaymentRailsScreen(),
+            routes: [
+              GoRoute(
+                path: ':railId',
+                builder: (_, state) => RailDetailScreen(
+                  railId: state.pathParameters['railId']!,
+                  rail: switch (state.extra) {
+                    final PaymentRail rail => rail,
+                    _ => null,
+                  },
+                ),
+              ),
+            ],
+          ),
+          _page(
+            _below(AppRoutes.connectItemId, AppRoutes.settings),
+            const ConnectByItemIdScreen(),
+          ),
+          _page(
+            _below(AppRoutes.cardImport, AppRoutes.settings),
+            const ManualCardBillImportScreen(),
+          ),
+          _page(
+            _below(AppRoutes.invoiceIssuer, AppRoutes.settings),
+            const InvoiceIssuerSetupScreen(),
+          ),
+          _page(
+            _below(AppRoutes.payroll, AppRoutes.settings),
+            const PayrollInputScreen(),
+          ),
+          _page(
+            _below(AppRoutes.accountantExport, AppRoutes.settings),
+            const AccountantExportScreen(),
+          ),
+        ],
+      ),
+      _page(AppRoutes.installments, const InstallmentsScreen()),
+      _page(AppRoutes.subscriptions, const SubscriptionsScreen()),
+      _page(AppRoutes.cards, const CardsScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, state, shell) =>
             TabsShell(navigationShell: shell, location: state.uri.path),
@@ -153,61 +222,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ],
             ),
           ]),
-          _tab(AppRoutes.chat, const ChatScreen(), [
-            GoRoute(
-              path: ':threadId',
-              builder: (_, state) => ConversationScreen(
-                threadId: state.pathParameters['threadId']!,
-              ),
-            ),
-          ]),
-          _tab(AppRoutes.more, const MoreScreen(), [
-            _page(
-              _below(AppRoutes.entityProfiles, AppRoutes.more),
-              const EntityProfilesScreen(),
-            ),
-            GoRoute(
-              path: _below(AppRoutes.captureSources, AppRoutes.more),
-              builder: (_, _) => const CaptureSourcesScreen(),
-              routes: [_page('scan', const ScanBillScreen())],
-            ),
-            GoRoute(
-              path: _below(AppRoutes.rails, AppRoutes.more),
-              builder: (_, _) => const PaymentRailsScreen(),
-              routes: [
-                GoRoute(
-                  path: ':railId',
-                  builder: (_, state) => RailDetailScreen(
-                    railId: state.pathParameters['railId']!,
-                    rail: switch (state.extra) {
-                      final PaymentRail rail => rail,
-                      _ => null,
-                    },
-                  ),
-                ),
-              ],
-            ),
-            _page(
-              _below(AppRoutes.connectItemId, AppRoutes.more),
-              const ConnectByItemIdScreen(),
-            ),
-            _page(
-              _below(AppRoutes.cardImport, AppRoutes.more),
-              const ManualCardBillImportScreen(),
-            ),
-            _page(
-              _below(AppRoutes.invoiceIssuer, AppRoutes.more),
-              const InvoiceIssuerSetupScreen(),
-            ),
-            _page(
-              _below(AppRoutes.payroll, AppRoutes.more),
-              const PayrollInputScreen(),
-            ),
-            _page(
-              _below(AppRoutes.accountantExport, AppRoutes.more),
-              const AccountantExportScreen(),
-            ),
-          ]),
+          _tab(AppRoutes.insights, const InsightsScreen()),
         ],
       ),
     ],

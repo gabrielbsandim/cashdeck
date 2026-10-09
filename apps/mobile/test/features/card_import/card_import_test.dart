@@ -114,7 +114,7 @@ void main() {
   });
 
   testWidgets('reviews the lines and creates the bill', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.more);
+    final app = await pumpRoute(tester, AppRoutes.settings);
     app.router.push(AppRoutes.cardImport).ignore();
     await settle(tester);
 
@@ -146,7 +146,7 @@ void main() {
     await tester.tap(find.byKey(ManualCardBillImportScreen.createKey));
     await settle(tester);
     expect(find.text(l10n.cardBillCreatedToast), findsOneWidget);
-    expect(app.location, AppRoutes.more);
+    expect(app.location, AppRoutes.settings);
   });
 
   testWidgets('a failed load or creation says why', (tester) async {
@@ -221,13 +221,13 @@ void main() {
   });
 
   testWidgets('the close button leaves', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.more);
+    final app = await pumpRoute(tester, AppRoutes.settings);
     app.router.push(AppRoutes.cardImport).ignore();
     await settle(tester);
 
     await tester.tap(find.byTooltip('Fechar'));
     await settle(tester);
 
-    expect(app.location, AppRoutes.more);
+    expect(app.location, AppRoutes.settings);
   });
 }

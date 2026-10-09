@@ -2,6 +2,8 @@ import 'package:cashdeck/app/app.dart';
 import 'package:cashdeck/app/router/app_router.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -62,5 +64,13 @@ extension RouterOf on ProviderContainer {
 /// Lets a toast run out on its own, as when the user ignores it.
 Future<void> waitForToast(WidgetTester tester) async {
   await tester.pump(const Duration(seconds: 5));
+  await settle(tester);
+}
+
+/// Picks [scope] in the entity chip of the tab header.
+Future<void> pickScope(WidgetTester tester, EntityScope scope) async {
+  await tester.tap(find.byKey(EntityChip.chipKey));
+  await settle(tester);
+  await tester.tap(find.byKey(EntityChip.optionKey(scope)));
   await settle(tester);
 }

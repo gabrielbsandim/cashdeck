@@ -15,15 +15,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class MoreScreen extends ConsumerWidget {
+/// Ajustes, opened from the avatar on every tab, in four groups.
+class SettingsScreen extends ConsumerWidget {
   const new({super.key});
 
-  static const themeSelectorKey = Key('more-theme');
-  static const hideAmountsKey = Key('more-hide-amounts');
-  static const signOutKey = Key('more-sign-out');
-  static const pauseKey = Key('more-pause');
+  static const themeSelectorKey = Key('settings-theme');
+  static const hideAmountsKey = Key('settings-hide-amounts');
+  static const signOutKey = Key('settings-sign-out');
+  static const pauseKey = Key('settings-pause');
 
-  static Key rowKey(String route) => Key('more-row-$route');
+  static Key rowKey(String route) => Key('settings-row-$route');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,28 +41,60 @@ class MoreScreen extends ConsumerWidget {
           chevron: true,
           onTap: () => context.push(route),
         );
-    Widget section(String title) => Padding(
+    Widget section(String title, {String? trailing}) => Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenGutter,
         AppSpacing.xl,
         AppSpacing.screenGutter,
         AppSpacing.xs,
       ),
-      child: CdSectionHeader(title: title, small: true),
+      child: CdSectionHeader(
+        title: title,
+        small: true,
+        subtitle: trailing == null ? null : Text(trailing),
+      ),
     );
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.moreTitle)),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(l10n.settingsTitle),
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
         children: [
-          section(l10n.moreSectionProfiles),
+          const SizedBox(height: AppSpacing.sm),
           link(
             Symbols.badge_rounded,
-            l10n.profilesTitle,
-            l10n.moreProfilesHint,
+            l10n.settingsProfileTitle,
+            l10n.settingsProfileHint,
             AppRoutes.entityProfiles,
           ),
-          section(l10n.moreSectionPayments),
+          section(l10n.settingsSectionConnections),
+          link(
+            Symbols.account_balance_rounded,
+            l10n.itemIdTitle,
+            l10n.moreItemIdHint,
+            AppRoutes.connectItemId,
+          ),
+          link(
+            Symbols.route_rounded,
+            l10n.railsTitle,
+            l10n.moreRailsHint,
+            AppRoutes.rails,
+          ),
+          link(
+            Symbols.inbox_rounded,
+            l10n.captureTitle,
+            l10n.moreCaptureHint,
+            AppRoutes.captureSources,
+          ),
+          link(
+            Symbols.credit_card_rounded,
+            l10n.cardImportMenu,
+            l10n.moreCardImportHint,
+            AppRoutes.cardImport,
+          ),
+          section(l10n.settingsSectionPayments),
           CdListRow(
             key: pauseKey,
             icon: Symbols.pause_circle_rounded,
@@ -83,45 +116,10 @@ class MoreScreen extends ConsumerWidget {
                     },
             ),
           ),
-          link(
-            Symbols.route_rounded,
-            l10n.railsTitle,
-            l10n.moreRailsHint,
-            AppRoutes.rails,
+          section(
+            l10n.settingsSectionCompany,
+            trailing: l10n.settingsCompanyOnly,
           ),
-          link(
-            Symbols.inbox_rounded,
-            l10n.captureTitle,
-            l10n.moreCaptureHint,
-            AppRoutes.captureSources,
-          ),
-          link(
-            Symbols.credit_card_rounded,
-            l10n.cardImportMenu,
-            l10n.moreCardImportHint,
-            AppRoutes.cardImport,
-          ),
-          section(l10n.moreSectionAlerts),
-          link(
-            Symbols.notifications_rounded,
-            l10n.alertsTitle,
-            l10n.moreAlertsHint,
-            AppRoutes.alerts,
-          ),
-          link(
-            Symbols.tune_rounded,
-            l10n.alertSettingsTitle,
-            l10n.moreAlertSettingsHint,
-            AppRoutes.alertSettings,
-          ),
-          section(l10n.moreSectionConnections),
-          link(
-            Symbols.link_rounded,
-            l10n.itemIdTitle,
-            l10n.moreItemIdHint,
-            AppRoutes.connectItemId,
-          ),
-          section(l10n.moreSectionCompany),
           link(
             Symbols.receipt_rounded,
             l10n.issuerTitle,
@@ -140,7 +138,7 @@ class MoreScreen extends ConsumerWidget {
             l10n.moreExportHint,
             AppRoutes.accountantExport,
           ),
-          section(l10n.moreSectionDisplay),
+          section(l10n.settingsSectionAppearance),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenGutter,
@@ -159,14 +157,26 @@ class MoreScreen extends ConsumerWidget {
           CdListRow(
             key: hideAmountsKey,
             icon: Symbols.visibility_off_rounded,
-            title: l10n.hideAmountsSetting,
+            title: l10n.settingsPrivacy,
+            subtitle: l10n.hideAmountsSetting,
             trailing: Switch(
               value: prefs.hideAmounts,
               onChanged: (_) => controller.toggleHideAmounts(),
             ),
             onTap: controller.toggleHideAmounts,
           ),
-          section(l10n.moreSectionAccount),
+          link(
+            Symbols.notifications_rounded,
+            l10n.alertsTitle,
+            l10n.moreAlertsHint,
+            AppRoutes.alerts,
+          ),
+          link(
+            Symbols.tune_rounded,
+            l10n.alertSettingsTitle,
+            l10n.moreAlertSettingsHint,
+            AppRoutes.alertSettings,
+          ),
           CdListRow(
             key: rowKey(AppRoutes.unlock),
             icon: Symbols.lock_rounded,

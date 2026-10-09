@@ -6,7 +6,7 @@ import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/features/automation/automation_providers.dart';
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
-import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,11 +17,11 @@ import '../../../support/pump_app.dart';
 
 void main() {
   testWidgets('changes the theme and the privacy mode', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.more);
+    final app = await pumpRoute(tester, AppRoutes.settings);
 
     await tester.tap(find.text(l10n.themeDark));
     await settle(tester);
-    await tester.tap(find.byKey(MoreScreen.hideAmountsKey));
+    await tester.tap(find.byKey(SettingsScreen.hideAmountsKey));
     await settle(tester);
     expect(
       app.read(displayPreferencesProvider),
@@ -30,7 +30,7 @@ void main() {
 
     await tester.tap(
       find.descendant(
-        of: find.byKey(MoreScreen.hideAmountsKey),
+        of: find.byKey(SettingsScreen.hideAmountsKey),
         matching: find.byType(Switch),
       ),
     );
@@ -39,11 +39,11 @@ void main() {
   });
 
   testWidgets('the kill switch pauses every automatic payment', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.more);
+    final app = await pumpRoute(tester, AppRoutes.settings);
 
     await tester.tap(
       find.descendant(
-        of: find.byKey(MoreScreen.pauseKey),
+        of: find.byKey(SettingsScreen.pauseKey),
         matching: find.byType(Switch),
       ),
     );
@@ -59,13 +59,13 @@ void main() {
     when(automation.pause).thenAnswer((_) async => const Err(NetworkFailure()));
     await pumpRoute(
       tester,
-      AppRoutes.more,
+      AppRoutes.settings,
       overrides: [automationRepositoryProvider.overrideWithValue(automation)],
     );
 
     await tester.tap(
       find.descendant(
-        of: find.byKey(MoreScreen.pauseKey),
+        of: find.byKey(SettingsScreen.pauseKey),
         matching: find.byType(Switch),
       ),
     );
@@ -88,7 +88,7 @@ void main() {
     testWidgets('opens $route', (tester) async {
       final app = await pumpRoute(
         tester,
-        AppRoutes.more,
+        AppRoutes.settings,
         overrides: [
           biometricAuthenticatorProvider.overrideWithValue(
             FakeBiometricAuthenticator(approve: false),
@@ -96,7 +96,7 @@ void main() {
         ],
       );
 
-      await tester.tap(find.byKey(MoreScreen.rowKey(route)));
+      await tester.tap(find.byKey(SettingsScreen.rowKey(route)));
       await settle(tester);
 
       expect(app.location, route);

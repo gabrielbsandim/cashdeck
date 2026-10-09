@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -12,7 +13,6 @@ import 'package:cashdeck/core/widgets/inputs/cd_search_field.dart';
 import 'package:cashdeck/core/widgets/layout/cd_options_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
-import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
@@ -75,13 +75,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final l10n = AppLocalizations.of(context);
     final transactions = ref.watch(transactionsControllerProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.transactionsTitle),
-        actions: const [PrivacyToggle()],
-      ),
+      appBar: const TabAppBar(),
       body: Column(
         children: [
-          const EntitySwitcher(),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenGutter,

@@ -8,7 +8,6 @@ import 'package:cashdeck/features/automation/automation_providers.dart';
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
-import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
 import 'package:cashdeck/features/home/presentation/company_home.dart';
@@ -28,13 +27,6 @@ import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
 void main() {
-  Future<void> pickScope(WidgetTester tester, EntityScope scope) async {
-    await tester.tap(find.byKey(EntityChip.chipKey));
-    await settle(tester);
-    await tester.tap(find.byKey(EntityChip.optionKey(scope)));
-    await settle(tester);
-  }
-
   testWidgets('Início Pessoal shows balance, reserve, forecast and alerts', (
     tester,
   ) async {

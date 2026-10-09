@@ -10,6 +10,7 @@ import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/bills/bills_providers.dart';
 import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
@@ -18,7 +19,6 @@ import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
-import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,17 +43,13 @@ void main() {
       expect(find.text(l10n.billsGroupSettled), findsOneWidget);
       expect(find.text('Coworking Ponte'), findsNothing);
 
-      await tester.tap(
-        find.byKey(EntitySwitcher.segmentKey(EntityScope.consolidated)),
-      );
+      await pickScope(tester, EntityScope.consolidated);
       await settle(tester);
       expect(
         find.text(l10n.billTitleWithEntity('Coworking Ponte', 'PJ')),
         findsOneWidget,
       );
-      await tester.tap(
-        find.byKey(EntitySwitcher.segmentKey(EntityScope.personal)),
-      );
+      await pickScope(tester, EntityScope.personal);
       await settle(tester);
 
       await tester.tap(find.byKey(BillsScreen.tileKey('bill-energy')));
@@ -258,6 +254,7 @@ void main() {
     List<Override> overrides() => [
       billsRepositoryProvider.overrideWithValue(repository),
       clockProvider.overrideWithValue(FixedClock(testNow)),
+      unreadAlertsProvider.overrideWith((ref) async => 0),
     ];
 
     setUpAll(() => registerFallbackValue(EntityKind.personal));

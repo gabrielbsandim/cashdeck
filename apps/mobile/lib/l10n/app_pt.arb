@@ -3,7 +3,7 @@
   "appTitle": "Cashdeck",
   "tabHome": "Início",
   "tabTransactions": "Transações",
-  "tabBills": "A pagar",
+  "tabBills": "Pagar",
   "tabChat": "Chat",
   "tabMore": "Mais",
   "homeTitle": "Início",
@@ -1730,5 +1730,314 @@
   },
   "balancesAvailable": "Disponível",
   "balancesReserve": "Reserva",
-  "balancesOther": "Cartões e investimentos"
+  "balancesOther": "Cartões e investimentos",
+  "tabInsights": "Análises",
+  "askBarHint": "Pergunte ao Cashdeck",
+  "settingsTitle": "Ajustes",
+  "settingsOpen": "Abrir ajustes",
+  "settingsSectionConnections": "Conexões",
+  "settingsSectionPayments": "Pagamentos",
+  "settingsSectionCompany": "Empresa",
+  "settingsCompanyOnly": "só com entidade PJ",
+  "settingsSectionAppearance": "Conta e aparência",
+  "settingsProfileTitle": "Pessoal + Empresa",
+  "settingsProfileHint": "Perfis, CPF e CNPJ · servidor próprio",
+  "settingsPrivacy": "Privacidade",
+  "insightsTitle": "Análises",
+  "installmentsTitle": "Parcelamentos",
+  "subscriptionsTitle": "Assinaturas",
+  "cardsTitle": "Cartões",
+  "periodWeek": "1s",
+  "periodMonth": "1m",
+  "periodSixMonths": "6m",
+  "periodYear": "1a",
+  "insightCategoryAbove": "{name} está {percent}% acima da média, {amount} a mais",
+  "@insightCategoryAbove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightInstallments": "Parcelas já comprometem {amount} de {month}",
+  "@insightInstallments": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "insightSavingsUp": "Você guardou {percent}% da renda, acima da média de {average}%",
+  "@insightSavingsUp": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "average": {
+        "type": "int"
+      }
+    }
+  },
+  "insightSavingsDown": "Você guardou {percent}% da renda, abaixo da média de {average}%",
+  "@insightSavingsDown": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "average": {
+        "type": "int"
+      }
+    }
+  },
+  "insightPriceUp": "{name} subiu de {previous} para {amount}",
+  "@insightPriceUp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsPreviousMonth": "Mês anterior",
+  "insightsNextMonth": "Próximo mês",
+  "insightsFlowTitle": "Entradas vs saídas",
+  "insightsIncome": "Entradas",
+  "insightsExpenses": "Saídas",
+  "insightsResult": "Resultado",
+  "insightsMonthsSix": "6m",
+  "insightsMonthsTwelve": "12m",
+  "insightsFlowSemantics": "Entradas e saídas dos últimos {count} meses",
+  "@insightsFlowSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsPercent": "{percent}%",
+  "@insightsPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsSavingsTitle": "Taxa de poupança",
+  "insightsSavingsCaption": "da renda guardada · média de 3 meses {average}%",
+  "@insightsSavingsCaption": {
+    "placeholders": {
+      "average": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsSavingsNoAverage": "da renda guardada",
+  "insightsSavingsNoIncome": "Sem entradas no mês",
+  "insightsChangesTitle": "O que mudou",
+  "insightsChangeAverage": "média {amount}",
+  "@insightsChangeAverage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsChangesEmpty": "Nenhuma categoria fugiu da média",
+  "insightsFixedTitle": "Custo fixo",
+  "insightsFixedSubscriptions": "Assinaturas",
+  "insightsFixedInstallments": "Parcelas",
+  "insightsFixedBills": "Contas",
+  "insightsFixedShare": "da renda",
+  "insightsFixedSemantics": "Custo fixo de {percent}% da renda",
+  "@insightsFixedSemantics": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsLeftTitle": "Quanto sobra até o fim do mês",
+  "insightsLeftBalance": "Saldo disponível",
+  "insightsLeftBills": "Contas a pagar",
+  "insightsLeftCard": "Fatura do cartão",
+  "insightsLeftResult": "Sobra",
+  "insightsCompanyTitle": "Empresa para pessoal",
+  "insightsCompanyTransfers": "Transferências PJ → PF",
+  "insightsCompanyTaxes": "Impostos da empresa",
+  "insightsListTitle": "Insights",
+  "insightsMore": "Mais análises",
+  "installmentsCommitted": "Comprometido em {month}",
+  "@installmentsCommitted": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "installmentsCommittedSemantics": "Parcelas dos próximos meses",
+  "installmentsFilterAll": "Todos",
+  "installmentsFilterEnding": "Terminando",
+  "installmentsProgress": "{number} de {count}",
+  "@installmentsProgress": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "installmentsRemaining": "Restante {amount}",
+  "@installmentsRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "installmentsEnds": "Termina em {month}",
+  "@installmentsEnds": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "installmentsEmpty": "Nenhum parcelamento",
+  "installmentsEmptyMessage": "Compras parceladas no cartão aparecem aqui.",
+  "installmentsPurchase": "Compra",
+  "installmentsTotal": "Total",
+  "installmentsPaid": "Pago",
+  "installmentsLeft": "Restante",
+  "installmentsNumber": "Parcela {number}",
+  "@installmentsNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionsPerMonth": "por mês",
+  "subscriptionsPerYear": "{amount} por ano",
+  "@subscriptionsPerYear": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionsList": "Lista",
+  "subscriptionsCalendar": "Calendário",
+  "subscriptionsSuggestionTitle": "Parece uma assinatura",
+  "subscriptionsSuggestionBody": "{name} · {amount} todo dia {day}",
+  "@subscriptionsSuggestionBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionsConfirm": "Confirmar",
+  "subscriptionsDismiss": "Ignorar",
+  "subscriptionsDay": "Dia {day}",
+  "@subscriptionsDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionsPaid": "Pago",
+  "subscriptionsUpcoming": "Próxima",
+  "subscriptionsLate": "Atrasada",
+  "subscriptionsPriceUp": "Subiu de {previous}",
+  "@subscriptionsPriceUp": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionsRemove": "Remover das assinaturas",
+  "subscriptionsEmpty": "Nenhuma assinatura",
+  "subscriptionsEmptyMessage": "Cobranças que se repetem todo mês aparecem aqui.",
+  "subscriptionsConfirmed": "Assinatura confirmada",
+  "subscriptionsDismissed": "Sugestão ignorada",
+  "subscriptionsRemoved": "Assinatura removida",
+  "subscriptionsNoneOnDay": "Nada cobrado neste dia",
+  "cardsBills": "Faturas",
+  "cardsLimits": "Limites",
+  "cardsBillDates": "Fecha {closes} · vence {due}",
+  "@cardsBillDates": {
+    "placeholders": {
+      "closes": {
+        "type": "String"
+      },
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsBillDue": "Vence {due}",
+  "@cardsBillDue": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsNoDates": "Sem datas da fatura",
+  "cardsCurrentBill": "Fatura atual",
+  "cardsUsedOfTotal": "do limite total",
+  "cardsUsed": "Usado {used} de {limit}",
+  "@cardsUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsAvailable": "Disponível {amount}",
+  "@cardsAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsNoLimit": "Sem dados do limite",
+  "cardsLimitSemantics": "{percent}% do limite usado",
+  "@cardsLimitSemantics": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsEmpty": "Conecte um cartão",
+  "cardsEmptyMessage": "Cartões conectados por Open Finance aparecem aqui."
 }

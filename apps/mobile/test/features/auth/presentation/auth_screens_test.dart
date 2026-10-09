@@ -6,7 +6,7 @@ import 'package:cashdeck/core/session/server_credentials.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
-import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -108,7 +108,7 @@ void main() {
   testWidgets('More locks the app and signs out', (tester) async {
     final app = await pumpRoute(
       tester,
-      AppRoutes.more,
+      AppRoutes.settings,
       overrides: [
         biometricAuthenticatorProvider.overrideWithValue(
           FakeBiometricAuthenticator(approve: false),
@@ -116,7 +116,7 @@ void main() {
       ],
     );
 
-    await tester.tap(find.byKey(MoreScreen.rowKey(AppRoutes.unlock)));
+    await tester.tap(find.byKey(SettingsScreen.rowKey(AppRoutes.unlock)));
     await settle(tester);
     expect(app.location, AppRoutes.unlock);
 
@@ -124,9 +124,9 @@ void main() {
     await settle(tester);
     expect(app.location, AppRoutes.home);
 
-    app.router.go(AppRoutes.more);
+    app.router.go(AppRoutes.settings);
     await settle(tester);
-    await tester.tap(find.byKey(MoreScreen.signOutKey));
+    await tester.tap(find.byKey(SettingsScreen.signOutKey));
     await settle(tester);
     expect(app.location, AppRoutes.signIn);
   });

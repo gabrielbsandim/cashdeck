@@ -2,8 +2,9 @@ abstract final class AppRoutes {
   static const home = '/home';
   static const transactions = '/transactions';
   static const bills = '/bills';
+  static const insights = '/insights';
   static const chat = '/chat';
-  static const more = '/more';
+  static const settings = '/settings';
 
   static const signIn = '/sign-in';
   static const unlock = '/unlock';
@@ -12,19 +13,22 @@ abstract final class AppRoutes {
   static const alerts = '/alerts';
   static const alertSettings = '$alerts/settings';
   static const pasteCode = '/paste-code';
+  static const installments = '/installments';
+  static const subscriptions = '/subscriptions';
+  static const cards = '/cards';
 
-  static const entityProfiles = '$more/profiles';
-  static const captureSources = '$more/capture';
-  static const scanBill = '$more/capture/scan';
-  static const rails = '$more/rails';
-  static const connectItemId = '$more/open-finance/item-id';
-  static const cardImport = '$more/card-import';
-  static const invoiceIssuer = '$more/invoice-issuer';
-  static const payroll = '$more/payroll';
-  static const accountantExport = '$more/accountant-export';
+  static const entityProfiles = '$settings/profiles';
+  static const captureSources = '$settings/capture';
+  static const scanBill = '$settings/capture/scan';
+  static const rails = '$settings/rails';
+  static const connectItemId = '$settings/open-finance/item-id';
+  static const cardImport = '$settings/card-import';
+  static const invoiceIssuer = '$settings/invoice-issuer';
+  static const payroll = '$settings/payroll';
+  static const accountantExport = '$settings/accountant-export';
 
   /// The tab roots, the only places the bottom navigation shows.
-  static const List<String> tabs = [home, transactions, bills, chat, more];
+  static const List<String> tabs = [home, transactions, bills, insights];
 
   static String bill(String billId) => '$bills/${Uri.encodeComponent(billId)}';
 

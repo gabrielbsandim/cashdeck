@@ -208,7 +208,7 @@ void main() {
     });
 
     testWidgets('opens on the company when that is the scope', (tester) async {
-      final app = await pumpRoute(tester, AppRoutes.more);
+      final app = await pumpRoute(tester, AppRoutes.settings);
       app.read(entityScopeProvider.notifier).select(EntityScope.company);
       app.router.go(AppRoutes.rails);
       await settle(tester);
@@ -245,20 +245,20 @@ void main() {
     });
 
     testWidgets('continue leaves the screen', (tester) async {
-      final app = await pumpRoute(tester, AppRoutes.more);
+      final app = await pumpRoute(tester, AppRoutes.settings);
       app.router.push(AppRoutes.rails).ignore();
       await settle(tester);
 
       await tester.tap(find.byKey(PaymentRailsScreen.continueKey));
       await settle(tester);
 
-      expect(app.location, AppRoutes.more);
+      expect(app.location, AppRoutes.settings);
     });
   });
 
   group('the rail detail', () {
     testWidgets('tests, explains uploads and removes the rail', (tester) async {
-      final app = await pumpRoute(tester, AppRoutes.more);
+      final app = await pumpRoute(tester, AppRoutes.settings);
       app.router.push(AppRoutes.rails).ignore();
       await settle(tester);
       await tester.tap(find.byKey(PaymentRailsScreen.railKey('rail-pf-pix')));

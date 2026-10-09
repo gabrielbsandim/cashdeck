@@ -3,6 +3,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/transactions/data/fake_transactions_repository.dart';
@@ -56,9 +57,7 @@ final class _Scripted implements TransactionsRepository {
 }
 
 Future<void> _consolidated(WidgetTester tester) async {
-  await tester.tap(
-    find.byKey(EntitySwitcher.segmentKey(EntityScope.consolidated)),
-  );
+  await pickScope(tester, EntityScope.consolidated);
   await settle(tester);
 }
 
@@ -278,7 +277,10 @@ void main() {
     final app = await pumpRoute(
       tester,
       AppRoutes.transactions,
-      overrides: [transactionsRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(repository),
+        unreadAlertsProvider.overrideWith((ref) async => 0),
+      ],
     );
     expect(find.text(l10n.errorNetwork), findsOneWidget);
 
@@ -303,9 +305,7 @@ void main() {
     app.router.pop();
     await settle(tester);
     repository.empty = true;
-    await tester.tap(
-      find.byKey(EntitySwitcher.segmentKey(EntityScope.company)),
-    );
+    await pickScope(tester, EntityScope.company);
     await settle(tester);
     expect(find.text(l10n.transactionsEmptyTitle), findsOneWidget);
   });

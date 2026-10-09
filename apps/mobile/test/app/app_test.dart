@@ -1,11 +1,13 @@
 import 'package:cashdeck/app/app.dart';
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/core/widgets/layout/cd_ask_bar.dart';
 import 'package:cashdeck/core/widgets/layout/cd_nav_bar.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
-import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,7 +29,15 @@ void main() {
 
     await tester.tap(find.byKey(CdNavBar.itemKey(3)));
     await settle(tester);
+    expect(find.byType(InsightsScreen), findsOneWidget);
+
+    await tester.tap(find.byKey(CdAskBar.barKey));
+    await settle(tester);
     expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.byType(CdNavBar), findsNothing);
+
+    app.router.pop();
+    await settle(tester);
 
     await tester.tap(find.byKey(CdNavBar.itemKey(2)));
     await settle(tester);
@@ -53,14 +63,14 @@ void main() {
     expect(bar.items[2].label, l10n.tabBills);
   });
 
-  testWidgets('switches to the dark theme from Mais', (tester) async {
-    await pumpRoute(tester, AppRoutes.more);
-    expect(find.byType(MoreScreen), findsOneWidget);
+  testWidgets('switches to the dark theme from Ajustes', (tester) async {
+    await pumpRoute(tester, AppRoutes.settings);
+    expect(find.byType(SettingsScreen), findsOneWidget);
 
     await tester.tap(find.text(l10n.themeDark));
     await settle(tester);
 
-    final context = tester.element(find.byType(MoreScreen));
+    final context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.dark);
   });
 
