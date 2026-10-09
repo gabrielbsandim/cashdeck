@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="flex:none;display:flex;flex-direction:column;font-family:Geist,sans-serif">
+<sc-if value="{{ ask }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 12px 10px">
+<div style="height:52px;border-radius:26px;background:var(--sf3);border:1px solid var(--cardb);display:flex;align-items:center;gap:10px;padding:0 4px 0 16px;box-shadow:0 8px 24px rgba(0,0,0,.18)">
+<i style="font:22px/1 'Material Symbols Rounded';color:var(--pr);font-variation-settings:'FILL' 1">auto_awesome</i>
+<span style="flex:1;font:500 15px Geist;color:var(--mu)">Pergunte ao Cashdeck</span>
+<span style="width:44px;height:44px;border-radius:22px;display:grid;place-items:center;color:var(--mu)"><i style="font:22px/1 'Material Symbols Rounded'">mic</i></span>
+</div>
+</div>
+</sc-if>
+<div style="background:var(--bg);border-top:1px solid var(--olv);display:flex;flex-direction:column">
+<div style="display:flex;height:80px">
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative">
+<div style="{{ it.pill }}"><i style="{{ it.icon }}">{{ it.i }}</i></div><span style="{{ it.lab }}">{{ it.l }}</span>
+<sc-if value="{{ it.badge }}"><span style="position:absolute;top:12px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:var(--fail);color:var(--bg);font-size:11px;font-weight:700;display:grid;place-items:center">{{ it.badge }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="height:16px;display:grid;place-items:center"><div style="width:108px;height:4px;border-radius:2px;background:var(--mu)"></div></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:170},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;tx&quot;,&quot;pay&quot;,&quot;insights&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ask&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active ?? 'home';
+    const L = [['home','home','Início'],['tx','receipt_long','Transações'],['pay','event_upcoming','Pagar'],['insights','insights','Análises']];
+    return { ask: this.props.ask ?? true, items: L.map(([k,i,l]) => { const on = k === a; return { i, l, badge: k === 'pay' ? '3' : '',
+      pill: { width: 64, height: 32, borderRadius: 16, background: on ? 'var(--prc)' : 'transparent', color: on ? 'var(--onprc)' : 'var(--mu)', display: 'grid', placeItems: 'center' },
+      icon: { font: "22px/1 'Material Symbols Rounded'", fontVariationSettings: on ? "'FILL' 1" : "'FILL' 0" },
+      lab: { fontSize: 12, fontWeight: on ? 600 : 500, color: on ? 'var(--on)' : 'var(--mu)', whiteSpace: 'nowrap' } }; }) };
+  }
+}
+</script>
+</body>
+</html>
