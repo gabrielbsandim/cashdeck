@@ -278,6 +278,22 @@ describe('Pluggy webhooks', () => {
     expect(bare[0]).toMatchObject({ kind: 'IGNORED', type: 'UNKNOWN' })
     await refused(pluggy.read(TENANT, delivery('pluggy', {})))
   })
+
+  it('reads the token from the URL before the header', async () => {
+    const pluggy = reader('pluggy')
+    const body = { event: 'item/updated', eventId: 'ev-2', itemId: 'item-2' }
+    const fromUrl = await pluggy.read(
+      TENANT,
+      delivery('pluggy', body, {}, { token: 'pluggy-secret' }),
+    )
+    expect(fromUrl[0]).toMatchObject({
+      kind: 'OPEN_FINANCE_ITEM',
+      itemId: 'item-2',
+    })
+    await refused(
+      pluggy.read(TENANT, delivery('pluggy', body, auth, { token: 'wrong' })),
+    )
+  })
 })
 
 describe('Notaas webhooks', () => {

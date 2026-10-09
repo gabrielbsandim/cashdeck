@@ -319,7 +319,7 @@ selects which secret to check against, so it grants nothing by itself.
 | Asaas | `/api/webhooks/asaas` | `ASAAS_WEBHOOK_TOKEN` | the `authToken` set on the webhook, sent back in `asaas-access-token` |
 | Mercado Pago | `/api/webhooks/mercado-pago` | `MERCADO_PAGO_WEBHOOK_SECRET` | `x-signature: ts=<ts>,v1=<hex>`, HMAC-SHA256 of `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` |
 | Inter Empresas | `/api/webhooks/inter?token=<secret>` | `INTER_WEBHOOK_TOKEN` | the token in the registered URL (or the `x-cashdeck-webhook-token` header) |
-| Pluggy | `/api/webhooks/pluggy` | `PLUGGY_WEBHOOK_SECRET` | `x-cashdeck-webhook-token` header, set in `headers` when the webhook is created |
+| Pluggy | `/api/webhooks/pluggy?token=<secret>` (event `all`) | `PLUGGY_WEBHOOK_SECRET` | the token in the registered URL (or the `x-cashdeck-webhook-token` header); the dashboard form has no header field |
 | Notaas | `/api/webhooks/notaas` | `NOTAAS_WEBHOOK_SECRET` | `X-Notaas-Signature: sha256=<hex HMAC of the raw body>` |
 
 ### What each event does

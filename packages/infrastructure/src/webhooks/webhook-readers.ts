@@ -165,7 +165,8 @@ const PLUGGY_SYNC_EVENTS = new Set([
   'transactions/deleted',
 ])
 
-// Pluggy signs nothing; the webhook is created with our token as a header.
+// Pluggy signs nothing, and its dashboard form takes only a URL and an event,
+// so the token rides in the URL (`?token=`); the header is accepted too.
 export class PluggyWebhookReader implements WebhookReader {
   readonly provider: WebhookProvider = 'pluggy'
 
@@ -181,7 +182,10 @@ export class PluggyWebhookReader implements WebhookReader {
       tenantId,
       delivery,
     )
-    requireSame(delivery.headers[WEBHOOK_TOKEN_HEADER], secret)
+    requireSame(
+      delivery.query.token ?? delivery.headers[WEBHOOK_TOKEN_HEADER],
+      secret,
+    )
     const body = parseObject(delivery.rawBody)
     const eventId = text(body.eventId) ?? bodyId(delivery.rawBody)
     const type = text(body.event) ?? 'UNKNOWN'

@@ -108,10 +108,10 @@ the crons do the same work on their schedule. For each provider you use:
      the panel shows into `MERCADO_PAGO_WEBHOOK_SECRET`.
    - **Inter Empresas** (banking webhook API, once per type):
      `https://<api domain>/api/webhooks/inter?token=<INTER_WEBHOOK_TOKEN>`.
-   - **Pluggy** (`POST /webhooks` with `event: "all"`): URL
-     `https://<api domain>/api/webhooks/pluggy` and
-     `headers: { "x-cashdeck-webhook-token": "<PLUGGY_WEBHOOK_SECRET>" }`;
-     headers can only be set through the API.
+   - **Pluggy** (dashboard webhook form, or `POST /webhooks`): URL
+     `https://<api domain>/api/webhooks/pluggy?token=<PLUGGY_WEBHOOK_SECRET>`,
+     event `all`. The form takes only a URL and an event, so the token goes in
+     the URL.
    - **Notaas** (webhook endpoints): URL
      `https://<api domain>/api/webhooks/notaas`; the endpoint secret goes into
      `NOTAAS_WEBHOOK_SECRET`.
