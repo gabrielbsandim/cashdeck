@@ -4,9 +4,10 @@ The API runs on Vercel and the database on Neon Postgres.
 
 ## Vercel project
 
-- Import the repository and set **Root Directory** to `apps/api`. Vercel
-  detects Next.js and pnpm; the build runs from the monorepo root, so the
-  workspace packages build through Turborepo.
+- Import the repository and set **Root Directory** to `apps/api`.
+  `apps/api/vercel.json` pins the install and build commands to the monorepo
+  root (`pnpm turbo run build --filter=@cashdeck/api`), so the workspace
+  packages and the Prisma client are built first.
 - Node.js 24 (the root `engines` field).
 - `apps/api/vercel.json` declares the crons (UTC):
 
@@ -17,9 +18,10 @@ The API runs on Vercel and the database on Neon Postgres.
   | `/api/cron/payment-ladder` | `0 11 * * 1-5` |
   | `/api/cron/reconcile-payments` | `0 21 * * 1-5` |
   | `/api/cron/invoices` | `0 12 * * 1-5` |
+  | `/api/cron/alerts` | `0 12 * * *` |
 
   Vercel sends `Authorization: Bearer $CRON_SECRET`; a cron without the secret
-  answers 401.
+  answers 401. Cron routes allow 300 seconds each.
 
 ## Database
 
@@ -40,13 +42,6 @@ again never overwrites an entity; change one with `PATCH /api/v1/entities/{id}`
 they all send the entity tax id. Without `DATABASE_URL` the API keeps
 everything in memory, which only suits local development; a Vercel deploy
 refuses to start without it.
-
-## Vercel project
-
-Import the repository with Root Directory `apps/api`. `apps/api/vercel.json`
-pins the install and build commands to the monorepo root
-(`pnpm turbo run build --filter=@cashdeck/api`), so the workspace packages and
-the Prisma client are built first. Cron routes allow 300 seconds each.
 
 ## Environment variables
 
