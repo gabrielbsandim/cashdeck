@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import {
   type BillSource,
+  categorizeAfterSync,
+  type ChatConfig,
   type Clock,
   DEFAULT_SAFETY_SETTINGS,
+  DEFAULT_CHAT_CONFIG,
   type Deps,
   FakeSecretVault,
   type IdGenerator,
@@ -12,6 +15,8 @@ import {
   InMemoryAuditLog,
   InMemoryBillRepository,
   InMemoryBudgetRepository,
+  InMemoryCategoryRepository,
+  InMemoryChatRepository,
   InMemoryConnectionRepository,
   InMemoryDeviceTokenRepository,
   InMemoryDocumentStore,
@@ -34,6 +39,8 @@ import {
   makeCaptureFile,
   makeCaptureSources,
   makeCardStatements,
+  makeCategorizeTransactions,
+  makeChat,
   makeCompanySummary,
   makeConsolidatedSummary,
   makeCreateManualAccount,
@@ -49,6 +56,7 @@ import {
   makeIssuerSetup,
   makeListAccounts,
   makeListBills,
+  makeListCategories,
   makeListEntities,
   makeUpdateEntity,
   makeListInvoices,
@@ -71,6 +79,7 @@ import {
   makeRunPaymentLadder,
   makeTestIssuer,
   makeUpdateAccount,
+  makeUpdateTransaction,
   makeUploadIssuerCertificate,
   type PaymentRail,
   type PaymentSettings,
@@ -152,6 +161,38 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
     webhookEvents: new InMemoryWebhookEventStore(),
     alertStore: new InMemoryAlertRepository(),
     devices: new InMemoryDeviceTokenRepository(),
+    categories: new InMemoryCategoryRepository(),
+    chat: new InMemoryChatRepository(),
+  }
+}
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max)
+
+const numberOr = (value: string | undefined, fallback: number) =>
+  value === undefined ? fallback : Number(value)
+
+export function chatConfig(env: ServerEnv): ChatConfig {
+  const defaults = DEFAULT_CHAT_CONFIG
+  return {
+    enabled: env.CHAT_ENABLED === 'true',
+    dailyTurnLimit: numberOr(
+      env.CHAT_DAILY_TURN_LIMIT,
+      defaults.dailyTurnLimit,
+    ),
+    dailyCostLimitMillicents:
+      numberOr(
+        env.CHAT_DAILY_COST_LIMIT_CENTS,
+        defaults.dailyCostLimitMillicents / 1000,
+      ) * 1000,
+    maxRounds: clamp(numberOr(env.CHAT_MAX_ROUNDS, defaults.maxRounds), 1, 12),
+    // Below the route maxDuration of 60 s, with room to save the reply.
+    turnBudgetMs: clamp(
+      numberOr(env.CHAT_TURN_BUDGET_MS, defaults.turnBudgetMs),
+      1000,
+      50_000,
+    ),
+    historyLimit: defaults.historyLimit,
   }
 }
 
@@ -234,6 +275,7 @@ export function buildContainer(
     ids: uuids,
   }
   const runPaymentLadder = withLadderAlerts(makeRunPaymentLadder(deps), alerts)
+  const categorizeTransactions = makeCategorizeTransactions(deps)
   return {
     deps,
     env,
@@ -257,13 +299,20 @@ export function buildContainer(
     createManualAccount: makeCreateManualAccount(deps),
     updateAccount: makeUpdateAccount(deps),
     listTransactions: makeListTransactions(deps),
+    updateTransaction: makeUpdateTransaction(deps),
+    listCategories: makeListCategories(deps),
+    categorizeTransactions,
+    chat: makeChat(deps, chatConfig(env)),
     listTransfers: makeListTransfers(deps),
     getTransfer: makeGetTransfer(deps),
     recordTransfer: makeRecordTransfer(deps),
     personalSummary: makePersonalSummary(deps),
     companySummary: makeCompanySummary(deps),
     consolidatedSummary: makeConsolidatedSummary(deps),
-    openFinance: makeOpenFinance(deps),
+    openFinance: categorizeAfterSync(
+      makeOpenFinance(deps),
+      categorizeTransactions,
+    ),
     rails: makeRails(deps),
     automation: makeAutomation(deps),
     captureSources: makeCaptureSources(deps),

@@ -3,6 +3,7 @@ import {
   type AlertRepository,
   type DeviceTokenRepository,
 } from '@/ports/alerts'
+import { type ChatRepository } from '@/ports/chat'
 import { type LlmProvider } from '@/ports/llm-provider'
 import { type RailId } from '@cashdeck/domain'
 import {
@@ -18,6 +19,7 @@ import { type ReserveFunder } from '@/ports/reserve-funder'
 import {
   type AttachmentRepository,
   type BudgetRepository,
+  type CategoryRepository,
   type ConnectionRepository,
   type DocumentStore,
   type InstitutionRepository,
@@ -62,6 +64,8 @@ export type Deps = {
   transfers: TransferRepository
   invoices: InvoiceRepository
   budgets: BudgetRepository
+  categories: CategoryRepository
+  chat: ChatRepository
   attachments: AttachmentRepository
   documents: DocumentStore
   bills: BillRepository

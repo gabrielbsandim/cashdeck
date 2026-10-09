@@ -3,8 +3,10 @@ import { z } from 'zod'
 import { InvalidTransitionError, ValidationError } from '@cashdeck/domain'
 import {
   AmountRequiredError,
+  ConflictError,
   NotFoundError,
   ProviderNotConfiguredError,
+  QuotaExceededError,
 } from '@cashdeck/application'
 import { fail, handleError, ok, okPage, readJson } from '@/server/api/respond'
 import { reportError, safeLogError } from '@/server/observability'
@@ -44,6 +46,8 @@ describe('respond helpers', () => {
         'INVALID_TRANSITION',
       ],
       [new ProviderNotConfiguredError('Inter'), 503, 'NOT_CONFIGURED'],
+      [new ConflictError('busy'), 409, 'CONFLICT'],
+      [new QuotaExceededError('used up'), 429, 'RATE_LIMITED'],
       [Object.assign(new Error('dup'), { code: 'P2002' }), 409, 'CONFLICT'],
       [Object.assign(new Error('gone'), { code: 'P2025' }), 404, 'NOT_FOUND'],
     ]

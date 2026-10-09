@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ConflictError,
   NotFoundError,
   ProviderNotConfiguredError,
+  QuotaExceededError,
   UnauthorizedError,
 } from '@/errors/errors'
 import { LlmProviderError } from '@/ports/llm-provider'
@@ -28,6 +30,14 @@ describe('application errors', () => {
     expect(new LlmProviderError('m', 'c', cause)).toMatchObject({
       code: 'c',
       cause,
+    })
+    expect(new QuotaExceededError('q')).toMatchObject({
+      code: 'RATE_LIMITED',
+      name: 'QuotaExceededError',
+    })
+    expect(new ConflictError('c')).toMatchObject({
+      code: 'CONFLICT',
+      name: 'ConflictError',
     })
   })
 })

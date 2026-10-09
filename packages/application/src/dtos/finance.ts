@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { ACCOUNT_ORIGINS, ACCOUNT_TYPES, TAX_REGIMES } from '@cashdeck/domain'
+import {
+  ACCOUNT_ORIGINS,
+  ACCOUNT_TYPES,
+  CATEGORIZED_BY,
+  TAX_REGIMES,
+} from '@cashdeck/domain'
 import {
   entityKindSchema,
   isoDate,
@@ -73,6 +78,9 @@ export const transactionViewSchema = z.object({
   kind: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
   transferId: z.string().nullable(),
   invoiceId: z.string().nullable(),
+  note: z.string().nullable(),
+  categorizedBy: z.enum(CATEGORIZED_BY).nullable(),
+  categoryConfidence: z.number().min(0).max(1).nullable(),
 })
 
 export type TransactionView = z.infer<typeof transactionViewSchema>
@@ -82,7 +90,38 @@ export const listTransactionsQuerySchema = pageQuerySchema.extend({
   accountId: z.string().min(1).optional(),
   from: isoDate.optional(),
   to: isoDate.optional(),
+  categoryId: z.string().min(1).optional(),
+  uncategorized: z
+    .enum(['true', 'false'])
+    .transform(value => value === 'true')
+    .optional(),
+  search: z.string().trim().min(1).max(100).optional(),
 })
+
+export const updateTransactionSchema = z.object({
+  categoryId: z.string().min(1).nullable().optional(),
+  note: z.string().max(500).nullable().optional(),
+  applyToSimilar: z.boolean().default(false),
+})
+
+export const updateTransactionResultSchema = z.object({
+  transaction: transactionViewSchema,
+  similarUpdated: z.int(),
+})
+
+export type UpdateTransactionResult = z.infer<
+  typeof updateTransactionResultSchema
+>
+
+export const categoryViewSchema = z.object({
+  id: z.string(),
+  key: z.string().nullable(),
+  name: z.string(),
+  icon: z.string().nullable(),
+  parentId: z.string().nullable(),
+})
+
+export type CategoryView = z.infer<typeof categoryViewSchema>
 
 const transferPartySchema = z.object({
   owner: entityKindSchema,

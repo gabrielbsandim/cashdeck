@@ -29,6 +29,7 @@ import {
 import {
   InMemoryAttachmentRepository,
   InMemoryBudgetRepository,
+  InMemoryCategoryRepository,
   InMemoryConnectionRepository,
   InMemoryDocumentStore,
   InMemoryInstitutionRepository,
@@ -41,6 +42,7 @@ import {
   InMemorySecretStore,
 } from '@/testing/repositories'
 import { type WebhookProvider, type WebhookReader } from '@/ports/webhooks'
+import { InMemoryChatRepository } from '@/testing/chat'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import { InMemoryWebhookEventStore } from '@/testing/webhooks'
 import {
@@ -73,6 +75,8 @@ export function fullDeps(options: Options = {}) {
     transfers: new InMemoryTransferRepository(),
     invoices: new InMemoryInvoiceRepository(),
     budgets: options.budgets ?? new InMemoryBudgetRepository(),
+    categories: new InMemoryCategoryRepository(),
+    chat: new InMemoryChatRepository(),
     attachments: new InMemoryAttachmentRepository(),
     documents: new InMemoryDocumentStore(),
     secrets: new InMemorySecretStore(),

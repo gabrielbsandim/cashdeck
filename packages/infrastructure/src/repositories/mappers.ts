@@ -10,6 +10,7 @@ import {
   type BillKind,
   type BillSource,
   type BillStatus,
+  type CategorizedBy,
   type EntityKind,
   type FinancialEntity,
   type FundingStatus,
@@ -62,6 +63,9 @@ export type TransactionRow = {
   categoryId: string | null
   transferGroupId: string | null
   invoiceId: string | null
+  note: string | null
+  categorizedBy: CategorizedBy | null
+  categoryConfidence: number | null
 }
 
 export type BillRow = {
@@ -186,6 +190,9 @@ export function transactionFromRow(row: TransactionRow): Transaction {
     transferGroupId: row.transferGroupId,
     externalId: row.externalId,
     invoiceId: row.invoiceId,
+    note: row.note,
+    categorizedBy: row.categorizedBy,
+    categoryConfidence: row.categoryConfidence,
   })
 }
 
@@ -202,6 +209,9 @@ export function transactionToRow(transaction: Transaction): TransactionRow {
     categoryId: transaction.categoryId,
     transferGroupId: transaction.transferGroupId,
     invoiceId: transaction.invoiceId,
+    note: transaction.note,
+    categorizedBy: transaction.categorizedBy,
+    categoryConfidence: transaction.categoryConfidence,
   }
 }
 

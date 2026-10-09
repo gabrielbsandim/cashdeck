@@ -174,6 +174,40 @@ describe('transactions', () => {
       bookedOn: { gte: undefined, lte: undefined },
     })
   })
+
+  it('filters by category, uncategorized and text', async () => {
+    const { db, repos } = mockClient()
+    db.transaction.findMany.mockResolvedValue([])
+    await repos.transactions.all(TENANT, { categoryId: 'c1', search: 'sol' })
+    expect(db.transaction.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      categoryId: 'c1',
+      OR: [
+        { description: { contains: 'sol', mode: 'insensitive' } },
+        { note: { contains: 'sol', mode: 'insensitive' } },
+      ],
+    })
+    await repos.transactions.all(TENANT, {
+      categoryId: 'c1',
+      uncategorized: true,
+    })
+    expect(db.transaction.findMany.mock.calls[1]?.[0].where).toMatchObject({
+      categoryId: null,
+      OR: undefined,
+    })
+  })
+
+  it('maps the note and who categorized it', async () => {
+    const { db, repos } = mockClient()
+    const noted = {
+      ...transaction,
+      note: 'lunch',
+      categoryId: 'c1',
+      categorizedBy: 'AI' as const,
+      categoryConfidence: 0.8,
+    }
+    db.transaction.findFirst.mockResolvedValueOnce(transactionToRow(noted))
+    expect(await repos.transactions.findById(TENANT, 'tx1')).toEqual(noted)
+  })
 })
 
 describe('connections and transfers', () => {

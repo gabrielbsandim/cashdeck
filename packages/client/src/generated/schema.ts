@@ -209,6 +209,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the category or note; a category change learns a rule */
+        patch: operations["updateTransaction"];
+        trace?: never;
+    };
+    "/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Categories, built-in ones first created on demand */
+        get: operations["listCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transfers": {
         parameters: {
             query?: never;
@@ -1204,6 +1238,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/chat/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chat threads, most recent activity first */
+        get: operations["listChatThreads"];
+        put?: never;
+        /** Start a chat for one entity or both */
+        post: operations["createChatThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/threads/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Messages of a thread, oldest first */
+        get: operations["listChatMessages"];
+        put?: never;
+        /** Send text and files; returns the stored message and the reply */
+        post: operations["sendChatMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/actions/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run an action the assistant proposed */
+        post: operations["confirmChatAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/chat/actions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard an action the assistant proposed */
+        post: operations["cancelChatAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1260,6 +1364,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1302,6 +1407,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1340,6 +1446,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1389,6 +1496,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1488,6 +1596,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1558,6 +1667,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1630,6 +1740,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1702,6 +1813,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1759,6 +1871,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1808,6 +1921,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1872,6 +1986,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1930,6 +2045,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -1944,6 +2060,9 @@ export interface operations {
                 accountId?: string;
                 from?: string;
                 to?: string;
+                categoryId?: string;
+                uncategorized?: "true" | "false";
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -1974,6 +2093,10 @@ export interface operations {
                             kind: "INCOME" | "EXPENSE" | "TRANSFER";
                             transferId: string | null;
                             invoiceId: string | null;
+                            note: string | null;
+                            /** @enum {string|null} */
+                            categorizedBy: "RULE" | "AI" | "USER" | null;
+                            categoryConfidence: number | null;
                         }[];
                         nextCursor: string | null;
                     };
@@ -1984,6 +2107,109 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    categoryId?: string | null;
+                    note?: string | null;
+                    /** @default false */
+                    applyToSimilar?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Set the category or note; a category change learns a rule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            transaction: {
+                                id: string;
+                                accountId: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                bookedOn: string;
+                                description: string;
+                                categoryId: string | null;
+                                /** @enum {string} */
+                                kind: "INCOME" | "EXPENSE" | "TRANSFER";
+                                transferId: string | null;
+                                invoiceId: string | null;
+                                note: string | null;
+                                /** @enum {string|null} */
+                                categorizedBy: "RULE" | "AI" | "USER" | null;
+                                categoryConfidence: number | null;
+                            };
+                            similarUpdated: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories, built-in ones first created on demand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            key: string | null;
+                            name: string;
+                            icon: string | null;
+                            parentId: string | null;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2042,6 +2268,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2113,6 +2340,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2171,6 +2399,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2201,6 +2430,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2260,6 +2490,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2331,6 +2562,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2416,6 +2648,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2514,6 +2747,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2576,6 +2810,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2628,6 +2863,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2658,6 +2894,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2703,6 +2940,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2734,6 +2972,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2791,6 +3030,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2830,6 +3070,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2872,6 +3113,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2906,6 +3148,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2942,6 +3185,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -2987,6 +3231,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3021,6 +3266,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3066,6 +3312,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3103,6 +3350,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3159,6 +3407,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3199,6 +3448,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3243,6 +3493,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3287,6 +3538,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3331,6 +3583,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3390,6 +3643,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3438,6 +3692,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3477,6 +3732,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3506,6 +3762,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3571,6 +3828,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3621,6 +3879,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3671,6 +3930,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3727,6 +3987,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3778,6 +4039,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3821,6 +4083,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3874,6 +4137,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3927,6 +4191,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3960,6 +4225,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -3993,6 +4259,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4046,6 +4313,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4076,6 +4344,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4106,6 +4375,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4159,6 +4429,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4237,6 +4508,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4292,6 +4564,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4326,6 +4599,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4400,6 +4674,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4465,6 +4740,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4540,6 +4816,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4602,6 +4879,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4654,6 +4932,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4708,6 +4987,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4766,6 +5046,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4813,6 +5094,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4861,6 +5143,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4897,6 +5180,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4927,6 +5211,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -4976,6 +5261,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5008,6 +5294,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5054,6 +5341,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5086,6 +5374,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5122,6 +5411,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5166,6 +5456,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5210,6 +5501,7 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];
@@ -5244,6 +5536,407 @@ export interface operations {
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listChatThreads: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chat threads, most recent activity first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            scope: "PF" | "PJ" | "ALL";
+                            title: string | null;
+                            createdAt: string;
+                            updatedAt: string;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createChatThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default ALL
+                     * @enum {string}
+                     */
+                    scope?: "PF" | "PJ" | "ALL";
+                };
+            };
+        };
+        responses: {
+            /** @description Start a chat for one entity or both */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            scope: "PF" | "PJ" | "ALL";
+                            title: string | null;
+                            createdAt: string;
+                            updatedAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listChatMessages: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Messages of a thread, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            threadId: string;
+                            /** @enum {string} */
+                            role: "user" | "assistant";
+                            text: string;
+                            /** @enum {string|null} */
+                            notice: "ROUND_LIMIT" | "TIME_BUDGET" | "EMPTY" | "ERROR" | null;
+                            attachments: {
+                                id: string;
+                                fileName: string;
+                                mimeType: string;
+                                size: number;
+                            }[];
+                            actions: {
+                                id: string;
+                                threadId: string;
+                                /** @enum {string} */
+                                tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                                /** @enum {string} */
+                                status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
+                                /** @enum {string|null} */
+                                entity: "PF" | "PJ" | null;
+                                needsEntity: boolean;
+                                details: {
+                                    payee: string | null;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    } | null;
+                                    dueDate: string | null;
+                                    fileName: string | null;
+                                    pattern: string | null;
+                                    category: string | null;
+                                    payer: string | null;
+                                };
+                                result: {
+                                    billId: string | null;
+                                    invoiceId: string | null;
+                                    ruleId: string | null;
+                                    updated: number | null;
+                                } | null;
+                                error: string | null;
+                                createdAt: string;
+                            }[];
+                            createdAt: string;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    sendChatMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @default  */
+                    text?: string;
+                    /** @default [] */
+                    attachments?: {
+                        fileName: string;
+                        mimeType: string;
+                        base64: string;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Send text and files; returns the stored message and the reply */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            messages: {
+                                id: string;
+                                threadId: string;
+                                /** @enum {string} */
+                                role: "user" | "assistant";
+                                text: string;
+                                /** @enum {string|null} */
+                                notice: "ROUND_LIMIT" | "TIME_BUDGET" | "EMPTY" | "ERROR" | null;
+                                attachments: {
+                                    id: string;
+                                    fileName: string;
+                                    mimeType: string;
+                                    size: number;
+                                }[];
+                                actions: {
+                                    id: string;
+                                    threadId: string;
+                                    /** @enum {string} */
+                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                                    /** @enum {string} */
+                                    status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
+                                    /** @enum {string|null} */
+                                    entity: "PF" | "PJ" | null;
+                                    needsEntity: boolean;
+                                    details: {
+                                        payee: string | null;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        } | null;
+                                        dueDate: string | null;
+                                        fileName: string | null;
+                                        pattern: string | null;
+                                        category: string | null;
+                                        payer: string | null;
+                                    };
+                                    result: {
+                                        billId: string | null;
+                                        invoiceId: string | null;
+                                        ruleId: string | null;
+                                        updated: number | null;
+                                    } | null;
+                                    error: string | null;
+                                    createdAt: string;
+                                }[];
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    confirmChatAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    entity?: "PF" | "PJ";
+                };
+            };
+        };
+        responses: {
+            /** @description Run an action the assistant proposed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            threadId: string;
+                            /** @enum {string} */
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                            /** @enum {string} */
+                            status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
+                            /** @enum {string|null} */
+                            entity: "PF" | "PJ" | null;
+                            needsEntity: boolean;
+                            details: {
+                                payee: string | null;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                dueDate: string | null;
+                                fileName: string | null;
+                                pattern: string | null;
+                                category: string | null;
+                                payer: string | null;
+                            };
+                            result: {
+                                billId: string | null;
+                                invoiceId: string | null;
+                                ruleId: string | null;
+                                updated: number | null;
+                            } | null;
+                            error: string | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    cancelChatAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discard an action the assistant proposed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            threadId: string;
+                            /** @enum {string} */
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                            /** @enum {string} */
+                            status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
+                            /** @enum {string|null} */
+                            entity: "PF" | "PJ" | null;
+                            needsEntity: boolean;
+                            details: {
+                                payee: string | null;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                dueDate: string | null;
+                                fileName: string | null;
+                                pattern: string | null;
+                                category: string | null;
+                                payer: string | null;
+                            };
+                            result: {
+                                billId: string | null;
+                                invoiceId: string | null;
+                                ruleId: string | null;
+                                updated: number | null;
+                            } | null;
+                            error: string | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
             500: components["responses"]["Error"];
             502: components["responses"]["Error"];
             503: components["responses"]["Error"];

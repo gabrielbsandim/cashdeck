@@ -1,4 +1,10 @@
-import { type LocalDate, type Money, type Transaction } from '@cashdeck/domain'
+import {
+  type Category,
+  type CategoryRule,
+  type LocalDate,
+  type Money,
+  type Transaction,
+} from '@cashdeck/domain'
 import { type Page, type PageRequest } from '@/ports/repositories'
 
 export type Institution = {
@@ -18,6 +24,10 @@ export type TransactionFilter = {
   accountIds?: readonly string[]
   from?: LocalDate
   to?: LocalDate
+  categoryId?: string
+  uncategorized?: boolean
+  // Case-insensitive substring of the description or the note.
+  search?: string
 }
 
 export interface TransactionRepository {
@@ -236,4 +246,12 @@ export interface DocumentStore {
   ): Promise<void>
   list<T>(tenantId: string, collection: string): Promise<T[]>
   delete(tenantId: string, collection: string, id: string): Promise<void>
+}
+
+export interface CategoryRepository {
+  list(tenantId: string): Promise<Category[]>
+  findById(tenantId: string, id: string): Promise<Category | null>
+  save(category: Category): Promise<void>
+  listRules(tenantId: string): Promise<CategoryRule[]>
+  saveRule(rule: CategoryRule): Promise<void>
 }

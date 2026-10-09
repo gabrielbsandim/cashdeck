@@ -1,4 +1,8 @@
-import { type Transaction } from '@cashdeck/domain'
+import {
+  type Category,
+  type CategoryRule,
+  type Transaction,
+} from '@cashdeck/domain'
 import { type Page, type PageRequest } from '@/ports/repositories'
 import {
   type Attachment,
@@ -6,6 +10,7 @@ import {
   type AttachmentRepository,
   type BudgetLimit,
   type BudgetRepository,
+  type CategoryRepository,
   type Connection,
   type ConnectionRepository,
   type DocumentStore,
@@ -65,12 +70,33 @@ export class InMemoryInstitutionRepository
   }
 }
 
+function containsText(transaction: Transaction, search: string): boolean {
+  const needle = search.toLowerCase()
+  return [transaction.description, transaction.note ?? ''].some(text =>
+    text.toLowerCase().includes(needle),
+  )
+}
+
+function inCategory(transaction: Transaction, filter: TransactionFilter) {
+  if (filter.uncategorized) {
+    return transaction.categoryId === null
+  }
+  return !filter.categoryId || transaction.categoryId === filter.categoryId
+}
+
 function matches(transaction: Transaction, filter: TransactionFilter): boolean {
   const inAccounts =
     !filter.accountIds || filter.accountIds.includes(transaction.accountId)
   const afterFrom = !filter.from || transaction.bookedOn >= filter.from
   const beforeTo = !filter.to || transaction.bookedOn <= filter.to
-  return inAccounts && afterFrom && beforeTo
+  const found = !filter.search || containsText(transaction, filter.search)
+  return (
+    inAccounts &&
+    afterFrom &&
+    beforeTo &&
+    found &&
+    inCategory(transaction, filter)
+  )
 }
 
 export class InMemoryTransactionRepository
@@ -341,5 +367,24 @@ export class InMemoryDocumentStore implements DocumentStore {
     id: string,
   ): Promise<void> {
     this.rows.delete(InMemoryDocumentStore.id(tenantId, collection, id))
+  }
+}
+
+export class InMemoryCategoryRepository
+  extends TenantMap<Category>
+  implements CategoryRepository
+{
+  private readonly rules = new Map<string, CategoryRule>()
+
+  async list(tenantId: string): Promise<Category[]> {
+    return this.of(tenantId)
+  }
+
+  async listRules(tenantId: string): Promise<CategoryRule[]> {
+    return [...this.rules.values()].filter(rule => rule.tenantId === tenantId)
+  }
+
+  async saveRule(rule: CategoryRule): Promise<void> {
+    this.rules.set(key(rule.tenantId, rule.id), rule)
   }
 }

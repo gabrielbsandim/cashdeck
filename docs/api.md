@@ -14,6 +14,7 @@ machine-readable version of this file.
 - **Error codes.** `UNAUTHORIZED` 401, `NOT_FOUND` 404, `CONFLICT` 409,
   `INVALID_TRANSITION` 409, `VALIDATION_ERROR` 422, `AMOUNT_REQUIRED` 422
   (see Bills), `INVALID_JSON` 400,
+  `RATE_LIMITED` 429 (the daily AI chat quota),
   `NOT_CONFIGURED` 503 (a provider or the server token is missing),
   `PROVIDER_ERROR` 502, `INTERNAL_ERROR` 500.
 - **Money** is always an object `{ "cents": int, "currency": "BRL" }`. Cents are
@@ -195,18 +196,51 @@ Body: `{ name?: string, isReserve?: bool, cdiPercent?: int | null, balanceCents?
 
 ## Transactions
 
-### GET /transactions?entity=&accountId=&from=&to=&cursor=&limit=
+### GET /transactions?entity=&accountId=&categoryId=&uncategorized=&search=&from=&to=&cursor=&limit=
 
-Newest first. `data`: array of
+Newest first. `categoryId` keeps one category, `uncategorized=true` keeps the
+ones without (it wins over `categoryId`), `search` matches the description or
+the note, case-insensitive. `data`: array of
 
 ```json
 {
   "id": string, "accountId": string, "entityKind": "PF"|"PJ", "amount": Money,
   "bookedOn": date, "description": string, "categoryId": string | null,
   "kind": "INCOME"|"EXPENSE"|"TRANSFER", "transferId": string | null,
-  "invoiceId": string | null
+  "invoiceId": string | null, "note": string | null,
+  "categorizedBy": "RULE"|"AI"|"USER" | null,
+  "categoryConfidence": number | null
 }
 ```
+
+`categoryConfidence` goes from 0 to 1: 1 for a rule or the user, the model's
+own score for `AI` (guesses below 0.5 are not stored).
+
+### PATCH /transactions/{id}
+
+Body `{ categoryId?: string | null, note?: string | null, applyToSimilar?: bool }`
+(note at most 500 characters; a blank note clears it). Setting a category marks
+it `USER` and learns a rule for the account's entity from the description's
+merchant words (bank noise such as `PIX`, `COMPRA` and digits is dropped). With
+`applyToSimilar: true` the rule also relabels existing transactions of that
+entity that the user did not set. `data`:
+`{ transaction: Transaction, similarUpdated: int }`.
+
+### GET /categories
+
+`data`: `[{ id, key: string | null, name, icon: string | null, parentId: string | null }]`,
+by name. A tenant with no categories gets the built-in list on the first call;
+`key` is the stable slug of a built-in one (`groceries`, `restaurants`,
+`transport`, `fuel`, `housing`, `utilities`, `health`, `education`, `leisure`,
+`shopping`, `subscriptions`, `travel`, `taxes`, `fees`, `salary`, `income`,
+`investments`, `transfers`, `services`, `other`), so the app can translate it.
+
+### Automatic categorization
+
+After every Open Finance sync (manual or cron) the server categorizes the
+uncategorized transactions of the last 90 days, at most 200 per run: rules
+first (`RULE`), then the `LlmProvider` in batches of 40 (`AI`). A failed model
+call never fails the sync; the rest waits for the next one.
 
 ### Internal transfers
 
@@ -641,6 +675,83 @@ same day never repeats it.
   or refreshes the FCM token of this device. `data`: `{ token, platform, createdAt, lastSeenAt }`, 201.
 - `DELETE /devices/{token}`: the token percent-encoded. `{ removed: bool }`.
   Tokens FCM reports as unregistered are removed on the next push.
+
+## AI chat
+
+The assistant answers over the tenant's own data with tools. The server fixes
+the tenant and the entity scope of each thread; the model can narrow a query
+but never widen it. Side effects are never run by the model: it proposes a
+pending action and the app confirms it.
+
+`ChatThread`: `{ id, scope: "PF"|"PJ"|"ALL", title: string | null, createdAt: timestamp, updatedAt: timestamp }`.
+
+`ChatMessage`:
+
+```json
+{
+  "id": string, "threadId": string, "role": "user"|"assistant", "text": string,
+  "notice": null | "ROUND_LIMIT" | "TIME_BUDGET" | "EMPTY" | "ERROR",
+  "attachments": [{ "id": string, "fileName": string, "mimeType": string, "size": int }],
+  "actions": [ChatAction],
+  "createdAt": timestamp
+}
+```
+
+`notice` explains an assistant message with no text: the turn hit the round
+limit or the time budget, the model answered nothing twice, or the model call
+failed.
+
+`ChatAction`:
+
+```json
+{
+  "id": string, "threadId": string,
+  "tool": "CREATE_BILL_FROM_ATTACHMENT"|"PAY_BILL"|"CREATE_CATEGORY_RULE"|"DRAFT_INVOICE",
+  "status": "PENDING"|"CONFIRMED"|"CANCELLED"|"FAILED"|"EXPIRED",
+  "entity": "PF"|"PJ" | null, "needsEntity": bool,
+  "details": { "payee": string|null, "amount": Money|null, "dueDate": date|null,
+               "fileName": string|null, "pattern": string|null,
+               "category": string|null, "payer": string|null },
+  "result": null | { "billId": string|null, "invoiceId": string|null,
+                     "ruleId": string|null, "updated": int|null },
+  "error": string | null, "createdAt": timestamp
+}
+```
+
+A pending action expires after 24 hours.
+
+- `POST /chat/threads`: body `{ scope?: "PF"|"PJ"|"ALL" }` (default `ALL`).
+  `data`: `ChatThread`, 201.
+- `GET /chat/threads?cursor=&limit=`: page of `ChatThread`, most recent
+  activity first.
+- `GET /chat/threads/{id}/messages?cursor=&limit=`: page of `ChatMessage`,
+  oldest first.
+- `POST /chat/threads/{id}/messages`: body
+  `{ text?: string, attachments?: [{ fileName, mimeType, base64 }] }`. Text up
+  to 4000 characters, up to 3 files (JPEG, PNG, HEIC, WebP, PDF, MP3, M4A, AAC,
+  OGG, WAV, WebM audio), 4 MB of base64 in total so the request stays under
+  the Vercel body limit; text or a file is required. `data`:
+  `{ messages: [ChatMessage] }` with the stored user message and the reply,
+  201. 429 `RATE_LIMITED` once the daily quota is used, 409 `CONFLICT` while
+  another reply on the same thread is being written, 503 `NOT_CONFIGURED`
+  when `CHAT_ENABLED=false`.
+- `POST /chat/actions/{id}/confirm`: body `{ entity?: "PF"|"PJ" }`, required
+  when `needsEntity` is true (a bill read from a file in an `ALL` thread).
+  Runs the existing use case (bill capture, the payment ladder with
+  `confirmed: true`, the rule, or the invoice for that income), records an
+  audit event with the request actor and returns the `ChatAction` with `result`, or `FAILED` with
+  `error`. Confirming a settled action returns it unchanged.
+- `POST /chat/actions/{id}/cancel`: a pending action becomes `CANCELLED`.
+
+Tools the model can call: `query_transactions`, `summarize_period`,
+`compare_categories`, `list_bills`, `net_worth_snapshot`, `explain_charge`
+(read), and `create_bill_from_attachment`, `pay_bill`,
+`create_categorization_rule`, `draft_invoice` (propose only). A turn is bounded
+by `CHAT_MAX_ROUNDS` model calls and `CHAT_TURN_BUDGET_MS`, and retries once
+after an empty answer. User text is normalized, stripped of control and
+invisible characters and wrapped in a `<user_message>` block; attachments,
+transaction descriptions and tool results are declared data, and phrases that
+try to override the instructions are flagged and recorded on the reply.
 
 ## Crons
 

@@ -31,6 +31,10 @@ import {
 } from '@cashdeck/application'
 import { Money, type Transaction } from '@cashdeck/domain'
 import {
+  PrismaCategoryRepository,
+  PrismaChatRepository,
+} from '@/repositories/prisma-insights'
+import {
   fromDbDate,
   toDbDate,
   transactionFromRow,
@@ -83,6 +87,18 @@ export class PrismaInstitutionRepository implements InstitutionRepository {
   }
 }
 
+function categoryWhere(filter: TransactionFilter) {
+  return filter.uncategorized ? null : filter.categoryId
+}
+
+function searchWhere(search: string | undefined) {
+  if (!search) {
+    return undefined
+  }
+  const contains = { contains: search, mode: 'insensitive' as const }
+  return [{ description: contains }, { note: contains }]
+}
+
 function transactionWhere(tenantId: string, filter: TransactionFilter) {
   return {
     tenantId,
@@ -91,6 +107,8 @@ function transactionWhere(tenantId: string, filter: TransactionFilter) {
       gte: filter.from ? toDbDate(filter.from) : undefined,
       lte: filter.to ? toDbDate(filter.to) : undefined,
     },
+    categoryId: categoryWhere(filter),
+    OR: searchWhere(filter.search),
   }
 }
 
@@ -630,5 +648,7 @@ export function createPrismaRecords(db: PrismaClient) {
     attachments: new PrismaAttachmentRepository(db),
     documents: new PrismaDocumentStore(db),
     webhookEvents: new PrismaWebhookEventStore(db),
+    categories: new PrismaCategoryRepository(db),
+    chat: new PrismaChatRepository(db),
   }
 }

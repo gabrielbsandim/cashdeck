@@ -64,7 +64,12 @@ read from are in [providers.md](providers.md).
 | `CASHDECK_SERVER_NAME` | no | Shown by `GET /auth/check`, defaults to `Cashdeck` |
 | `CASHDECK_APP_SCHEME` | no | Deep link scheme of the OAuth redirect, defaults to `cashdeck` |
 | `SENTRY_DSN` | no | Error reporting |
-| `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL_ID`, `AI_GATEWAY_API_KEY`, `AI_GATEWAY_FALLBACK_MODEL` | for AI | Card statements and shared bills |
+| `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL_ID`, `AI_GATEWAY_API_KEY`, `AI_GATEWAY_FALLBACK_MODEL` | for AI | Card statements, shared bills, categorization and the chat. `LLM_PROVIDER` is `gateway`, `gemini` or `fake` (the default, no network) |
+| `CHAT_ENABLED` | no | `false` turns the AI chat off (503); defaults to `true` |
+| `CHAT_DAILY_TURN_LIMIT` | no | Chat messages per tenant per day, defaults to `100` |
+| `CHAT_DAILY_COST_LIMIT_CENTS` | no | Model spend per tenant per day in BRL cents, defaults to `200` |
+| `CHAT_MAX_ROUNDS` | no | Model calls per chat turn, 1 to 12, defaults to `6` |
+| `CHAT_TURN_BUDGET_MS` | no | Wall time of a chat turn, 1000 to 50000, defaults to `25000` (the route allows 60 s) |
 | `BRL_PER_USD` | no | Fallback exchange rate |
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | for Open Finance | Aggregator |
 | `ASAAS_API_KEY`, `ASAAS_ENVIRONMENT` | no | Tenant-wide Asaas fallback |

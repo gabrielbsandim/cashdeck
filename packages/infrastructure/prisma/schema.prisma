@@ -117,6 +117,12 @@ enum CardBillStatus {
   PAID
 }
 
+enum CategorizedBy {
+  RULE
+  AI
+  USER
+}
+
 model Tenant {
   id        String   @id
   name      String
@@ -201,29 +207,33 @@ model Account {
 }
 
 model Transaction {
-  id              String   @id
-  tenantId        String   @map("tenant_id")
-  accountId       String   @map("account_id")
-  externalId      String?  @map("external_id")
-  amountCents     BigInt   @map("amount_cents")
-  currency        String   @db.Char(3)
-  bookedOn        DateTime @map("booked_on") @db.Date
-  description     String
-  categoryId      String?  @map("category_id")
-  transferGroupId String?  @map("transfer_group_id")
-  invoiceId       String?  @map("invoice_id")
-  note            String?
+  id                 String         @id
+  tenantId           String         @map("tenant_id")
+  accountId          String         @map("account_id")
+  externalId         String?        @map("external_id")
+  amountCents        BigInt         @map("amount_cents")
+  currency           String         @db.Char(3)
+  bookedOn           DateTime       @map("booked_on") @db.Date
+  description        String
+  categoryId         String?        @map("category_id")
+  transferGroupId    String?        @map("transfer_group_id")
+  invoiceId          String?        @map("invoice_id")
+  note               String?
+  categorizedBy      CategorizedBy? @map("categorized_by")
+  categoryConfidence Float?         @map("category_confidence")
 
   account Account @relation(fields: [accountId], references: [id])
 
   @@unique([tenantId, accountId, externalId])
   @@index([tenantId, bookedOn])
+  @@index([tenantId, categoryId])
   @@map("transactions")
 }
 
 model Category {
   id       String  @id
   tenantId String  @map("tenant_id")
+  key      String?
   name     String
   parentId String? @map("parent_id")
   icon     String?
@@ -233,11 +243,13 @@ model Category {
 }
 
 model CategoryRule {
-  id         String @id
-  tenantId   String @map("tenant_id")
+  id         String   @id
+  tenantId   String   @map("tenant_id")
+  entityId   String?  @map("entity_id")
   pattern    String
-  categoryId String @map("category_id")
-  priority   Int    @default(0)
+  categoryId String   @map("category_id")
+  priority   Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
   @@map("category_rules")
@@ -635,12 +647,15 @@ model Secret {
 model ChatThread {
   id        String   @id
   tenantId  String   @map("tenant_id")
+  scope     String   @default("ALL")
   title     String?
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
 
   messages ChatMessage[]
 
   @@index([tenantId])
+  @@index([tenantId, updatedAt])
   @@map("chat_threads")
 }
 
@@ -651,6 +666,7 @@ model ChatMessage {
   role      String
   content   String
   toolCalls Json?                       @map("tool_calls")
+  notice    String?
   embedding Unsupported("vector(768)")?
   createdAt DateTime                    @default(now()) @map("created_at")
 
@@ -658,4 +674,39 @@ model ChatMessage {
 
   @@index([tenantId, threadId])
   @@map("chat_messages")
+}
+
+model ChatAttachment {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  threadId  String   @map("thread_id")
+  messageId String   @map("message_id")
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  size      Int
+  bytes     Bytes
+  createdAt DateTime @map("created_at")
+
+  @@index([tenantId, threadId])
+  @@map("chat_attachments")
+}
+
+model ChatAction {
+  id          String      @id
+  tenantId    String      @map("tenant_id")
+  threadId    String      @map("thread_id")
+  messageId   String      @map("message_id")
+  tool        String
+  status      String
+  entity      EntityKind?
+  needsEntity Boolean     @default(false) @map("needs_entity")
+  target      Json        @default("{}")
+  details     Json        @default("{}")
+  result      Json?
+  error       String?
+  createdAt   DateTime    @map("created_at")
+  resolvedAt  DateTime?   @map("resolved_at")
+
+  @@index([tenantId, threadId])
+  @@map("chat_actions")
 }

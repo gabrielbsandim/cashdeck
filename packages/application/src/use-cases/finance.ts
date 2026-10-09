@@ -265,6 +265,9 @@ export function toTransactionView(
     kind: transactionKind(transaction),
     transferId: transaction.transferGroupId,
     invoiceId: transaction.invoiceId,
+    note: transaction.note,
+    categorizedBy: transaction.categorizedBy,
+    categoryConfidence: transaction.categoryConfidence,
   }
 }
 
@@ -283,7 +286,14 @@ export function makeListTransactions(
       : accounts.map(a => a.id)
     const page = await deps.transactions.list(
       tenantId,
-      { accountIds, from: query.from, to: query.to },
+      {
+        accountIds,
+        from: query.from,
+        to: query.to,
+        categoryId: query.categoryId,
+        uncategorized: query.uncategorized,
+        search: query.search,
+      },
       { cursor: query.cursor, limit: query.limit },
     )
     return {

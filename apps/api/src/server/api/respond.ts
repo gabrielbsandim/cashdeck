@@ -3,9 +3,11 @@ import { ZodError } from 'zod'
 import { InvalidTransitionError, ValidationError } from '@cashdeck/domain'
 import {
   AmountRequiredError,
+  ConflictError,
   NotFoundError,
   ProviderError,
   ProviderNotConfiguredError,
+  QuotaExceededError,
   UnauthorizedError,
 } from '@cashdeck/application'
 import { reportError } from '@/server/observability'
@@ -93,6 +95,14 @@ const RULES: ErrorRule[] = [
   {
     matches: error => error instanceof UnauthorizedError,
     respond: error => fail('UNAUTHORIZED', error.message, 401),
+  },
+  {
+    matches: error => error instanceof ConflictError,
+    respond: error => fail('CONFLICT', error.message, 409),
+  },
+  {
+    matches: error => error instanceof QuotaExceededError,
+    respond: error => fail('RATE_LIMITED', error.message, 429),
   },
   {
     matches: error => error instanceof InvalidTransitionError,

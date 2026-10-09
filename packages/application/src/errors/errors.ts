@@ -60,3 +60,21 @@ export class UnauthorizedError extends Error {
     this.name = 'UnauthorizedError'
   }
 }
+
+export class QuotaExceededError extends Error {
+  readonly code = 'RATE_LIMITED'
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'QuotaExceededError'
+  }
+}
+
+export class ConflictError extends Error {
+  readonly code = 'CONFLICT'
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'ConflictError'
+  }
+}

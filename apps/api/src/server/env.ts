@@ -43,6 +43,12 @@ const providerEnv = Object.fromEntries(
   PROVIDER_ENV_NAMES.map(name => [name, z.string().optional()]),
 ) as Record<(typeof PROVIDER_ENV_NAMES)[number], z.ZodOptional<z.ZodString>>
 
+// Kept as text: the LLM factory reads the same object as plain strings.
+const count = z.preprocess(
+  value => (value === '' ? undefined : value),
+  z.string().regex(/^\d+$/, 'Expected a whole number').optional(),
+)
+
 const envSchema = z.object({
   CASHDECK_TENANT_ID: z.string().min(1).default('local'),
   DATABASE_URL: z.string().optional(),
@@ -56,6 +62,12 @@ const envSchema = z.object({
   AI_GATEWAY_API_KEY: z.string().optional(),
   AI_GATEWAY_FALLBACK_MODEL: z.string().optional(),
   BRL_PER_USD: z.string().optional(),
+  // The AI chat: kill switch, daily quota per tenant and the turn bounds.
+  CHAT_ENABLED: z.enum(['true', 'false']).default('true'),
+  CHAT_DAILY_TURN_LIMIT: count,
+  CHAT_DAILY_COST_LIMIT_CENTS: count,
+  CHAT_MAX_ROUNDS: count,
+  CHAT_TURN_BUDGET_MS: count,
   // An empty variable reads as unset; a set token must be long enough to guess.
   CASHDECK_API_TOKEN: z.preprocess(
     value => (value === '' ? undefined : value),
