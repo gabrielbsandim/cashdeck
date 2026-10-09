@@ -11,6 +11,7 @@ final class FakePayrollRepository implements PayrollRepository {
   final Clock _clock;
   final Duration latency;
   PayrollMonth? _saved;
+  SimplesAnnex? _declared;
 
   static CalendarDate _monthsBack(CalendarDate first, int months) {
     final index = first.year * 12 + first.month - 1 - months;
@@ -34,6 +35,7 @@ final class FakePayrollRepository implements PayrollRepository {
           _standard(_monthsBack(first, back)),
       ],
       revenue12: const Money(28_740_000),
+      declaredAnnex: _declared,
     );
   }
 
@@ -47,6 +49,13 @@ final class FakePayrollRepository implements PayrollRepository {
   Future<Result<PayrollSheet>> save(PayrollMonth month) async {
     await Future<void>.delayed(latency);
     _saved = month;
+    return Ok(_sheet());
+  }
+
+  @override
+  Future<Result<PayrollSheet>> declareAnnex(SimplesAnnex? annex) async {
+    await Future<void>.delayed(latency);
+    _declared = annex;
     return Ok(_sheet());
   }
 }

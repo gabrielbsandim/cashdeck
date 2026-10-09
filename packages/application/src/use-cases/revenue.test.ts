@@ -58,6 +58,34 @@ describe('revenue', () => {
     expect(mixed.months[0]?.domestic.cents).toBe(1_700_000)
   })
 
+  it('prices ISS from the declared annex while payroll is short', async () => {
+    const deps = fullDeps()
+    const revenue = makeRevenue(deps)
+    const payroll = makePayroll(deps)
+    for (const month of PREVIOUS_YEAR) {
+      await revenue.save(TENANT, month, {
+        domesticCents: 1_600_000,
+        exportCents: 0,
+      })
+    }
+    const declared = await payroll.declare(TENANT, { annex: 'III' })
+    expect(declared.declaredAnnex).toBe('III')
+    const sheet = await revenue.sheet(TENANT)
+    expect([sheet.annex, sheet.issRatePercent]).toEqual(['III', 2.02])
+    const cleared = await payroll.declare(TENANT, { annex: null })
+    expect(cleared.declaredAnnex).toBeNull()
+    const open = await revenue.sheet(TENANT)
+    expect([open.annex, open.issRatePercent]).toEqual(['V', null])
+  })
+
+  it('lets a full year of payroll outrank the declared annex', async () => {
+    const deps = fullDeps()
+    const revenue = await seedYear(deps)
+    await makePayroll(deps).declare(TENANT, { annex: 'V' })
+    const sheet = await revenue.sheet(TENANT)
+    expect([sheet.annex, sheet.issRatePercent]).toEqual(['III', 2.02])
+  })
+
   it('sends the rate with a domestic invoice and none with an export', async () => {
     const deps = fullDeps()
     await seedYear(deps)

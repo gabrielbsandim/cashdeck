@@ -13645,12 +13645,21 @@
                             "currency"
                           ],
                           "additionalProperties": false
+                        },
+                        "declaredAnnex": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "III",
+                            "V"
+                          ]
                         }
                       },
                       "required": [
                         "current",
                         "history",
-                        "revenue12"
+                        "revenue12",
+                        "declaredAnnex"
                       ],
                       "additionalProperties": false
                     }
@@ -13924,12 +13933,291 @@
                             "currency"
                           ],
                           "additionalProperties": false
+                        },
+                        "declaredAnnex": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "III",
+                            "V"
+                          ]
                         }
                       },
                       "required": [
                         "current",
                         "history",
-                        "revenue12"
+                        "revenue12",
+                        "declaredAnnex"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/payroll/annex": {
+      "put": {
+        "operationId": "declareAnnex",
+        "summary": "Declare the Simples annex until a year of payroll exists",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "annex": {
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "III",
+                      "V"
+                    ]
+                  }
+                },
+                "required": [
+                  "annex"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Declare the Simples annex until a year of payroll exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current": {
+                          "type": "object",
+                          "properties": {
+                            "month": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "proLabore": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "salaries": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "fgts": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "month",
+                            "proLabore",
+                            "salaries",
+                            "fgts"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "proLabore": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "salaries": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "fgts": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "proLabore",
+                              "salaries",
+                              "fgts"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "revenue12": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "declaredAnnex": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "III",
+                            "V"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "current",
+                        "history",
+                        "revenue12",
+                        "declaredAnnex"
                       ],
                       "additionalProperties": false
                     }

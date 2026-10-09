@@ -62,6 +62,7 @@ import { PUT as issuerCertificate } from '@/app/api/v1/invoices/issuer/certifica
 import { POST as testIssuer } from '@/app/api/v1/invoices/issuer/test/route'
 import { GET as serviceCodes } from '@/app/api/v1/invoices/service-codes/route'
 import { GET as payroll } from '@/app/api/v1/payroll/route'
+import { PUT as declareAnnex } from '@/app/api/v1/payroll/annex/route'
 import { PUT as savePayroll } from '@/app/api/v1/payroll/[month]/route'
 import { GET as revenue } from '@/app/api/v1/revenue/route'
 import { PUT as saveRevenue } from '@/app/api/v1/revenue/[month]/route'
@@ -415,6 +416,13 @@ describe('invoices and payroll', () => {
     })
     expect(sheet.status).toBe(200)
     expect((await call(h(payroll), 'GET')).status).toBe(200)
+    const declared = await call(h(declareAnnex), 'PUT', {
+      body: { annex: 'III' },
+    })
+    expect([declared.status, declared.body.data.declaredAnnex]).toEqual([
+      200,
+      'III',
+    ])
     const bad = await call(h(savePayroll), 'PUT', {
       body: {},
       params: { month: 'x' },

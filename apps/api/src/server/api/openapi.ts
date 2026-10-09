@@ -24,6 +24,7 @@ import {
   createAccountSchema,
   createInvoiceTemplateSchema,
   createThreadSchema,
+  declareAnnexSchema,
   entityKindSchema,
   entityViewSchema,
   exportPeriodQuerySchema,
@@ -726,6 +727,14 @@ const OPERATIONS: Operation[] = [
     id: 'savePayroll',
     summary: 'Save the payroll of a month',
     body: savePayrollSchema,
+    response: payrollSheetViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/payroll/annex',
+    id: 'declareAnnex',
+    summary: 'Declare the Simples annex until a year of payroll exists',
+    body: declareAnnexSchema,
     response: payrollSheetViewSchema,
   },
   {

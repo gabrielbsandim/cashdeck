@@ -12,6 +12,7 @@ import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_currency_input.dart';
+import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
@@ -38,6 +39,7 @@ class PayrollInputScreen extends ConsumerWidget {
 
   static const saveKey = Key('payroll-save');
   static const proLaboreKey = Key('payroll-pro-labore');
+  static const annexIiiKey = Key('payroll-annex-iii');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,7 +77,21 @@ class _PayrollForm extends ConsumerStatefulWidget {
 
 class _PayrollFormState extends ConsumerState<_PayrollForm> {
   late PayrollMonth _current = widget.sheet.current;
+  late PayrollSheet _sheet = widget.sheet;
   var _saving = false;
+
+  Future<void> _declare(SimplesAnnex? annex) async {
+    final l10n = AppLocalizations.of(context);
+    final result = await ref
+        .read(payrollRepositoryProvider)
+        .declareAnnex(annex);
+    if (!mounted) return;
+    if (result case Ok(:final value)) setState(() => _sheet = value);
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.payrollAnnexSaved);
+  }
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
@@ -96,11 +112,11 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
     final hide = ref.watch(hideAmountsProvider);
     final fator = FatorR.of(
       current: _current,
-      history: widget.sheet.history,
-      revenue12: widget.sheet.revenue12,
+      history: _sheet.history,
+      revenue12: _sheet.revenue12,
     );
     final percent = (fator.ratio * 100).toStringAsFixed(1).replaceAll('.', ',');
-    final annexIii = fator.annex == SimplesAnnex.iii;
+    final annexIii = _sheet.annexOf(fator) == SimplesAnnex.iii;
     final secondary = AppTextStyles.bodyMd.copyWith(
       color: palette.onSurfaceVariant,
     );
@@ -202,10 +218,29 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
             ],
           ),
         ),
+        if (!_sheet.fullYear) ...[
+          const SizedBox(height: AppSpacing.lg),
+          CdSectionHeader(title: l10n.payrollAnnexTitle, small: true),
+          Text(l10n.payrollAnnexHint, style: secondary),
+          const SizedBox(height: AppSpacing.sm),
+          CdSegmented<SimplesAnnex?>(
+            segments: [
+              CdSegment(null, l10n.payrollAnnexFromPayroll),
+              CdSegment(
+                SimplesAnnex.iii,
+                l10n.annexIii,
+                key: PayrollInputScreen.annexIiiKey,
+              ),
+              CdSegment(SimplesAnnex.v, l10n.annexV),
+            ],
+            selected: _sheet.declaredAnnex,
+            onChanged: _declare,
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
-        if (widget.sheet.history.isNotEmpty)
+        if (_sheet.history.isNotEmpty)
           CdSectionHeader(title: l10n.payrollPreviousMonths, small: true),
-        for (final month in widget.sheet.history.take(3))
+        for (final month in _sheet.history.take(3))
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(

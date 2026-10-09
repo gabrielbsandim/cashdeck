@@ -2173,5 +2173,9 @@
   "cardsHistorySemantics": "Valor das últimas faturas",
   "cardsImportTitle": "Cartão sem Open Finance?",
   "cardsImportMessage": "Importe a fatura em PDF ou CSV",
-  "cardsNotSent": "O banco não enviou"
+  "cardsNotSent": "O banco não enviou",
+  "payrollAnnexTitle": "Anexo informado pela contadora",
+  "payrollAnnexHint": "Até a folha somar 12 meses, o ISS das notas e a estimativa do DAS usam este anexo.",
+  "payrollAnnexFromPayroll": "Pela folha",
+  "payrollAnnexSaved": "Anexo atualizado"
 }

@@ -1,7 +1,11 @@
-import { Money } from '@cashdeck/domain'
+import { Money, type SimplesAnnex } from '@cashdeck/domain'
 import { type z } from 'zod'
 import { money } from '@/dtos/common'
-import { type PayrollSheetView, type savePayrollSchema } from '@/dtos/payroll'
+import {
+  type declareAnnexSchema,
+  type PayrollSheetView,
+  type savePayrollSchema,
+} from '@/dtos/payroll'
 import { type Deps } from '@/use-cases/deps'
 import {
   addMonths,
@@ -22,6 +26,25 @@ export type PayrollEntry = {
 export const PAYROLL_COLLECTION = 'payroll'
 
 export const REVENUE_COLLECTION = 'revenue-history'
+
+// The annex the accountant reports, standing in for Fator R until a year of
+// payroll exists to compute it.
+export const ANNEX_COLLECTION = 'simples-annex'
+
+type DeclaredAnnex = { annex: SimplesAnnex }
+
+export async function declaredAnnex(
+  deps: Pick<Deps, 'documents'>,
+  tenantId: string,
+  entityId: string,
+): Promise<SimplesAnnex | null> {
+  const found = await deps.documents.get<DeclaredAnnex>(
+    tenantId,
+    ANNEX_COLLECTION,
+    entityId,
+  )
+  return found?.annex ?? null
+}
 
 export type RevenueEntry = {
   month: string
@@ -146,7 +169,26 @@ export function makePayroll(
       current: toView(current),
       history: window.filter(entry => entry.month !== month).map(toView),
       revenue12: money(revenue12),
+      declaredAnnex: await declaredAnnex(deps, tenantId, entity.id),
     }
+  }
+
+  async function declare(
+    tenantId: string,
+    input: z.infer<typeof declareAnnexSchema>,
+  ): Promise<PayrollSheetView> {
+    const entity = await requireEntity(deps.entities, tenantId, 'PJ')
+    if (input.annex === null) {
+      await deps.documents.delete(tenantId, ANNEX_COLLECTION, entity.id)
+      return sheet(tenantId)
+    }
+    await deps.documents.put<DeclaredAnnex>(
+      tenantId,
+      ANNEX_COLLECTION,
+      entity.id,
+      { annex: input.annex },
+    )
+    return sheet(tenantId)
   }
 
   async function save(
@@ -167,5 +209,5 @@ export function makePayroll(
     return sheet(tenantId)
   }
 
-  return { sheet, save }
+  return { sheet, save, declare }
 }

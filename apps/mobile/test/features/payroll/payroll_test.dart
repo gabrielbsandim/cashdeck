@@ -39,6 +39,19 @@ final class _NoRevenue implements PayrollRepository {
   @override
   Future<Result<PayrollSheet>> save(PayrollMonth month) async =>
       const Err(NetworkFailure());
+
+  @override
+  Future<Result<PayrollSheet>> declareAnnex(SimplesAnnex? annex) async {
+    if (annex == SimplesAnnex.v) return const Err(NetworkFailure());
+    return Ok(
+      PayrollSheet(
+        current: _month,
+        history: const [],
+        revenue12: const Money(0),
+        declaredAnnex: annex,
+      ),
+    );
+  }
 }
 
 void main() {
@@ -67,7 +80,9 @@ void main() {
     );
     expect(const FatorR(payroll12: Money(1), revenue12: Money(0)).ratio, 0);
     expect(fator.props, hasLength(2));
-    expect(sheet.props, hasLength(3));
+    expect(sheet.props, hasLength(4));
+    expect(sheet.fullYear, isTrue);
+    expect(sheet.annexOf(fator), SimplesAnnex.iii);
     expect(sheet.current.props, hasLength(4));
   });
 
@@ -87,6 +102,25 @@ void main() {
       edited,
     );
     expect(edited.copyWith(), edited);
+
+    final declared = (await repository.declareAnnex(
+      SimplesAnnex.v,
+    ) as Ok<PayrollSheet>).value;
+    expect(declared.declaredAnnex, SimplesAnnex.v);
+    const short = PayrollSheet(
+      current: PayrollMonth(
+        month: CalendarDate(2026, 10, 1),
+        proLabore: Money(0),
+        salaries: Money(0),
+        fgts: Money(0),
+      ),
+      history: [],
+      revenue12: Money(100),
+      declaredAnnex: SimplesAnnex.iii,
+    );
+    const nothing = FatorR(payroll12: Money(0), revenue12: Money(100));
+    expect(short.annexOf(nothing), SimplesAnnex.iii);
+    await repository.declareAnnex(null);
   });
 
   test('the provider reads the fake', () {
@@ -105,6 +139,7 @@ void main() {
     expect(find.text(l10n.fatorR('30,7')), findsOneWidget);
     expect(find.text(l10n.annexIii), findsOneWidget);
     expect(find.text('Setembro'), findsOneWidget);
+    expect(find.byKey(PayrollInputScreen.annexIiiKey), findsNothing);
 
     await tester.enterText(
       find.descendant(
@@ -140,8 +175,22 @@ void main() {
     flaky.fail = false;
     await tester.tap(find.byKey(CdErrorState.retryKey));
     await settle(tester);
-    expect(find.text(l10n.annexV), findsOneWidget);
+    expect(find.text(l10n.annexV), findsNWidgets(2));
+    expect(find.text(l10n.payrollAnnexTitle), findsOneWidget);
 
+    await tester.tap(find.byKey(PayrollInputScreen.annexIiiKey));
+    await settle(tester);
+    expect(find.text(l10n.payrollAnnexSaved), findsOneWidget);
+    expect(find.text(l10n.annexIii), findsNWidgets(2));
+
+    await tester.tap(find.text(l10n.annexV));
+    await settle(tester);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
+    expect(find.text(l10n.annexIii), findsNWidgets(2));
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(PayrollInputScreen.saveKey));
     await tester.tap(find.byKey(PayrollInputScreen.saveKey));
     await settle(tester);
     expect(find.text(l10n.errorNetwork), findsOneWidget);

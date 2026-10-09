@@ -587,12 +587,17 @@ keeps the month from being drafted again.
 
 `PayrollMonth`: `{ month: date (first day), proLabore: Money, salaries: Money, fgts: Money }`.
 
-- `GET /payroll`: `{ current: PayrollMonth, history: [PayrollMonth], revenue12: Money }`.
+- `GET /payroll`: `{ current: PayrollMonth, history: [PayrollMonth], revenue12: Money, declaredAnnex: 'III' | 'V' | null }`.
   `current` is this month (zeros until saved); `history` the eleven earlier
   months that have entries, most recent first; `revenue12` the company's
-  invoiced revenue of the last twelve months, in BRL.
+  invoiced revenue of the last twelve months, in BRL; `declaredAnnex` the
+  annex the accountant reported, or null.
 - `PUT /payroll/{YYYY-MM}`: body `{ proLaboreCents, salariesCents, fgtsCents }`.
   Returns the sheet.
+- `PUT /payroll/annex`: body `{ annex: 'III' | 'V' | null }`. Until twelve
+  months of payroll exist, the declared annex picks the ISS rate and the DAS
+  estimate; a full year of payroll then computes Fator R instead. Null clears
+  it. Returns the sheet.
 
 ## Manual card bill import
 

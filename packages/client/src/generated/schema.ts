@@ -1119,6 +1119,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payroll/annex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Declare the Simples annex until a year of payroll exists */
+        put: operations["declareAnnex"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/revenue": {
         parameters: {
             query?: never;
@@ -5757,6 +5774,8 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            /** @enum {string|null} */
+                            declaredAnnex: "III" | "V" | null;
                         };
                     };
                 };
@@ -5833,6 +5852,83 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            /** @enum {string|null} */
+                            declaredAnnex: "III" | "V" | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    declareAnnex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string|null} */
+                    annex: "III" | "V" | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Declare the Simples annex until a year of payroll exists */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            current: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            history: {
+                                month: string;
+                                proLabore: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                salaries: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fgts: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            revenue12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string|null} */
+                            declaredAnnex: "III" | "V" | null;
                         };
                     };
                 };

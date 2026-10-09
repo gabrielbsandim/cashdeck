@@ -4,6 +4,7 @@ import { money } from '@/dtos/common'
 import { type RevenueSheetView, type saveRevenueSchema } from '@/dtos/revenue'
 import { type Deps } from '@/use-cases/deps'
 import {
+  declaredAnnex,
   payrollTotal,
   payrollWindow,
   REVENUE_COLLECTION,
@@ -23,7 +24,8 @@ export type IssQuote = {
   domesticRbt12: Money
   exportRbt12: Money
   annex: SimplesAnnex
-  // Null until twelve months of payroll exist, since Fator R picks the annex.
+  // Null until twelve months of payroll exist or the accountant's annex is
+  // declared, since Fator R picks the annex.
   ratePercent: number | null
 }
 
@@ -45,11 +47,20 @@ export async function issQuote(
   const domesticRbt12 = sum(months.map(month => month.domestic))
   const exportRbt12 = sum(months.map(month => month.exports))
   const payroll = await payrollWindow(deps, tenantId, range.to)
-  const annex = annexFor(
-    Money.of(payroll.reduce((total, entry) => total + payrollTotal(entry), 0)),
-    domesticRbt12.add(exportRbt12),
-  )
-  const rate = payroll.length < MONTHS ? null : issRate(annex, domesticRbt12)
+  const complete = payroll.length >= MONTHS
+  const declared = complete
+    ? null
+    : await declaredAnnex(deps, tenantId, entityId)
+  const annex =
+    declared ??
+    annexFor(
+      Money.of(
+        payroll.reduce((total, entry) => total + payrollTotal(entry), 0),
+      ),
+      domesticRbt12.add(exportRbt12),
+    )
+  const known = complete || declared !== null
+  const rate = known ? issRate(annex, domesticRbt12) : null
   return {
     domesticRbt12,
     exportRbt12,

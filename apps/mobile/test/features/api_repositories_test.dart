@@ -36,6 +36,7 @@ import 'package:cashdeck/features/open_finance/data/api_open_finance_repository.
 import 'package:cashdeck/features/open_finance/domain/item_lookup.dart';
 import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
 import 'package:cashdeck/features/payroll/data/api_payroll_repository.dart';
+import 'package:cashdeck/features/payroll/domain/payroll.dart';
 import 'package:cashdeck/features/payroll/payroll_providers.dart';
 import 'package:cashdeck/features/rails/data/api_rails_repository.dart';
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
@@ -951,6 +952,7 @@ void main() {
       final dio = _api({
         'GET /api/v1/payroll': _sheet,
         'PUT /api/v1/payroll/2026-10': _sheet,
+        'PUT /api/v1/payroll/annex': {..._sheet, 'declaredAnnex': 'III'},
       });
       final repository = ApiPayrollRepository(dio);
 
@@ -964,6 +966,14 @@ void main() {
         'salariesCents': 20000,
         'fgtsCents': 0,
       });
+      expect(sheet.declaredAnnex, isNull);
+      final declared = _ok(await repository.declareAnnex(SimplesAnnex.iii));
+      expect(declared.declaredAnnex, SimplesAnnex.iii);
+      expect(_sent(dio, 2), {'annex': 'III'});
+      await repository.declareAnnex(SimplesAnnex.v);
+      expect(_sent(dio, 3), {'annex': 'V'});
+      await repository.declareAnnex(null);
+      expect(_sent(dio, 4), {'annex': null});
     });
 
     test('the kill switch reads, pauses and resumes', () async {
