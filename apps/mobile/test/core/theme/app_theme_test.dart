@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/theme/app_chart_colors.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -60,6 +61,34 @@ void main() {
     expect(entities.lerp(AppEntityColors.dark, 0.2), entities);
     expect(entities.lerp(AppEntityColors.dark, 0.8), AppEntityColors.dark);
     expect(AppPalette.dark.isDark, isTrue);
+  });
+
+  test('charts and glows ship per theme and swap whole', () {
+    expect(AppTheme.dark().extension<AppChartColors>(), AppChartColors.dark);
+    expect(AppTheme.light().extension<AppEntityGlow>(), AppEntityGlow.light);
+    expect(AppPalette.dark.surface, const Color(0xFF000000));
+    final charts = AppChartColors.light;
+    expect(charts.at(7), charts.series[1]);
+    expect(charts.copyWith(), charts);
+    expect(charts.lerp(null, 1), charts);
+    expect(charts.lerp(AppChartColors.dark, 0.8), AppChartColors.dark);
+    expect(charts.lerp(AppChartColors.dark, 0.2), charts);
+    const glow = AppEntityGlow.dark;
+    expect(glow.of(EntityTone.personal), glow.personal);
+    expect(glow.of(EntityTone.company), glow.company);
+    expect(glow.of(EntityTone.consolidated), glow.consolidated);
+    expect(glow.copyWith(), glow);
+    expect(glow.lerp(null, 1), glow);
+    expect(glow.lerp(AppEntityGlow.light, 0.8), AppEntityGlow.light);
+    expect(glow.lerp(AppEntityGlow.light, 0.2), glow);
+  });
+
+  test('a bank colour lands on the nearest series slot', () {
+    final charts = AppChartColors.dark;
+    expect(charts.nearest(const Color(0xFF00A859)), charts.series[1]);
+    expect(charts.nearest(const Color(0xFFCC092F)), charts.series[5]);
+    expect(charts.nearest(const Color(0xFFFF7A00)), charts.series[2]);
+    expect(charts.nearest(const Color(0xFF820AD1)), charts.series[3]);
   });
 
   test('light casts shadows, dark steps up tonal surfaces', () {

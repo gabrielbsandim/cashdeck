@@ -23,6 +23,8 @@ abstract final class AppRadius {
   static const sm = 8.0;
   static const md = 12.0;
   static const lg = 16.0;
+  static const xl = 20.0;
+  static const xxl = 24.0;
   static const sheet = 28.0;
   static const full = 999.0;
 }
@@ -70,6 +72,18 @@ abstract final class AppMotion {
   static const emphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1);
   static const exit = Cubic(0.3, 0, 1, 1);
 
+  static const countUp = Duration(milliseconds: 380);
+  static const chartDraw = Duration(milliseconds: 360);
+  static const barGrow = Duration(milliseconds: 280);
+  static const barStagger = Duration(milliseconds: 24);
+  static const segmentFill = Duration(milliseconds: 90);
+  static const ringSweep = Duration(milliseconds: 360);
+  static const containerTransform = Duration(milliseconds: 350);
+  static const glowDrift = Duration(seconds: 12);
+  static const skeletonPulse = Duration(milliseconds: 1200);
+
+  static const emphasized = Cubic(0.2, 0, 0, 1);
+
   static const springSnappy = SpringDescription(
     mass: 1,
     stiffness: 700,
@@ -81,11 +95,10 @@ abstract final class AppMotion {
     damping: 30,
   );
 
+  static bool reduced(BuildContext context) =>
+      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
   /// [duration], or zero when the device asks for reduced motion.
-  static Duration of(BuildContext context, Duration duration) {
-    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
-      return Duration.zero;
-    }
-    return duration;
-  }
+  static Duration of(BuildContext context, Duration duration) =>
+      reduced(context) ? Duration.zero : duration;
 }

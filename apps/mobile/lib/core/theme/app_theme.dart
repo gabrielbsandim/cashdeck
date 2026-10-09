@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/theme/app_chart_colors.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -5,16 +6,28 @@ import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static ThemeData light() =>
-      _build(AppPalette.light, AppMoneyColors.light, AppEntityColors.light);
+  static ThemeData light() => _build(
+    AppPalette.light,
+    AppMoneyColors.light,
+    AppEntityColors.light,
+    AppChartColors.light,
+    AppEntityGlow.light,
+  );
 
-  static ThemeData dark() =>
-      _build(AppPalette.dark, AppMoneyColors.dark, AppEntityColors.dark);
+  static ThemeData dark() => _build(
+    AppPalette.dark,
+    AppMoneyColors.dark,
+    AppEntityColors.dark,
+    AppChartColors.dark,
+    AppEntityGlow.dark,
+  );
 
   static ThemeData _build(
     AppPalette palette,
     AppMoneyColors money,
     AppEntityColors entities,
+    AppChartColors charts,
+    AppEntityGlow glow,
   ) {
     final colorScheme = ColorScheme(
       brightness: palette.brightness,
@@ -74,7 +87,7 @@ abstract final class AppTheme {
       textTheme: textTheme,
       scaffoldBackgroundColor: palette.surface,
       canvasColor: palette.surface,
-      extensions: [palette, money, entities],
+      extensions: [palette, money, entities, charts, glow],
       appBarTheme: AppBarTheme(
         backgroundColor: palette.surface,
         foregroundColor: palette.onSurface,
@@ -88,12 +101,12 @@ abstract final class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: palette.surfaceContainerLow,
+        color: charts.card,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: BorderSide(color: palette.outlineVariant),
+          side: BorderSide(color: charts.cardBorder),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
