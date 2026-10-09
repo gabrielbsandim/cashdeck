@@ -2,6 +2,7 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/widgets/insights/cd_institution_logo.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -76,6 +77,9 @@ void main() {
     expect(find.text(l10n.relativeTodayTitle), findsOneWidget);
     expect(find.text(l10n.relativeYesterdayTitle), findsOneWidget);
     expect(find.text('Padaria Trigo Bom'), findsWidgets);
+    expect(find.text('Lumen'), findsOneWidget);
+    expect(find.textContaining(' · 2/3'), findsOneWidget);
+    expect(find.byType(CdInstitutionLogo), findsWidgets);
     expect(find.text(l10n.categoryRestaurants), findsWidgets);
     expect(find.text(l10n.transactionUncategorized), findsWidgets);
     expect(find.text('Cliente Atlas Software'), findsNothing);

@@ -33,6 +33,10 @@ final class _FailingImport implements OpenFinanceRepository {
     Set<String> accountIds,
     EntityKind owner,
   ) async => const Err(NetworkFailure());
+
+  @override
+  Future<Result<int>> sync(String connectionId, {required int days}) async =>
+      const Err(NetworkFailure());
 }
 
 void main() {
@@ -95,6 +99,7 @@ void main() {
       await repository.lookup(FakeOpenFinanceRepository.foundId),
       const Ok<ItemLookup>(ItemAlreadyConnected(EntityKind.personal)),
     );
+    expect(await repository.sync('conn-aurora', days: 90), const Ok(30));
   });
 
   test('the provider reads the fake', () {

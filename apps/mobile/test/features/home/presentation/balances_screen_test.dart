@@ -9,8 +9,11 @@ import 'package:cashdeck/features/entities/presentation/entity_scope_controller.
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/open_finance/domain/item_lookup.dart';
+import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/transactions_providers.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/app_harness.dart';
@@ -35,6 +38,23 @@ final class _Accounts implements TransactionsRepository {
     String id,
     TransactionUpdate update,
   ) async => const Err(NetworkFailure());
+}
+
+final class _FailingSync implements OpenFinanceRepository {
+  @override
+  Future<Result<ItemLookup>> lookup(String itemId) async =>
+      const Err(NetworkFailure());
+
+  @override
+  Future<Result<int>> import(
+    String itemId,
+    Set<String> accountIds,
+    EntityKind owner,
+  ) async => const Err(NetworkFailure());
+
+  @override
+  Future<Result<int>> sync(String connectionId, {required int days}) async =>
+      connectionId == 'conn-stale' ? const Ok(3) : const Err(NetworkFailure());
 }
 
 const _checking = TransactionAccount(
@@ -133,6 +153,88 @@ void main() {
     app.read(entityScopeProvider.notifier).select(EntityScope.company);
     await settle(tester);
     expect(find.byType(CdErrorState), findsOneWidget);
+  });
+
+  testWidgets('syncs 90 days of each connection and says how many came', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.balances);
+
+    expect(find.text(l10n.syncStateUpdated), findsOneWidget);
+    expect(find.text(l10n.syncStateUpdating), findsOneWidget);
+    await tester.tap(find.byKey(BalancesScreen.syncKey));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await settle(tester);
+
+    expect(find.text(l10n.balancesSynced(60)), findsOneWidget);
+  });
+
+  testWidgets('a failed sync says why and the states read as words', (
+    tester,
+  ) async {
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        openFinanceRepositoryProvider.overrideWithValue(_FailingSync()),
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(
+            const Ok([
+              TransactionAccount(
+                id: 'stale',
+                name: 'Conta parada',
+                owner: EntityKind.personal,
+                institution: 'Banco Exemplo',
+                type: AccountType.checking,
+                balance: Money(1_000),
+                connectionId: 'conn-stale',
+                sync: AccountSync(state: SyncState.outdated),
+              ),
+              TransactionAccount(
+                id: 'locked',
+                name: 'Conta travada',
+                owner: EntityKind.personal,
+                institution: 'Banco Exemplo',
+                type: AccountType.checking,
+                balance: Money(2_000),
+                connectionId: 'conn-locked',
+                sync: AccountSync(state: SyncState.needsAction),
+              ),
+            ]),
+          ),
+        ),
+      ],
+    );
+
+    expect(find.text(l10n.syncStateOutdated), findsOneWidget);
+    expect(find.text(l10n.syncStateNeedsAction), findsOneWidget);
+    await tester.tap(find.byKey(BalancesScreen.syncKey));
+    await settle(tester);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
+  });
+
+  testWidgets('connect opens the item id screen', (tester) async {
+    final app = await pumpRoute(tester, AppRoutes.balances);
+    await tester.tap(find.byKey(BalancesScreen.connectKey));
+    await settle(tester);
+    expect(app.location, AppRoutes.connectItemId);
+  });
+
+  testWidgets('the empty state offers to connect', (tester) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([])),
+        ),
+      ],
+    );
+    expect(find.byKey(BalancesScreen.syncKey), findsNothing);
+    await tester.tap(find.text(l10n.balancesConnect));
+    await settle(tester);
+    expect(app.location, AppRoutes.connectItemId);
   });
 
   test('only BRL checking, savings and wallets count as cash', () {

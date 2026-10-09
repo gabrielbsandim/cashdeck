@@ -184,6 +184,7 @@ final class TransactionAccount extends Equatable {
     this.logo,
     this.credit,
     this.sync,
+    this.connectionId,
   });
 
   final String id;
@@ -203,6 +204,9 @@ final class TransactionAccount extends Equatable {
 
   /// Null for a manual account.
   final AccountSync? sync;
+
+  /// The Open Finance connection that feeds it; null for a manual account.
+  final String? connectionId;
 
   /// Counts toward the home balance, as the server's cash account types do.
   bool get isCash =>
@@ -227,6 +231,7 @@ final class TransactionAccount extends Equatable {
     logo,
     credit,
     sync,
+    connectionId,
   ];
 }
 

@@ -8,6 +8,7 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
@@ -33,6 +34,32 @@ import '../../../support/pump_app.dart';
 
 void main() {
   group('on the fake backend', () {
+    testWidgets('the calendar narrows the list to one day and back', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bills);
+      expect(find.byType(CdCalendarMonth), findsOneWidget);
+
+      await tester.tap(find.byKey(CdCalendarMonth.dayKey(12)));
+      await settle(tester);
+      expect(find.byKey(BillsScreen.tileKey('bill-energy')), findsOneWidget);
+      expect(find.text(l10n.billsGroupSettled), findsNothing);
+
+      await tester.tap(find.byKey(CdCalendarMonth.dayKey(1)));
+      await settle(tester);
+      expect(find.text(l10n.billsNoneOnDay), findsOneWidget);
+
+      await tester.tap(find.text(l10n.billsCalendarClear));
+      await settle(tester);
+      expect(find.text(l10n.billsGroupSettled), findsOneWidget);
+
+      await tester.tap(find.byKey(CdCalendarMonth.dayKey(12)));
+      await settle(tester);
+      await tester.tap(find.byKey(CdCalendarMonth.dayKey(12)));
+      await settle(tester);
+      expect(find.text(l10n.billsGroupSettled), findsOneWidget);
+    });
+
     testWidgets('groups the bills and tags the entity when consolidated', (
       tester,
     ) async {

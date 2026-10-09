@@ -3,12 +3,17 @@ import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
+import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
+import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
+import 'package:cashdeck/core/widgets/insights/cd_segment_bar.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
@@ -20,6 +25,7 @@ import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
+import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,11 +79,18 @@ class BillsScreen extends ConsumerWidget {
   }
 }
 
-class _BillList extends ConsumerWidget {
+class _BillList extends ConsumerStatefulWidget {
   const new({required this.listing, required this.today});
 
   final BillsListing listing;
   final CalendarDate today;
+
+  @override
+  ConsumerState<_BillList> createState() => _BillListState();
+}
+
+class _BillListState extends ConsumerState<_BillList> {
+  CalendarDate? _day;
 
   /// Starts the next page this far before the end, so scrolling rarely
   /// waits on it.
@@ -87,10 +100,33 @@ class _BillList extends ConsumerWidget {
   static const double _fabClearance = 56.0 + AppSpacing.lg + AppSpacing.xl;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final money = context.money;
     final controller = ref.read(billsControllerProvider.notifier);
-    final bills = listing.bills;
+    final listing = widget.listing;
+    final today = widget.today;
+    final day = _day;
+    final all = listing.bills;
+    final month = YearMonth.of(today);
+    final allNeeding = billsNeedingYou(all, today);
+    Color dotOf(Bill bill) => switch (bill) {
+      _ when bill.isSettled => money.paid,
+      _ when allNeeding.contains(bill) => money.overdue,
+      _ when bill.awaitsBankDebit(today) => money.pending,
+      _ => money.scheduled,
+    };
+    final dots = <int, List<Color>>{};
+    for (final bill in all) {
+      if (!month.contains(bill.dueDate)) continue;
+      dots.putIfAbsent(bill.dueDate.day, () => []).add(dotOf(bill));
+    }
+    final bills = day == null
+        ? all
+        : [
+            for (final bill in all)
+              if (bill.dueDate == day) bill,
+          ];
     final needing = billsNeedingYou(bills, today);
     final settled = bills.where((bill) => bill.isSettled).toList();
     final debiting = bills
@@ -126,6 +162,46 @@ class _BillList extends ConsumerWidget {
           _fabClearance,
         ),
         children: [
+          CdInsightCard(
+            title: monthTitle(l10n, month),
+            actionLabel: day == null ? null : l10n.billsCalendarClear,
+            onAction: () => setState(() => _day = null),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CdCalendarMonth(
+                  month: month,
+                  weekdays: weekdayInitials(l10n),
+                  today: today,
+                  selected: day,
+                  dots: dots,
+                  onSelect: (date) =>
+                      setState(() => _day = date == day ? null : date),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                CdSegmentLegend(
+                  entries: [
+                    (money.overdue, l10n.billsLegendNeedsYou),
+                    (money.scheduled, l10n.billsLegendUpcoming),
+                    (money.pending, l10n.billsLegendDebit),
+                    (money.paid, l10n.billsLegendPaid),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (day != null && bills.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: Text(
+                l10n.billsNoneOnDay,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMd.copyWith(
+                  color: context.palette.onSurfaceVariant,
+                ),
+              ),
+            ),
           for (final (title, group) in groups)
             if (group.isNotEmpty) ...[
               CdSectionHeader(title: title, small: true),

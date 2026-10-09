@@ -19,6 +19,7 @@ class CdTransactionRow extends StatelessWidget {
     this.badge,
     this.onTap,
     this.leading,
+    this.corner,
     super.key,
   });
 
@@ -33,6 +34,9 @@ class CdTransactionRow extends StatelessWidget {
 
   /// Replaces the icon, for an entity badge.
   final Widget? leading;
+
+  /// A small mark on the icon's corner, such as the institution's logo.
+  final Widget? corner;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +55,24 @@ class CdTransactionRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              leading ?? CdIconTile(icon),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  leading ?? CdIconTile(icon),
+                  if (corner case final corner?)
+                    Positioned(
+                      right: -4,
+                      bottom: -4,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: palette.surface, width: 2),
+                        ),
+                        child: corner,
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(

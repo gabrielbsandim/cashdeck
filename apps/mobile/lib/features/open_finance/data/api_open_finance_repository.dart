@@ -59,4 +59,14 @@ final class ApiOpenFinanceRepository implements OpenFinanceRepository {
     );
     return readInt(asJsonMap(unwrapData(response.data)), 'imported');
   });
+
+  @override
+  Future<Result<int>> sync(String connectionId, {required int days}) =>
+      guardRequest(() async {
+        final response = await _dio.post<Object?>(
+          '$path/connections/$connectionId/sync',
+          queryParameters: {'days': days},
+        );
+        return readInt(asJsonMap(unwrapData(response.data)), 'transactions');
+      });
 }

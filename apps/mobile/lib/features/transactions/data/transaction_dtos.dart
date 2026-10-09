@@ -81,6 +81,7 @@ TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   logo: _logo(readOptionalMap(json, 'logo')),
   credit: _credit(readOptionalMap(json, 'credit')),
   sync: _sync(readOptionalMap(json, 'sync')),
+  connectionId: readOptionalString(json, 'connectionId'),
 );
 
 AccountLogo? _logo(JsonMap? json) {

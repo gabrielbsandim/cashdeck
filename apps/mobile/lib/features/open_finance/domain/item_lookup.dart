@@ -68,4 +68,8 @@ abstract interface class OpenFinanceRepository {
     Set<String> accountIds,
     EntityKind owner,
   );
+
+  /// Pulls [days] of history for the connection; returns the new
+  /// transactions.
+  Future<Result<int>> sync(String connectionId, {required int days});
 }

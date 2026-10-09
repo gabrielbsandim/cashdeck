@@ -39,6 +39,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       balance: Money(482_015),
       numberSuffix: '4410',
       sync: AccountSync(state: SyncState.updated),
+      connectionId: 'conn-aurora',
     ),
     TransactionAccount(
       id: 'acc-pf-card',
@@ -55,6 +56,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
         brand: 'VISA',
       ),
       sync: AccountSync(state: SyncState.updating),
+      connectionId: 'conn-horizonte',
     ),
     TransactionAccount(
       id: 'acc-pj-checking',
@@ -65,6 +67,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       balance: Money(1_820_000),
       numberSuffix: '7702',
       sync: AccountSync(state: SyncState.needsAction),
+      connectionId: 'conn-aurora-pj',
     ),
   ];
 
@@ -275,6 +278,12 @@ final class FakeTransactionsRepository implements TransactionsRepository {
     'Pix enviado Pro-labore': 'transfer-prolabore',
   };
 
+  /// What the bank's raw line hides: the store's name or the installment.
+  static const Map<String, (String?, TransactionInstallment?)> _extras = {
+    'Streaming Lumen': ('Lumen', null),
+    'Farmácia Vida Plena': (null, TransactionInstallment(number: 2, count: 3)),
+  };
+
   static EntityKind _ownerOf(String accountId) =>
       accountsList.firstWhere((account) => account.id == accountId).owner;
 
@@ -306,6 +315,8 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       transferId: transferId,
       categorizedBy: source,
       categoryConfidence: source == CategorySource.ai ? 0.86 : null,
+      merchant: _extras[description]?.$1,
+      installment: _extras[description]?.$2,
     );
   }
 
@@ -398,6 +409,8 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       },
       categorizedBy: source ?? row.categorizedBy,
       categoryConfidence: source == null ? row.categoryConfidence : null,
+      merchant: row.merchant,
+      installment: row.installment,
     );
   }
 

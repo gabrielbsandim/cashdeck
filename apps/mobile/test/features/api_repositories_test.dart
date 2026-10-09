@@ -996,6 +996,12 @@ void main() {
           'connectionId': 'c1',
           'imported': 1,
         },
+        'POST /api/v1/open-finance/connections/c1/sync': {
+          'accounts': 1,
+          'transactions': 12,
+          'settledBills': 0,
+          'syncedAt': '2026-10-08T15:00:00.000Z',
+        },
       });
       final repository = ApiOpenFinanceRepository(dio);
 
@@ -1011,6 +1017,8 @@ void main() {
         'entity': 'PJ',
         'accountIds': ['a1'],
       });
+      expect(await repository.sync('c1', days: 90), const Ok(12));
+      expect(adapterOf(dio).requests.last.queryParameters, {'days': 90});
       expect(itemLookupFromJson({'status': 'NOT_FOUND'}), const ItemNotFound());
       expect(
         itemLookupFromJson({'status': 'ALREADY_CONNECTED', 'owner': 'PF'}),

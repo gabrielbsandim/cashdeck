@@ -58,4 +58,10 @@ final class FakeOpenFinanceRepository implements OpenFinanceRepository {
     _connected[itemId.trim().toLowerCase()] = owner;
     return Ok(accountIds.length);
   }
+
+  @override
+  Future<Result<int>> sync(String connectionId, {required int days}) async {
+    await Future<void>.delayed(latency);
+    return Ok(days ~/ 3);
+  }
 }

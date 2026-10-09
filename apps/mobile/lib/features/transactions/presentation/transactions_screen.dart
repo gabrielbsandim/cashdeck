@@ -4,12 +4,14 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/app/shell/tab_app_bar.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/theme/app_chart_colors.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_filter_chip.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_search_field.dart';
+import 'package:cashdeck/core/widgets/insights/cd_institution_logo.dart';
 import 'package:cashdeck/core/widgets/layout/cd_options_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
@@ -290,6 +292,26 @@ class _TransactionList extends ConsumerWidget {
     final categories = loaded ?? const <Category>[];
     final consolidated =
         ref.watch(entityScopeProvider) == EntityScope.consolidated;
+    final accounts = {
+      for (final account
+          in ref.watch(transactionAccountsProvider).value ??
+              const <TransactionAccount>[])
+        account.id: account,
+    };
+    final institutions = {
+      for (final account in accounts.values) account.institution,
+    }.toList();
+    Widget? institutionOf(Transaction transaction) {
+      final account = accounts[transaction.accountId];
+      if (account == null) return null;
+      return CdInstitutionLogo(
+        name: account.institution,
+        imageUrl: account.logo?.imageUrl,
+        colors: context.charts.at(institutions.indexOf(account.institution)),
+        size: 18,
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       children: [
@@ -313,8 +335,12 @@ class _TransactionList extends ConsumerWidget {
               leading: consolidated
                   ? EntityKindBadge(kind: transaction.owner, size: 40)
                   : null,
-              title: transaction.description,
-              subtitle: transactionCategoryLabel(l10n, transaction, loaded),
+              corner: institutionOf(transaction),
+              title: transaction.displayName,
+              subtitle: [
+                transactionCategoryLabel(l10n, transaction, loaded),
+                ?transaction.installment?.label,
+              ].join(' · '),
               amount: transaction.amount,
               kind: amountKindOf(transaction),
               onTap: () => _open(context, transaction),
