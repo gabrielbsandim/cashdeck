@@ -101,6 +101,19 @@ class MoreScreen extends ConsumerWidget {
             l10n.moreCardImportHint,
             AppRoutes.cardImport,
           ),
+          section(l10n.moreSectionAlerts),
+          link(
+            Symbols.notifications_rounded,
+            l10n.alertsTitle,
+            l10n.moreAlertsHint,
+            AppRoutes.alerts,
+          ),
+          link(
+            Symbols.tune_rounded,
+            l10n.alertSettingsTitle,
+            l10n.moreAlertSettingsHint,
+            AppRoutes.alertSettings,
+          ),
           section(l10n.moreSectionConnections),
           link(
             Symbols.link_rounded,

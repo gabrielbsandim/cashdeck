@@ -56,6 +56,12 @@ void main() {
 
     await tester.tap(find.byKey(HomeScreen.alertsKey));
     await settle(tester);
+    expect(app.location, AppRoutes.alerts);
+    app.router.pop();
+    await settle(tester);
+
+    await tester.tap(find.byKey(PersonalHome.alertsSeeAllKey));
+    await settle(tester);
     expect(find.byKey(const Key('sheet-alert-1')), findsOneWidget);
     await tester.tap(find.byKey(const Key('sheet-alert-1')));
     await tester.tapAt(const Offset(200, 20));
@@ -125,7 +131,7 @@ void main() {
     await pickScope(tester, EntityScope.consolidated);
 
     expect(find.byType(ConsolidatedHome), findsOneWidget);
-    expect(find.byKey(HomeScreen.alertsKey), findsNothing);
+    expect(find.byKey(HomeScreen.alertsKey), findsOneWidget);
     expect(find.text(l10n.transferProLabore), findsOneWidget);
 
     await tester.tap(

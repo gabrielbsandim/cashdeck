@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Push stays off until a Firebase project's google-services.json is placed here.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "io.cashdeck.app"
     // receive_sharing_intent 1.9 compiles against API 37.

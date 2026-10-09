@@ -49,3 +49,7 @@ app.*.map.json
 
 # Generated localizations
 /lib/l10n/generated/
+
+# Firebase config, per environment
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist

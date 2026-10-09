@@ -4,6 +4,8 @@ import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
+import 'package:cashdeck/core/push/firebase_push_messaging.dart';
+import 'package:cashdeck/core/push/push_messaging.dart';
 import 'package:cashdeck/core/scan/camera_code_scanner.dart';
 import 'package:cashdeck/core/scan/code_scanner.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
@@ -48,6 +50,7 @@ Future<void> main() async {
         linkOpenerProvider.overrideWithValue(const PlatformLinkOpener()),
         shareIntakeProvider.overrideWithValue(PlatformShareIntake()),
         codeScannerProvider.overrideWithValue(cameraScanner),
+        pushMessagingProvider.overrideWithValue(FirebasePushMessaging()),
       ],
       child: const CashdeckApp(),
     ),

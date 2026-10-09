@@ -4,6 +4,8 @@ import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/accountant_export/presentation/accountant_export_screen.dart';
+import 'package:cashdeck/features/alerts/presentation/alert_settings_screen.dart';
+import 'package:cashdeck/features/alerts/presentation/alerts_screen.dart';
 import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
@@ -77,6 +79,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       _page(AppRoutes.signIn, const ServerSignInScreen()),
       _page(AppRoutes.unlock, const UnlockScreen()),
+      GoRoute(
+        path: AppRoutes.alerts,
+        builder: (_, _) => const AlertsScreen(),
+        routes: [
+          _page(
+            _below(AppRoutes.alertSettings, AppRoutes.alerts),
+            const AlertSettingsScreen(),
+          ),
+        ],
+      ),
       GoRoute(
         path: AppRoutes.sharedFile,
         redirect: (_, state) =>

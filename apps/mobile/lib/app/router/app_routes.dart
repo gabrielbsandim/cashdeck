@@ -8,6 +8,8 @@ abstract final class AppRoutes {
   static const signIn = '/sign-in';
   static const unlock = '/unlock';
   static const sharedFile = '/shared-file';
+  static const alerts = '/alerts';
+  static const alertSettings = '$alerts/settings';
 
   static const entityProfiles = '$more/profiles';
   static const captureSources = '$more/capture';
