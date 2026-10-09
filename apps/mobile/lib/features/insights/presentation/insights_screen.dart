@@ -25,6 +25,7 @@ import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
@@ -93,9 +94,9 @@ class InsightsScreen extends ConsumerWidget {
           ),
           Expanded(
             child: switch (ref.watch(monthlyInsightsProvider)) {
-              AsyncData(:final value) => _Analysis(
-                insights: value,
-                count: window.count,
+              AsyncData(:final value) => CdRefresh(
+                providers: [monthlyInsightsProvider],
+                child: _Analysis(insights: value, count: window.count),
               ),
               AsyncError(:final error) => CdErrorState(
                 failure: failureOf(error),
@@ -168,6 +169,7 @@ class _Analysis extends ConsumerWidget {
       ),
     ];
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenGutter,
         AppSpacing.sm,

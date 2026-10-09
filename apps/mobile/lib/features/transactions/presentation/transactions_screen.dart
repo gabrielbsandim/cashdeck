@@ -17,6 +17,7 @@ import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
@@ -27,6 +28,7 @@ import 'package:cashdeck/features/transactions/presentation/transactions_control
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -48,6 +50,12 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 
   /// How long typing pauses before the search runs.
   static const searchDelay = Duration(milliseconds: 350);
+
+  static final List<ProviderBase<AsyncValue<Object?>>> refreshed = [
+    transactionsControllerProvider,
+    transactionAccountsProvider,
+    categoriesProvider,
+  ];
 
   @override
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -102,7 +110,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 filtered: list.filtered,
                 onClear: _clearFilters,
               ),
-              AsyncValue(value: final list?) => _TransactionList(list: list),
+              AsyncValue(value: final list?) => CdRefresh(
+                providers: TransactionsScreen.refreshed,
+                child: _TransactionList(list: list),
+              ),
               AsyncError(:final error) => CdErrorState(
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(transactionsControllerProvider),
@@ -313,6 +324,7 @@ class _TransactionList extends ConsumerWidget {
     }
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       children: [
         for (final day in groupByDay(list.items)) ...[

@@ -31,12 +31,14 @@ final class _Scripted implements TransactionsRepository {
   bool failMore = false;
   bool failUpdate = false;
   bool empty = false;
+  int lists = 0;
 
   @override
   Future<Result<TransactionPage>> list(
     TransactionQuery query, {
     String? cursor,
   }) async {
+    lists++;
     if (failList || (failMore && cursor != null)) {
       return const Err(NetworkFailure());
     }
@@ -312,6 +314,26 @@ void main() {
     await pickScope(tester, EntityScope.company);
     await settle(tester);
     expect(find.text(l10n.transactionsEmptyTitle), findsOneWidget);
+  });
+
+  testWidgets('pulling the list fetches it again', (tester) async {
+    final repository = _Scripted();
+    await pumpRoute(
+      tester,
+      AppRoutes.transactions,
+      overrides: [transactionsRepositoryProvider.overrideWithValue(repository)],
+    );
+    final before = repository.lists;
+
+    await tester.fling(
+      find.byKey(TransactionsScreen.rowKey('tx-1')),
+      const Offset(0, 1500),
+      1000,
+    );
+    await settle(tester);
+
+    expect(repository.lists, before + 1);
+    expect(find.byType(RefreshProgressIndicator), findsNothing);
   });
 
   test('labels cover every source, kind and day', () {

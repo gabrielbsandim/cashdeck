@@ -373,6 +373,21 @@ void main() {
           month: any(named: 'month'),
         );
 
+    testWidgets('pulling Análises fetches the window again', (tester) async {
+      when(monthsCall()).thenAnswer((_) async => Ok(_monthly()));
+      await pumpRoute(tester, AppRoutes.insights, overrides: overrides());
+      verify(monthsCall()).called(1);
+
+      await tester.fling(
+        find.byType(ListView).last,
+        const Offset(0, 1500),
+        1000,
+      );
+      await settle(tester);
+
+      verify(monthsCall()).called(1);
+    });
+
     testWidgets('Análises retries a failure and reads a month with no income', (
       tester,
     ) async {

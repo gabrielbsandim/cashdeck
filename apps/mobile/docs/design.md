@@ -52,7 +52,7 @@ and held in `displayPreferencesProvider`.
 | `inputs`   | `CdTextField`, `CdCurrencyInput`, `CdSearchField`, `CdSegmented`, `CdFilterChip`, `CdCheckboxRow` |
 | `layout`   | `CdCard`, `CdListRow`, `CdSectionHeader`, `CdKeyValueRow`, `CdIconTile`, `CdEntityBadge`, `CdStepper`, `CdNavBar`, `showCdBottomSheet` |
 | `money`    | `CdAmount`, `CdAccountCard`, `CdBillCard`, `CdBudgetBar`, `CdTransactionRow`, `CdCopyField`, `CdPaymentLadder`, `CdConfirmSheet`, `PrivacyToggle` |
-| `states`   | `CdEmptyState`, `CdErrorState`, `CdSkeleton`, `CdStateView`, `ComingSoon` |
+| `states`   | `CdEmptyState`, `CdErrorState`, `CdRefresh`, `CdSkeleton`, `CdStateView`, `ComingSoon` |
 
 Feature widgets: `EntitySwitcher` and `EntityKindBadge` (`features/entities`),
 `PaymentLadderView` (`features/bills`), and the three home layouts in

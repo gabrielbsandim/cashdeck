@@ -1,21 +1,29 @@
+import 'dart:async';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/automation/automation_providers.dart';
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/home/data/fake_home_repository.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
 import 'package:cashdeck/features/home/presentation/company_home.dart';
 import 'package:cashdeck/features/home/presentation/consolidated_home.dart';
+import 'package:cashdeck/features/home/presentation/home_insights.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/features/home/presentation/personal_home.dart';
+import 'package:cashdeck/features/insights/data/fake_insights_repository.dart';
+import 'package:cashdeck/features/insights/domain/insights.dart';
+import 'package:cashdeck/features/insights/insights_providers.dart';
 import 'package:cashdeck/features/transactions/presentation/transfer_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -268,6 +276,64 @@ void main() {
     await settle(tester);
 
     expect(find.text(l10n.errorNetwork), findsOneWidget);
+  });
+
+  testWidgets('pulling Início refetches every card and waits for them', (
+    tester,
+  ) async {
+    registerFallbackValue(EntityScope.personal);
+    registerFallbackValue(InsightPeriod.month);
+    final clock = FixedClock(testNow);
+    final homeFake = FakeHomeRepository(clock, latency: Duration.zero);
+    final insightsFake = FakeInsightsRepository(clock, latency: Duration.zero);
+    final home = MockHomeRepository();
+    final insights = MockInsightsRepository();
+    Completer<void>? hold;
+    when(home.personal).thenAnswer((_) => homeFake.personal());
+    when(() => insights.overview(any(), any())).thenAnswer((call) async {
+      await hold?.future;
+      return await insightsFake.overview(
+        call.positionalArguments[0] as EntityScope,
+        call.positionalArguments[1] as InsightPeriod,
+      );
+    });
+    when(() => insights.installments(any()))
+        .thenAnswer((_) => insightsFake.installments(EntityScope.personal));
+    when(() => insights.subscriptions(any()))
+        .thenAnswer((_) => insightsFake.subscriptions(EntityScope.personal));
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+      overrides: [
+        homeRepositoryProvider.overrideWithValue(home),
+        insightsRepositoryProvider.overrideWithValue(insights),
+      ],
+    );
+    await tester.tap(find.byKey(HomeSpendCard.periodKey(InsightPeriod.year)));
+    await settle(tester);
+    verify(home.personal).called(1);
+    verify(() => insights.overview(any(), InsightPeriod.month)).called(1);
+    verify(() => insights.overview(any(), InsightPeriod.year)).called(1);
+    verify(() => insights.installments(any())).called(1);
+    verify(() => insights.subscriptions(any())).called(1);
+
+    hold = Completer<void>();
+    await tester.fling(find.byType(HomeScroll), const Offset(0, 3000), 1000);
+    for (var frame = 0; frame < 10; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    verify(home.personal).called(1);
+    verify(() => insights.overview(any(), InsightPeriod.year)).called(1);
+    verify(() => insights.installments(any())).called(1);
+    verify(() => insights.subscriptions(any())).called(1);
+    expect(find.byType(RefreshProgressIndicator), findsOneWidget);
+
+    hold.complete();
+    await settle(tester);
+    expect(find.byType(RefreshProgressIndicator), findsNothing);
+    verifyNever(() => insights.overview(any(), InsightPeriod.month));
   });
 
   testWidgets('an empty alerts sheet says so', (tester) async {

@@ -10,6 +10,7 @@ import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
 import 'package:cashdeck/features/alerts/presentation/alert_labels.dart';
@@ -67,11 +68,8 @@ class AlertsScreen extends ConsumerWidget {
           icon: Symbols.notifications_rounded,
           title: l10n.alertsInboxEmpty,
         ),
-        AsyncData(:final value) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(alertsControllerProvider);
-            await ref.read(alertsControllerProvider.future);
-          },
+        AsyncData(:final value) => CdRefresh(
+          providers: [alertsControllerProvider, unreadAlertsProvider],
           child: ListView(
             padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
             children: [
