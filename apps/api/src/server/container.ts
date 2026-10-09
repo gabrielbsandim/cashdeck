@@ -7,11 +7,13 @@ import {
   FakeSecretVault,
   type IdGenerator,
   InMemoryAccountRepository,
+  InMemoryAlertRepository,
   InMemoryAttachmentRepository,
   InMemoryAuditLog,
   InMemoryBillRepository,
   InMemoryBudgetRepository,
   InMemoryConnectionRepository,
+  InMemoryDeviceTokenRepository,
   InMemoryDocumentStore,
   InMemoryEntityRepository,
   InMemoryFundingRepository,
@@ -25,6 +27,8 @@ import {
   InMemoryTransferRepository,
   InMemoryWebhookEventStore,
   makeAccountantExport,
+  makeAlertEmitter,
+  makeAlerts,
   makeAutomation,
   makeCaptureBill,
   makeCaptureFile,
@@ -62,6 +66,7 @@ import {
   makeReconcilePayments,
   makeRecordTransfer,
   makeRecurringInvoices,
+  makeRunDailyAlerts,
   makeRunDuePayments,
   makeRunPaymentLadder,
   makeTestIssuer,
@@ -73,10 +78,12 @@ import {
   StaticPaymentSettings,
   type WebhookProvider,
   type WebhookReader,
+  withLadderAlerts,
 } from '@cashdeck/application'
 import { createFinancialEntity, RAIL_IDS, type RailId } from '@cashdeck/domain'
 import {
   createLlmProvider,
+  createPrismaAlertStores,
   createPrismaRecords,
   createPrismaRepositories,
   createProviders,
@@ -143,6 +150,8 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
     attachments: new InMemoryAttachmentRepository(),
     documents: new InMemoryDocumentStore(),
     webhookEvents: new InMemoryWebhookEventStore(),
+    alertStore: new InMemoryAlertRepository(),
+    devices: new InMemoryDeviceTokenRepository(),
   }
 }
 
@@ -158,6 +167,7 @@ function stores(env: ServerEnv, settings: PaymentSettings) {
   return {
     ...createPrismaRepositories(db, settings),
     ...createPrismaRecords(db),
+    ...createPrismaAlertStores(db),
   }
 }
 
@@ -184,6 +194,17 @@ export function buildContainer(
     vault,
     transport,
     llm,
+    deviceTokens: async tenantId =>
+      (await base.devices.list(tenantId)).map(device => device.token),
+    onInvalidToken: async (tenantId, token) => {
+      await base.devices.remove(tenantId, token)
+    },
+  })
+  const alerts = makeAlertEmitter({
+    ...base,
+    notifier: providers.notifier,
+    clock: systemClock,
+    ids: uuids,
   })
   const rails: PaymentRail[] = providers.rails
   const deps: Deps = {
@@ -207,10 +228,12 @@ export function buildContainer(
     archives: new StoredZipWriter(),
     pdfs: new SimplePdfWriter(),
     llm,
+    notifier: providers.notifier,
+    alerts,
     clock: systemClock,
     ids: uuids,
   }
-  const runPaymentLadder = makeRunPaymentLadder(deps)
+  const runPaymentLadder = withLadderAlerts(makeRunPaymentLadder(deps), alerts)
   return {
     deps,
     env,
@@ -262,6 +285,8 @@ export function buildContainer(
     cardStatements: makeCardStatements(deps),
     receipts: makeReceipts(deps),
     accountantExport: makeAccountantExport(deps),
+    alerts: makeAlerts(deps),
+    runDailyAlerts: makeRunDailyAlerts(deps),
   }
 }
 

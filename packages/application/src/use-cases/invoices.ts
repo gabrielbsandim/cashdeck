@@ -17,6 +17,7 @@ import {
 import { ProviderError } from '@/errors/errors'
 import { type Invoice } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
+import { emitAlert, invoiceAlert } from '@/use-cases/alert-events'
 import { credentialName, putCredential } from '@/use-cases/credentials'
 import { type Deps } from '@/use-cases/deps'
 import { makeInvoiceLifecycle } from '@/use-cases/invoice-lifecycle'
@@ -252,7 +253,8 @@ export function makeListInvoices(deps: Pick<Deps, 'entities' | 'invoices'>) {
 }
 
 export function makeIssueInvoice(
-  deps: Pick<Deps, 'invoices' | 'issuer' | 'audit' | 'clock' | 'ids'>,
+  deps: Pick<Deps, 'invoices' | 'issuer' | 'audit' | 'clock' | 'ids'> &
+    Partial<Pick<Deps, 'alerts'>>,
 ) {
   const lifecycle = makeInvoiceLifecycle(deps)
   return async function issueInvoice(
@@ -307,6 +309,7 @@ export function makeIssueInvoice(
       at: deps.clock.now(),
     })
     await lifecycle.storeFiles(updated)
+    await emitAlert(deps.alerts, invoiceAlert(updated, client.name))
     return updated
   }
 }

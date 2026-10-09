@@ -14,8 +14,14 @@ import { type BillSource, type OpenFinanceProvider } from '@/ports/providers'
 import { type RailStatusReader } from '@/ports/rail-status'
 import { type PaymentSettings } from '@/ports/repositories'
 import {
+  InMemoryAlertRepository,
+  InMemoryDeviceTokenRepository,
+  RecordingAlertEmitter,
+} from '@/testing/alerts'
+import {
   FakeInvoiceIssuer,
   FakeLlmProvider,
+  FakeNotifier,
   FakeOpenFinanceProvider,
   FakePixLocationResolver,
   FakeSecretVault,
@@ -92,6 +98,10 @@ export function fullDeps(options: Options = {}) {
     archives: new FakeArchiveWriter(),
     pdfs: new FakePdfWriter(),
     llm: new FakeLlmProvider(),
+    alertStore: new InMemoryAlertRepository(),
+    devices: new InMemoryDeviceTokenRepository(),
+    notifier: new FakeNotifier(),
+    alerts: new RecordingAlertEmitter(),
   }
 }
 

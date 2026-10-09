@@ -8,6 +8,7 @@
     { "path": "/api/cron/capture", "schedule": "30 9 * * *" },
     { "path": "/api/cron/payment-ladder", "schedule": "0 11 * * 1-5" },
     { "path": "/api/cron/reconcile-payments", "schedule": "0 21 * * 1-5" },
-    { "path": "/api/cron/invoices", "schedule": "0 12 * * 1-5" }
+    { "path": "/api/cron/invoices", "schedule": "0 12 * * 1-5" },
+    { "path": "/api/cron/alerts", "schedule": "0 12 * * *" }
   ]
 }

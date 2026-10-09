@@ -102,7 +102,8 @@ describe('api routes', () => {
     const run = await json(await payBill(confirm, params(id)))
     expect(run.body.data.status).toBe('ASSISTED')
     const audit = getContainer().deps.audit as InMemoryAuditLog
-    expect(audit.events.at(-1)).toMatchObject({
+    const attempts = audit.events.filter(e => e.action === 'payment.attempt')
+    expect(attempts.at(-1)).toMatchObject({
       action: 'payment.attempt',
       actor: 'USER',
       actorId: expect.stringMatching(/^token:[0-9a-f]{12}$/),

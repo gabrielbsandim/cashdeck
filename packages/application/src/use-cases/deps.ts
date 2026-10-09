@@ -1,8 +1,14 @@
+import {
+  type AlertEmitter,
+  type AlertRepository,
+  type DeviceTokenRepository,
+} from '@/ports/alerts'
 import { type LlmProvider } from '@/ports/llm-provider'
 import { type RailId } from '@cashdeck/domain'
 import {
   type BillSource,
   type InvoiceIssuer,
+  type Notifier,
   type OpenFinanceProvider,
   type PixLocationResolver,
   type SecretVault,
@@ -82,6 +88,10 @@ export type Deps = {
   archives: ArchiveWriter
   pdfs: PdfWriter
   llm: LlmProvider
+  alertStore: AlertRepository
+  devices: DeviceTokenRepository
+  notifier: Notifier
+  alerts: AlertEmitter
   clock: Clock
   ids: IdGenerator
 }

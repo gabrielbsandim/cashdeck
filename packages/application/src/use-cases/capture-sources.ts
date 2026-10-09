@@ -1,7 +1,8 @@
 import { type EntityKind, type FinancialEntity } from '@cashdeck/domain'
 import { type CaptureSourcesView } from '@/dtos/capture'
-import { NotConfiguredSource } from '@/errors/errors'
+import { AmountRequiredError, NotConfiguredSource } from '@/errors/errors'
 import { type CapturedBill } from '@/ports/providers'
+import { amountRequiredAlert, emitAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
 import { credentialName, putCredential } from '@/use-cases/credentials'
@@ -56,7 +57,8 @@ type CaptureDeps = Pick<
   | 'rails'
   | 'clock'
   | 'ids'
->
+> &
+  Partial<Pick<Deps, 'alerts'>>
 
 export function makeCaptureSources(deps: CaptureDeps) {
   const capture = makeCaptureBill(deps)
@@ -189,7 +191,12 @@ export function makeCaptureSources(deps: CaptureDeps) {
         payee: found.payee ?? undefined,
       })
       return !result.duplicate
-    } catch {
+    } catch (error) {
+      const skipped = error instanceof AmountRequiredError
+      await emitAlert(
+        deps.alerts,
+        skipped ? amountRequiredAlert(tenantId, entityId, source, found) : null,
+      )
       return false
     }
   }

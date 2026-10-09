@@ -555,14 +555,31 @@ model Alert {
   id        String    @id
   tenantId  String    @map("tenant_id")
   type      String
+  entityId  String?   @map("entity_id")
+  billId    String?   @map("bill_id")
+  invoiceId String?   @map("invoice_id")
   title     String
   body      String
   data      Json      @default("{}")
+  dedupeKey String?   @map("dedupe_key")
   readAt    DateTime? @map("read_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
+  @@unique([tenantId, dedupeKey])
   @@index([tenantId, createdAt])
+  @@index([tenantId, readAt])
   @@map("alerts")
+}
+
+model DeviceToken {
+  token      String   @id
+  tenantId   String   @map("tenant_id")
+  platform   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastSeenAt DateTime @map("last_seen_at")
+
+  @@index([tenantId])
+  @@map("device_tokens")
 }
 
 model AuditEvent {

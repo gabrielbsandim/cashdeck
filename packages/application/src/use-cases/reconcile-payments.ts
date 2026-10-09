@@ -17,6 +17,7 @@ import {
   type ResolvedPayment,
 } from '@/use-cases/payment-guards'
 import { allPages } from '@/use-cases/shared'
+import { assistedAlert, billAlert, emitAlert } from '@/use-cases/alert-events'
 
 type ReconcileDeps = Pick<
   Deps,
@@ -28,7 +29,8 @@ type ReconcileDeps = Pick<
   | 'audit'
   | 'clock'
   | 'ids'
->
+> &
+  Partial<Pick<Deps, 'alerts'>>
 
 export type ReconcileResult = {
   checked: number
@@ -125,6 +127,7 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
       await deps.payments.savePlan(tenantId, jumpToAssisted(plan))
     }
     await deps.bills.save(transitionBill(bill, 'ASSISTED'))
+    await emitAlert(deps.alerts, assistedAlert(bill, reason))
   }
 
   async function apply(
@@ -140,6 +143,7 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
           ? new Date(status.settledAt)
           : deps.clock.now()
         await deps.bills.save(markBillPaid(bill, 'RAIL', paidAt))
+        await emitAlert(deps.alerts, billAlert('PAYMENT_PAID', bill))
         return 'PAID'
       }
       case 'FAILED':

@@ -10,6 +10,7 @@ import { money } from '@/dtos/common'
 import { type LlmToolParameter } from '@/ports/llm-provider'
 import { type Deps } from '@/use-cases/deps'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
+import { cardClosedAlert, emitAlert } from '@/use-cases/alert-events'
 import {
   decodeUpload,
   required,
@@ -103,7 +104,8 @@ type StatementDeps = Pick<
   | 'rails'
   | 'clock'
   | 'ids'
->
+> &
+  Partial<Pick<Deps, 'alerts'>>
 
 export function makeCardStatements(deps: StatementDeps) {
   const capture = makeCaptureBill(deps)
@@ -165,6 +167,7 @@ export function makeCardStatements(deps: StatementDeps) {
       createdAt: deps.clock.now().toISOString(),
     }
     await deps.documents.put(tenantId, COLLECTION, statement.id, statement)
+    await emitAlert(deps.alerts, cardClosedAlert(tenantId, statement))
     return toView(statement, entity.kind)
   }
 

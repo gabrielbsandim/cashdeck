@@ -12,6 +12,7 @@ import {
 } from '@cashdeck/domain'
 import { type CaptureBillInput } from '@/dtos/bill'
 import { AmountRequiredError, NotFoundError } from '@/errors/errors'
+import { type AlertEmitter } from '@/ports/alerts'
 import { type PixCharge, type PixLocationResolver } from '@/ports/providers'
 import { type AuditLog, type BillRepository } from '@/ports/repositories'
 import { type Clock, type IdGenerator } from '@/ports/system'
@@ -25,6 +26,7 @@ import {
   type BuildPaymentPlanDeps,
   makeBuildPaymentPlan,
 } from '@/use-cases/build-payment-plan'
+import { billAlert, emitAlert } from '@/use-cases/alert-events'
 
 export type CaptureBillDeps = BuildPaymentPlanDeps & {
   bills: BillRepository
@@ -32,6 +34,7 @@ export type CaptureBillDeps = BuildPaymentPlanDeps & {
   clock: Clock
   ids: IdGenerator
   pixLocations?: PixLocationResolver
+  alerts?: AlertEmitter
 }
 
 export type CaptureBillResult = { bill: Bill; duplicate: boolean }
@@ -303,6 +306,7 @@ export function makeCaptureBill(deps: CaptureBillDeps) {
     if (dropped) {
       await audit(tenantId, bill, 'bill.pix_code_dropped', dropped)
     }
+    await emitAlert(deps.alerts, billAlert('BILL_CAPTURED', bill))
     return { bill, duplicate: false }
   }
 }

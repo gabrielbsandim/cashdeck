@@ -595,6 +595,53 @@ For a card without Open Finance, usually in a foreign currency.
 - `GET /accountant-export/{id}/download`: the ZIP itself (`application/zip`),
   rebuilt from the stored period and items. Contains one CSV per item.
 
+## Alerts
+
+Alerts land in an inbox and go out as push notifications through FCM. The
+server writes `title` and `body` in pt-BR; `data` carries the raw values
+(`payee`, `amount`, `dueDate`, and per type `rail`, `reason`, `method`,
+`hasPixCode`, `shortfall`, `invoice`, `client`, `card`, `closing`, `source`). A push
+carries the same `data` plus `alertId`, `entityId`, `billId` and `invoiceId`
+when set, so a tap opens the bill.
+
+| Type | Raised when |
+|---|---|
+| `BILL_CAPTURED` | a new bill is captured (not a duplicate) |
+| `BILL_NEEDS_AMOUNT` | Gmail or DDA found a bill with no amount and skipped it (`AMOUNT_REQUIRED`); no `billId` |
+| `BILL_DUE_SOON` | daily cron: an unpaid bill is due tomorrow |
+| `PAYMENT_NEEDS_CONFIRMATION` | the ladder stops for a new payee or an amount above the threshold |
+| `PAYMENT_PAID` | a rail pays the bill, at once or on reconciliation |
+| `PAYMENT_MOVED_DOWN` | a rail failed and the ladder moved to the next step |
+| `PAYMENT_ASSISTED` | the bill fell to assisted, from the ladder or from reconciliation (`reason` such as `IN_FLIGHT_UNRESOLVED`, `APPROVAL_EXPIRED` or `RESERVE_FUNDING_FAILED`); `method` is `PIX`, `BARCODE` or `NONE` and `hasPixCode` says whether a Pix copy-and-paste is available |
+| `APPROVAL_PENDING` | the payment waits for approval in the bank |
+| `LOW_BALANCE` | daily cron: the reserve does not cover tomorrow's automatic payments |
+| `INVOICE_ISSUED`, `INVOICE_FAILED` | the issuer answers `ISSUED` or `REJECTED`, on issue, polling or webhook |
+| `CARD_BILL_CLOSED` | a card statement is read |
+
+Each alert has a dedupe key, so a retried job or a second cron run on the
+same day never repeats it.
+
+- `GET /alerts?unread=true|false&cursor=&limit=`: newest first, cursor
+  pagination.
+
+  ```json
+  {
+    "data": [{ "id": string, "type": AlertType, "entityId": string | null, "billId": string | null, "invoiceId": string | null, "title": string, "body": string, "data": { [key]: string }, "createdAt": datetime, "readAt": datetime | null }],
+    "nextCursor": string | null
+  }
+  ```
+
+- `GET /alerts/unread-count`: `{ unread: int }`.
+- `POST /alerts/{id}/read`: the alert, with `readAt` set (kept if it was read before).
+- `POST /alerts/read-all`: `{ updated: int }`.
+- `GET /alerts/settings`: `{ types: [{ type, muted: bool }] }`, every type.
+- `PATCH /alerts/settings`: body `{ muted: { [AlertType]: bool } }`, only the
+  types to change. A muted type still lands in the inbox; it only skips the push.
+- `POST /devices`: body `{ token, platform: "ANDROID"|"IOS"|"WEB" }`. Registers
+  or refreshes the FCM token of this device. `data`: `{ token, platform, createdAt, lastSeenAt }`, 201.
+- `DELETE /devices/{token}`: the token percent-encoded. `{ removed: bool }`.
+  Tokens FCM reports as unregistered are removed on the next push.
+
 ## Crons
 
 Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
@@ -605,6 +652,7 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | `/api/cron/open-finance-sync` | daily 09:00 | syncs every connection |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
 | `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
+| `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
 

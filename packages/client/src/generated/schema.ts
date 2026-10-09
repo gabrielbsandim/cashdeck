@@ -1084,6 +1084,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alert inbox, newest first */
+        get: operations["listAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many alerts are unread */
+        get: operations["countUnreadAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark one alert read */
+        post: operations["markAlertRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every alert read */
+        post: operations["markAllAlertsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which alert types are muted */
+        get: operations["getAlertSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mute or unmute alert types; a muted type skips the push only */
+        patch: operations["updateAlertSettings"];
+        trace?: never;
+    };
+    "/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a push token for this device */
+        post: operations["registerDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a push token */
+        delete: operations["removeDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4800,6 +4920,323 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listAlerts: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                unread?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alert inbox, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            entityId: string | null;
+                            billId: string | null;
+                            invoiceId: string | null;
+                            title: string;
+                            body: string;
+                            data: {
+                                [key: string]: string;
+                            };
+                            createdAt: string;
+                            readAt: string | null;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    countUnreadAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How many alerts are unread */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            unread: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    markAlertRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mark one alert read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            entityId: string | null;
+                            billId: string | null;
+                            invoiceId: string | null;
+                            title: string;
+                            body: string;
+                            data: {
+                                [key: string]: string;
+                            };
+                            createdAt: string;
+                            readAt: string | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    markAllAlertsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mark every alert read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            updated: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getAlertSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Which alert types are muted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            types: {
+                                /** @enum {string} */
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                muted: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateAlertSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    muted: {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Mute or unmute alert types; a muted type skips the push only */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            types: {
+                                /** @enum {string} */
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                muted: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    registerDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    /** @enum {string} */
+                    platform: "ANDROID" | "IOS" | "WEB";
+                };
+            };
+        };
+        responses: {
+            /** @description Register a push token for this device */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            token: string;
+                            /** @enum {string} */
+                            platform: "ANDROID" | "IOS" | "WEB";
+                            createdAt: string;
+                            lastSeenAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forget a push token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            removed: boolean;
+                        };
+                    };
                 };
             };
             400: components["responses"]["Error"];

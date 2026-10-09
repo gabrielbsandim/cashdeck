@@ -7,13 +7,15 @@ import {
   type InvoiceFileKind,
 } from '@/ports/records'
 import { type AuditEvent } from '@/ports/repositories'
+import { emitAlert, invoiceAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { required } from '@/use-cases/shared'
 
 type LifecycleDeps = Pick<
   Deps,
   'invoices' | 'issuer' | 'audit' | 'clock' | 'ids'
->
+> &
+  Partial<Pick<Deps, 'alerts'>>
 
 export type InvoicePollResult = {
   checked: number
@@ -116,6 +118,11 @@ export function makeInvoiceLifecycle(deps: LifecycleDeps) {
         result: updated.status,
         details: { from: invoice.status, externalId: invoice.externalId },
       })
+      const client = await deps.invoices.findClient(
+        updated.tenantId,
+        updated.clientId,
+      )
+      await emitAlert(deps.alerts, invoiceAlert(updated, client?.name ?? ''))
     }
     await storeFiles(updated)
     return updated
