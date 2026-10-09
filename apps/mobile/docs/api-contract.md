@@ -30,6 +30,10 @@ Codes the camera reads go to `POST /bills` with the entity id from
 `GET /entities`. Certificate uploads (rails and invoice issuer) ask for the
 expiry date, since a .pfx does not let the server read it.
 
+The profiles screen lists both entities with `GET /entities` and saves one
+with `PATCH /entities/{id}`: `name`, the unmasked `taxId` (checked locally
+first) and, for `PJ` only, `taxRegime`.
+
 ## Envelope
 
 - Success: `{ "data": <payload> }`.

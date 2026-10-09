@@ -54,6 +54,13 @@ class MoreScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
         children: [
+          section(l10n.moreSectionProfiles),
+          link(
+            Symbols.badge_rounded,
+            l10n.profilesTitle,
+            l10n.moreProfilesHint,
+            AppRoutes.entityProfiles,
+          ),
           section(l10n.moreSectionPayments),
           CdListRow(
             key: pauseKey,

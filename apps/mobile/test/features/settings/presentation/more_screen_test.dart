@@ -74,6 +74,7 @@ void main() {
   });
 
   for (final route in [
+    AppRoutes.entityProfiles,
     AppRoutes.rails,
     AppRoutes.captureSources,
     AppRoutes.cardImport,

@@ -45,6 +45,9 @@ void main() {
     await tester.tap(find.byKey(EntityChip.chipKey));
     await tester.pumpAndSettle();
     expect(find.text(l10n.entitySheetTitle), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Conta pessoal'), findsOneWidget);
+    expect(find.text('Empresa Exemplo Ltda'), findsOneWidget);
     await tester.tap(find.byKey(EntityChip.optionKey(EntityScope.company)));
     await tester.pumpAndSettle();
 

@@ -13,6 +13,7 @@ import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
 import 'package:cashdeck/features/capture/presentation/shared_file_screen.dart';
 import 'package:cashdeck/features/card_import/presentation/manual_card_bill_import_screen.dart';
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
+import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
 import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_screen.dart';
@@ -113,6 +114,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ]),
           _tab(AppRoutes.chat, const ChatScreen()),
           _tab(AppRoutes.more, const MoreScreen(), [
+            _page(
+              _below(AppRoutes.entityProfiles, AppRoutes.more),
+              const EntityProfilesScreen(),
+            ),
             GoRoute(
               path: _below(AppRoutes.captureSources, AppRoutes.more),
               builder: (_, _) => const CaptureSourcesScreen(),

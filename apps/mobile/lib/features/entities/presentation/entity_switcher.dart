@@ -5,7 +5,9 @@ import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_entity_badge.dart';
+import 'package:cashdeck/features/entities/domain/entity_profile.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_profiles_provider.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +115,11 @@ class _EntitySheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final scope = ref.watch(entityScopeProvider);
+    final names = {
+      for (final profile
+          in ref.watch(entityProfilesProvider).value ?? const <EntityProfile>[])
+        _scopeOf(profile.kind): profile.name,
+    };
     return RadioGroup<EntityScope>(
       groupValue: scope,
       onChanged: (value) {
@@ -130,6 +137,15 @@ class _EntitySheet extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.trailing,
               secondary: EntityScopeBadge(scope: option),
+              subtitle: switch (names[option]) {
+                final name? => Text(
+                  name,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: palette.onSurfaceVariant,
+                  ),
+                ),
+                null => null,
+              },
               title: Text(
                 entityScopeLabel(l10n, option),
                 style: AppTextStyles.bodyLg.copyWith(
@@ -180,14 +196,14 @@ class EntityKindBadge extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => EntityScopeBadge(
-    scope: switch (kind) {
-      EntityKind.personal => EntityScope.personal,
-      EntityKind.company => EntityScope.company,
-    },
-    size: size,
-  );
+  Widget build(BuildContext context) =>
+      EntityScopeBadge(scope: _scopeOf(kind), size: size);
 }
+
+EntityScope _scopeOf(EntityKind kind) => switch (kind) {
+  EntityKind.personal => EntityScope.personal,
+  EntityKind.company => EntityScope.company,
+};
 
 String entityScopeLabel(AppLocalizations l10n, EntityScope scope) =>
     switch (scope) {

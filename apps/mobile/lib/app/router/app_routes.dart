@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const unlock = '/unlock';
   static const sharedFile = '/shared-file';
 
+  static const entityProfiles = '$more/profiles';
   static const captureSources = '$more/capture';
   static const scanBill = '$more/capture/scan';
   static const rails = '$more/rails';
