@@ -295,7 +295,7 @@ describe('open finance', () => {
     expect(mirror).toMatchObject({ name: 'MeuPluggy', connectorId: 200 })
     expect(card).toMatchObject({
       numberSuffix: '4321',
-      credit: { brand: 'VISA', dueOn: '2026-10-27' },
+      credit: { brand: 'VISA', dueOn: '2026-10-27', openBill: null },
     })
     expect(checking?.credit).toBeNull()
 
@@ -311,6 +311,51 @@ describe('open finance', () => {
       ['2026-09-27', 4_200, undefined],
       ['2026-08-27', 3_100, 500],
     ])
+  })
+
+  it('sums the charges the issuer has not billed yet as the open bill', async () => {
+    const card = {
+      externalId: 'card-1',
+      name: 'Card',
+      type: 'CREDIT_CARD' as const,
+      balanceCents: -9_000,
+      currency: 'BRL',
+      credit: {
+        limitCents: 20_000,
+        availableCents: 11_000,
+        closesOn: null,
+        dueOn: '2026-09-15',
+        brand: null,
+      },
+    }
+    const charge = (externalId: string, bookedOn: string, cents: number) => ({
+      externalId,
+      accountExternalId: 'card-1',
+      amountCents: cents,
+      currency: 'BRL',
+      bookedOn,
+      description: externalId,
+    })
+    const issuer = new FakeOpenFinanceProvider(
+      [card],
+      [
+        { ...charge('installment', '2026-08-20', -300), openBillCents: -300 },
+        { ...charge('billed', '2026-09-01', -200), openBillCents: 0 },
+        { ...charge('refund', '2026-10-02', 50), openBillCents: 50 },
+        { ...charge('payment', '2026-09-10', 9_000), openBillCents: 0 },
+      ],
+      [item],
+    )
+    const { deps, of } = setup(issuer)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['card-1'],
+    })
+    const synced = await of.sync(TENANT, connectionId)
+    expect(synced.transactions).toBe(4)
+    const [stored] = await deps.accounts.list(TENANT)
+    expect(stored?.credit?.openBill?.cents).toBe(250)
   })
 
   it('keeps going when connectors, bills or the institution are missing', async () => {

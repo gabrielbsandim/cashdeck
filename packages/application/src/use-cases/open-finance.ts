@@ -34,6 +34,8 @@ import {
 
 export const OPEN_FINANCE_PROVIDER = 'pluggy'
 const FIRST_SYNC_DAYS = 30
+// A card is read two cycles back, so every charge of the open bill is seen.
+const CARD_LOOKBACK_DAYS = 62
 
 type OpenFinanceDeps = Pick<
   Deps,
@@ -56,7 +58,25 @@ type OpenFinanceDeps = Pick<
 const balanceOf = (account: ProviderAccount) =>
   Money.of(account.balanceCents, account.currency)
 
-function creditOf(account: ProviderAccount): CreditLine | null {
+// Null unless the issuer marks which charges it has already billed.
+function unbilledOf(
+  fetched: readonly ProviderTransaction[],
+  currency: string,
+): Money | null {
+  const marked = fetched.flatMap(tx =>
+    typeof tx.openBillCents === 'number' ? [tx.openBillCents] : [],
+  )
+  if (marked.length === 0) {
+    return null
+  }
+  const total = marked.reduce((sum, cents) => sum + cents, 0)
+  return Money.of(Math.max(0, -total), currency)
+}
+
+function creditOf(
+  account: ProviderAccount,
+  fetched: readonly ProviderTransaction[],
+): CreditLine | null {
   const credit = account.credit
   if (account.type !== 'CREDIT_CARD' || !credit) {
     return null
@@ -67,13 +87,28 @@ function creditOf(account: ProviderAccount): CreditLine | null {
     closesOn: credit.closesOn,
     dueOn: credit.dueOn,
     brand: credit.brand,
+    openBill: unbilledOf(fetched, account.currency),
   }
 }
 
-const detailsOf = (account: ProviderAccount) => ({
+const detailsOf = (
+  account: ProviderAccount,
+  fetched: readonly ProviderTransaction[] = [],
+) => ({
   numberSuffix: account.numberSuffix ?? null,
-  credit: creditOf(account),
+  credit: creditOf(account, fetched),
 })
+
+function rangeFor(
+  account: ProviderAccount,
+  range: { from: string; to: string },
+) {
+  if (account.type !== 'CREDIT_CARD') {
+    return range
+  }
+  const cycles = addDays(range.to, -CARD_LOOKBACK_DAYS)
+  return { from: cycles < range.from ? cycles : range.from, to: range.to }
+}
 
 const brandingOf = (connector: ProviderConnector | null | undefined) => ({
   connectorId: connector?.id ?? null,
@@ -324,19 +359,19 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       return 0
     }
     const owner = await context.resolve(remote.name)
+    const fetched = await deps.openFinance.listTransactions(
+      connectionOf(context.connection.itemId),
+      remote.externalId,
+      rangeFor(remote, context.range),
+    )
     const synced: Account = {
       ...account,
       balance: balanceOf(remote),
       institutionId: owner?.id ?? account.institutionId,
-      ...detailsOf(remote),
+      ...detailsOf(remote, fetched),
     }
     await deps.accounts.save(synced)
     await syncBills(context.connection, synced)
-    const fetched = await deps.openFinance.listTransactions(
-      connectionOf(context.connection.itemId),
-      remote.externalId,
-      context.range,
-    )
     return deps.transactions.saveNew(
       fetched.map(tx => toTransaction(tenantId, synced, tx)),
     )

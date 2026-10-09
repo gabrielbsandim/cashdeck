@@ -22,6 +22,8 @@ export type CreditLine = {
   readonly closesOn: LocalDate | null
   readonly dueOn: LocalDate | null
   readonly brand: string | null
+  // Charges not yet on a closed bill, when the issuer marks what it billed.
+  readonly openBill: Money | null
 }
 
 export type Account = {
@@ -97,6 +99,12 @@ export function creditUsedPercent(credit: CreditLine): number | null {
   const used = credit.limit.cents - credit.available.cents
   const percent = Math.round((used * 100) / credit.limit.cents)
   return Math.min(100, Math.max(0, percent))
+}
+
+// The open bill, else everything owed, which counts installments still ahead.
+export function openBillOf(card: Account): Money {
+  const owed = Money.of(Math.max(0, -card.balance.cents), card.balance.currency)
+  return card.credit?.openBill ?? owed
 }
 
 export function availableToPay(account: Account): Money {

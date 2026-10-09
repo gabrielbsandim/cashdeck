@@ -5,7 +5,8 @@ import {
   daysBetween,
   type EntityKind,
   type LocalDate,
-  Money,
+  type Money,
+  openBillOf,
   shiftMonth,
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
@@ -53,8 +54,8 @@ function stateOf(bill: Dated, day: LocalDate): CardBillState {
   return day <= bill.dueOn ? 'CLOSED' : 'PAST'
 }
 
-// The bill the issuer is still filling, worth what the card owes now. Without
-// the issuer's dates it is the cycle after the last bill it reported.
+// The bill the issuer is still filling. Without the issuer's dates it is the
+// cycle after the last bill it reported.
 function openBill(
   card: Account,
   stored: readonly CardBill[],
@@ -71,7 +72,7 @@ function openBill(
     closesOn: reportedClosesOn ?? addDays(dueOn, -gap),
     reportedClosesOn,
     dueOn,
-    total: Money.of(Math.max(0, -card.balance.cents), card.balance.currency),
+    total: openBillOf(card),
     minimum: null,
   }
 }

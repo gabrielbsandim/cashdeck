@@ -231,6 +231,7 @@ describe('PluggyProvider', () => {
         description: 'Mercado',
         merchant: 'Mercado Exemplo',
         installment: { number: 3, count: 10, purchaseOn: '2026-08-01' },
+        openBillCents: 0,
       },
       {
         externalId: 't2',
@@ -241,6 +242,7 @@ describe('PluggyProvider', () => {
         description: '',
         merchant: 'Exemplo LTDA',
         installment: null,
+        openBillCents: 0,
       },
       expect.objectContaining({
         externalId: 't3',
@@ -248,7 +250,39 @@ describe('PluggyProvider', () => {
         bookedOn: '2026-10-05',
         merchant: null,
         installment: null,
+        openBillCents: null,
       }),
+    ])
+  })
+
+  it('counts pending unbilled charges and refunds toward the open bill', async () => {
+    const url = `${PLUGGY_URL}/v2/transactions?accountId=a1&dateFrom=2026-10-01&dateTo=2026-10-31`
+    const tx = (id: string, fields: object) => ({
+      id,
+      amount: 10,
+      type: 'DEBIT',
+      status: 'PENDING',
+      creditCardMetadata: {},
+      ...fields,
+    })
+    const scripted = new ScriptedTransport().on('GET', url, {
+      json: {
+        results: [
+          tx('charge', {}),
+          tx('abroad', { amount: 5, amountInAccountCurrency: 27.5 }),
+          tx('billed', { creditCardMetadata: { billId: 'b1' } }),
+          tx('posted', { status: 'POSTED' }),
+          tx('refund', { type: 'CREDIT', operationType: 'ESTORNO' }),
+          tx('payment', { type: 'CREDIT', amount: 900 }),
+        ],
+      },
+    })
+    const listed = await provider(scripted).listTransactions(connection, 'a1', {
+      from: '2026-10-01',
+      to: '2026-10-31',
+    })
+    expect(listed.map(t => t.openBillCents)).toEqual([
+      -1000, -2750, 0, 0, 1000, 0,
     ])
   })
 

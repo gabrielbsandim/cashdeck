@@ -56,6 +56,7 @@ export type AccountRow = {
   creditClosesOn: Date | null
   creditDueOn: Date | null
   creditBrand: string | null
+  creditOpenBillCents: bigint | null
 }
 
 export type TransactionRow = {
@@ -153,6 +154,10 @@ function creditFromRow(row: AccountRow): CreditLine | null {
     closesOn: optionalDate(row.creditClosesOn),
     dueOn: optionalDate(row.creditDueOn),
     brand: row.creditBrand,
+    openBill:
+      row.creditOpenBillCents === null
+        ? null
+        : Money.of(Number(row.creditOpenBillCents), row.currency),
   }
 }
 
@@ -223,6 +228,9 @@ export function accountToRow(account: Account): AccountRow {
     creditClosesOn: optionalDbDate(credit?.closesOn ?? null),
     creditDueOn: optionalDbDate(credit?.dueOn ?? null),
     creditBrand: credit?.brand ?? null,
+    creditOpenBillCents: credit?.openBill
+      ? BigInt(credit.openBill.cents)
+      : null,
   }
 }
 

@@ -4,6 +4,7 @@ import {
   availableToPay,
   createAccount,
   creditUsedPercent,
+  openBillOf,
 } from '@/entities/account'
 import { createTransaction, transactionKind } from '@/entities/transaction'
 import { Money } from '@/money/money'
@@ -104,6 +105,7 @@ describe('createAccount', () => {
       closesOn: '2026-10-20',
       dueOn: '2026-10-27',
       brand: 'VISA',
+      openBill: null,
     }
     const card = createAccount({
       ...accountInput,
@@ -125,6 +127,25 @@ describe('createAccount', () => {
       0,
     )
     expect(creditUsedPercent({ ...credit, limit: Money.zero() })).toBeNull()
+  })
+
+  it('reads the open bill, else everything the card owes', () => {
+    const owing = createAccount({
+      ...accountInput,
+      type: 'CREDIT_CARD',
+      balance: Money.of(-9_000),
+    })
+    expect(openBillOf(owing).cents).toBe(9_000)
+    expect(openBillOf({ ...owing, balance: Money.of(300) }).cents).toBe(0)
+    const credit = {
+      limit: Money.of(10_000),
+      available: Money.of(1_000),
+      closesOn: null,
+      dueOn: null,
+      brand: null,
+      openBill: Money.of(4_000),
+    }
+    expect(openBillOf({ ...owing, credit }).cents).toBe(4_000)
   })
 })
 

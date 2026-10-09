@@ -84,11 +84,15 @@ type PluggyTransaction = {
   accountId?: string
   description?: string
   amount?: number
+  amountInAccountCurrency?: number | null
   date?: string
   currencyCode?: string
   type?: 'DEBIT' | 'CREDIT'
+  status?: 'PENDING' | 'POSTED'
+  operationType?: string | null
   merchant?: { name?: string | null; businessName?: string | null } | null
   creditCardMetadata?: {
+    billId?: string | null
     installmentNumber?: number | null
     totalInstallments?: number | null
     purchaseDate?: string | null
@@ -323,6 +327,24 @@ function toInstallment(
   return { number, count, purchaseOn: calendarDay(metadata?.purchaseDate) }
 }
 
+// Refunds and cashback lower the bill; a payment only settles the last one.
+const BILL_CREDITS = ['ESTORNO', 'CASHBACK']
+
+// A charge stays pending and unlinked until the issuer puts it on a bill.
+function openBillCents(tx: PluggyTransaction): number | null {
+  if (!tx.creditCardMetadata) {
+    return null
+  }
+  if (tx.creditCardMetadata.billId || tx.status !== 'PENDING') {
+    return 0
+  }
+  const cents = Math.abs(toCents(tx.amountInAccountCurrency ?? tx.amount))
+  if (tx.type !== 'CREDIT') {
+    return -cents
+  }
+  return BILL_CREDITS.includes(tx.operationType ?? '') ? cents : 0
+}
+
 function toTransaction(
   tx: PluggyTransaction,
   accountExternalId: string,
@@ -337,6 +359,7 @@ function toTransaction(
     description: tx.description ?? '',
     merchant: tx.merchant?.name || tx.merchant?.businessName || null,
     installment: toInstallment(tx.creditCardMetadata),
+    openBillCents: openBillCents(tx),
   }
 }
 

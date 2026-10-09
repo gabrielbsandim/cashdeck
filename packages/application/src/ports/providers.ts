@@ -41,6 +41,9 @@ export type ProviderTransaction = {
   description: string
   merchant?: string | null
   installment?: ProviderInstallment | null
+  // Signed share of the card's open bill in the account currency: zero once
+  // billed or for a bill payment, null when the issuer does not say.
+  openBillCents?: number | null
 }
 
 // A closed card bill as the issuer reports it.

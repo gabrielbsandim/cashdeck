@@ -170,6 +170,7 @@ describe('PrismaAccountRepository', () => {
         closesOn: '2026-10-20',
         dueOn: '2026-10-27',
         brand: 'VISA',
+        openBill: Money.of(12_500),
       },
     })
     await repos.accounts.save(card)
@@ -179,6 +180,7 @@ describe('PrismaAccountRepository', () => {
       creditAvailableCents: 470_000n,
       creditClosesOn: new Date('2026-10-20T00:00:00.000Z'),
       creditBrand: 'VISA',
+      creditOpenBillCents: 12_500n,
     })
     db.account.findFirst.mockResolvedValueOnce(accountToRow(card))
     expect(await repos.accounts.findById(TENANT, 'a1')).toEqual(card)
@@ -187,6 +189,7 @@ describe('PrismaAccountRepository', () => {
       creditAvailableCents: null,
       creditClosesOn: null,
       creditDueOn: null,
+      creditOpenBillCents: null,
     })
     expect((await repos.accounts.findById(TENANT, 'a1'))?.credit).toEqual({
       limit: Money.of(500_000),
@@ -194,6 +197,7 @@ describe('PrismaAccountRepository', () => {
       closesOn: null,
       dueOn: null,
       brand: 'VISA',
+      openBill: null,
     })
   })
 })

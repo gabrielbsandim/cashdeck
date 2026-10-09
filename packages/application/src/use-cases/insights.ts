@@ -12,6 +12,7 @@ import {
   isSettled,
   type LocalDate,
   Money,
+  openBillOf,
   type Transaction,
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
@@ -270,10 +271,7 @@ export function cardsSummary(
   if (cards.length === 0) {
     return null
   }
-  const owed = cards.reduce(
-    (total, card) => total + Math.max(0, -card.balance.cents),
-    0,
-  )
+  const owed = cards.reduce((total, card) => total + openBillOf(card).cents, 0)
   const lines = cards.flatMap(card => (card.credit ? [card.credit] : []))
   const limit = lines.reduce((total, line) => total + line.limit.cents, 0)
   const available = lines.reduce(
@@ -294,6 +292,7 @@ export function cardsSummary(
           closesOn: null,
           dueOn: null,
           brand: null,
+          openBill: null,
         })
       : null,
   }

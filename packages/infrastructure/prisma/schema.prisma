@@ -209,6 +209,7 @@ model Account {
   creditClosesOn       DateTime?     @map("credit_closes_on") @db.Date
   creditDueOn          DateTime?     @map("credit_due_on") @db.Date
   creditBrand          String?       @map("credit_brand")
+  creditOpenBillCents  BigInt?       @map("credit_open_bill_cents")
 
   entity       FinancialEntity @relation(fields: [entityId], references: [id])
   transactions Transaction[]

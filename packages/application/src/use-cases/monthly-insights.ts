@@ -5,6 +5,7 @@ import {
   committedByMonth,
   type EntityKind,
   type LocalDate,
+  openBillOf,
 } from '@cashdeck/domain'
 import {
   type Insight,
@@ -142,7 +143,7 @@ function cardBillDue(
       const due = dues.get(card.id) ?? null
       return due === null || due <= range.to
     })
-    .reduce((total, card) => total + Math.max(0, -card.balance.cents), 0)
+    .reduce((total, card) => total + openBillOf(card).cents, 0)
 }
 
 type MonthContext = {

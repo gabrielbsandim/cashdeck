@@ -136,6 +136,7 @@ describe('entities and accounts', () => {
           closesOn: '2026-10-20',
           dueOn: '2026-10-27',
           brand: 'VISA',
+          openBill: null,
         },
       }),
     )

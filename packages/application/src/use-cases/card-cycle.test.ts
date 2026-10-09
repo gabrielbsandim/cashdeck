@@ -10,6 +10,7 @@ const credit = (dueOn: LocalDate | null): CreditLine => ({
   closesOn: null,
   dueOn,
   brand: null,
+  openBill: null,
 })
 
 const card = (id: string, line: CreditLine | null = null) =>

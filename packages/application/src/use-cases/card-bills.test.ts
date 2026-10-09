@@ -15,6 +15,7 @@ const credit = (
   closesOn,
   dueOn,
   brand: null,
+  openBill: null,
 })
 
 const card = (id: string, cents: number, line: CreditLine | null) =>
@@ -55,7 +56,10 @@ describe('card bills', () => {
     await deps.accounts.save(card('d', 500, credit('2026-10-29', '2026-11-05')))
     await deps.accounts.save(card('e', -100, null))
     await deps.accounts.save(
-      card('f', -100, credit('2026-09-03', '2026-09-10')),
+      card('f', -100, {
+        ...credit('2026-09-03', '2026-09-10'),
+        openBill: Money.of(40),
+      }),
     )
     await deps.accounts.save(account({ id: 'checking', entityId: 'pf' }))
     await deps.cardBills.saveAll([
@@ -133,7 +137,7 @@ describe('card bills', () => {
       {
         closesOn: null,
         dueOn: '2026-10-10',
-        total: cents(100),
+        total: cents(40),
         minimum: null,
         state: 'CLOSED',
         range: { from: '2026-09-04', to: '2026-10-03' },
