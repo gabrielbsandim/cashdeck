@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 /// readable by an older app.
 enum AlertKind {
   billCaptured('BILL_CAPTURED'),
+  billNeedsAmount('BILL_NEEDS_AMOUNT'),
   billDueSoon('BILL_DUE_SOON'),
   paymentNeedsConfirmation('PAYMENT_NEEDS_CONFIRMATION'),
   paymentPaid('PAYMENT_PAID'),

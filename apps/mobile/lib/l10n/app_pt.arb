@@ -536,6 +536,7 @@
   "moreAlertsHint": "Caixa de alertas de contas e pagamentos",
   "moreAlertSettingsHint": "Escolha quais alertas viram push",
   "alertKindBillCaptured": "Nova conta capturada",
+  "alertKindBillNeedsAmount": "Conta sem valor",
   "alertKindBillDueSoon": "Conta vencendo",
   "alertKindPaymentNeedsConfirmation": "Pagamento para confirmar",
   "alertKindPaymentPaid": "Conta paga",

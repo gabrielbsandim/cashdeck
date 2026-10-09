@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.billCaptured => l10n.alertKindBillCaptured,
+  AlertKind.billNeedsAmount => l10n.alertKindBillNeedsAmount,
   AlertKind.billDueSoon => l10n.alertKindBillDueSoon,
   AlertKind.paymentNeedsConfirmation => l10n.alertKindPaymentNeedsConfirmation,
   AlertKind.paymentPaid => l10n.alertKindPaymentPaid,
@@ -20,6 +21,7 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
 
 IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.billCaptured => Symbols.inbox_rounded,
+  AlertKind.billNeedsAmount => Symbols.edit_note_rounded,
   AlertKind.billDueSoon => Symbols.event_upcoming_rounded,
   AlertKind.paymentNeedsConfirmation => Symbols.help_rounded,
   AlertKind.paymentPaid => Symbols.task_alt_rounded,

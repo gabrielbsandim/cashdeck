@@ -197,6 +197,7 @@
   "moreAlertsHint": "Inbox of bill and payment alerts",
   "moreAlertSettingsHint": "Choose which alerts send a push",
   "alertKindBillCaptured": "New bill captured",
+  "alertKindBillNeedsAmount": "Bill without an amount",
   "alertKindBillDueSoon": "Bill due soon",
   "alertKindPaymentNeedsConfirmation": "Payment to confirm",
   "alertKindPaymentPaid": "Bill paid",
