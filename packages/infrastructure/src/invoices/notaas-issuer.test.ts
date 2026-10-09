@@ -90,9 +90,13 @@ describe('NotaasIssuer', () => {
       },
     )
     const nfse = issuer(scripted, { NOTAAS_EXPORT_COUNTRY: 'GB' })
-    await nfse.issue({ ...domestic, clientTaxId: '529.982.247-25' }, 'k1')
+    await nfse.issue(
+      { ...domestic, clientTaxId: '529.982.247-25', issRatePercent: 2.02 },
+      'k1',
+    )
     expect(scripted.body('POST', `${NOTAAS_URL}/emitir`)).toMatchObject({
       tomador: { cpf: '52998224725' },
+      valores: { aliquotaIss: 2.02 },
     })
     await nfse.issue(exported, 'k2')
     expect(scripted.body('POST', `${NOTAAS_URL}/emitir`)).toMatchObject({

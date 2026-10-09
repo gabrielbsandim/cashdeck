@@ -4,10 +4,12 @@ import {
   type FinancialEntity,
   localDate,
   type LocalDate,
+  Money,
   toLocalDate,
   ValidationError,
 } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
+import { type Invoice } from '@/ports/records'
 import {
   type FinancialEntityRepository,
   type Page,
@@ -112,4 +114,11 @@ export async function allPages<T>(
     cursor = page.nextCursor
   } while (cursor)
   return items
+}
+
+export function brlOf(invoice: Invoice): Money {
+  if (invoice.amount.currency === 'BRL') {
+    return invoice.amount
+  }
+  return Money.of(Math.round(invoice.amount.cents * (invoice.fxRate ?? 0)))
 }

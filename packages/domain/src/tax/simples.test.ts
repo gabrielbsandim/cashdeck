@@ -6,6 +6,7 @@ import {
   effectiveRate,
   estimateDas,
   fatorR,
+  issRate,
 } from '@/tax/simples'
 
 const reais = (value: number) => Money.of(value * 100)
@@ -33,24 +34,42 @@ describe('effectiveRate', () => {
   })
 })
 
+describe('issRate', () => {
+  it('takes the ISS share of the effective rate', () => {
+    expect(issRate('III', Money.of(19_183_166))).toBeCloseTo(0.020226, 6)
+    expect(issRate('III', reais(120_000))).toBeCloseTo(0.0201)
+    expect(issRate('V', reais(100_000))).toBeCloseTo(0.0217)
+  })
+
+  it('caps at 5% and leaves the last bracket to the city', () => {
+    expect(issRate('III', reais(3_500_000))).toBe(0.05)
+    expect(issRate('III', reais(4_000_000))).toBeNull()
+  })
+})
+
 describe('estimateDas', () => {
+  const das = (input: Partial<Parameters<typeof estimateDas>[0]>) =>
+    estimateDas({
+      annex: 'III',
+      domesticRbt12: reais(120_000),
+      exportRbt12: Money.zero(),
+      domestic: Money.zero(),
+      exports: Money.zero(),
+      ...input,
+    }).cents
+
   it('spares exports from ISS, PIS and COFINS', () => {
+    expect(das({ domestic: reais(10_000) })).toBe(60_000)
+    expect(das({ exports: reais(10_000) })).toBe(30_540)
+  })
+
+  it('finds each market rate from its own RBT12', () => {
     expect(
-      estimateDas({
-        annex: 'III',
-        rbt12: reais(120_000),
-        domestic: reais(10_000),
-        exports: Money.zero(),
-      }).cents,
-    ).toBe(60_000)
-    expect(
-      estimateDas({
-        annex: 'III',
-        rbt12: reais(120_000),
-        domestic: Money.zero(),
-        exports: reais(10_000),
-      }).cents,
-    ).toBe(30_540)
+      das({ domesticRbt12: reais(360_000), domestic: reais(10_000) }),
+    ).toBe(86_000)
+    expect(das({ exportRbt12: reais(360_000), exports: reais(10_000) })).toBe(
+      43_774,
+    )
   })
 })
 

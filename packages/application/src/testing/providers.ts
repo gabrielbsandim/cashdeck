@@ -195,11 +195,13 @@ export class FakePixLocationResolver implements PixLocationResolver {
 export class FakeInvoiceIssuer implements InvoiceIssuer {
   readonly id = 'fake'
   readonly issued = new Map<string, IssuedInvoice>()
+  readonly drafts: InvoiceDraft[] = []
 
   async issue(
-    _draft: InvoiceDraft,
+    draft: InvoiceDraft,
     idempotencyKey: string,
   ): Promise<IssuedInvoice> {
+    this.drafts.push(draft)
     const existing = this.issued.get(idempotencyKey)
     if (existing) {
       return existing

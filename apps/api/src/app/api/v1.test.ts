@@ -63,6 +63,8 @@ import { POST as testIssuer } from '@/app/api/v1/invoices/issuer/test/route'
 import { GET as serviceCodes } from '@/app/api/v1/invoices/service-codes/route'
 import { GET as payroll } from '@/app/api/v1/payroll/route'
 import { PUT as savePayroll } from '@/app/api/v1/payroll/[month]/route'
+import { GET as revenue } from '@/app/api/v1/revenue/route'
+import { PUT as saveRevenue } from '@/app/api/v1/revenue/[month]/route'
 import { POST as readStatement } from '@/app/api/v1/card-statements/route'
 import { GET as latestStatement } from '@/app/api/v1/card-statements/latest/route'
 import { GET as getStatement } from '@/app/api/v1/card-statements/[id]/route'
@@ -418,6 +420,12 @@ describe('invoices and payroll', () => {
       params: { month: 'x' },
     })
     expect(bad.status).toBe(422)
+    const entered = await call(h(saveRevenue), 'PUT', {
+      body: { domesticCents: 1_600_000, exportCents: 0 },
+      params: { month: '2026-09' },
+    })
+    expect(entered.status).toBe(200)
+    expect((await call(h(revenue), 'GET')).status).toBe(200)
   })
 
   it('approves a stored draft once the issuer answers', async () => {

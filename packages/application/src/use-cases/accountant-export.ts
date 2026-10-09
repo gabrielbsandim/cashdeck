@@ -15,11 +15,11 @@ import {
 import { type AttachmentMeta } from '@/ports/records'
 import { type ArchiveEntry } from '@/ports/services'
 import { type Deps } from '@/use-cases/deps'
-import { brlOf } from '@/use-cases/invoices'
 import { PAYROLL_COLLECTION, type PayrollEntry } from '@/use-cases/payroll'
 import {
   addMonths,
   allPages,
+  brlOf,
   firstDay,
   lastDay,
   monthOf,

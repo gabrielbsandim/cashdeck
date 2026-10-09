@@ -252,7 +252,7 @@ Asaas balance already covers them.
 | Credential | Use |
 |---|---|
 | `NOTAAS_API_KEY` | `x-api-key` header |
-| `NOTAAS_ALIQUOTA_ISS` | ISS rate for domestic invoices (required for them) |
+| `NOTAAS_ALIQUOTA_ISS` | ISS rate for domestic invoices until twelve months of payroll let the app compute it |
 | `NOTAAS_LOCAL_PRESTACAO` | optional IBGE code of the place of service |
 | `NOTAAS_EXPORT_COUNTRY` | ISO2 country of export clients, default `US` |
 | `NOTAAS_WEBHOOK_SECRET` | HMAC secret of the webhook (see [Webhooks](#webhooks)) |

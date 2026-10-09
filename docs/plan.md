@@ -254,7 +254,12 @@ Pix route and the funding transfer, with no code change.
   approval in the app or chat before emission.
 - **Taxes and reconciliation.**
   - Estimate the monthly DAS from issued invoices: RBT12, Annex III or V by Fator R,
-    and export revenue excluded from ISS, PIS and COFINS.
+    and export revenue excluded from ISS, PIS and COFINS. Each market takes its
+    rate from its own RBT12 (LC 123/2006 art. 3, par. 15).
+  - Price the ISS of each domestic invoice from the domestic RBT12 and the annex,
+    capped at 5%. Months billed before the app are entered by hand
+    (`PUT /api/v1/revenue/{month}`) and add to the invoices issued here. Until
+    twelve months of payroll exist, the rate comes from the issuer settings.
   - Match each invoice to its receipt in the bank feed (including FX receipts).
   - Match each tax guide to its payment.
   - Flag gaps: an invoice not paid, a receipt without an invoice, a month without a

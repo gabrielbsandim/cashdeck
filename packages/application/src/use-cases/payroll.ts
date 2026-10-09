@@ -3,9 +3,9 @@ import { type z } from 'zod'
 import { money } from '@/dtos/common'
 import { type PayrollSheetView, type savePayrollSchema } from '@/dtos/payroll'
 import { type Deps } from '@/use-cases/deps'
-import { brlOf } from '@/use-cases/invoices'
 import {
   addMonths,
+  brlOf,
   firstDay,
   monthOf,
   requireEntity,
@@ -20,6 +20,24 @@ export type PayrollEntry = {
 }
 
 export const PAYROLL_COLLECTION = 'payroll'
+
+export const REVENUE_COLLECTION = 'revenue-history'
+
+export type RevenueEntry = {
+  month: string
+  domesticCents: number
+  exportCents: number
+}
+
+export type RevenueMonth = {
+  month: string
+  domestic: Money
+  exports: Money
+  entered: boolean
+}
+
+export const sum = (values: readonly Money[]) =>
+  values.reduce((total, value) => total.add(value), Money.zero())
 
 export function payrollTotal(entry: PayrollEntry): number {
   return entry.proLaboreCents + entry.salariesCents + entry.fgtsCents
@@ -55,22 +73,61 @@ export async function payrollWindow(
     .sort((a, b) => b.month.localeCompare(a.month))
 }
 
-export async function issuedRevenue(
-  deps: Pick<Deps, 'invoices'>,
+const NOTHING_ENTERED: RevenueEntry = {
+  month: '',
+  domesticCents: 0,
+  exportCents: 0,
+}
+
+// Revenue billed outside the app is entered by hand and adds to the invoices
+// issued here, so a month can mix both.
+export async function revenueMonths(
+  deps: Pick<Deps, 'invoices' | 'documents'>,
   tenantId: string,
   entityId: string,
   range: { from: string; to: string },
-): Promise<Money> {
+): Promise<RevenueMonth[]> {
+  const entered = new Map(
+    (await deps.documents.list<RevenueEntry>(tenantId, REVENUE_COLLECTION)).map(
+      entry => [entry.month, entry],
+    ),
+  )
   const invoices = await deps.invoices.all(tenantId, {
     entityId,
     status: 'ISSUED',
     competenceFrom: range.from,
     competenceTo: range.to,
   })
-  return invoices.reduce(
-    (sum, invoice) => sum.add(brlOf(invoice)),
-    Money.zero(),
-  )
+  const months: RevenueMonth[] = []
+  for (
+    let month = range.to;
+    month >= range.from;
+    month = addMonths(month, -1)
+  ) {
+    const entry = entered.get(month) ?? NOTHING_ENTERED
+    const issued = invoices.filter(invoice => invoice.competence === month)
+    months.push({
+      month,
+      domestic: sum(issued.filter(i => !i.isExport).map(brlOf)).add(
+        Money.of(entry.domesticCents),
+      ),
+      exports: sum(issued.filter(i => i.isExport).map(brlOf)).add(
+        Money.of(entry.exportCents),
+      ),
+      entered: entered.has(month),
+    })
+  }
+  return months
+}
+
+export async function issuedRevenue(
+  deps: Pick<Deps, 'invoices' | 'documents'>,
+  tenantId: string,
+  entityId: string,
+  range: { from: string; to: string },
+): Promise<Money> {
+  const months = await revenueMonths(deps, tenantId, entityId, range)
+  return sum(months.flatMap(month => [month.domestic, month.exports]))
 }
 
 export function makePayroll(

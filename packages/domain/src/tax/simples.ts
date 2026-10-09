@@ -13,6 +13,7 @@ type Bracket = {
   readonly deductionCents: number
   // ISS, PIS and COFINS share of the rate, which an export does not pay.
   readonly domesticOnlyShare: number
+  readonly issShare: number
 }
 
 const REAIS = 100
@@ -22,30 +23,32 @@ const bracket = (
   rate: number,
   deduction: number,
   domesticOnlyShare: number,
+  issShare: number,
 ): Bracket => ({
   upToCents: upTo * REAIS,
   rate,
   deductionCents: deduction * REAIS,
   domesticOnlyShare,
+  issShare,
 })
 
 // LC 123/2006 Annexes III and V as amended by LC 155/2016.
 const ANNEXES: Record<SimplesAnnex, readonly Bracket[]> = {
   III: [
-    bracket(180_000, 0.06, 0, 0.491),
-    bracket(360_000, 0.112, 9_360, 0.491),
-    bracket(720_000, 0.135, 17_640, 0.491),
-    bracket(1_800_000, 0.16, 35_640, 0.491),
-    bracket(3_600_000, 0.21, 125_640, 0.491),
-    bracket(4_800_000, 0.33, 648_000, 0.195),
+    bracket(180_000, 0.06, 0, 0.491, 0.335),
+    bracket(360_000, 0.112, 9_360, 0.491, 0.32),
+    bracket(720_000, 0.135, 17_640, 0.491, 0.325),
+    bracket(1_800_000, 0.16, 35_640, 0.491, 0.325),
+    bracket(3_600_000, 0.21, 125_640, 0.491, 0.335),
+    bracket(4_800_000, 0.33, 648_000, 0.195, 0),
   ],
   V: [
-    bracket(180_000, 0.155, 0, 0.3115),
-    bracket(360_000, 0.18, 4_500, 0.3415),
-    bracket(720_000, 0.195, 9_900, 0.3715),
-    bracket(1_800_000, 0.205, 17_100, 0.4015),
-    bracket(3_600_000, 0.23, 62_100, 0.4065),
-    bracket(4_800_000, 0.305, 540_000, 0.2),
+    bracket(180_000, 0.155, 0, 0.3115, 0.14),
+    bracket(360_000, 0.18, 4_500, 0.3415, 0.17),
+    bracket(720_000, 0.195, 9_900, 0.3715, 0.19),
+    bracket(1_800_000, 0.205, 17_100, 0.4015, 0.21),
+    bracket(3_600_000, 0.23, 62_100, 0.4065, 0.235),
+    bracket(4_800_000, 0.305, 540_000, 0.2, 0),
   ],
 }
 
@@ -71,18 +74,35 @@ export function effectiveRate(annex: SimplesAnnex, rbt12: Money): number {
   return (rbt12.cents * found.rate - found.deductionCents) / rbt12.cents
 }
 
+const ISS_CAP = 0.05
+
+// The ISS share of the effective rate, capped at 5%. Null in the last bracket,
+// where ISS leaves the DAS and the city charges its own rate.
+export function issRate(annex: SimplesAnnex, rbt12: Money): number | null {
+  const { issShare } = bracketFor(annex, rbt12)
+  if (issShare === 0) {
+    return null
+  }
+  return Math.min(effectiveRate(annex, rbt12) * issShare, ISS_CAP)
+}
+
+// LC 123/2006 art. 3, par. 15: each market finds its rate from its own RBT12.
 export type DasEstimateInput = {
   annex: SimplesAnnex
-  rbt12: Money
+  domesticRbt12: Money
+  exportRbt12: Money
   domestic: Money
   exports: Money
 }
 
 export function estimateDas(input: DasEstimateInput): Money {
-  const found = bracketFor(input.annex, input.rbt12)
-  const rate = effectiveRate(input.annex, input.rbt12)
-  const domestic = input.domestic.cents * rate
-  const exports = input.exports.cents * rate * (1 - found.domesticOnlyShare)
+  const exportBracket = bracketFor(input.annex, input.exportRbt12)
+  const domestic =
+    input.domestic.cents * effectiveRate(input.annex, input.domesticRbt12)
+  const exports =
+    input.exports.cents *
+    effectiveRate(input.annex, input.exportRbt12) *
+    (1 - exportBracket.domesticOnlyShare)
   return Money.of(Math.round(domestic + exports), input.domestic.currency)
 }
 

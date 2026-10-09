@@ -171,15 +171,9 @@ export class NotaasIssuer implements InvoiceIssuer {
   ): Promise<Record<string, unknown>> {
     const brlCents = brlTotal(draft)
     if (!draft.export) {
-      const { NOTAAS_ALIQUOTA_ISS } = await requireCredentials(
-        this.deps.credentials,
-        PROVIDER,
-        ['NOTAAS_ALIQUOTA_ISS'],
-        scope,
-      )
       return {
         total: toDecimal(brlCents),
-        aliquotaIss: Number(NOTAAS_ALIQUOTA_ISS),
+        aliquotaIss: await this.issRate(draft, scope),
       }
     }
     const exportacao: Record<string, unknown> = {
@@ -196,6 +190,22 @@ export class NotaasIssuer implements InvoiceIssuer {
       exportacao.valorServicoMoeda = toDecimal(draft.amountCents)
     }
     return { total: toDecimal(brlCents), aliquotaIss: 0, exportacao }
+  }
+
+  private async issRate(
+    draft: InvoiceDraft,
+    scope: { tenantId: string; entityId: string },
+  ): Promise<number> {
+    if (typeof draft.issRatePercent === 'number') {
+      return draft.issRatePercent
+    }
+    const { NOTAAS_ALIQUOTA_ISS } = await requireCredentials(
+      this.deps.credentials,
+      PROVIDER,
+      ['NOTAAS_ALIQUOTA_ISS'],
+      scope,
+    )
+    return Number(NOTAAS_ALIQUOTA_ISS)
   }
 
   private async exportCountry(scope: {

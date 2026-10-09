@@ -10,7 +10,6 @@ import {
 } from '@/testing/deps.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import {
-  brlOf,
   certificateStateOf,
   ISSUER_COLLECTION,
   makeInvoiceReceipt,
@@ -22,6 +21,7 @@ import {
   serviceCodeOf,
 } from '@/use-cases/invoices'
 import { makePayroll } from '@/use-cases/payroll'
+import { brlOf } from '@/use-cases/shared'
 
 const SETUP = {
   kind: 'NATIONAL' as const,

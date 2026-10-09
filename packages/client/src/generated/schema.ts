@@ -982,6 +982,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/revenue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Twelve months of revenue and the ISS rate they set */
+        get: operations["getRevenue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/revenue/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Enter the revenue of a month billed outside the app */
+        put: operations["saveRevenue"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/card-statements": {
         parameters: {
             query?: never;
@@ -4807,6 +4841,125 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getRevenue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Twelve months of revenue and the ISS rate they set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            months: {
+                                month: string;
+                                domestic: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                exports: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                entered: boolean;
+                            }[];
+                            domesticRbt12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            exportRbt12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            annex: "III" | "V";
+                            issRatePercent: number | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    saveRevenue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    domesticCents: number;
+                    exportCents: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Enter the revenue of a month billed outside the app */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            months: {
+                                month: string;
+                                domestic: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                exports: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                entered: boolean;
+                            }[];
+                            domesticRbt12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            exportRbt12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            annex: "III" | "V";
+                            issRatePercent: number | null;
                         };
                     };
                 };

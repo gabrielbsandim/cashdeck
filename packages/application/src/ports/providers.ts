@@ -110,6 +110,8 @@ export type InvoiceDraft = {
   // Issuers report in BRL; a foreign currency invoice carries its converted total.
   brlAmountCents?: number | null
   export: boolean
+  // From RBT12 and Fator R; null leaves the rate to the issuer settings.
+  issRatePercent?: number | null
 }
 
 export type IssuedInvoice = {

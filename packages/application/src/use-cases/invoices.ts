@@ -2,7 +2,6 @@ import {
   daysBetween,
   type FinancialEntity,
   type LocalDate,
-  Money,
   ValidationError,
 } from '@cashdeck/domain'
 import { type z } from 'zod'
@@ -21,7 +20,9 @@ import { emitAlert, invoiceAlert } from '@/use-cases/alert-events'
 import { credentialName, putCredential } from '@/use-cases/credentials'
 import { type Deps } from '@/use-cases/deps'
 import { makeInvoiceLifecycle } from '@/use-cases/invoice-lifecycle'
+import { issQuote } from '@/use-cases/revenue'
 import {
+  brlOf,
   decodeUpload,
   monthOf,
   required,
@@ -196,13 +197,6 @@ export function makeTestIssuer(deps: Pick<Deps, 'issuer' | 'clock'>) {
   }
 }
 
-export function brlOf(invoice: Invoice): Money {
-  if (invoice.amount.currency === 'BRL') {
-    return invoice.amount
-  }
-  return Money.of(Math.round(invoice.amount.cents * (invoice.fxRate ?? 0)))
-}
-
 export function makeInvoiceViews(deps: Pick<Deps, 'invoices'>) {
   return async function invoiceViews(
     tenantId: string,
@@ -253,7 +247,10 @@ export function makeListInvoices(deps: Pick<Deps, 'entities' | 'invoices'>) {
 }
 
 export function makeIssueInvoice(
-  deps: Pick<Deps, 'invoices' | 'issuer' | 'audit' | 'clock' | 'ids'> &
+  deps: Pick<
+    Deps,
+    'invoices' | 'documents' | 'issuer' | 'audit' | 'clock' | 'ids'
+  > &
     Partial<Pick<Deps, 'alerts'>>,
 ) {
   const lifecycle = makeInvoiceLifecycle(deps)
@@ -272,6 +269,9 @@ export function makeIssueInvoice(
       await deps.invoices.findClient(tenantId, invoice.clientId),
       'Invoice client',
     )
+    const quote = invoice.isExport
+      ? null
+      : await issQuote(deps, tenantId, invoice.entityId, invoice.competence)
     const issued = await deps.issuer.issue(
       {
         tenantId,
@@ -284,6 +284,7 @@ export function makeIssueInvoice(
         currency: invoice.amount.currency,
         brlAmountCents: brlOf(invoice).cents,
         export: invoice.isExport,
+        issRatePercent: quote?.ratePercent ?? null,
       },
       `invoice:${invoice.id}`,
     )

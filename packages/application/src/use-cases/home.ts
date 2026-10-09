@@ -1,7 +1,6 @@
 import {
   type Account,
   addDays,
-  annexFor,
   averageDailySpend,
   type Bill,
   CASH_ACCOUNT_TYPES,
@@ -23,10 +22,9 @@ import {
   type PersonalSummary,
 } from '@/dtos/home'
 import { type Deps } from '@/use-cases/deps'
-import { brlOf } from '@/use-cases/invoices'
-import { issuedRevenue, payrollTotal, payrollWindow } from '@/use-cases/payroll'
+import { issQuote } from '@/use-cases/revenue'
 import {
-  addMonths,
+  brlOf,
   firstDay,
   lastDay,
   monthInstants,
@@ -281,21 +279,20 @@ export function makeCompanySummary(
     })
     const domestic = sum(issued.filter(i => !i.isExport).map(brlOf))
     const exports = sum(issued.filter(i => i.isExport).map(brlOf))
-    const previous = { from: addMonths(month, -12), to: addMonths(month, -1) }
-    const rbt12 = await issuedRevenue(deps, tenantId, scope.entity.id, previous)
-    const payroll = await payrollWindow(deps, tenantId, previous.to)
-    const annex = annexFor(
-      Money.of(
-        payroll.reduce((total, entry) => total + payrollTotal(entry), 0),
-      ),
-      rbt12,
+    const { annex, domesticRbt12, exportRbt12 } = await issQuote(
+      deps,
+      tenantId,
+      scope.entity.id,
+      month,
     )
     return {
       cash: money(sum(cash.map(account => account.balance))),
       sync: await syncOf(deps, tenantId, scope),
       billed: money(domestic.add(exports)),
       invoiceCount: issued.length,
-      dasEstimate: money(estimateDas({ annex, rbt12, domestic, exports })),
+      dasEstimate: money(
+        estimateDas({ annex, domesticRbt12, exportRbt12, domestic, exports }),
+      ),
       dasDue: dasDueDate(month),
       annex,
       drafts: await draftsOf(deps, tenantId, scope.entity.id),
