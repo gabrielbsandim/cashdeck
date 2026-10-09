@@ -76,7 +76,6 @@ export type PluggyProviderDeps = {
   credentials: Credentials
   transport: Transport
   now?: () => number
-  pageSize?: number
 }
 
 export class PluggyProvider implements OpenFinanceProvider {
@@ -122,7 +121,6 @@ export class PluggyProvider implements OpenFinanceProvider {
       accountId: accountExternalId,
       dateFrom: range.from,
       dateTo: range.to,
-      pageSize: String(this.deps.pageSize ?? 500),
     })
     const transactions: PluggyTransaction[] = []
     let after: string | null = null

@@ -13,7 +13,6 @@ function provider(scripted: ScriptedTransport) {
       PLUGGY_CLIENT_SECRET: 'secret',
     }),
     transport: scripted.transport,
-    pageSize: 2,
   })
 }
 
@@ -115,7 +114,7 @@ describe('PluggyProvider', () => {
   })
 
   it('follows the transaction cursor and signs amounts by type', async () => {
-    const first = `${PLUGGY_URL}/v2/transactions?accountId=a1&dateFrom=2026-10-01&dateTo=2026-10-31&pageSize=2`
+    const first = `${PLUGGY_URL}/v2/transactions?accountId=a1&dateFrom=2026-10-01&dateTo=2026-10-31`
     const scripted = new ScriptedTransport()
       .on('GET', `${first}&after=cursor-2`, {
         json: {
