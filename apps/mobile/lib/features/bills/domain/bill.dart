@@ -165,6 +165,10 @@ final class Bill extends Equatable {
 
   bool isOverdue(CalendarDate today) => !isSettled && dueDate.isBefore(today);
 
+  /// Past due on auto debit: the bank's debit can post days later, so this is
+  /// not late yet, only waiting for the statement.
+  bool awaitsBankDebit(CalendarDate today) => debitsItself && isOverdue(today);
+
   @override
   List<Object?> get props => [
     id,

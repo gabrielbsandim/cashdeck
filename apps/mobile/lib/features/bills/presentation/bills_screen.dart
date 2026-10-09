@@ -98,12 +98,21 @@ class _BillList extends ConsumerWidget {
     final bills = listing.bills;
     final needing = billsNeedingYou(bills, today);
     final settled = bills.where((bill) => bill.isSettled).toList();
+    final debiting = bills
+        .where((bill) => bill.awaitsBankDebit(today))
+        .toList();
     final upcoming = bills
-        .where((bill) => !bill.isSettled && !needing.contains(bill))
+        .where(
+          (bill) =>
+              !bill.isSettled &&
+              !needing.contains(bill) &&
+              !debiting.contains(bill),
+        )
         .toList();
     final groups = [
       (l10n.billsGroupNeedsYou, needing),
       (l10n.billsGroupUpcoming, upcoming),
+      (l10n.billsGroupAwaitingDebit, debiting),
       (l10n.billsGroupSettled, settled),
     ];
     final failure = listing.moreFailure;

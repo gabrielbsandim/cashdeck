@@ -96,8 +96,12 @@ List<Bill> billsNeedingYou(List<Bill> bills, CalendarDate today) => [
       bill,
 ];
 
-/// What is due from today through [days] ahead, plus anything overdue.
+/// What is due from today through [days] ahead, plus anything overdue that
+/// is not already left to the bank's auto debit.
 List<Bill> billsDueWithin(List<Bill> bills, CalendarDate today, int days) => [
   for (final bill in bills)
-    if (!bill.isSettled && today.daysUntil(bill.dueDate) <= days) bill,
+    if (!bill.isSettled &&
+        !bill.awaitsBankDebit(today) &&
+        today.daysUntil(bill.dueDate) <= days)
+      bill,
 ];

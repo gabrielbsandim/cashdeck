@@ -139,4 +139,17 @@ void main() {
       sooner,
     ]);
   });
+
+  test('a past due bill on auto debit waits for the bank, not the user', () {
+    final debiting = testBill(
+      id: 'debiting',
+      dueDate: testToday.addDays(-1),
+      autoDebit: true,
+    );
+    final dueToday = testBill(id: 'due-today', autoDebit: true);
+
+    expect(debiting.awaitsBankDebit(testToday), isTrue);
+    expect(dueToday.awaitsBankDebit(testToday), isFalse);
+    expect(billsDueWithin([debiting, dueToday], testToday, 7), [dueToday]);
+  });
 }
