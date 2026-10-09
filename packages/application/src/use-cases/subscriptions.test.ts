@@ -58,10 +58,29 @@ describe('subscriptions', () => {
       priceChanged: true,
       dayOfMonth: 12,
       thisMonth: 'UPCOMING',
+      nextChargeOn: '2026-10-12',
     })
+    expect(music?.charges).toEqual([
+      {
+        transactionId: 'music-3',
+        bookedOn: '2026-09-12',
+        amount: cents(2_390),
+      },
+      {
+        transactionId: 'music-2',
+        bookedOn: '2026-08-12',
+        amount: cents(2_190),
+      },
+      {
+        transactionId: 'music-1',
+        bookedOn: '2026-07-12',
+        amount: cents(2_190),
+      },
+    ])
     expect(before.suggestions[0]).toMatchObject({
       thisMonth: 'PAID',
       priceChanged: false,
+      nextChargeOn: '2026-11-02',
     })
     expect(before.suggestions[2]?.thisMonth).toBe('UPCOMING')
 
@@ -78,6 +97,9 @@ describe('subscriptions', () => {
       previousAmount: null,
       priceChanged: false,
       transactionIds: ['once'],
+      charges: [
+        { transactionId: 'once', bookedOn: '2026-09-12', amount: cents(1_500) },
+      ],
     })
     expect(after.suggestions).toEqual([])
     expect(after).toMatchObject({
@@ -112,17 +134,56 @@ describe('subscriptions', () => {
       status: 'CONFIRMED',
       lastSeenOn: null,
     })
+    await deps.recurrences.save({
+      id: 'month-end',
+      tenantId: TENANT,
+      entityId: 'pf',
+      key: 'clube exemplo',
+      name: 'Clube Exemplo',
+      amount: Money.of(800),
+      dayOfMonth: 31,
+      status: 'CONFIRMED',
+      lastSeenOn: '2026-10-01',
+    })
     const view = await subscriptions.list(TENANT, 'PF')
     expect(
-      view.items.map(item => [item.name, item.thisMonth, item.transactionIds]),
+      view.items.map(item => [
+        item.name,
+        item.thisMonth,
+        item.nextChargeOn,
+        item.charges,
+      ]),
     ).toEqual([
-      ['Jornal Exemplo', 'LATE', []],
-      ['Revista Exemplo', 'UPCOMING', []],
+      ['Jornal Exemplo', 'LATE', '2026-10-01', []],
+      ['Revista Exemplo', 'UPCOMING', '2026-10-20', []],
+      ['Clube Exemplo', 'PAID', '2026-11-30', []],
     ])
     expect(await subscriptions.remove(TENANT, 'old')).toEqual({ id: 'old' })
     expect((await deps.recurrences.findById(TENANT, 'old'))?.status).toBe(
       'DISMISSED',
     )
+  })
+
+  it('leaves a metered utility bill out of the suggestions', async () => {
+    const { deps, subscriptions } = await seeded()
+    const bills: Array<[string, number]> = [
+      ['2026-07-16', 26_200],
+      ['2026-08-18', 31_400],
+      ['2026-09-16', 28_900],
+    ]
+    for (const [bookedOn, value] of bills) {
+      await deps.transactions.save(
+        transaction({
+          id: `power-${bookedOn}`,
+          accountId: 'card',
+          bookedOn,
+          amount: Money.of(-value),
+          description: 'ENERGIA EXEMPLO',
+        }),
+      )
+    }
+    const view = await subscriptions.list(TENANT, 'PF')
+    expect(view.suggestions.map(s => s.key)).not.toContain('energia exemplo')
   })
 
   it('refuses what cannot recur', async () => {

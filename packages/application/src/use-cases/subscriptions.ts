@@ -23,7 +23,13 @@ import {
   type InsightsDeps,
   percentChange,
 } from '@/use-cases/insights'
-import { addMonths, monthOf, required, today } from '@/use-cases/shared'
+import {
+  addMonths,
+  lastDay,
+  monthOf,
+  required,
+  today,
+} from '@/use-cases/shared'
 
 type SubscriptionDeps = InsightsDeps &
   Pick<Deps, 'recurrences' | 'ids' | 'accounts'>
@@ -45,6 +51,22 @@ function monthStatus(
   return late ? 'LATE' : 'UPCOMING'
 }
 
+function chargeDay(month: string, dayOfMonth: number): LocalDate {
+  const day = `${month}-${String(dayOfMonth).padStart(2, '0')}`
+  const last = lastDay(month)
+  return day > last ? last : day
+}
+
+// A late charge is still expected on this month's day.
+function nextChargeOn(
+  status: SubscriptionView['thisMonth'],
+  dayOfMonth: number,
+  day: LocalDate,
+): LocalDate {
+  const month = monthOf(day)
+  return chargeDay(status === 'PAID' ? addMonths(month, 1) : month, dayOfMonth)
+}
+
 function priceOf(charge: RecurringCharge) {
   const previous = charge.previousAmount
   if (!previous) {
@@ -60,6 +82,11 @@ function chargeView(
   charge: RecurringCharge,
   options: { id: string | null; kind: EntityKind; day: LocalDate },
 ): SubscriptionView {
+  const thisMonth = monthStatus(
+    charge.lastChargeOn,
+    charge.dayOfMonth,
+    options.day,
+  )
   return {
     id: options.id,
     key: charge.key,
@@ -69,10 +96,16 @@ function chargeView(
     ...priceOf(charge),
     dayOfMonth: charge.dayOfMonth,
     lastChargeOn: charge.lastChargeOn,
-    thisMonth: monthStatus(charge.lastChargeOn, charge.dayOfMonth, options.day),
+    nextChargeOn: nextChargeOn(thisMonth, charge.dayOfMonth, options.day),
+    thisMonth,
     accountId: charge.accountId,
     categoryId: charge.categoryId,
     transactionIds: [...charge.transactionIds],
+    charges: charge.charges.map(entry => ({
+      transactionId: entry.transactionId,
+      bookedOn: entry.bookedOn,
+      amount: money(entry.amount),
+    })),
   }
 }
 
@@ -82,6 +115,11 @@ function storedView(
   kind: EntityKind,
   day: LocalDate,
 ): SubscriptionView {
+  const thisMonth = monthStatus(
+    recurrence.lastSeenOn,
+    recurrence.dayOfMonth,
+    day,
+  )
   return {
     id: recurrence.id,
     key: recurrence.key,
@@ -92,10 +130,12 @@ function storedView(
     priceChanged: false,
     dayOfMonth: recurrence.dayOfMonth,
     lastChargeOn: recurrence.lastSeenOn,
-    thisMonth: monthStatus(recurrence.lastSeenOn, recurrence.dayOfMonth, day),
+    nextChargeOn: nextChargeOn(thisMonth, recurrence.dayOfMonth, day),
+    thisMonth,
     accountId: null,
     categoryId: null,
     transactionIds: [],
+    charges: [],
   }
 }
 

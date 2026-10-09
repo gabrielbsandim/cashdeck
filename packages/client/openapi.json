@@ -4092,6 +4092,10 @@
                                 "type": "string",
                                 "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                               },
+                              "nextChargeOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
                               "thisMonth": {
                                 "type": "string",
                                 "enum": [
@@ -4113,6 +4117,47 @@
                                 "items": {
                                   "type": "string"
                                 }
+                              },
+                              "charges": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "transactionId": {
+                                      "type": "string"
+                                    },
+                                    "bookedOn": {
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cents": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "minLength": 3,
+                                          "maxLength": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "cents",
+                                        "currency"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "transactionId",
+                                    "bookedOn",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
                               }
                             },
                             "required": [
@@ -4125,10 +4170,12 @@
                               "priceChanged",
                               "dayOfMonth",
                               "lastChargeOn",
+                              "nextChargeOn",
                               "thisMonth",
                               "accountId",
                               "categoryId",
-                              "transactionIds"
+                              "transactionIds",
+                              "charges"
                             ],
                             "additionalProperties": false
                           }
@@ -4209,6 +4256,10 @@
                                 "type": "string",
                                 "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                               },
+                              "nextChargeOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
                               "thisMonth": {
                                 "type": "string",
                                 "enum": [
@@ -4230,6 +4281,47 @@
                                 "items": {
                                   "type": "string"
                                 }
+                              },
+                              "charges": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "transactionId": {
+                                      "type": "string"
+                                    },
+                                    "bookedOn": {
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cents": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "minLength": 3,
+                                          "maxLength": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "cents",
+                                        "currency"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "transactionId",
+                                    "bookedOn",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
                               }
                             },
                             "required": [
@@ -4242,10 +4334,12 @@
                               "priceChanged",
                               "dayOfMonth",
                               "lastChargeOn",
+                              "nextChargeOn",
                               "thisMonth",
                               "accountId",
                               "categoryId",
-                              "transactionIds"
+                              "transactionIds",
+                              "charges"
                             ],
                             "additionalProperties": false
                           }

@@ -269,6 +269,51 @@ both sides; a pro-labore is the company's expense and the person's income.
   (`application/pdf`): kind, amount, date, rail, both parties and `document`
   as the reference.
 
+## Subscriptions
+
+### GET /subscriptions?entity=PF|PJ
+
+Confirmed subscriptions (`items`) and detected ones the user has not decided on
+(`suggestions`, `id: null`), each list by charge day. A suggestion is a plain
+expense seen in three or more of the last 200 days' months, about once a month,
+still running and at a steady price. A metered bill (the last three charges all
+differ and spread more than 5%, like power or water) is a recurring bill, not a
+subscription, and is never suggested. `data`:
+
+```json
+{
+  "monthly": Money, "yearly": Money, "previousMonth": Money,
+  "changePercent": int | null,
+  "items": [Subscription], "suggestions": [Subscription]
+}
+```
+
+`Subscription`:
+
+```json
+{
+  "id": string | null, "key": string, "entityKind": "PF"|"PJ", "name": string,
+  "amount": Money, "previousAmount": Money | null, "priceChanged": bool,
+  "dayOfMonth": int, "lastChargeOn": date | null, "nextChargeOn": date,
+  "thisMonth": "PAID"|"UPCOMING"|"LATE",
+  "accountId": string | null, "categoryId": string | null,
+  "transactionIds": [string],
+  "charges": [{ "transactionId": string, "bookedOn": date, "amount": Money }]
+}
+```
+
+`charges` is newest first, positive amounts. `nextChargeOn` is next month's
+charge day once this month is paid, otherwise this month's (also when `LATE`),
+clamped to the month's last day. A confirmed subscription whose charges left
+the history keeps its stored amount and day with `charges: []`.
+
+- `POST /subscriptions`: body `{ transactionId }`, confirms the recurrence the
+  transaction belongs to. `data`: `{ id }`, 201.
+- `POST /subscriptions/dismiss`: body `{ transactionId }`, the suggestion is not
+  a subscription and is not suggested again. `data`: `{ id }`.
+- `DELETE /subscriptions/{id}`: stops tracking a confirmed subscription; it is
+  stored as dismissed, so it is not suggested again. `data`: `{ id }`.
+
 ## Bills
 
 Unchanged from the first cut, with one difference: the payment plan is built

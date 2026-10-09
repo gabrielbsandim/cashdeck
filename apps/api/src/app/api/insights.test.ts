@@ -230,6 +230,10 @@ describe('insights', () => {
       expect.objectContaining({
         id: confirmed.body.data.id,
         name: 'Posto Azul',
+        nextChargeOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        charges: expect.arrayContaining([
+          expect.objectContaining({ transactionId: 't3' }),
+        ]),
       }),
     ])
     const removed = await call(removeSubscription, 'DELETE', {

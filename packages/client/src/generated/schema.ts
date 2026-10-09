@@ -2612,11 +2612,20 @@ export interface operations {
                                 priceChanged: boolean;
                                 dayOfMonth: number;
                                 lastChargeOn: string | null;
+                                nextChargeOn: string;
                                 /** @enum {string} */
                                 thisMonth: "PAID" | "UPCOMING" | "LATE";
                                 accountId: string | null;
                                 categoryId: string | null;
                                 transactionIds: string[];
+                                charges: {
+                                    transactionId: string;
+                                    bookedOn: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
                             }[];
                             suggestions: {
                                 id: string | null;
@@ -2635,11 +2644,20 @@ export interface operations {
                                 priceChanged: boolean;
                                 dayOfMonth: number;
                                 lastChargeOn: string | null;
+                                nextChargeOn: string;
                                 /** @enum {string} */
                                 thisMonth: "PAID" | "UPCOMING" | "LATE";
                                 accountId: string | null;
                                 categoryId: string | null;
                                 transactionIds: string[];
+                                charges: {
+                                    transactionId: string;
+                                    bookedOn: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
                             }[];
                         };
                     };

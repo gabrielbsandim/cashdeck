@@ -106,6 +106,12 @@ export type InstallmentsView = z.infer<typeof installmentsViewSchema>
 
 export const SUBSCRIPTION_MONTH_STATUSES = ['PAID', 'UPCOMING', 'LATE'] as const
 
+const subscriptionChargeSchema = z.object({
+  transactionId: z.string(),
+  bookedOn: isoDate,
+  amount: moneyViewSchema,
+})
+
 export const subscriptionViewSchema = z.object({
   id: z.string().nullable(),
   key: z.string(),
@@ -116,10 +122,13 @@ export const subscriptionViewSchema = z.object({
   priceChanged: z.boolean(),
   dayOfMonth: z.int(),
   lastChargeOn: isoDate.nullable(),
+  nextChargeOn: isoDate,
   thisMonth: z.enum(SUBSCRIPTION_MONTH_STATUSES),
   accountId: z.string().nullable(),
   categoryId: z.string().nullable(),
   transactionIds: z.array(z.string()),
+  // Newest first, within the history the detector reads.
+  charges: z.array(subscriptionChargeSchema),
 })
 
 export type SubscriptionView = z.infer<typeof subscriptionViewSchema>
