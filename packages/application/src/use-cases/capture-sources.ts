@@ -206,7 +206,10 @@ export function makeCaptureSources(deps: CaptureDeps) {
     return last ? new Date(last) : new Date(now - FIRST_READ_DAYS * DAY_MS)
   }
 
+  // The read starts its window at the run start, so mail that lands mid-run is
+  // picked up by the next one instead of falling between the two.
   async function readOne(tenantId: string, mailbox: Mailbox) {
+    const startedAt = deps.clock.now().toISOString()
     const result = await captureAllFrom(
       tenantId,
       mailbox.entityId,
@@ -215,7 +218,7 @@ export function makeCaptureSources(deps: CaptureDeps) {
     )
     await deps.documents.put(tenantId, MAILBOX_COLLECTION, mailbox.id, {
       ...mailbox,
-      lastReadAt: deps.clock.now().toISOString(),
+      lastReadAt: startedAt,
       billsFound: mailbox.billsFound + result.created,
       emailsScanned: mailbox.emailsScanned + result.fetched,
     })
@@ -265,6 +268,7 @@ export function makeCaptureSources(deps: CaptureDeps) {
   }
 
   async function readDda(tenantId: string, row: DdaEnrollment) {
+    const startedAt = deps.clock.now().toISOString()
     const result = await captureAllFrom(
       tenantId,
       row.entityId,
@@ -273,7 +277,7 @@ export function makeCaptureSources(deps: CaptureDeps) {
     )
     await deps.documents.put(tenantId, DDA_COLLECTION, row.entityId, {
       ...row,
-      lastBatchAt: deps.clock.now().toISOString(),
+      lastBatchAt: startedAt,
       boletos: row.boletos + result.created,
     })
     return result.created

@@ -87,6 +87,26 @@ describe('capture sources', () => {
     )
   })
 
+  it('starts the next read window when the previous run started', async () => {
+    const windows: Date[] = []
+    const later = new Date(NOW.getTime() + 300_000)
+    const slow: BillSource = {
+      source: 'GMAIL',
+      fetch: async (_tenant, _entity, since) => {
+        windows.push(since)
+        deps.clock.set(later)
+        return []
+      },
+    }
+    const deps = fullDeps({ billSources: [slow] })
+    const capture = makeCaptureSources(deps)
+    const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
+    const read = await capture.readMailbox(TENANT, mailbox.id)
+    expect(read.mailboxes[0]?.lastReadAt).toBe(NOW.toISOString())
+    await capture.readMailbox(TENANT, mailbox.id)
+    expect(windows[1]).toEqual(NOW)
+  })
+
   it('replaces the previous mailbox of an entity', async () => {
     const deps = fullDeps()
     const capture = makeCaptureSources(deps)
