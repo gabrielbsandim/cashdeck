@@ -588,6 +588,7 @@ model DeviceToken {
   token      String   @id
   tenantId   String   @map("tenant_id")
   platform   String
+  locale     String   @default("pt")
   createdAt  DateTime @default(now()) @map("created_at")
   lastSeenAt DateTime @map("last_seen_at")
 

@@ -5,7 +5,11 @@ import {
   type Money,
   type RailId,
 } from '@cashdeck/domain'
-import { type AlertEmitter, type AlertInput } from '@/ports/alerts'
+import {
+  type AlertEmitter,
+  type AlertInput,
+  type DeviceLocale,
+} from '@/ports/alerts'
 import { type Invoice, type InvoiceStatus } from '@/ports/records'
 
 type AlertData = Record<string, string>
@@ -25,9 +29,20 @@ const MANUAL_HINT: Record<string, string> = {
   NONE: 'pague pelo app do banco e marque como paga.',
 }
 
+const MANUAL_HINT_EN: Record<string, string> = {
+  PIX: 'use the Pix copy and paste in your bank app.',
+  BARCODE: 'use the barcode in your bank app.',
+  NONE: 'pay in your bank app and mark it as paid.',
+}
+
+const SOURCE_NAMES_EN: Record<string, string> = { GMAIL: 'email', DDA: 'DDA' }
+
 const due = (d: AlertData) => `${d.payee} · ${d.amount}`
 
-// Push and inbox text, in pt-BR: the server speaks the default locale.
+const invoiceEn = (d: AlertData) =>
+  d.number ? `Invoice ${d.number}` : 'Invoice'
+
+// The inbox keeps the pt-BR text; each push device gets its own locale.
 export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
   BILL_CAPTURED: d => ({
     title: 'Nova conta capturada',
@@ -77,6 +92,70 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Fatura do cartão fechou',
     body: `${d.card}: fechou em ${d.closing}, vence em ${d.dueDate}.`,
   }),
+}
+
+export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
+  BILL_CAPTURED: d => ({
+    title: 'New bill captured',
+    body: `${due(d)}, due ${d.dueDate}.`,
+  }),
+  BILL_NEEDS_AMOUNT: d => ({
+    title: 'Bill without an amount',
+    body: `${d.payee} arrived by ${SOURCE_NAMES_EN[`${d.sourceKind}`] ?? d.source} without an amount; add the bill in the app.`,
+  }),
+  BILL_DUE_SOON: d => ({
+    title: 'Bill due tomorrow',
+    body: `${due(d)} is still unpaid.`,
+  }),
+  PAYMENT_NEEDS_CONFIRMATION: d => ({
+    title: 'Confirm the payment',
+    body: `${due(d)} needs your confirmation before it is paid.`,
+  }),
+  PAYMENT_PAID: d => ({
+    title: 'Bill paid',
+    body: `${due(d)} was paid.`,
+  }),
+  PAYMENT_MOVED_DOWN: d => ({
+    title: 'Payment changed route',
+    body: `${due(d)}: ${d.rail} failed, the bill moved to the next step.`,
+  }),
+  PAYMENT_ASSISTED: d => ({
+    title: 'Pay manually',
+    body: `${due(d)}: ${MANUAL_HINT_EN[`${d.method}`]}`,
+  }),
+  APPROVAL_PENDING: d => ({
+    title: 'Approval pending in the bank',
+    body: `${due(d)} awaits your approval in internet banking.`,
+  }),
+  LOW_BALANCE: d => ({
+    title: 'Low reserve balance',
+    body: `${d.shortfall} short in the reserve for the bills due ${d.dueDate}.`,
+  }),
+  INVOICE_ISSUED: d => ({
+    title: 'Invoice issued',
+    body: `${invoiceEn(d)} to ${d.client} · ${d.amount}.`,
+  }),
+  INVOICE_FAILED: d => ({
+    title: 'Invoice not issued',
+    body: `${invoiceEn(d)} to ${d.client} · ${d.amount} was rejected.`,
+  }),
+  CARD_BILL_CLOSED: d => ({
+    title: 'Card bill closed',
+    body: `${d.card}: closed on ${d.closing}, due ${d.dueDate}.`,
+  }),
+}
+
+const TEXTS_BY_LOCALE: Record<
+  DeviceLocale,
+  Record<AlertType, (d: AlertData) => AlertText>
+> = { pt: ALERT_TEXTS, en: ALERT_TEXTS_EN }
+
+export function alertText(
+  type: AlertType,
+  data: AlertData,
+  locale: DeviceLocale,
+): AlertText {
+  return TEXTS_BY_LOCALE[locale][type](data)
 }
 
 export function formatMoney(money: Money): string {
@@ -147,6 +226,7 @@ export function invoiceAlert(
     invoiceId: invoice.id,
     data: {
       invoice: invoice.number ? `Nota ${invoice.number}` : 'Nota',
+      number: invoice.number ?? '',
       client: clientName,
       amount: formatMoney(invoice.amount),
     },
@@ -167,7 +247,11 @@ export function amountRequiredAlert(
     tenantId,
     type: 'BILL_NEEDS_AMOUNT',
     entityId,
-    data: { payee: found.payee ?? 'Uma conta', source: SOURCE_NAMES[source] },
+    data: {
+      payee: found.payee ?? 'Uma conta',
+      source: SOURCE_NAMES[source],
+      sourceKind: source,
+    },
     dedupeKey: `BILL_NEEDS_AMOUNT:${entityId}:${source}:${found.externalId}`,
   }
 }

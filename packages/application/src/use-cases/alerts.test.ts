@@ -15,6 +15,9 @@ import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import { FixedClock, SequentialIdGenerator } from '@/testing/system'
 import {
   ALERT_TEXTS,
+  ALERT_TEXTS_EN,
+  alertText,
+  amountRequiredAlert,
   assistedAlert,
   billAlert,
   cardClosedAlert,
@@ -86,10 +89,51 @@ describe('alert text', () => {
       source: 'DDA',
     }
     for (const type of ALERT_TYPES) {
-      const text = ALERT_TEXTS[type](data)
-      expect(text.title.length).toBeGreaterThan(0)
-      expect(text.body).not.toContain('undefined')
+      for (const text of [
+        ALERT_TEXTS[type](data),
+        ALERT_TEXTS_EN[type](data),
+      ]) {
+        expect(text.title.length).toBeGreaterThan(0)
+        expect(text.body).not.toContain('undefined')
+      }
     }
+  })
+
+  it('speaks English with the raw data keys', () => {
+    const missing = amountRequiredAlert(TENANT, 'pf', 'GMAIL', {
+      externalId: 'm1',
+      payee: 'Water',
+    })
+    expect(missing.data).toMatchObject({
+      source: 'e-mail',
+      sourceKind: 'GMAIL',
+    })
+    expect(alertText('BILL_NEEDS_AMOUNT', missing.data, 'en').body).toBe(
+      'Water arrived by email without an amount; add the bill in the app.',
+    )
+    expect(
+      alertText('BILL_NEEDS_AMOUNT', { payee: 'Gas', source: 'DDA' }, 'en')
+        .body,
+    ).toContain('arrived by DDA')
+    expect(alertText('BILL_DUE_SOON', due.data, 'pt').title).toBe(
+      'Conta vence amanhã',
+    )
+    expect(alertText('BILL_DUE_SOON', due.data, 'en')).toEqual({
+      title: 'Bill due tomorrow',
+      body: `Power company · ${due.data.amount} is still unpaid.`,
+    })
+    const issued = invoiceAlert(invoice({ id: 'i', number: '7' }), 'Client')
+    expect(alertText('INVOICE_ISSUED', issued?.data ?? {}, 'en').body).toMatch(
+      /^Invoice 7 to Client/,
+    )
+    const unnumbered = invoiceAlert(
+      invoice({ id: 'r', status: 'REJECTED' }),
+      'Client',
+    )
+    expect(unnumbered?.data.number).toBe('')
+    expect(
+      alertText('INVOICE_FAILED', unnumbered?.data ?? {}, 'en').body,
+    ).toMatch(/^Invoice to Client .* was rejected\.$/)
   })
 
   it('tells how to pay a bill by hand', () => {
@@ -171,6 +215,16 @@ describe('alert emitter', () => {
     expect(notifier.sent).toEqual([
       expect.objectContaining({
         type: 'BILL_DUE_SOON',
+        localized: {
+          pt: {
+            title: 'Conta vence amanhã',
+            body: `Power company · ${due.data.amount} ainda não foi paga.`,
+          },
+          en: {
+            title: 'Bill due tomorrow',
+            body: `Power company · ${due.data.amount} is still unpaid.`,
+          },
+        },
         data: expect.objectContaining({
           alertId: 'a_1',
           billId: 'b1',
@@ -279,10 +333,12 @@ describe('alert inbox', () => {
     const first = await alerts.registerDevice(TENANT, {
       token: 'device-1',
       platform: 'ANDROID',
+      locale: 'pt',
     })
     expect(first).toEqual({
       token: 'device-1',
       platform: 'ANDROID',
+      locale: 'pt',
       createdAt: NOW.toISOString(),
       lastSeenAt: NOW.toISOString(),
     })
@@ -290,8 +346,10 @@ describe('alert inbox', () => {
     const again = await alerts.registerDevice(TENANT, {
       token: 'device-1',
       platform: 'ANDROID',
+      locale: 'en',
     })
     expect(again).toMatchObject({
+      locale: 'en',
       createdAt: NOW.toISOString(),
       lastSeenAt: '2026-10-09T12:00:00.000Z',
     })

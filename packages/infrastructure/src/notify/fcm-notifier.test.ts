@@ -1,6 +1,10 @@
 import { createVerify, generateKeyPairSync } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { FcmNotifier, serviceAccountAssertion } from '@/notify/fcm-notifier'
+import {
+  FcmNotifier,
+  type PushDevice,
+  serviceAccountAssertion,
+} from '@/notify/fcm-notifier'
 import { credentials, TENANT } from '@/testing/provider-fixtures'
 import { ScriptedTransport } from '@/testing/scripted-transport'
 
@@ -22,12 +26,16 @@ const notification = {
   type: 'BILL_PAID',
   title: 'Conta paga',
   body: 'Energia paga pelo Pix.',
+  localized: {
+    pt: { title: 'Conta paga', body: 'Energia paga pelo Pix.' },
+    en: { title: 'Bill paid', body: 'Power paid by Pix.' },
+  },
   data: { billId: 'bill-1' },
 }
 
 function notifier(
   scripted: ScriptedTransport,
-  devices: string[],
+  devices: Array<string | PushDevice>,
   invalid: string[] = [],
 ) {
   return new FcmNotifier({
@@ -35,7 +43,10 @@ function notifier(
       FCM_SERVICE_ACCOUNT_JSON: JSON.stringify(account),
     }),
     transport: scripted.transport,
-    deviceTokens: async () => devices,
+    deviceTokens: async () =>
+      devices.map(device =>
+        typeof device === 'string' ? { token: device, locale: 'pt' } : device,
+      ),
     onInvalidToken: async (_tenant, token) => {
       invalid.push(token)
     },
@@ -108,6 +119,26 @@ describe('FcmNotifier', () => {
     )
   })
 
+  it('sends each device the text in its language', async () => {
+    const scripted = new ScriptedTransport()
+      .on('POST', TOKEN, { json: { access_token: 'fcm-token' } })
+      .on('POST', SEND, { json: { name: 'projects/x/messages/1' } })
+    const unknown = { token: 'd3', locale: 'fr' } as unknown as PushDevice
+    await notifier(scripted, [
+      { token: 'd1', locale: 'en' },
+      'd2',
+      unknown,
+    ]).notify(notification)
+    const sent = scripted.requests
+      .filter(request => request.url === SEND)
+      .map(request => JSON.parse(request.body ?? '{}').message.notification)
+    expect(sent).toEqual([
+      { title: 'Bill paid', body: 'Power paid by Pix.' },
+      { title: 'Conta paga', body: 'Energia paga pelo Pix.' },
+      { title: 'Conta paga', body: 'Energia paga pelo Pix.' },
+    ])
+  })
+
   it('does nothing without devices and fails on real errors', async () => {
     const quiet = new ScriptedTransport()
     await notifier(quiet, []).notify(notification)
@@ -134,7 +165,7 @@ describe('FcmNotifier', () => {
     const unconfigured = new FcmNotifier({
       credentials: credentials({}),
       transport: refused.transport,
-      deviceTokens: async () => ['d1'],
+      deviceTokens: async () => [{ token: 'd1', locale: 'pt' }],
     })
     await expect(unconfigured.notify(notification)).rejects.toThrow(
       'Firebase Cloud Messaging is not configured.',
@@ -146,7 +177,7 @@ describe('FcmNotifier', () => {
       transport: new ScriptedTransport()
         .on('POST', TOKEN, { json: { access_token: 't' } })
         .on('POST', SEND, { status: 404 }).transport,
-      deviceTokens: async () => ['d1'],
+      deviceTokens: async () => [{ token: 'd1', locale: 'pt' }],
     })
     await expect(defaults.notify(notification)).resolves.toBeUndefined()
   })

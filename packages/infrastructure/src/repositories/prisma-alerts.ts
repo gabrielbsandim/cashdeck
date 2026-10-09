@@ -2,6 +2,7 @@ import { type Prisma, type PrismaClient } from '@prisma/client'
 import {
   type AlertFilter,
   type AlertRepository,
+  type DeviceLocale,
   type DevicePlatform,
   type DeviceToken,
   type DeviceTokenRepository,
@@ -92,11 +93,15 @@ export class PrismaAlertRepository implements AlertRepository {
   }
 }
 
-type DeviceRow = Omit<DeviceToken, 'platform'> & { platform: string }
+type DeviceRow = Omit<DeviceToken, 'platform' | 'locale'> & {
+  platform: string
+  locale: string
+}
 
 const deviceFromRow = (row: DeviceRow): DeviceToken => ({
   ...row,
   platform: row.platform as DevicePlatform,
+  locale: row.locale as DeviceLocale,
 })
 
 export class PrismaDeviceTokenRepository implements DeviceTokenRepository {

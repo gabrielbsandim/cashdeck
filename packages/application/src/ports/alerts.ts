@@ -28,10 +28,14 @@ export interface AlertRepository {
 export const DEVICE_PLATFORMS = ['ANDROID', 'IOS', 'WEB'] as const
 export type DevicePlatform = (typeof DEVICE_PLATFORMS)[number]
 
+export const DEVICE_LOCALES = ['pt', 'en'] as const
+export type DeviceLocale = (typeof DEVICE_LOCALES)[number]
+
 export type DeviceToken = {
   tenantId: string
   token: string
   platform: DevicePlatform
+  locale: DeviceLocale
   createdAt: Date
   lastSeenAt: Date
 }

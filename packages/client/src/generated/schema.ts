@@ -5751,6 +5751,11 @@ export interface operations {
                     token: string;
                     /** @enum {string} */
                     platform: "ANDROID" | "IOS" | "WEB";
+                    /**
+                     * @default pt
+                     * @enum {string}
+                     */
+                    locale?: "pt" | "en";
                 };
             };
         };
@@ -5766,6 +5771,8 @@ export interface operations {
                             token: string;
                             /** @enum {string} */
                             platform: "ANDROID" | "IOS" | "WEB";
+                            /** @enum {string} */
+                            locale: "pt" | "en";
                             createdAt: string;
                             lastSeenAt: string;
                         };

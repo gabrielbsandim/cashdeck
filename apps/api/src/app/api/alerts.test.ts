@@ -127,7 +127,7 @@ describe('alerts api', () => {
       body: { token: DEVICE, platform: 'ANDROID' },
     })
     expect(created.status).toBe(201)
-    expect(created.body.data).toMatchObject({ token: DEVICE })
+    expect(created.body.data).toMatchObject({ token: DEVICE, locale: 'pt' })
     const removed = await call(removeDevice, 'DELETE', {
       params: { token: encodeURIComponent(DEVICE) },
     })
@@ -153,10 +153,12 @@ describe('alerts api', () => {
       }),
     )
     const sent: string[] = []
+    const bodies: string[] = []
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string) => {
+      vi.fn(async (url: string, init?: RequestInit) => {
         sent.push(url)
+        bodies.push(String(init?.body ?? ''))
         if (url.includes('oauth2')) {
           return Response.json({ access_token: 'access', expires_in: 3600 })
         }
@@ -172,7 +174,7 @@ describe('alerts api', () => {
       }),
     )
     await call(registerDevice, 'POST', {
-      body: { token: DEVICE, platform: 'ANDROID' },
+      body: { token: DEVICE, platform: 'ANDROID', locale: 'en' },
     })
     await call(captureBill, 'POST', {
       body: {
@@ -182,6 +184,7 @@ describe('alerts api', () => {
       },
     })
     expect(sent.some(url => url.includes('messages:send'))).toBe(true)
+    expect(bodies.some(body => body.includes('New bill captured'))).toBe(true)
     const removed = await call(removeDevice, 'DELETE', {
       params: { token: DEVICE },
     })

@@ -1,7 +1,11 @@
 import { z } from 'zod'
 import { ALERT_TYPES, type Alert } from '@cashdeck/domain'
 import { pageQuerySchema } from '@/dtos/common'
-import { DEVICE_PLATFORMS, type DeviceToken } from '@/ports/alerts'
+import {
+  DEVICE_LOCALES,
+  DEVICE_PLATFORMS,
+  type DeviceToken,
+} from '@/ports/alerts'
 
 export const alertTypeSchema = z.enum(ALERT_TYPES)
 
@@ -41,11 +45,13 @@ export const updateAlertSettingsSchema = z.object({
 export const registerDeviceSchema = z.object({
   token: z.string().trim().min(1).max(4096),
   platform: z.enum(DEVICE_PLATFORMS),
+  locale: z.enum(DEVICE_LOCALES).default('pt'),
 })
 
 export const deviceViewSchema = z.object({
   token: z.string(),
   platform: z.enum(DEVICE_PLATFORMS),
+  locale: z.enum(DEVICE_LOCALES),
   createdAt: z.string(),
   lastSeenAt: z.string(),
 })
@@ -73,6 +79,7 @@ export function toDeviceView(device: DeviceToken): DeviceView {
   return {
     token: device.token,
     platform: device.platform,
+    locale: device.locale,
     createdAt: device.createdAt.toISOString(),
     lastSeenAt: device.lastSeenAt.toISOString(),
   }

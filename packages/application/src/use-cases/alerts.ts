@@ -13,7 +13,7 @@ import {
 import { type AlertEmitter, type AlertInput } from '@/ports/alerts'
 import { type DocumentStore } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
-import { ALERT_TEXTS } from '@/use-cases/alert-events'
+import { ALERT_TEXTS, alertText } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { required } from '@/use-cases/shared'
 
@@ -83,6 +83,10 @@ export function makeAlertEmitter(deps: AlertEmitterDeps): AlertEmitter {
         type: alert.type,
         title: alert.title,
         body: alert.body,
+        localized: {
+          pt: alertText(alert.type, alert.data, 'pt'),
+          en: alertText(alert.type, alert.data, 'en'),
+        },
         data: pushData(alert),
       })
       .then(
@@ -198,6 +202,7 @@ export function makeAlerts(
         tenantId,
         token: input.token,
         platform: input.platform,
+        locale: input.locale,
         createdAt: known?.createdAt ?? now,
         lastSeenAt: now,
       }

@@ -50,6 +50,10 @@ describe('createProviders', () => {
         type: 'x',
         title: 't',
         body: 'b',
+        localized: {
+          pt: { title: 't', body: 'b' },
+          en: { title: 't', body: 'b' },
+        },
         data: {},
       }),
     ).resolves.toBeUndefined()

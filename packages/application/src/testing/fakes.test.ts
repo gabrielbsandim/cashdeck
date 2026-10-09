@@ -358,6 +358,10 @@ describe('provider fakes', () => {
       type: 'x',
       title: 'a',
       body: 'b',
+      localized: {
+        pt: { title: 'a', body: 'b' },
+        en: { title: 'A', body: 'B' },
+      },
       data: {},
     })
     expect(notifier.sent).toHaveLength(1)

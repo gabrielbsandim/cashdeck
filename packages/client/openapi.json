@@ -13125,6 +13125,14 @@
                       "IOS",
                       "WEB"
                     ]
+                  },
+                  "locale": {
+                    "default": "pt",
+                    "type": "string",
+                    "enum": [
+                      "pt",
+                      "en"
+                    ]
                   }
                 },
                 "required": [
@@ -13157,6 +13165,13 @@
                             "WEB"
                           ]
                         },
+                        "locale": {
+                          "type": "string",
+                          "enum": [
+                            "pt",
+                            "en"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -13167,6 +13182,7 @@
                       "required": [
                         "token",
                         "platform",
+                        "locale",
                         "createdAt",
                         "lastSeenAt"
                       ],

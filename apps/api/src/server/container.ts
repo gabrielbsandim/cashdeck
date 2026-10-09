@@ -238,7 +238,10 @@ export function buildContainer(
     transport,
     llm,
     deviceTokens: async tenantId =>
-      (await base.devices.list(tenantId)).map(device => device.token),
+      (await base.devices.list(tenantId)).map(device => ({
+        token: device.token,
+        locale: device.locale,
+      })),
     onInvalidToken: async (tenantId, token) => {
       await base.devices.remove(tenantId, token)
     },

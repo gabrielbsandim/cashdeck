@@ -1,5 +1,9 @@
 import { createSign } from 'node:crypto'
-import { type Notification, type Notifier } from '@cashdeck/application'
+import {
+  type DeviceLocale,
+  type Notification,
+  type Notifier,
+} from '@cashdeck/application'
 import {
   type Credentials,
   requireCredentials,
@@ -24,7 +28,9 @@ type ServiceAccount = {
   private_key: string
 }
 
-export type DeviceTokens = (tenantId: string) => Promise<string[]>
+export type PushDevice = { token: string; locale: DeviceLocale }
+
+export type DeviceTokens = (tenantId: string) => Promise<PushDevice[]>
 
 export type FcmNotifierDeps = {
   credentials: Credentials
@@ -98,8 +104,8 @@ export class FcmNotifier implements Notifier {
         headers: { authorization: `Bearer ${accessToken}` },
         json: {
           message: {
-            token: device,
-            notification: {
+            token: device.token,
+            notification: notification.localized[device.locale] ?? {
               title: notification.title,
               body: notification.body,
             },
@@ -113,7 +119,7 @@ export class FcmNotifier implements Notifier {
       if (!isStaleToken(response.status, response.text)) {
         throw new ProviderHttpError(PROVIDER, response.status, response.text)
       }
-      await this.deps.onInvalidToken?.(notification.tenantId, device)
+      await this.deps.onInvalidToken?.(notification.tenantId, device.token)
     }
   }
 

@@ -4,6 +4,7 @@ import {
   type LocalDate,
   type Money,
 } from '@cashdeck/domain'
+import { type DeviceLocale } from '@/ports/alerts'
 
 export type OpenFinanceConnection = { provider: string; itemId: string }
 
@@ -132,11 +133,14 @@ export interface InvoiceIssuer {
   check(): Promise<ProviderCheck>
 }
 
+export type NotificationText = { title: string; body: string }
+
 export type Notification = {
   tenantId: string
   type: string
   title: string
   body: string
+  localized: Record<DeviceLocale, NotificationText>
   data: Record<string, string>
 }
 

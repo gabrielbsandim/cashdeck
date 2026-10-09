@@ -110,6 +110,7 @@ describe('prisma alerts', () => {
       tenantId: TENANT,
       token: 'device-1',
       platform: 'ANDROID' as const,
+      locale: 'en' as const,
       createdAt: NOW,
       lastSeenAt: NOW,
     }
