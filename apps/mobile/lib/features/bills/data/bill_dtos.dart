@@ -107,4 +107,5 @@ Bill billFromJson(JsonMap json) => Bill(
     final raw => lookupValue(_paidBy, raw),
   },
   confirmationReason: _confirmationReasons[json['confirmationReason']],
+  autoDebit: json['autoDebit'] == true,
 );

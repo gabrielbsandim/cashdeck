@@ -181,6 +181,7 @@ class _RailRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
               radius: 16,
@@ -207,12 +208,10 @@ class _RailRow extends StatelessWidget {
                       color: palette.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.xs),
+                  CdStatusBadge(tone: tone, label: label, icon: icon),
                 ],
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Flexible(
-              child: CdStatusBadge(tone: tone, label: label, icon: icon),
             ),
           ],
         ),

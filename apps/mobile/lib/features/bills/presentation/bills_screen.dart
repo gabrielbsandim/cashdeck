@@ -88,6 +88,9 @@ class _BillList extends ConsumerWidget {
   /// waits on it.
   static const _prefetch = 600.0;
 
+  /// The extended FAB and its margin, so the last bill scrolls clear of it.
+  static const double _fabClearance = 56.0 + AppSpacing.lg + AppSpacing.xl;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -116,7 +119,7 @@ class _BillList extends ConsumerWidget {
           AppSpacing.screenGutter,
           AppSpacing.sm,
           AppSpacing.screenGutter,
-          AppSpacing.xxl * 2,
+          _fabClearance,
         ),
         children: [
           for (final (title, group) in groups)
@@ -169,8 +172,11 @@ class BillTile extends ConsumerWidget {
     final consolidated =
         ref.watch(entityScopeProvider) == EntityScope.consolidated;
     final title = consolidated
-        ? l10n.billTitleWithEntity(bill.payee, entityShortLabel(l10n, bill))
-        : bill.payee;
+        ? l10n.billTitleWithEntity(
+            billPayeeOf(l10n, bill),
+            entityShortLabel(l10n, bill),
+          )
+        : billPayeeOf(l10n, bill);
     return CdBillCard(
       key: BillsScreen.tileKey(bill.id),
       icon: billIconOf(bill),

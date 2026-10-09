@@ -375,7 +375,14 @@
   },
   "openBankButton": "Abrir banco",
   "alreadyApprovedButton": "Já aprovei",
-  "ladderConfirmBody": "Acima do limite por pagamento: confirme no app para o passo 1 pagar.",
+  "ladderConfirmBody": "{reason}: confirme no app para o passo 1 pagar.",
+  "@ladderConfirmBody": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "reviewAndConfirmButton": "Revisar e confirmar",
   "ladderJumped": "Pulou para o passo {step} às {time}",
   "@ladderJumped": {
@@ -1538,5 +1545,19 @@
   "chatDetailFile": "Arquivo",
   "chatDetailPattern": "Descrição",
   "chatDetailCategory": "Categoria",
-  "chatDetailPayer": "Pagador"
+  "chatDetailPayer": "Pagador",
+  "railUnavailable": "Não oferecido",
+  "budgetsEmpty": "Nenhum orçamento neste mês. Peça no Chat para criar um.",
+  "budgetsAskChat": "Abrir o Chat",
+  "cardImportShortTitle": "Fatura do cartão",
+  "cardImportEmptyTitle": "Nenhuma fatura para revisar",
+  "cardImportEmptyMessage": "Quando uma fatura em PDF for lida, ela aparece aqui para você escolher as linhas e gerar a conta.",
+  "accountTypeChecking": "Conta corrente",
+  "accountTypeSavings": "Poupança",
+  "accountTypeCreditCard": "Cartão de crédito",
+  "accountTypeInvestment": "Investimento",
+  "accountTypeWallet": "Carteira",
+  "billAutoDebit": "Débito automático",
+  "billAutoDebitExplain": "O banco debita sozinho; o app só dá baixa quando o débito aparecer no extrato",
+  "billAutoDebitHint": "O banco debita no vencimento"
 }

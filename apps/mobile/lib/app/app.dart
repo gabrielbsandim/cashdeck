@@ -6,6 +6,7 @@ import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/core/theme/app_theme.dart';
+import 'package:cashdeck/core/widgets/layout/cd_bottom_inset.dart';
 import 'package:cashdeck/features/alerts/presentation/push_listener.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -69,9 +70,11 @@ class _CashdeckAppState extends ConsumerState<CashdeckApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: ref.watch(appRouterProvider),
-      builder: (_, child) => PushListener(
-        onOpen: (location) => ref.read(appRouterProvider).go(location),
-        child: child ?? const SizedBox.shrink(),
+      builder: (_, child) => CdBottomInset(
+        child: PushListener(
+          onOpen: (location) => ref.read(appRouterProvider).go(location),
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
       debugShowCheckedModeBanner: false,
     );

@@ -23,10 +23,11 @@ final class _Flaky implements CardImportRepository {
     latency: Duration.zero,
   );
   bool failStatement = true;
+  AppFailure failure = const NetworkFailure();
 
   @override
   Future<Result<CardStatement>> statement() async {
-    if (failStatement) return const Err(NetworkFailure());
+    if (failStatement) return Err(failure);
     return await _inner.statement();
   }
 
@@ -144,7 +145,7 @@ void main() {
       AppRoutes.cardImport,
       overrides: [cardImportRepositoryProvider.overrideWithValue(flaky)],
     );
-    expect(find.text(l10n.cardImportMenu), findsOneWidget);
+    expect(find.text(l10n.cardImportShortTitle), findsOneWidget);
     expect(find.text(l10n.errorNetwork), findsOneWidget);
 
     flaky.failStatement = false;
@@ -154,6 +155,20 @@ void main() {
     await settle(tester);
     expect(find.text(l10n.errorNetwork), findsOneWidget);
     expect(find.byType(ManualCardBillImportScreen), findsOneWidget);
+  });
+
+  testWidgets('no statement waiting reads as empty, not as an error', (
+    tester,
+  ) async {
+    final flaky = _Flaky()..failure = const NotFoundFailure();
+    await pumpRoute(
+      tester,
+      AppRoutes.cardImport,
+      overrides: [cardImportRepositoryProvider.overrideWithValue(flaky)],
+    );
+
+    expect(find.text(l10n.cardImportEmptyTitle), findsOneWidget);
+    expect(find.byKey(CdErrorState.retryKey), findsNothing);
   });
 
   testWidgets('the close button leaves', (tester) async {

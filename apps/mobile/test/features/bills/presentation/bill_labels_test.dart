@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/theme/money_tone.dart';
+import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -13,6 +14,28 @@ void main() {
     plan: const [LadderStep.automatic, LadderStep.assisted],
     attempts: [testAttempt(LadderStep.automatic, AttemptOutcome.failed)],
   );
+
+  test('an auto debit bill never reads as overdue or as waiting', () {
+    final debited = testBill(
+      dueDate: testToday.addDays(-2),
+      status: BillStatus.needsConfirmation,
+      autoDebit: true,
+    );
+
+    expect(billStatusOf(l10n, debited, testToday).$1, l10n.billAutoDebit);
+    expect(billHomeStatusOf(l10n, debited, testToday).$1, l10n.billAutoDebit);
+    expect(billLadderHint(l10n, debited), l10n.billAutoDebitHint);
+    expect(billsNeedingYou([debited], testToday), isEmpty);
+  });
+
+  test('a bill without a payee is called by its kind', () {
+    expect(billPayeeOf(l10n, testBill(payee: ' ')), l10n.billKindBoleto);
+    expect(
+      billPayeeOf(l10n, testBill(payee: '', kind: BillKind.pixQr)),
+      l10n.billKindPixQr,
+    );
+    expect(billPayeeOf(l10n, testBill()), 'Payee Example');
+  });
 
   test('overdue wins over the stored status, step 3 reads as assisted', () {
     final overdue = testBill(dueDate: testToday.addDays(-2));

@@ -14,6 +14,7 @@ import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
+import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
@@ -40,6 +41,7 @@ class BillDetailScreen extends ConsumerWidget {
   static const copyPixKey = Key('bill-copy-pix');
   static const viewReceiptKey = Key('bill-view-receipt');
   static const shareReceiptKey = Key('bill-share-receipt');
+  static const autoDebitKey = Key('bill-auto-debit');
 
   final String billId;
 
@@ -77,7 +79,7 @@ class _BillDetail extends ConsumerWidget {
     final undone = showCdToast(
       context,
       icon: Symbols.task_alt_rounded,
-      message: l10n.billMarkedPaidToast(bill.payee),
+      message: l10n.billMarkedPaidToast(billPayeeOf(l10n, bill)),
       actionLabel: l10n.undoButton,
     ).then((reason) => reason == SnackBarClosedReason.action);
     final failure = await notifier.markPaid(undone: undone);
@@ -95,7 +97,7 @@ class _BillDetail extends ConsumerWidget {
     final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
     final confirmed = await showCdConfirmSheet(
       context,
-      title: l10n.confirmBillTitle(bill.payee),
+      title: l10n.confirmBillTitle(billPayeeOf(l10n, bill)),
       reason: confirmationReasonLabel(l10n, bill.confirmationReason),
       rows: [
         CdConfirmRow(
@@ -116,6 +118,18 @@ class _BillDetail extends ConsumerWidget {
           : Symbols.error_rounded,
       message: failure?.userMessage(l10n) ?? l10n.billConfirmedToast,
     );
+  }
+
+  Future<void> _setAutoDebit(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
+    final failure = await ref
+        .read(billDetailControllerProvider(bill.id).notifier)
+        .setAutoDebit(enabled: enabled);
+    if (failure == null || !context.mounted) return;
+    await showOutcomeToast(context, failure, success: '');
   }
 
   /// The server renders the receipt PDF from the rail proof, or from the
@@ -141,6 +155,7 @@ class _BillDetail extends ConsumerWidget {
     final showsCode =
         code != null &&
         !bill.isSettled &&
+        !bill.autoDebit &&
         currentStepOf(bill) != LadderStep.assisted;
     final secondary = AppTextStyles.bodyMd.copyWith(
       color: palette.onSurfaceVariant,
@@ -160,7 +175,7 @@ class _BillDetail extends ConsumerWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                bill.payee,
+                billPayeeOf(l10n, bill),
                 style: AppTextStyles.titleLg.copyWith(color: palette.onSurface),
               ),
             ),
@@ -187,6 +202,20 @@ class _BillDetail extends ConsumerWidget {
           ),
           style: secondary,
         ),
+        if (!bill.isSettled) ...[
+          const SizedBox(height: AppSpacing.md),
+          CdListRow(
+            key: BillDetailScreen.autoDebitKey,
+            icon: Symbols.autorenew_rounded,
+            title: l10n.billAutoDebit,
+            subtitle: l10n.billAutoDebitExplain,
+            padding: EdgeInsets.zero,
+            trailing: Switch(
+              value: bill.autoDebit,
+              onChanged: (enabled) => _setAutoDebit(context, ref, enabled),
+            ),
+          ),
+        ],
         if (showsCode && pix != null) ...[
           const SizedBox(height: AppSpacing.xl),
           CdCopyField(
@@ -234,26 +263,28 @@ class _BillDetail extends ConsumerWidget {
             ],
           ),
         ],
-        const SizedBox(height: AppSpacing.xl),
-        PaymentLadderView(
-          bill: bill,
-          today: today,
-          actions: LadderActions(
-            onMarkPaid: () => _markPaid(context, ref),
-            onReceipt: () => context.push(AppRoutes.billReceipt(bill.id)),
-            onOpenBank: () => showCdToast(
-              context,
-              icon: Symbols.open_in_new_rounded,
-              message: l10n.openBankToast,
+        if (!bill.debitsItself) ...[
+          const SizedBox(height: AppSpacing.xl),
+          PaymentLadderView(
+            bill: bill,
+            today: today,
+            actions: LadderActions(
+              onMarkPaid: () => _markPaid(context, ref),
+              onReceipt: () => context.push(AppRoutes.billReceipt(bill.id)),
+              onOpenBank: () => showCdToast(
+                context,
+                icon: Symbols.open_in_new_rounded,
+                message: l10n.openBankToast,
+              ),
+              onApproved: () => showCdToast(
+                context,
+                icon: Symbols.sync_rounded,
+                message: l10n.approvalCheckToast,
+              ),
+              onConfirm: () => _confirm(context, ref),
             ),
-            onApproved: () => showCdToast(
-              context,
-              icon: Symbols.sync_rounded,
-              message: l10n.approvalCheckToast,
-            ),
-            onConfirm: () => _confirm(context, ref),
           ),
-        ),
+        ],
       ],
     );
   }

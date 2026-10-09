@@ -299,7 +299,9 @@ class PaymentLadderView extends StatelessWidget {
               ),
         lines: lines,
         body: bill.status == BillStatus.needsConfirmation
-            ? l10n.ladderConfirmBody
+            ? l10n.ladderConfirmBody(
+                confirmationReasonLabel(l10n, bill.confirmationReason),
+              )
             : l10n.ladderStepAutomaticHint,
         actions: [
           if (bill.status == BillStatus.needsConfirmation)

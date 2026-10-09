@@ -35,18 +35,21 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       name: 'Corrente Aurora ••4410',
       owner: EntityKind.personal,
       institution: 'Banco Aurora',
+      type: AccountType.checking,
     ),
     TransactionAccount(
       id: 'acc-pf-card',
       name: 'Cartão Horizonte ••9021',
       owner: EntityKind.personal,
       institution: 'Horizonte',
+      type: AccountType.creditCard,
     ),
     TransactionAccount(
       id: 'acc-pj-checking',
       name: 'Aurora PJ ••7702',
       owner: EntityKind.company,
       institution: 'Banco Aurora',
+      type: AccountType.checking,
     ),
   ];
 

@@ -176,6 +176,42 @@ void main() {
     expect(find.text(l10n.automationPausedTitle), findsOneWidget);
   });
 
+  testWidgets('no budgets points to the chat; a falling forecast shows once', (
+    tester,
+  ) async {
+    final home = MockHomeRepository();
+    when(home.personal).thenAnswer(
+      (_) async => Ok(
+        PersonalSummary(
+          balance: const Money(10_000),
+          sync: SyncInfo(accountCount: 1, syncedAt: testNow),
+          reserve: null,
+          forecast: const CashForecast(
+            from: testToday,
+            balances: [Money(10_000), Money(5_000), Money(1_000)],
+            floor: Money(0),
+          ),
+          budgets: const [],
+          alerts: const [],
+        ),
+      ),
+    );
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.home,
+      overrides: [homeRepositoryProvider.overrideWithValue(home)],
+    );
+
+    expect(find.text(l10n.budgetsEmpty), findsOneWidget);
+    expect(
+      find.text(l10n.forecastAt(testToday.addDays(2).dayMonth)),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(PersonalHome.budgetsChatKey));
+    await settle(tester);
+    expect(app.location, AppRoutes.chat);
+  });
+
   testWidgets('a failed load retries, a failed action says why', (
     tester,
   ) async {

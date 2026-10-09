@@ -73,12 +73,22 @@ final class PayBill {
       _repository.pay(id, confirmed: confirmed);
 }
 
+final class SetAutoDebit {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<Result<Bill>> call(String id, {required bool enabled}) =>
+      _repository.setAutoDebit(id, enabled: enabled);
+}
+
 /// The open bills that wait on the user: overdue, waiting for a confirmation
 /// or a bank approval, or ready on step 3. The Contas a pagar badge counts
 /// these.
 List<Bill> billsNeedingYou(List<Bill> bills, CalendarDate today) => [
   for (final bill in bills)
     if (!bill.isSettled &&
+        !bill.autoDebit &&
         (bill.isOverdue(today) ||
             bill.status == BillStatus.needsConfirmation ||
             bill.status == BillStatus.awaitingApproval ||

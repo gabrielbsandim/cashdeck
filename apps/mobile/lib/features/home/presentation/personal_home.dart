@@ -1,3 +1,4 @@
+import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
@@ -6,6 +7,7 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/charts/cd_line_chart.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
@@ -21,6 +23,7 @@ import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Início for the person: balance, reserve, what is due, the 30 day
@@ -29,6 +32,7 @@ class PersonalHome extends ConsumerWidget {
   const new({required this.summary, super.key});
 
   static const alertsSeeAllKey = Key('home-alerts-see-all');
+  static const budgetsChatKey = Key('home-budgets-chat');
 
   final PersonalSummary summary;
 
@@ -56,19 +60,22 @@ class PersonalHome extends ConsumerWidget {
             CdSectionHeader(title: l10n.budgetsOfMonth(month)),
             const SizedBox(height: AppSpacing.md),
             CdCard(
-              child: Column(
-                children: [
-                  for (final (index, budget) in summary.budgets.indexed) ...[
-                    if (index > 0) const SizedBox(height: AppSpacing.lg),
-                    CdBudgetBar(
-                      icon: budgetCategoryIcon(budget.category),
-                      name: budgetCategoryLabel(l10n, budget),
-                      spent: budget.spent,
-                      limit: budget.limit,
+              child: summary.budgets.isEmpty
+                  ? const _NoBudgets()
+                  : Column(
+                      children: [
+                        for (final (index, budget)
+                            in summary.budgets.indexed) ...[
+                          if (index > 0) const SizedBox(height: AppSpacing.lg),
+                          CdBudgetBar(
+                            icon: budgetCategoryIcon(budget.category),
+                            name: budgetCategoryLabel(l10n, budget),
+                            spent: budget.spent,
+                            limit: budget.limit,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
           ],
         ),
@@ -87,6 +94,35 @@ class PersonalHome extends ConsumerWidget {
                 HomeAlertRow(key: Key('home-alert-$index'), alert: alert),
             ],
           ),
+      ],
+    );
+  }
+}
+
+class _NoBudgets extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final palette = context.palette;
+    return Row(
+      children: [
+        Icon(Symbols.donut_small_rounded, color: palette.onSurfaceVariant),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            l10n.budgetsEmpty,
+            style: AppTextStyles.bodyMd.copyWith(
+              color: palette.onSurfaceVariant,
+            ),
+          ),
+        ),
+        CdButton.text(
+          key: PersonalHome.budgetsChatKey,
+          label: l10n.budgetsAskChat,
+          onPressed: () => context.go(AppRoutes.chat),
+        ),
       ],
     );
   }
@@ -224,19 +260,21 @@ class _ForecastSection extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        l10n.forecastAt(forecast.lastDate.dayMonth),
-                        style: secondary,
-                      ),
-                      CdPrivateText(
-                        (hide) => MoneyFormat.format(forecast.last, hide: hide),
-                        style: strong,
-                      ),
-                    ],
-                  ),
+                  if (forecast.lastDate != forecast.lowestDate)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          l10n.forecastAt(forecast.lastDate.dayMonth),
+                          style: secondary,
+                        ),
+                        CdPrivateText(
+                          (hide) =>
+                              MoneyFormat.format(forecast.last, hide: hide),
+                          style: strong,
+                        ),
+                      ],
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),

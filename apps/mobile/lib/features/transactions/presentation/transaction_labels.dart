@@ -113,3 +113,20 @@ String dayLabel(
     ).format(DateTime(day.year, day.month, day.day)),
   };
 }
+
+String? accountTypeLabel(AppLocalizations l10n, AccountType? type) =>
+    switch (type) {
+      AccountType.checking => l10n.accountTypeChecking,
+      AccountType.savings => l10n.accountTypeSavings,
+      AccountType.creditCard => l10n.accountTypeCreditCard,
+      AccountType.investment => l10n.accountTypeInvestment,
+      AccountType.wallet => l10n.accountTypeWallet,
+      null => null,
+    };
+
+IconData accountTypeIcon(AccountType? type) => switch (type) {
+  AccountType.creditCard => Symbols.credit_card_rounded,
+  AccountType.savings || AccountType.investment => Symbols.savings_rounded,
+  AccountType.wallet => Symbols.account_balance_wallet_rounded,
+  AccountType.checking || null => Symbols.account_balance_rounded,
+};

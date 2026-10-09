@@ -10,6 +10,7 @@ final class PickerOption<T> {
     required this.label,
     required this.key,
     this.icon,
+    this.subtitle,
     this.selected = false,
   });
 
@@ -17,6 +18,7 @@ final class PickerOption<T> {
   final String label;
   final Key key;
   final IconData? icon;
+  final String? subtitle;
   final bool selected;
 }
 
@@ -36,6 +38,7 @@ Future<(T,)?> showOptionsSheet<T>(
         CdListRow(
           key: option.key,
           title: option.label,
+          subtitle: option.subtitle,
           icon: option.icon,
           padding: EdgeInsets.zero,
           trailing: option.selected

@@ -136,6 +136,8 @@ void main() {
 
     await tester.tap(find.byKey(TransactionsScreen.accountFilterKey));
     await settle(tester);
+    expect(find.text(l10n.accountTypeCreditCard), findsOneWidget);
+    expect(find.text(l10n.accountTypeChecking), findsOneWidget);
     await tester.tap(find.byKey(TransactionsScreen.optionKey('acc-pf-card')));
     await settle(tester);
     expect(find.text('Energia Lumina'), findsNothing);

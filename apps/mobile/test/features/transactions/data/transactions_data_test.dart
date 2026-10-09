@@ -116,6 +116,7 @@ void main() {
                 'name': 'Conta',
                 'entityKind': 'PJ',
                 'institution': 'Banco',
+                'type': 'CREDIT_CARD',
               },
             ],
           }),
@@ -163,6 +164,7 @@ void main() {
       });
       expect(update.similarUpdated, 3);
       expect(accounts.single.owner, EntityKind.company);
+      expect(accounts.single.type, AccountType.creditCard);
       expect(categories.single.key, 'groceries');
     });
 

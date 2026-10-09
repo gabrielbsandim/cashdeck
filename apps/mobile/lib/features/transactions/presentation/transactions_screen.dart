@@ -171,8 +171,9 @@ class _FilterBar extends ConsumerWidget {
           PickerOption(
             value: account.id,
             label: account.name,
+            subtitle: accountTypeLabel(l10n, account.type),
             key: TransactionsScreen.optionKey(account.id),
-            icon: Symbols.account_balance_rounded,
+            icon: accountTypeIcon(account.type),
             selected: filters.accountId == account.id,
           ),
       ],

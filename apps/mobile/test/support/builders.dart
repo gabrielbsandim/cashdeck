@@ -22,6 +22,7 @@ Bill testBill({
   String? paymentCode = '12345.67890',
   String? pixCode,
   List<PaymentAttempt> attempts = const [],
+  bool autoDebit = false,
 }) => Bill(
   id: id,
   payee: payee,
@@ -35,6 +36,7 @@ Bill testBill({
   paymentCode: paymentCode,
   pixCode: pixCode,
   attempts: attempts,
+  autoDebit: autoDebit,
 );
 
 PaymentAttempt testAttempt(

@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
@@ -13,6 +14,7 @@ import 'package:cashdeck/core/widgets/inputs/cd_checkbox_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_stepper.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
+import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/card_import/card_import_providers.dart';
@@ -51,11 +53,17 @@ class ManualCardBillImportScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: value == null
-            ? Text(l10n.cardImportMenu)
+            ? Text(l10n.cardImportShortTitle)
             : _Title(statement: value),
       ),
       body: switch (statement) {
         AsyncData(:final value) => _Review(statement: value),
+        AsyncError(:final error) when failureOf(error) is NotFoundFailure =>
+          CdEmptyState(
+            icon: Symbols.credit_card_rounded,
+            title: l10n.cardImportEmptyTitle,
+            message: l10n.cardImportEmptyMessage,
+          ),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(cardStatementProvider),

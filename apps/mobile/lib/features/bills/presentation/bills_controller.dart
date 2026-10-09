@@ -134,6 +134,14 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
+  Future<AppFailure?> setAutoDebit({required bool enabled}) async {
+    final result = await ref
+        .read(setAutoDebitProvider)
+        .call(billId, enabled: enabled);
+    ref.invalidate(billsControllerProvider);
+    return _apply(result);
+  }
+
   AppFailure? _apply(Result<Bill> result) {
     switch (result) {
       case Ok(:final value):

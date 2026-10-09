@@ -548,6 +548,49 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('auto debit hides the ladder and shows its chip', (
+      tester,
+    ) async {
+      final bill = testBill(status: BillStatus.needsConfirmation);
+      final debited = testBill(
+        status: BillStatus.needsConfirmation,
+        autoDebit: true,
+      );
+      when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
+      when(() => repository.setAutoDebit('bill-1', enabled: true))
+          .thenAnswer((_) async => Ok(debited));
+      when(() => repository.setAutoDebit('bill-1', enabled: false))
+          .thenAnswer((_) async => const Err(NetworkFailure()));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+
+      await tester.pumpApp(
+        const BillDetailScreen(billId: 'bill-1'),
+        overrides: overrides(),
+      );
+      await tester.pump();
+      expect(find.byKey(PaymentLadderView.confirmKey), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(BillDetailScreen.autoDebitKey),
+          matching: find.byType(Switch),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(PaymentLadderView.confirmKey), findsNothing);
+      expect(find.byKey(BillDetailScreen.copyCodeKey), findsNothing);
+      expect(find.text(l10n.billAutoDebit), findsNWidgets(2));
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(BillDetailScreen.autoDebitKey),
+          matching: find.byType(Switch),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.errorNetwork), findsOneWidget);
+    });
+
     testWidgets('a failed confirmation says why', (tester) async {
       final bill = testBill(status: BillStatus.needsConfirmation);
       when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
@@ -560,6 +603,10 @@ void main() {
         overrides: overrides(),
       );
       await tester.pump();
+      expect(
+        find.text(l10n.ladderConfirmBody(l10n.confirmReasonGeneric)),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(PaymentLadderView.confirmKey));
       await tester.pumpAndSettle();
       expect(find.text(l10n.confirmReasonGeneric), findsOneWidget);
@@ -610,4 +657,8 @@ final class _Single implements BillsRepository {
   @override
   Future<Result<Bill>> pay(String id, {required bool confirmed}) =>
       inner.pay(id, confirmed: confirmed);
+
+  @override
+  Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
+      inner.setAutoDebit(id, enabled: enabled);
 }

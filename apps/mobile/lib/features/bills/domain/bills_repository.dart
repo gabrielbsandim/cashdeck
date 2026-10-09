@@ -28,4 +28,7 @@ abstract interface class BillsRepository {
   /// Runs the ladder; [confirmed] is true only after the user confirmed in
   /// the app, which is what a capped or new payee payment waits for.
   Future<Result<Bill>> pay(String id, {required bool confirmed});
+
+  /// Marks the bill as debited by the bank on its own, or undoes it.
+  Future<Result<Bill>> setAutoDebit(String id, {required bool enabled});
 }

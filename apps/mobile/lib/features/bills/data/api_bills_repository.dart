@@ -78,6 +78,16 @@ final class ApiBillsRepository implements BillsRepository {
         );
         return billFromJson(asJsonMap(unwrapData(response.data)));
       });
+
+  @override
+  Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
+      guardRequest(() async {
+        final response = await _dio.put<Object?>(
+          '$path/${Uri.encodeComponent(id)}/auto-debit',
+          data: {'enabled': enabled},
+        );
+        return billFromJson(asJsonMap(unwrapData(response.data)));
+      });
 }
 
 /// Where the walk over [ApiBillsRepository.statusOrder] stopped: the status

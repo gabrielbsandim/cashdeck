@@ -40,7 +40,7 @@ String railDetail(AppLocalizations l10n, PaymentRail rail) =>
   ),
   RailStatus.unavailable => (
     MoneyTone.neutral,
-    l10n.ladderStateUnavailable,
+    l10n.railUnavailable,
     Symbols.block_rounded,
   ),
   RailStatus.always => (

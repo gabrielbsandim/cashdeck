@@ -66,7 +66,10 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
   Future<void> _shareText(Bill bill, BankProof? proof) async {
     final l10n = AppLocalizations.of(context);
     final text = proof == null
-        ? l10n.receiptShareLine(bill.payee, MoneyFormat.format(bill.amount))
+        ? l10n.receiptShareLine(
+            billPayeeOf(l10n, bill),
+            MoneyFormat.format(bill.amount),
+          )
         : l10n.receiptShareProof(
             proof.receiver,
             MoneyFormat.format(proof.amount),
@@ -171,7 +174,7 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          bill.payee,
+          billPayeeOf(AppLocalizations.of(context), bill),
           style: AppTextStyles.titleLg.copyWith(color: palette.onSurface),
         ),
         CdAmount(

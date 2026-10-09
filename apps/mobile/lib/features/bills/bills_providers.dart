@@ -28,3 +28,7 @@ final markBillPaidProvider = Provider<MarkBillPaid>(
 final payBillProvider = Provider<PayBill>(
   (ref) => PayBill(ref.watch(billsRepositoryProvider)),
 );
+
+final setAutoDebitProvider = Provider<SetAutoDebit>(
+  (ref) => SetAutoDebit(ref.watch(billsRepositoryProvider)),
+);

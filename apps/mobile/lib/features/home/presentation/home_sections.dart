@@ -253,7 +253,7 @@ class _DueRow extends StatelessWidget {
     return CdBillRow(
       key: Key('home-bill-${bill.id}'),
       icon: billIconOf(bill),
-      title: bill.payee,
+      title: billPayeeOf(l10n, bill),
       amount: bill.amount,
       dateLabel: showEntity ? null : date,
       leading: showEntity ? EntityKindBadge(kind: bill.owner) : null,

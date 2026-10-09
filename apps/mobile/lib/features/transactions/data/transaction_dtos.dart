@@ -50,11 +50,20 @@ Category categoryFromJson(JsonMap json) => Category(
   parentId: readOptionalString(json, 'parentId'),
 );
 
+const Map<String, AccountType> _accountTypes = {
+  'CHECKING': AccountType.checking,
+  'SAVINGS': AccountType.savings,
+  'CREDIT_CARD': AccountType.creditCard,
+  'INVESTMENT': AccountType.investment,
+  'WALLET': AccountType.wallet,
+};
+
 TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   id: readString(json, 'id'),
   name: readString(json, 'name'),
   owner: readEntityKind(json, 'entityKind'),
   institution: readString(json, 'institution'),
+  type: _accountTypes[readOptionalString(json, 'type')],
 );
 
 /// The query string of `GET /transactions`; empty filters are left out.

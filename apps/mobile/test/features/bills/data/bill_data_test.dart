@@ -298,6 +298,26 @@ void main() {
       expect(requests[2].data, {'confirmed': true});
     });
 
+    test('turns auto debit on and reads it back', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {...billJson(), 'autoDebit': true},
+        }),
+      );
+
+      final bill = (await ApiBillsRepository(
+        dio,
+      ).setAutoDebit('bill-1', enabled: true) as Ok<Bill>).value;
+
+      expect(bill.autoDebit, isTrue);
+      expect(bill.debitsItself, isTrue);
+      final request = adapterOf(dio).requests.single;
+      expect(request.method, 'PUT');
+      expect(request.path, '/api/v1/bills/bill-1/auto-debit');
+      expect(request.data, {'enabled': true});
+      expect(billFromJson(billJson()).autoDebit, isFalse);
+    });
+
     test('maps a 404 and a malformed body', () async {
       final missing = stubDio((_) => const StubResponse(404));
       final malformed = stubDio((_) => const StubResponse(200, {'data': 1}));
@@ -383,6 +403,24 @@ void main() {
       );
       expect(
         await local.pay('missing', confirmed: true),
+        const Err<Bill>(NotFoundFailure()),
+      );
+    });
+
+    test('auto debit sticks for the session and survives a mark', () async {
+      final local = FakeBillsRepository(FixedClock(testNow));
+
+      final debited = (await local.setAutoDebit(
+        'bill-gym',
+        enabled: true,
+      ) as Ok<Bill>).value;
+      final paid = (await local.markPaid('bill-gym') as Ok<Bill>).value;
+
+      expect(debited.autoDebit, isTrue);
+      expect(paid.autoDebit, isTrue);
+      expect(paid.debitsItself, isFalse);
+      expect(
+        await local.setAutoDebit('missing', enabled: true),
         const Err<Bill>(NotFoundFailure()),
       );
     });

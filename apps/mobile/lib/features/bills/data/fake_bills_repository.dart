@@ -304,4 +304,15 @@ final class FakeBillsRepository implements BillsRepository {
     }
     return found;
   }
+
+  @override
+  Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) async {
+    final found = await get(id);
+    if (found case Ok(:final value)) {
+      final changed = value.withAutoDebit(enabled: enabled);
+      _changed[id] = changed;
+      return Ok(changed);
+    }
+    return found;
+  }
 }

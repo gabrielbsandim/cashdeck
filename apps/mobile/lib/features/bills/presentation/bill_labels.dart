@@ -14,6 +14,7 @@ import 'package:material_symbols_icons/symbols.dart';
   Bill bill,
   CalendarDate today,
 ) {
+  if (bill.debitsItself) return (l10n.billAutoDebit, MoneyTone.scheduled);
   if (bill.isOverdue(today)) {
     return (l10n.billStatusOverdue, MoneyTone.overdue);
   }
@@ -43,6 +44,7 @@ import 'package:material_symbols_icons/symbols.dart';
   Bill bill,
   CalendarDate today,
 ) {
+  if (bill.debitsItself) return (l10n.billAutoDebit, MoneyTone.scheduled);
   if (bill.isOverdue(today)) return (l10n.billHomeOverdue, MoneyTone.overdue);
   if (bill.status == BillStatus.scheduled) {
     return (l10n.billHomeAutomatic(bill.dueDate.dayMonth), MoneyTone.scheduled);
@@ -57,6 +59,7 @@ String billLadderHint(AppLocalizations l10n, Bill bill) {
         ? l10n.billPaidByYou
         : l10n.billPaidAutomatically;
   }
+  if (bill.debitsItself) return l10n.billAutoDebitHint;
   final step = currentStepOf(bill);
   if (step == null) return '';
   final number = LadderStep.values.indexOf(step) + 1;
@@ -116,6 +119,10 @@ String billKindLabel(AppLocalizations l10n, BillKind kind) => switch (kind) {
 /// Code reads as one.
 String billKindLabelOf(AppLocalizations l10n, Bill bill) =>
     bill.isBolepix ? l10n.billKindBolepix : billKindLabel(l10n, bill.kind);
+
+/// Who the bill pays, or what it is when the capture found no payee.
+String billPayeeOf(AppLocalizations l10n, Bill bill) =>
+    bill.payee.trim().isEmpty ? billKindLabelOf(l10n, bill) : bill.payee;
 
 String paymentMethodLabel(AppLocalizations l10n, PaymentMethod method) =>
     switch (method) {

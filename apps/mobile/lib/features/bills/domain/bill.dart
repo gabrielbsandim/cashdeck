@@ -78,6 +78,7 @@ final class Bill extends Equatable {
     this.paidAt,
     this.paidBy,
     this.confirmationReason,
+    this.autoDebit = false,
   });
 
   final String id;
@@ -107,6 +108,10 @@ final class Bill extends Equatable {
   /// says why; null reads as a generic safety rule.
   final ConfirmationReason? confirmationReason;
 
+  /// The bank debits it on its own; the app only settles it from the
+  /// statement, so no ladder step acts on it.
+  final bool autoDebit;
+
   bool get isBolepix => kind == BillKind.boleto && pixCode != null;
 
   bool get isTax =>
@@ -129,7 +134,30 @@ final class Bill extends Equatable {
     paidAt: at,
     paidBy: PaidBy.user,
     confirmationReason: confirmationReason,
+    autoDebit: autoDebit,
   );
+
+  Bill withAutoDebit({required bool enabled}) => Bill(
+    id: id,
+    payee: payee,
+    amount: amount,
+    dueDate: dueDate,
+    kind: kind,
+    owner: owner,
+    status: status,
+    source: source,
+    plan: plan,
+    paymentCode: paymentCode,
+    pixCode: pixCode,
+    attempts: attempts,
+    paidAt: paidAt,
+    paidBy: paidBy,
+    confirmationReason: confirmationReason,
+    autoDebit: enabled,
+  );
+
+  /// Waits on nobody: the bank debits it, so it never needs the user.
+  bool get debitsItself => autoDebit && !isSettled;
 
   bool get isSettled =>
       status == BillStatus.paid || status == BillStatus.cancelled;
@@ -153,6 +181,7 @@ final class Bill extends Equatable {
     paidAt,
     paidBy,
     confirmationReason,
+    autoDebit,
   ];
 }
 

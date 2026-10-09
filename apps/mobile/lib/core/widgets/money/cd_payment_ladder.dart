@@ -346,8 +346,8 @@ class _OpenStep extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    height: 32,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 32),
                     child: Row(
                       children: [
                         Expanded(
@@ -356,11 +356,10 @@ class _OpenStep extends StatelessWidget {
                             style: AppTextStyles.titleSm.copyWith(
                               color: titleColor,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (badge != null) Flexible(child: badge),
                         if (trailing != null)
                           Text(
                             trailing,
@@ -372,6 +371,14 @@ class _OpenStep extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (badge != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: badge,
+                      ),
+                    ),
                   for (final line in step.lines) _LineView(line: line),
                   if (stepDown != null)
                     Padding(

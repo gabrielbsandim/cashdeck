@@ -87,6 +87,8 @@ final class Category extends Equatable {
   List<Object?> get props => [id, key, name, icon, parentId];
 }
 
+enum AccountType { checking, savings, creditCard, investment, wallet }
+
 /// An account a transaction can be filtered by.
 final class TransactionAccount extends Equatable {
   const new({
@@ -94,6 +96,7 @@ final class TransactionAccount extends Equatable {
     required this.name,
     required this.owner,
     required this.institution,
+    this.type,
   });
 
   final String id;
@@ -101,8 +104,11 @@ final class TransactionAccount extends Equatable {
   final EntityKind owner;
   final String institution;
 
+  /// Null when the server sent a type this build does not know.
+  final AccountType? type;
+
   @override
-  List<Object?> get props => [id, name, owner, institution];
+  List<Object?> get props => [id, name, owner, institution, type];
 }
 
 /// What the list shows: the scope, the filters and the text searched.

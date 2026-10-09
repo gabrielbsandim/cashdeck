@@ -5,6 +5,7 @@ import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/feedback/tone_icon.dart';
+import 'package:cashdeck/core/widgets/layout/cd_bottom_inset.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_entity_badge.dart';
@@ -135,6 +136,29 @@ void main() {
     expect(taps, ['card', 'category', 'suggested', 'row', 'section', 'banner']);
     expect(find.text(l10n.tonePaid), findsOneWidget);
     expect(find.text('Só mensagem'), findsOneWidget);
+  });
+
+  testWidgets('content stays above the system navigation bar', (tester) async {
+    const content = Key('content');
+    await tester.pumpApp(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(400, 2000),
+          padding: EdgeInsets.only(bottom: 48),
+        ),
+        child: CdBottomInset(
+          child: Builder(
+            builder: (context) => SizedBox.expand(
+              key: content,
+              child: Text('${MediaQuery.paddingOf(context).bottom}'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.getBottomLeft(find.byKey(content)).dy, 2000 - 48);
+    expect(find.text('0.0'), findsOneWidget);
   });
 
   testWidgets('the nav bar shows a badge and reports the tab', (tester) async {
