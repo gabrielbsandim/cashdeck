@@ -120,8 +120,12 @@ describe('routePayment', () => {
   it('routes personal bills', () => {
     expect(steps(route('PF', 'PIX_KEY'))).toEqual([
       'AUTOMATIC:MERCADO_PAGO_PAYOUTS:PIX',
+      'AUTOMATIC:ASAAS:PIX',
       'ASSISTED:ASSISTED:PIX',
     ])
+    expect(
+      steps(route('PF', 'PIX_KEY', rail => rail !== 'MERCADO_PAGO_PAYOUTS')),
+    ).toEqual(['AUTOMATIC:ASAAS:PIX', 'ASSISTED:ASSISTED:PIX'])
     expect(steps(route('PF', 'BOLETO'))).toEqual([
       'AUTOMATIC:ASAAS:BOLETO',
       'ASSISTED:ASSISTED:BOLETO',

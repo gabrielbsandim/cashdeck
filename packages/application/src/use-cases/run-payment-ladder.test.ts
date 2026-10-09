@@ -636,7 +636,11 @@ describe('runPaymentLadder', () => {
 describe('prepareFunding', () => {
   it('funds the personal Asaas bills that would be paid now, in one round', async () => {
     const asaas = new FakePaymentRail('ASAAS')
-    const deps = scenario([asaas, new FakePaymentRail('INTER_EMPRESAS')])
+    const deps = scenario([
+      asaas,
+      new FakePaymentRail('MERCADO_PAGO_PAYOUTS'),
+      new FakePaymentRail('INTER_EMPRESAS'),
+    ])
     deps.funder = new FakeReserveFunder(2000)
     const ready = [
       personalBill({ id: 'p1', amount: Money.of(5000) }),
@@ -679,6 +683,27 @@ describe('prepareFunding', () => {
     const run = makeRunPaymentLadder(deps)
     expect((await run(TENANT, 'p1')).bill.status).toBe('PAID')
     expect(deps.fundings.rows).toHaveLength(1)
+  })
+
+  it('funds a personal Pix key bill through Asaas without payouts', async () => {
+    const deps = scenario([new FakePaymentRail('ASAAS')])
+    deps.funder = new FakeReserveFunder(0)
+    const key = personalBill({
+      id: 'key',
+      kind: 'PIX_KEY',
+      code: 'friend@example.com',
+      amount: Money.of(3000),
+    })
+    await deps.bills.save(key)
+    await trust(deps.payees, key)
+    const summary = await makePrepareFunding(deps)(TENANT, [key])
+    expect(summary).toEqual({ rounds: 1, fundedCents: 3000 })
+    const done = await makeRunPaymentLadder(deps)(TENANT, 'key')
+    expect(done.bill.status).toBe('PAID')
+    expect(done.plan.steps.map(step => step.rail)).toEqual([
+      'ASAAS',
+      'ASSISTED',
+    ])
   })
 
   it('skips everything while the kill switch is on', async () => {

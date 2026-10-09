@@ -194,9 +194,11 @@ type Route = { readonly mode: StepMode; readonly rail: RailId }
 const auto = (rail: RailId): Route => ({ mode: 'AUTOMATIC', rail })
 const approval = (rail: RailId): Route => ({ mode: 'BANK_APPROVAL', rail })
 
+// Each list is tried in order and a rail the entity has not authorized is
+// skipped, so switching provider is authorizing one rail and removing another.
 const DEFAULT_ROUTES: Record<EntityKind, Record<BillKind, readonly Route[]>> = {
   PF: {
-    PIX_KEY: [auto('MERCADO_PAGO_PAYOUTS')],
+    PIX_KEY: [auto('MERCADO_PAGO_PAYOUTS'), auto('ASAAS')],
     PIX_QR: [auto('ASAAS')],
     BOLETO: [auto('ASAAS')],
     TAX_BARCODE: [],

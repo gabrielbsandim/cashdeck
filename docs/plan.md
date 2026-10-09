@@ -190,9 +190,14 @@ attempt on either method is paid or pending, no other step runs for that bill.
 
 | Bill kind | Step 1 | Step 2 | Step 3 |
 |---|---|---|---|
-| Pix to a key | Mercado Pago Payouts from the reserve | none | Assisted |
+| Pix to a key | Mercado Pago Payouts from the reserve, or Asaas when payouts is not authorized | none | Assisted |
 | Pix QR, boleto | Pix from the reserve to Asaas on the due date, then Asaas pays (by Pix when the bill carries a BR Code, then by barcode) | none | Assisted (Pix code first) |
 | Tax guide (PF DARF) | Asaas by Pix, only when the guide carries a BR Code | none | Assisted |
+
+Mercado Pago enables Payouts only through a commercial agreement. Without it,
+the Asaas balance is the reserve: a bill it cannot cover falls to assisted with
+`RESERVE_FUNDING_FAILED`. Authorizing the payouts rail later restores both the
+Pix route and the funding transfer, with no code change.
 
 ### 5.2 PJ routing (default)
 
