@@ -135,6 +135,15 @@ export function markBillPaid(bill: Bill, by: PaidBy, at: Date): Bill {
   return { ...transitionBill(bill, 'PAID'), paidAt: at, paidBy: by }
 }
 
+// Only a payment the user declared can be taken back; a rail or a statement
+// debit moved real money.
+export function markBillUnpaid(bill: Bill): Bill {
+  if (bill.status !== 'PAID' || bill.paidBy !== 'USER') {
+    throw new InvalidTransitionError('Bill', bill.status, 'OPEN')
+  }
+  return { ...bill, status: 'OPEN', paidAt: null, paidBy: null }
+}
+
 export function isSettled(bill: Bill): boolean {
   return bill.status === 'PAID' || bill.status === 'CANCELLED'
 }

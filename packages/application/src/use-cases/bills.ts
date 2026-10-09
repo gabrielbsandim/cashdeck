@@ -3,6 +3,7 @@ import {
   BILL_ACTION_ALERTS,
   type EntityKind,
   markBillPaid,
+  markBillUnpaid,
 } from '@cashdeck/domain'
 import {
   type BillDetailView,
@@ -167,5 +168,41 @@ export function makeMarkBillPaid(deps: {
       at,
     })
     return paid
+  }
+}
+
+// Undoes a payment marked by hand: the bill is open again and the next ladder
+// run may pay it, after asking for confirmation when it needs one.
+export function makeMarkBillUnpaid(deps: {
+  bills: BillRepository
+  audit: AuditLog
+  clock: Clock
+  ids: IdGenerator
+}) {
+  return async function markUnpaid(
+    tenantId: string,
+    billId: string,
+  ): Promise<Bill> {
+    const bill = await deps.bills.findById(tenantId, billId)
+    if (!bill) {
+      throw new NotFoundError('Bill')
+    }
+    if (bill.status !== 'PAID') {
+      return bill
+    }
+    const open = markBillUnpaid(bill)
+    await deps.bills.save(open)
+    await deps.audit.record({
+      id: deps.ids.next(),
+      tenantId,
+      actor: 'USER',
+      action: 'bill.marked_unpaid',
+      subjectId: bill.id,
+      rail: null,
+      result: 'OPEN',
+      details: { paidAt: (bill.paidAt as Date).toISOString() },
+      at: deps.clock.now(),
+    })
+    return open
   }
 }

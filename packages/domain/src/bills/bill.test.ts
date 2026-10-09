@@ -5,6 +5,7 @@ import {
   createBill,
   isSettled,
   markBillPaid,
+  markBillUnpaid,
   transitionBill,
 } from '@/bills/bill'
 import { decodePaymentCode } from '@/codes/payment-code'
@@ -116,5 +117,23 @@ describe('bill transitions', () => {
     const paid = markBillPaid(createBill(input), 'USER', at)
     expect(paid).toMatchObject({ status: 'PAID', paidBy: 'USER', paidAt: at })
     expect(isSettled(paid)).toBe(true)
+  })
+
+  it('takes back only a payment the user declared', () => {
+    const at = new Date('2026-10-20T13:00:00Z')
+    const bill = createBill(input)
+    const reopened = markBillUnpaid(markBillPaid(bill, 'USER', at))
+    expect(reopened).toMatchObject({
+      status: 'OPEN',
+      paidAt: null,
+      paidBy: null,
+    })
+    expect(() => markBillUnpaid(markBillPaid(bill, 'RAIL', at))).toThrow(
+      InvalidTransitionError,
+    )
+    expect(() => markBillUnpaid(markBillPaid(bill, 'STATEMENT', at))).toThrow(
+      InvalidTransitionError,
+    )
+    expect(() => markBillUnpaid(bill)).toThrow(InvalidTransitionError)
   })
 })

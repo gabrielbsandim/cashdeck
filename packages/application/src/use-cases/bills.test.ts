@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createBill, Money } from '@cashdeck/domain'
+import { createBill, InvalidTransitionError, Money } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
 import { FakePaymentRail } from '@/testing/providers'
 import { alert } from '@/testing/deps.test-helpers'
@@ -9,6 +9,7 @@ import {
   makeGetBill,
   makeListBills,
   makeMarkBillPaid,
+  makeMarkBillUnpaid,
 } from '@/use-cases/bills'
 import { makeRunPaymentLadder } from '@/use-cases/run-payment-ladder'
 
@@ -126,5 +127,40 @@ describe('bill queries and manual payment', () => {
     expect(deps.audit.events).toHaveLength(1)
     expect(deps.audit.events[0]?.details).toEqual({ proof: 'receipt.pdf' })
     await expect(markPaid(TENANT, 'nope')).rejects.toThrow(NotFoundError)
+  })
+
+  it('takes back a payment marked by hand', async () => {
+    const deps = scenario()
+    await deps.bills.save(seed('b1', '2026-10-20'))
+    const markUnpaid = makeMarkBillUnpaid(deps)
+    const untouched = await markUnpaid(TENANT, 'b1')
+    expect(untouched.status).toBe('OPEN')
+    expect(deps.audit.events).toHaveLength(0)
+
+    await makeMarkBillPaid(deps)(TENANT, 'b1')
+    const open = await markUnpaid(TENANT, 'b1')
+    expect(open).toMatchObject({ status: 'OPEN', paidAt: null, paidBy: null })
+    expect((await deps.bills.findById(TENANT, 'b1'))?.status).toBe('OPEN')
+    expect(deps.audit.events.at(-1)).toMatchObject({
+      action: 'bill.marked_unpaid',
+      actor: 'USER',
+      subjectId: 'b1',
+      details: { paidAt: NOW.toISOString() },
+    })
+    await expect(markUnpaid(TENANT, 'nope')).rejects.toThrow(NotFoundError)
+  })
+
+  it('keeps a payment a rail made', async () => {
+    const deps = scenario()
+    await deps.bills.save({
+      ...seed('b1', '2026-10-20'),
+      status: 'PAID',
+      paidAt: NOW,
+      paidBy: 'RAIL',
+    })
+    await expect(makeMarkBillUnpaid(deps)(TENANT, 'b1')).rejects.toThrow(
+      InvalidTransitionError,
+    )
+    expect((await deps.bills.findById(TENANT, 'b1'))?.paidBy).toBe('RAIL')
   })
 })

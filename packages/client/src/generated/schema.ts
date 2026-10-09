@@ -484,6 +484,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bills/{id}/mark-unpaid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo a payment marked by hand */
+        post: operations["markBillUnpaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bills/{id}/auto-debit": {
         parameters: {
             query?: never;
@@ -3736,6 +3753,63 @@ export interface operations {
         };
         responses: {
             /** @description Mark a bill paid by hand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            entityId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            /** @enum {string} */
+                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
+                            /** @enum {string} */
+                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
+                            /** @enum {string} */
+                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
+                            payee: string | null;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dueDate: string;
+                            code: string | null;
+                            pixCode: string | null;
+                            createdAt: string;
+                            paidAt: string | null;
+                            /** @enum {string|null} */
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
+                            autoDebit: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    markBillUnpaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undo a payment marked by hand */
             200: {
                 headers: {
                     [name: string]: unknown;

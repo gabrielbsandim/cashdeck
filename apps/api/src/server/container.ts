@@ -71,6 +71,7 @@ import {
   makeListTransactions,
   makeListTransfers,
   makeMarkBillPaid,
+  makeMarkBillUnpaid,
   makeOpenFinance,
   makePayroll,
   makePersonalSummary,
@@ -300,6 +301,7 @@ export function buildContainer(
     getBill: makeGetBill(deps),
     listBills: makeListBills(deps),
     markBillPaid: makeMarkBillPaid(deps),
+    markBillUnpaid: makeMarkBillUnpaid(deps),
     setAutoDebit: makeSetAutoDebit(deps, makeGetBill(deps)),
     runPaymentLadder,
     runDuePayments: makeRunDuePayments({

@@ -317,8 +317,18 @@ when a bill is captured, so `plan` is never null.
   `USER` with the API token's hash prefix and the `x-request-id` (or
   `x-vercel-id`) header.
 - `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
+  For a bill already paid outside Cashdeck (another account, the bank app).
   `attachmentId` points at a file already attached; `proof` is free text (an
-  end-to-end id, say). Returns `BillView`.
+  end-to-end id, or a note on who paid), kept in the audit log. Only this bill
+  becomes `PAID` with `paidBy: "USER"`; the ladder and the due-payments cron
+  skip it, and the next bills from the same payee are paid as usual. Its
+  due-soon and confirmation alerts are marked read. Returns `BillView`.
+- `POST /bills/{id}/mark-unpaid`: no body. Undoes `mark-paid`: the bill goes
+  back to `OPEN` with `paidAt` and `paidBy` null, so the next ladder run may
+  pay it (asking for confirmation again when it needs one). Only a bill with
+  `paidBy: "USER"` can be undone; one paid by a rail or settled from the
+  statement answers `409 INVALID_TRANSITION`. A bill that is not `PAID` comes
+  back unchanged. Returns `BillView`.
 - `PUT /bills/{id}/auto-debit`: body `{ enabled: bool }`. Marks every
   recipient of the bill, for its entity, as debited by the bank by itself, so
   this bill and the next ones from that payee carry `autoDebit: true`. The

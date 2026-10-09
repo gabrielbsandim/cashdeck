@@ -7,6 +7,7 @@ import { GET as listBills, POST as captureBill } from '@/app/api/v1/bills/route'
 import { GET as getBill } from '@/app/api/v1/bills/[id]/route'
 import { POST as payBill } from '@/app/api/v1/bills/[id]/pay/route'
 import { POST as markPaid } from '@/app/api/v1/bills/[id]/mark-paid/route'
+import { POST as markUnpaid } from '@/app/api/v1/bills/[id]/mark-unpaid/route'
 import { PUT as setAutoDebit } from '@/app/api/v1/bills/[id]/auto-debit/route'
 import { GET as paymentCron } from '@/app/api/cron/payment-ladder/route'
 
@@ -123,6 +124,16 @@ describe('api routes', () => {
     )
     expect(paid.body.data).toMatchObject({ status: 'PAID', paidBy: 'USER' })
 
+    const undone = await json(
+      await markUnpaid(post(`/bills/${id}/mark-unpaid`), params(id)),
+    )
+    expect(undone.body.data).toMatchObject({
+      status: 'OPEN',
+      paidAt: null,
+      paidBy: null,
+    })
+    await markPaid(post(`/bills/${id}/mark-paid`), params(id))
+
     const flag = (enabled: unknown) =>
       new Request(`http://localhost/api/v1/bills/${id}/auto-debit`, {
         method: 'PUT',
@@ -155,6 +166,10 @@ describe('api routes', () => {
     ).toBe(404)
     expect(
       (await markPaid(post('/bills/nope/mark-paid'), params('nope'))).status,
+    ).toBe(404)
+    expect(
+      (await markUnpaid(post('/bills/nope/mark-unpaid'), params('nope')))
+        .status,
     ).toBe(404)
   })
 

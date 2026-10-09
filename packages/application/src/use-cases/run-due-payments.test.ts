@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createBill, Money } from '@cashdeck/domain'
 import { FakePaymentRail } from '@/testing/providers'
 import { NOW, scenario, TENANT, trust } from '@/testing/scenario.test-helpers'
+import { makeMarkBillPaid } from '@/use-cases/bills'
 import { makeRunDuePayments } from '@/use-cases/run-due-payments'
 import {
   makePrepareFunding,
@@ -50,6 +51,50 @@ describe('runDuePayments', () => {
       funding: { rounds: 0, fundedCents: 0 },
     })
     expect((await deps.bills.findById(TENANT, 'b3'))?.status).toBe('OPEN')
+  })
+
+  it('skips the month paid by hand and pays the next one', async () => {
+    const rail = new FakePaymentRail('MERCADO_PAGO_PAYOUTS')
+    const deps = scenario([rail])
+    for (const [id, dueDate] of [
+      ['oct', '2026-10-09'],
+      ['nov', '2026-11-09'],
+    ] as const) {
+      const bill = createBill({
+        id,
+        tenantId: TENANT,
+        entityId: 'pf',
+        kind: 'PIX_KEY',
+        source: 'GMAIL',
+        payee: 'Condo',
+        amount: Money.of(50000),
+        dueDate,
+        code: 'condo@example.com',
+        createdAt: NOW,
+      })
+      await deps.bills.save(bill)
+      await trust(deps.payees, bill)
+    }
+    await makeMarkBillPaid(deps)(TENANT, 'oct', 'paid from another account')
+    const runLadder = makeRunPaymentLadder(deps)
+    const run = makeRunDuePayments({
+      ...deps,
+      runLadder,
+      prepareFunding: makePrepareFunding(deps),
+    })
+
+    expect((await run(TENANT)).checked).toBe(0)
+    expect((await runLadder(TENANT, 'oct')).attempts).toEqual([])
+    expect(rail.requests).toEqual([])
+
+    deps.clock.set(new Date('2026-11-06T12:00:00Z'))
+    expect((await run(TENANT)).byStatus).toEqual({ PAID: 1 })
+    expect(rail.requests.map(request => request.bill.id)).toEqual(['nov'])
+    expect(await deps.bills.findById(TENANT, 'oct')).toMatchObject({
+      status: 'PAID',
+      paidBy: 'USER',
+    })
+    expect((await deps.bills.findById(TENANT, 'nov'))?.paidBy).toBe('RAIL')
   })
 
   it('walks every page', async () => {

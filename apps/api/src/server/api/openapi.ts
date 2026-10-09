@@ -400,6 +400,13 @@ const OPERATIONS: Operation[] = [
     response: billViewSchema,
   },
   {
+    method: 'post',
+    path: '/bills/{id}/mark-unpaid',
+    id: 'markBillUnpaid',
+    summary: 'Undo a payment marked by hand',
+    response: billViewSchema,
+  },
+  {
     method: 'put',
     path: '/bills/{id}/auto-debit',
     id: 'setBillAutoDebit',
