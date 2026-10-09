@@ -48,6 +48,12 @@ describe('container', () => {
     )
     expect(online.deps.bills).toBeInstanceOf(PrismaBillRepository)
   })
+
+  it('refuses to keep data in memory on a deployed server', () => {
+    expect(() => buildContainer(readEnv({ VERCEL_ENV: 'production' }))).toThrow(
+      'DATABASE_URL is required',
+    )
+  })
 })
 
 describe('runCronJob', () => {

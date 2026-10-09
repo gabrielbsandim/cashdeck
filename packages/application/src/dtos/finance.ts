@@ -17,6 +17,12 @@ export const entityViewSchema = z.object({
   taxRegime: z.enum(TAX_REGIMES).nullable(),
 })
 
+export const updateEntitySchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  taxId: z.string().trim().min(11).max(18).optional(),
+  taxRegime: z.enum(TAX_REGIMES).nullable().optional(),
+})
+
 export const accountViewSchema = z.object({
   id: z.string(),
   entityKind: entityKindSchema,

@@ -61,6 +61,13 @@ A wrong or missing token returns 401 `UNAUTHORIZED`.
 
 `data`: array of `{ id, kind: "PF"|"PJ", name, taxId: string, taxRegime: string | null }`.
 
+### PATCH /entities/{id}
+
+Body: `{ name?, taxId?, taxRegime?: "SIMPLES_NACIONAL"|"MEI"|"LUCRO_PRESUMIDO"|"LUCRO_REAL" | null }`.
+The tax id may be formatted; it must be a valid CPF for `PF` and CNPJ for
+`PJ`, and a `PJ` keeps a regime. Answers the updated entity and writes an
+`entity.update` audit event. 404 for an unknown id, 422 for an invalid tax id.
+
 ## Home
 
 ### GET /home/personal

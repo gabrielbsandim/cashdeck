@@ -31,9 +31,21 @@ DATABASE_URL='<neon connection string>' pnpm -C packages/infrastructure db:deplo
 DATABASE_URL='<neon connection string>' pnpm -C packages/infrastructure db:seed
 ```
 
-The seed creates the personal and company entities once. Without
-`DATABASE_URL` the API keeps everything in memory, which only suits local
-development.
+The seed creates the personal and company entities once, from
+`CASHDECK_PF_NAME`, `CASHDECK_PF_TAX_ID`, `CASHDECK_PJ_NAME`, `CASHDECK_PJ_TAX_ID`
+and `CASHDECK_PJ_TAX_REGIME`, falling back to public test tax ids. Running it
+again never overwrites an entity; change one with `PATCH /api/v1/entities/{id}`
+(or the app settings) before connecting an issuer, a rail or the DDA, since
+they all send the entity tax id. Without `DATABASE_URL` the API keeps
+everything in memory, which only suits local development; a Vercel deploy
+refuses to start without it.
+
+## Vercel project
+
+Import the repository with Root Directory `apps/api`. `apps/api/vercel.json`
+pins the install and build commands to the monorepo root
+(`pnpm turbo run build --filter=@cashdeck/api`), so the workspace packages and
+the Prisma client are built first. Cron routes allow 300 seconds each.
 
 ## Environment variables
 

@@ -40,6 +40,7 @@ import {
   makeListAccounts,
   makeListBills,
   makeListEntities,
+  makeUpdateEntity,
   makeListInvoices,
   makeListTransactions,
   makeListTransfers,
@@ -131,6 +132,10 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
 }
 
 function stores(env: ServerEnv, settings: PaymentSettings) {
+  // In memory on a serverless deploy would drop bills between invocations.
+  if (!env.DATABASE_URL && env.VERCEL_ENV) {
+    throw new Error('DATABASE_URL is required on a deployed server.')
+  }
   if (!env.DATABASE_URL) {
     return inMemoryStores(env.CASHDECK_TENANT_ID, settings)
   }
@@ -201,6 +206,7 @@ export function buildContainer(
     }),
     reconcilePayments: makeReconcilePayments(deps),
     listEntities: makeListEntities(deps),
+    updateEntity: makeUpdateEntity(deps),
     listAccounts: makeListAccounts(deps),
     createManualAccount: makeCreateManualAccount(deps),
     updateAccount: makeUpdateAccount(deps),

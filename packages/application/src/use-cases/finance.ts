@@ -2,6 +2,7 @@ import {
   type Account,
   addDays,
   createAccount,
+  createFinancialEntity,
   createTransaction,
   type EntityKind,
   type FinancialEntity,
@@ -19,6 +20,7 @@ import {
   type TransactionView,
   type TransferView,
   type updateAccountSchema,
+  type updateEntitySchema,
 } from '@/dtos/finance'
 import { type InternalTransfer } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
@@ -46,18 +48,59 @@ function kindOf(index: EntityIndex, entityId: string): EntityKind {
   return required(index.get(entityId) ?? null, 'Entity').kind
 }
 
+function entityView(entity: FinancialEntity) {
+  return {
+    id: entity.id,
+    kind: entity.kind,
+    name: entity.name,
+    taxId: entity.taxId.value,
+    taxRegime: entity.taxRegime,
+  }
+}
+
 export function makeListEntities(deps: Pick<Deps, 'entities'>) {
   return async function listEntities(tenantId: string) {
     const all = await deps.entities.list(tenantId)
-    return all
-      .sort((a, b) => a.kind.localeCompare(b.kind))
-      .map(entity => ({
-        id: entity.id,
-        kind: entity.kind,
-        name: entity.name,
-        taxId: entity.taxId.value,
-        taxRegime: entity.taxRegime,
-      }))
+    return all.sort((a, b) => a.kind.localeCompare(b.kind)).map(entityView)
+  }
+}
+
+// The seed ships placeholder tax ids; the real ones are set here before any
+// issuer, rail or DDA call uses them.
+export function makeUpdateEntity(
+  deps: Pick<Deps, 'entities' | 'audit' | 'ids' | 'clock'>,
+) {
+  return async function updateEntity(
+    tenantId: string,
+    id: string,
+    input: z.infer<typeof updateEntitySchema>,
+  ) {
+    const current = required(
+      await deps.entities.findById(tenantId, id),
+      'Entity',
+    )
+    const updated = createFinancialEntity({
+      id: current.id,
+      tenantId,
+      kind: current.kind,
+      name: input.name ?? current.name,
+      taxId: input.taxId ?? current.taxId.value,
+      taxRegime:
+        input.taxRegime === undefined ? current.taxRegime : input.taxRegime,
+    })
+    await deps.entities.save(updated)
+    await deps.audit.record({
+      id: deps.ids.next(),
+      tenantId,
+      actor: 'USER',
+      action: 'entity.update',
+      subjectId: id,
+      rail: null,
+      result: 'UPDATED',
+      details: { fields: Object.keys(input) },
+      at: deps.clock.now(),
+    })
+    return entityView(updated)
   }
 }
 

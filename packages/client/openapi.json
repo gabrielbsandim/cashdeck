@@ -277,6 +277,135 @@
         }
       }
     },
+    "/entities/{id}": {
+      "patch": {
+        "operationId": "updateEntity",
+        "summary": "Set the name, tax id or tax regime of an entity",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "taxId": {
+                    "type": "string",
+                    "minLength": 11,
+                    "maxLength": 18
+                  },
+                  "taxRegime": {
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "SIMPLES_NACIONAL",
+                      "MEI",
+                      "LUCRO_PRESUMIDO",
+                      "LUCRO_REAL"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Set the name, tax id or tax regime of an entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "PF",
+                            "PJ"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "taxId": {
+                          "type": "string"
+                        },
+                        "taxRegime": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "SIMPLES_NACIONAL",
+                            "MEI",
+                            "LUCRO_PRESUMIDO",
+                            "LUCRO_REAL"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "name",
+                        "taxId",
+                        "taxRegime"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/home/personal": {
       "get": {
         "operationId": "getPersonalSummary",

@@ -12,6 +12,7 @@ import {
   makeListTransfers,
   makeRecordTransfer,
   makeUpdateAccount,
+  makeUpdateEntity,
 } from '@/use-cases/finance'
 
 async function seeded() {
@@ -37,6 +38,32 @@ describe('entities and accounts', () => {
       taxId: '11222333000181',
       taxRegime: 'SIMPLES_NACIONAL',
     })
+  })
+
+  it('updates the name, tax id and regime of an entity, audited', async () => {
+    const deps = fullDeps()
+    const update = makeUpdateEntity(deps)
+    const company = await update(TENANT, 'pj', {
+      name: 'Studio Exemplo',
+      taxId: '11.444.777/0001-61',
+      taxRegime: 'LUCRO_PRESUMIDO',
+    })
+    expect(company).toMatchObject({
+      name: 'Studio Exemplo',
+      taxId: '11444777000161',
+      taxRegime: 'LUCRO_PRESUMIDO',
+    })
+    const person = await update(TENANT, 'pf', { name: 'Casa' })
+    expect(person).toMatchObject({ name: 'Casa', taxRegime: null })
+    expect(deps.audit.events.at(-1)).toMatchObject({
+      action: 'entity.update',
+      subjectId: 'pf',
+      details: { fields: ['name'] },
+    })
+    await expect(
+      update(TENANT, 'pf', { taxId: '11444777000161' }),
+    ).rejects.toThrow('matching tax id')
+    await expect(update(TENANT, 'nope', {})).rejects.toThrow()
   })
 
   it('lists every account, or one entity, by name', async () => {

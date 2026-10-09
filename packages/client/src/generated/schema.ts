@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the name, tax id or tax regime of an entity */
+        patch: operations["updateEntity"];
+        trace?: never;
+    };
     "/home/personal": {
         parameters: {
             query?: never;
@@ -1107,6 +1124,55 @@ export interface operations {
                             /** @enum {string|null} */
                             taxRegime: "SIMPLES_NACIONAL" | "MEI" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | null;
                         }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateEntity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    taxId?: string;
+                    /** @enum {string|null} */
+                    taxRegime?: "SIMPLES_NACIONAL" | "MEI" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Set the name, tax id or tax regime of an entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            kind: "PF" | "PJ";
+                            name: string;
+                            taxId: string;
+                            /** @enum {string|null} */
+                            taxRegime: "SIMPLES_NACIONAL" | "MEI" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | null;
+                        };
                     };
                 };
             };

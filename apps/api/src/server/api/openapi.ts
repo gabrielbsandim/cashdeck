@@ -52,6 +52,7 @@ import {
   transactionViewSchema,
   transferViewSchema,
   updateAccountSchema,
+  updateEntitySchema,
   updateAutomationSchema,
   uploadSchema,
 } from '@cashdeck/application'
@@ -125,6 +126,14 @@ const OPERATIONS: Operation[] = [
     id: 'listEntities',
     summary: 'Personal and company entities',
     response: z.array(entityViewSchema),
+  },
+  {
+    method: 'patch',
+    path: '/entities/{id}',
+    id: 'updateEntity',
+    summary: 'Set the name, tax id or tax regime of an entity',
+    body: updateEntitySchema,
+    response: entityViewSchema,
   },
   {
     method: 'get',
