@@ -47,6 +47,8 @@ import {
   lookupItemSchema,
   pageQuerySchema,
   payrollSheetViewSchema,
+  insightsOverviewQuerySchema,
+  insightsOverviewSchema,
   personalSummarySchema,
   railCredentialsViewSchema,
   railTestViewSchema,
@@ -200,6 +202,14 @@ const OPERATIONS: Operation[] = [
     id: 'getConsolidatedSummary',
     summary: 'Personal and company together',
     response: consolidatedSummarySchema,
+  },
+  {
+    method: 'get',
+    path: '/insights/overview',
+    id: 'getInsightsOverview',
+    summary: 'Spending, categories and cash flow of a period',
+    query: insightsOverviewQuerySchema,
+    response: insightsOverviewSchema,
   },
   {
     method: 'get',

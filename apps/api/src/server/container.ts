@@ -44,6 +44,7 @@ import {
   makeChat,
   makeCompanySummary,
   makeConsolidatedSummary,
+  makeInsightsOverview,
   makeCreateManualAccount,
   makeDescribeBill,
   makeSetAutoDebit,
@@ -317,6 +318,7 @@ export function buildContainer(
     personalSummary: makePersonalSummary(deps),
     companySummary: makeCompanySummary(deps),
     consolidatedSummary: makeConsolidatedSummary(deps),
+    insightsOverview: makeInsightsOverview(deps),
     openFinance: categorizeAfterSync(
       makeOpenFinance(deps),
       categorizeTransactions,

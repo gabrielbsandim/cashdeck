@@ -23,6 +23,7 @@ import {
 import { POST as confirmAction } from '@/app/api/v1/chat/actions/[id]/confirm/route'
 import { POST as cancelAction } from '@/app/api/v1/chat/actions/[id]/cancel/route'
 import { POST as syncConnection } from '@/app/api/v1/open-finance/connections/[id]/sync/route'
+import { GET as insightsOverview } from '@/app/api/v1/insights/overview/route'
 
 const TOKEN = 'test-token-0123456789'
 
@@ -156,12 +157,34 @@ describe('transactions and categories', () => {
     )
     const missing = await call(syncConnection, 'POST', { params: { id: 'x' } })
     expect(missing.status).toBe(404)
+    const tooFar = await call(syncConnection, 'POST', {
+      params: { id: 'x' },
+      query: '?days=900',
+    })
+    expect(tooFar.status).toBe(422)
     expect(await container.openFinance.syncAll('local')).toMatchObject({
       connections: 0,
     })
     expect(
       await container.deps.transactions.findById('local', 't3'),
     ).toMatchObject({ categoryId: fuel?.id, categorizedBy: 'RULE' })
+  })
+})
+
+describe('insights', () => {
+  it('answers the overview of a period and rejects an unknown one', async () => {
+    await seedTransactions()
+    const overview = await call(insightsOverview, 'GET', {
+      query: '?entity=PF&period=1w',
+    })
+    expect(overview.status).toBe(200)
+    expect(overview.body.data).toMatchObject({
+      period: '1w',
+      spend: { series: expect.any(Array) },
+      billsDue: { days: 7 },
+    })
+    const bad = await call(insightsOverview, 'GET', { query: '?period=2d' })
+    expect(bad.status).toBe(422)
   })
 })
 

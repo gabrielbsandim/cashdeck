@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/insights/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Spending, categories and cash flow of a period */
+        get: operations["getInsightsOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts": {
         parameters: {
             query?: never;
@@ -1913,6 +1930,141 @@ export interface operations {
                                 };
                                 on: string;
                             }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getInsightsOverview: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                period?: "1w" | "1m" | "6m" | "1y";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Spending, categories and cash flow of a period */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            period: "1w" | "1m" | "6m" | "1y";
+                            range: {
+                                from: string;
+                                to: string;
+                            };
+                            previousRange: {
+                                from: string;
+                                to: string;
+                            };
+                            spend: {
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                previous: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                changePercent: number | null;
+                                series: {
+                                    day: string;
+                                    cumulative: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                previousSeries: {
+                                    day: string;
+                                    cumulative: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                topMerchants: {
+                                    name: string;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    count: number;
+                                }[];
+                            };
+                            categories: {
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                items: {
+                                    categoryId: string | null;
+                                    key: string | null;
+                                    name: string | null;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    sharePercent: number;
+                                    changePercent: number | null;
+                                }[];
+                            };
+                            flow: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                result: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            cards: {
+                                bill: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                dueOn: string | null;
+                                count: number;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                used: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                usedPercent: number | null;
+                            } | null;
+                            billsDue: {
+                                days: number;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                count: number;
+                            };
                         };
                     };
                 };
