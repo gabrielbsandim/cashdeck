@@ -861,6 +861,6 @@
   "cardsNotSent": "Not sent by the bank",
   "payrollAnnexTitle": "Annex from your accountant",
   "payrollAnnexHint": "Until payroll covers 12 months, the invoice ISS and the DAS estimate use this annex.",
-  "payrollAnnexFromPayroll": "From payroll",
+  "payrollAnnexFromPayroll": "Payroll",
   "payrollAnnexSaved": "Annex updated"
 }

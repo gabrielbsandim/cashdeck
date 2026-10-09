@@ -2176,6 +2176,6 @@
   "cardsNotSent": "O banco não enviou",
   "payrollAnnexTitle": "Anexo informado pela contadora",
   "payrollAnnexHint": "Até a folha somar 12 meses, o ISS das notas e a estimativa do DAS usam este anexo.",
-  "payrollAnnexFromPayroll": "Pela folha",
+  "payrollAnnexFromPayroll": "Folha",
   "payrollAnnexSaved": "Anexo atualizado"
 }
