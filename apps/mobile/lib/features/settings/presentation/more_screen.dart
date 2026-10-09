@@ -2,12 +2,12 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
-import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
+import 'package:cashdeck/features/auth/auth_providers.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -177,7 +177,7 @@ class MoreScreen extends ConsumerWidget {
             key: signOutKey,
             icon: Symbols.logout_rounded,
             title: l10n.signOutButton,
-            onTap: () => ref.read(serverSessionProvider.notifier).signOut(),
+            onTap: () => ref.read(signOutProvider).call(),
           ),
         ],
       ),

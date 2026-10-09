@@ -111,4 +111,9 @@ final class ApiAlertsRepository implements AlertsRepository {
           data: {'token': token, 'platform': platform},
         );
       });
+
+  @override
+  Future<Result<void>> removeDevice(String token) => guardRequest(() async {
+    await _dio.delete<Object?>('$devicesPath/${Uri.encodeComponent(token)}');
+  });
 }

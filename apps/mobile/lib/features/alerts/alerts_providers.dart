@@ -20,3 +20,10 @@ final registerPushDeviceProvider = Provider<RegisterPushDevice>(
     ref.watch(pushMessagingProvider),
   ),
 );
+
+final unregisterPushDeviceProvider = Provider<UnregisterPushDevice>(
+  (ref) => UnregisterPushDevice(
+    ref.watch(alertsRepositoryProvider),
+    ref.watch(pushMessagingProvider),
+  ),
+);

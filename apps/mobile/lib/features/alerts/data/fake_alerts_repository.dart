@@ -101,4 +101,10 @@ final class FakeAlertsRepository implements AlertsRepository {
     devices.add('$platform:$token');
     return _settle(null);
   }
+
+  @override
+  Future<Result<void>> removeDevice(String token) {
+    devices.removeWhere((device) => device.endsWith(':$token'));
+    return _settle(null);
+  }
 }

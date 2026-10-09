@@ -72,6 +72,8 @@ first) and, for `PJ` only, `taxRegime`.
 `POST /alerts/read-all` mark reads, and `GET`/`PATCH /alerts/settings` mute a
 type. An unknown alert type maps to `AlertKind.other`. After sign-in the app
 sends its FCM token to `POST /api/v1/devices` with `ANDROID`, `IOS` or `WEB`.
+Signing out first calls `DELETE /api/v1/devices/{token}` (percent-encoded),
+while the credentials still authenticate it; a failed call never blocks it.
 A push carries `billId` in its data; tapping it opens `/bills/{billId}`. Push
 needs the Firebase config files (see `docs/deploy.md` at the repository root);
 without them `FirebasePushMessaging.start` returns false and the app runs as is.

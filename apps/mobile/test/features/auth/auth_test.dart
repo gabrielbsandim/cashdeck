@@ -1,9 +1,14 @@
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/push/push_messaging.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/session/server_credentials.dart';
+import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/features/alerts/application/register_push_device.dart';
+import 'package:cashdeck/features/alerts/data/fake_alerts_repository.dart';
 import 'package:cashdeck/features/auth/application/sign_in.dart';
+import 'package:cashdeck/features/auth/application/sign_out.dart';
 import 'package:cashdeck/features/auth/auth_providers.dart';
 import 'package:cashdeck/features/auth/data/api_server_access_repository.dart';
 import 'package:cashdeck/features/auth/data/fake_server_access_repository.dart';
@@ -11,7 +16,30 @@ import 'package:cashdeck/features/auth/domain/server_access.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/builders.dart';
 import '../../support/stub_http_adapter.dart';
+
+final class _TokenPush implements PushMessaging {
+  const new();
+
+  @override
+  Future<bool> start() async => true;
+
+  @override
+  Future<String?> token() async => 'tok';
+
+  @override
+  Stream<String> tokenRefreshes() => const Stream.empty();
+
+  @override
+  Stream<PushMessage> foreground() => const Stream.empty();
+
+  @override
+  Stream<PushMessage> opened() => const Stream.empty();
+
+  @override
+  Future<PushMessage?> launchedBy() async => null;
+}
 
 void main() {
   test('flags an invalid address and an empty token', () {
@@ -20,6 +48,23 @@ void main() {
       SignInField.serverUrl,
       SignInField.token,
     });
+  });
+
+  test('SignOut forgets the push token before clearing the session', () async {
+    final alerts = FakeAlertsRepository(
+      FixedClock(testNow),
+      latency: Duration.zero,
+    );
+    await alerts.registerDevice('tok', 'ANDROID');
+    final seen = <List<String>>[];
+    final signOut = SignOut(
+      UnregisterPushDevice(alerts, const _TokenPush()),
+      () async => seen.add([...alerts.devices]),
+    );
+
+    await signOut();
+
+    expect(seen, [<String>[]]);
   });
 
   group('SignIn', () {

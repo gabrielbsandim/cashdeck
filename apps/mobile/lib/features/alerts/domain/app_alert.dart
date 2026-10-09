@@ -108,4 +108,6 @@ abstract interface class AlertsRepository {
   });
 
   Future<Result<void>> registerDevice(String token, String platform);
+
+  Future<Result<void>> removeDevice(String token);
 }

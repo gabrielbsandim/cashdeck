@@ -146,6 +146,29 @@ void main() {
     );
     await repository.registerDevice('tok', 'ANDROID');
     expect(repository.devices, ['ANDROID:tok']);
+    await repository.removeDevice('tok');
+    expect(repository.devices, isEmpty);
+  });
+
+  test('unregistering a device needs a token and a server answer', () async {
+    final repository = MockAlertsRepository();
+    when(() => repository.removeDevice(any()))
+        .thenAnswer((_) async => const Ok(null));
+    expect(
+      await UnregisterPushDevice(repository, const DisabledPushMessaging())(),
+      isFalse,
+    );
+    expect(
+      await UnregisterPushDevice(repository, const TokenPush('tok'))(),
+      isTrue,
+    );
+    verify(() => repository.removeDevice('tok')).called(1);
+    when(() => repository.removeDevice(any()))
+        .thenAnswer((_) async => const Err(NetworkFailure()));
+    expect(
+      await UnregisterPushDevice(repository, const TokenPush('tok'))(),
+      isFalse,
+    );
   });
 
   test('the API inbox pages, reads and mutes', () async {
@@ -175,6 +198,7 @@ void main() {
       'POST /api/v1/devices': const StubResponse(201, {
         'data': {'token': 'tok'},
       }),
+      'DELETE /api/v1/devices/a%3Ab': {'removed': true},
     });
     final repository = ApiAlertsRepository(dio);
 
@@ -212,6 +236,7 @@ void main() {
       'token': 'tok',
       'platform': 'ANDROID',
     });
+    expect(await repository.removeDevice('a:b'), isA<Ok<void>>());
   });
 
   test('a failed API call is a failure value', () async {
