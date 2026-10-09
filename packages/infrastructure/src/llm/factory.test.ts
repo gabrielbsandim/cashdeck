@@ -13,7 +13,7 @@ describe('createLlmProvider', () => {
       BRL_PER_USD: '5.5',
     })
     expect(provider.name).toBe('gateway')
-    expect(provider.modelId).toBe('google/gemini-3.5-flash-lite')
+    expect(provider.modelId).toBe('google/gemini-3.1-flash-lite')
   })
 
   it('drops the fallback when it equals the primary model', () => {
@@ -30,7 +30,7 @@ describe('createLlmProvider', () => {
       LLM_PROVIDER: 'gemini',
       GEMINI_API_KEY: 'k',
     })
-    expect(provider.modelId).toBe('gemini-3.8-flash')
+    expect(provider.modelId).toBe('gemini-3.1-flash-lite')
     expect(() => createLlmProvider({ LLM_PROVIDER: 'gemini' })).toThrow(
       'GEMINI_API_KEY is required',
     )

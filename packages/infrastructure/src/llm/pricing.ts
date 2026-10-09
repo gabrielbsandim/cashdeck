@@ -4,6 +4,19 @@ export interface ModelPricing {
 }
 
 export const MODEL_PRICING: Record<string, ModelPricing> = {
+  'gemini-3.1-flash-lite': {
+    inputUsdPerMTokens: 0.25,
+    outputUsdPerMTokens: 1.5,
+  },
+  'gemini-3.5-flash-lite': {
+    inputUsdPerMTokens: 0.3,
+    outputUsdPerMTokens: 2.5,
+  },
+  // Launch price; Google doubles it to 1.5 and 7.5 on 2027-01-01.
+  'gemini-3.8-flash': {
+    inputUsdPerMTokens: 0.75,
+    outputUsdPerMTokens: 3.75,
+  },
   'gemini-2.5-flash': {
     inputUsdPerMTokens: 0.3,
     outputUsdPerMTokens: 2.5,

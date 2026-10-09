@@ -27,6 +27,15 @@ describe('calculateCostMillicents', () => {
     expect(millicents).toBe(1_400_000)
   })
 
+  it('prices the default Gemini 3.1 Flash Lite model', () => {
+    const millicents = calculateCostMillicents({
+      modelId: 'gemini-3.1-flash-lite',
+      inputTokens: 1_000_000,
+      outputTokens: 1_000_000,
+    })
+    expect(millicents).toBe(875_000)
+  })
+
   it('honors a custom BRL/USD rate', () => {
     const millicents = calculateCostMillicents({
       modelId: 'gemini-2.5-flash',

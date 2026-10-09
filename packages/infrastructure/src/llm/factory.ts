@@ -8,7 +8,7 @@ import { GeminiProvider } from '@/llm/gemini-provider'
 
 export type LlmEnv = Record<string, string | undefined>
 
-export const DEFAULT_CHAT_MODEL_ID = 'gemini-3.5-flash-lite'
+export const DEFAULT_CHAT_MODEL_ID = 'gemini-3.1-flash-lite'
 export const DEFAULT_STRONG_MODEL = 'google/gemini-3.8-flash'
 
 function brlPerUsd(env: LlmEnv): number | undefined {
