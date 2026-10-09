@@ -53,6 +53,7 @@ export const accountViewSchema = z.object({
       brand: z.string().nullable(),
     })
     .nullable(),
+  openBill: moneyViewSchema.nullable(),
   sync: z
     .object({ status: z.string(), lastSyncAt: z.string().nullable() })
     .nullable(),

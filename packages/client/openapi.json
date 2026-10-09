@@ -4825,6 +4825,27 @@
                             ],
                             "additionalProperties": false
                           },
+                          "openBill": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "cents": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "currency": {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 3
+                              }
+                            },
+                            "required": [
+                              "cents",
+                              "currency"
+                            ],
+                            "additionalProperties": false
+                          },
                           "sync": {
                             "nullable": true,
                             "type": "object",
@@ -4858,6 +4879,7 @@
                           "numberSuffix",
                           "logo",
                           "credit",
+                          "openBill",
                           "sync"
                         ],
                         "additionalProperties": false
@@ -5139,6 +5161,27 @@
                           ],
                           "additionalProperties": false
                         },
+                        "openBill": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
                         "sync": {
                           "nullable": true,
                           "type": "object",
@@ -5172,6 +5215,7 @@
                         "numberSuffix",
                         "logo",
                         "credit",
+                        "openBill",
                         "sync"
                       ],
                       "additionalProperties": false
@@ -5434,6 +5478,27 @@
                           ],
                           "additionalProperties": false
                         },
+                        "openBill": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
                         "sync": {
                           "nullable": true,
                           "type": "object",
@@ -5467,6 +5532,7 @@
                         "numberSuffix",
                         "logo",
                         "credit",
+                        "openBill",
                         "sync"
                       ],
                       "additionalProperties": false

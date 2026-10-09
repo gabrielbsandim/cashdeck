@@ -177,11 +177,27 @@ every transaction linked to an internal transfer, so nothing counts twice.
   "id": string, "entityKind": "PF"|"PJ", "institution": string, "name": string,
   "type": "CHECKING"|"SAVINGS"|"CREDIT_CARD"|"INVESTMENT"|"WALLET",
   "origin": "CONNECTED"|"MANUAL", "isReserve": bool, "balance": Money,
-  "cdiPercent": int | null, "connectionId": string | null
+  "cdiPercent": int | null, "connectionId": string | null,
+  "numberSuffix": string | null,
+  "logo": { "imageUrl": string, "color": string | null } | null,
+  "credit": { "limit": Money, "available": Money, "usedPercent": int | null,
+              "closesOn": date | null, "dueOn": date | null, "brand": string | null } | null,
+  "openBill": Money | null,
+  "sync": { "status": string, "lastSyncAt": timestamp | null } | null
 }
 ```
 
 `entity` is optional; without it both entities are listed.
+
+A card's `balance` is everything owed on it, future installments included,
+so it is the limit in use and not money. `openBill` is what a card owes on its
+current bill: the charges the issuer has not billed yet when it marks them,
+else the whole amount owed. It is null on every other account type.
+
+`logo.imageUrl` is the Open Finance connector's icon and may be PNG or SVG. An
+account mirrored by an aggregator connector takes the bank its name carries;
+one whose name carries no bank, such as a card named after its product, takes
+the single bank its siblings on the same item resolved to.
 
 ### POST /accounts
 
@@ -193,6 +209,9 @@ Returns the account, 201.
 
 Body: `{ name?: string, isReserve?: bool, cdiPercent?: int | null, balanceCents?: int }`
 (`balanceCents` only for manual accounts). Returns the account.
+
+`name` renames any account, connected ones included; an Open Finance sync
+never overwrites it.
 
 ## Transactions
 

@@ -130,6 +130,7 @@ describe('entities and accounts', () => {
         institutionId: 'branded',
         connectionId: 'conn',
         numberSuffix: '4321',
+        balance: Money.of(-6_000),
         credit: {
           limit: Money.of(10_000),
           available: Money.of(4_000),
@@ -154,11 +155,13 @@ describe('entities and accounts', () => {
       numberSuffix: '4321',
       logo: { imageUrl: 'https://logo.example/1.svg', color: 'FF0000' },
       credit: { usedPercent: 60, dueOn: '2026-10-27', brand: 'VISA' },
+      openBill: { cents: 6_000, currency: 'BRL' },
       sync: { status: 'UPDATED', lastSyncAt: NOW.toISOString() },
     })
     expect(other).toMatchObject({
       logo: { color: null },
       credit: null,
+      openBill: null,
       sync: { status: 'UPDATING', lastSyncAt: null },
     })
   })

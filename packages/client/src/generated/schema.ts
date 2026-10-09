@@ -2841,6 +2841,10 @@ export interface operations {
                                 dueOn: string | null;
                                 brand: string | null;
                             } | null;
+                            openBill: {
+                                cents: number;
+                                currency: string;
+                            } | null;
                             sync: {
                                 status: string;
                                 lastSyncAt: string | null;
@@ -2929,6 +2933,10 @@ export interface operations {
                                 dueOn: string | null;
                                 brand: string | null;
                             } | null;
+                            openBill: {
+                                cents: number;
+                                currency: string;
+                            } | null;
                             sync: {
                                 status: string;
                                 lastSyncAt: string | null;
@@ -3010,6 +3018,10 @@ export interface operations {
                                 closesOn: string | null;
                                 dueOn: string | null;
                                 brand: string | null;
+                            } | null;
+                            openBill: {
+                                cents: number;
+                                currency: string;
                             } | null;
                             sync: {
                                 status: string;

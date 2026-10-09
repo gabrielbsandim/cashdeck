@@ -9,6 +9,7 @@ import {
   type EntityKind,
   type FinancialEntity,
   Money,
+  openBillOf,
   type Transaction,
   transactionKind,
   ValidationError,
@@ -120,6 +121,14 @@ function creditView(credit: CreditLine | null): AccountView['credit'] {
   }
 }
 
+// A card owes its bill, not a balance: the charges still to be billed.
+function openBillView(account: Account): AccountView['openBill'] {
+  if (account.type !== 'CREDIT_CARD') {
+    return null
+  }
+  return money(openBillOf(account))
+}
+
 function logoView(institution: Institution | null): AccountView['logo'] {
   if (!institution?.imageUrl) {
     return null
@@ -162,6 +171,7 @@ export function makeAccountViews(
         numberSuffix: account.numberSuffix,
         logo: logoView(institution),
         credit: creditView(account.credit),
+        openBill: openBillView(account),
         sync: connection
           ? {
               status: connection.status,
