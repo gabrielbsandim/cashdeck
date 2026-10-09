@@ -12,7 +12,8 @@ machine-readable version of this file.
   `{ "data": [...], "nextCursor": string | null }`. Failure is
   `{ "error": { "code": string, "message": string, "details"?: unknown } }`.
 - **Error codes.** `UNAUTHORIZED` 401, `NOT_FOUND` 404, `CONFLICT` 409,
-  `INVALID_TRANSITION` 409, `VALIDATION_ERROR` 422, `INVALID_JSON` 400,
+  `INVALID_TRANSITION` 409, `VALIDATION_ERROR` 422, `AMOUNT_REQUIRED` 422
+  (see Bills), `INVALID_JSON` 400,
   `NOT_CONFIGURED` 503 (a provider or the server token is missing),
   `PROVIDER_ERROR` 502, `INTERNAL_ERROR` 500.
 - **Money** is always an object `{ "cents": int, "currency": "BRL" }`. Cents are
@@ -241,8 +242,29 @@ when a bill is captured, so `plan` is never null.
   Send one of: a `paymentCode` (barcode, digitable line or BR Code), a
   `paymentCode` barcode plus its `pixCode` (a "boleto com Pix"), a `pixCode`
   alone (kept as `PIX_QR`), a `pixKey`, or `darfWithoutBarcode: true`. The BR
-  Code checksum is verified, and a Pix amount must match the barcode amount.
-  201 new, 200 duplicate. Returns `BillView`.
+  Code checksum is verified. A `pixCode` next to a barcode that does not
+  validate, or whose amount (printed, or read from the charge of a dynamic
+  code) differs from the barcode amount, is dropped and the bill is kept with
+  the barcode alone; the reason is written to the audit log
+  (`bill.pix_code_dropped`). 201 new, 200 duplicate. Returns `BillView`.
+  - **Amount and due date.** The amount comes from the code, then from the
+    charge behind a dynamic Pix code (its location is read on the server),
+    then from `amountCents`. When none has it the answer is 422
+    `AMOUNT_REQUIRED` with `details: { field: "amountCents", kind, payee }`;
+    the app asks for the amount and sends the same body again with
+    `amountCents` (and `dueDate` if the user gave one). The due date comes
+    from the barcode, then the charge (`cobv`), then `dueDate`, then today: a
+    Pix code without a due date is an immediate charge, so there is no
+    `DUE_DATE_REQUIRED`.
+  - **Duplicates and bolepix halves.** A capture is a duplicate (200) when a
+    bill that is not cancelled has the same barcode or the same `pixCode`, or
+    is a dynamic Pix code with the same location. When one half of a bolepix
+    arrives after the other (a barcode bill and then its Pix code, or a Pix QR
+    bill and then its barcode) with the same amount and the same due date or
+    payee, the missing half is attached to the stored bill (a Pix QR bill
+    becomes `BOLETO` or `TAX_BARCODE` with its `pixCode`), its plan is rebuilt
+    Pix first, and the answer is 200 with the updated `BillView`. A bill that
+    is no longer `OPEN` or has payment attempts is returned unchanged.
 - `GET /bills/{id}`: `BillDetailView` (`BillView` plus `plan` and `attempts`).
 - `POST /bills/{id}/pay`: body `{ confirmed?: bool }`. Runs the ladder. Returns
   `BillDetailView` plus `instructions: { kind, copyCode, pixCode, amountCents, dueDate } | null`;
@@ -401,11 +423,16 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 - `POST /capture/mailboxes/{id}/read`: reads it now. Returns `CaptureSources`.
 - `DELETE /capture/mailboxes/{id}`: disconnects. Returns `CaptureSources`.
 - `PUT /capture/dda/{entity}`: body `{ enabled: bool }`. Returns `CaptureSources`.
-- `POST /capture/files`: body `Upload` plus `entity` (a PDF or photo the user
-  shared). The AI reads the payment code, Pix code, payee, amount and due date;
-  the bill is captured with `source: "SHARE"` and the file attached to it.
-  Returns `BillView`, 201, or 200 when the same code was already captured. 422
-  when no code can be read.
+- `POST /capture/files`: body `Upload` plus `entity`, `amountCents?` and
+  `dueDate?` (a PDF or photo the user shared). The codes are first read from
+  the PDF text layer on the server; the AI reads the payee, the amount, the
+  due date and any code only drawn as an image. Codes that do not validate
+  are dropped (a mistyped Pix code leaves the barcode bill). The bill is
+  captured with `source: "SHARE"` under the same rules as `POST /bills` and
+  the file attached to it. Returns `BillView`, 201, or 200 when the same code
+  was already captured. 422 `VALIDATION_ERROR` when no code can be read, 422
+  `AMOUNT_REQUIRED` when no amount is known: send the same upload again with
+  `amountCents`.
 
 The callback is
 `/api/v1/capture/mailboxes/oauth/callback`; set it as `GMAIL_REDIRECT_URI` and

@@ -33,7 +33,42 @@ amount, otherwise the attempt fails with `PIX_AMOUNT_MISMATCH`. A dynamic code
 asks the client to fetch the JWS behind the location, the provider resolves it.
 
 Capture returns both codes: `CapturedBill.pixCode` is set next to
-`paymentCode` when a boleto PDF or e-mail body has both.
+`paymentCode` when a boleto PDF or e-mail body has both. Gmail also pairs the
+barcode read from an attached PDF with a Pix code printed in the body.
+
+Codes are found in text without the model wherever there is text: e-mail
+bodies and the text layer of PDFs (`PdfTextReader`, `unpdf`, one text item per
+line). A BR Code candidate runs from `000201` to any `6304` plus four
+characters, since that pattern can also appear inside the payload; every
+candidate is checked with the CRC16 and the longest valid one wins. The model
+fills only what the text did not give.
+
+### Dynamic Pix codes (`JwsPixLocationResolver`)
+
+A dynamic BR Code carries a location (field 26, sub-field 25) instead of the
+amount. At capture the server GETs `https://<location>` (`accept:
+application/jose`), with a 5 second timeout, and base64url-decodes the payload
+of the compact JWS it answers. It reads `valor.final` (cobv, amount due today)
+or `valor.original`, `calendario.dataDeVencimento` (cobv), `chave`,
+`recebedor.nome` and `txid`. The JWS signature is **not verified**: the
+charge only fills the amount, due date and payee of the bill, and the paying
+rail resolves the same location again. Only a public host name is fetched (no
+IP literal, port, credentials or single label host); a failure or an
+unreadable answer never blocks the capture, which then needs `amountCents`
+from the client (`AMOUNT_REQUIRED`). When the charge amount differs from the
+barcode amount of a bolepix, the Pix half is dropped.
+
+### Pix code uniqueness
+
+Migration `20261011120000_bill_pix_code_unique` adds a partial unique index
+on `(tenant_id, entity_id, pix_code)` for bills that are not cancelled. It
+fails when open duplicates already exist; check before deploying with:
+
+```sql
+SELECT tenant_id, entity_id, pix_code, count(*) FROM bills
+WHERE pix_code IS NOT NULL AND status <> 'CANCELLED'
+GROUP BY 1, 2, 3 HAVING count(*) > 1;
+```
 
 ## Reconciliation
 
@@ -156,12 +191,17 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
   then `POST /submit`. The outcome is `PENDING_APPROVAL` until someone approves
   the batch in C6 web banking. Tax guides are never sent.
 - DDA: `GET /v1/schedule_payments/query` lists open bills for the company.
+  `content` is the barcode; the Pix code of a bolepix is read from the first
+  of `pix_qr_code`, `pix_copy_paste`, `pix_code`, `qr_code` or `emv` that
+  holds a valid BR Code.
 - Docs: https://developers.c6bank.com.br/yamls/schedule-payments.yaml.
 - **Unconfirmed:** the token endpoint, the grant type and whether mTLS is
   required (the spec names only a bearer JWT), and the meaning of each item
   status (`SCHEDULED` is read as approved, `READ_DATA`, `PROCESSED` and
   `PROCESSING` as waiting for approval). No status reports a settled payment,
-  so the final PAID comes from the bank statement.
+  so the final PAID comes from the bank statement. Whether the DDA query
+  returns the Pix code of a bolepix at all, and under which field name, is
+  also unconfirmed: the spec could not be read (it sits behind a bot check).
 
 ### Gmail (`GmailBillSource`)
 
@@ -171,9 +211,11 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 
 - `GET /gmail/v1/users/me/messages?q=after:<since> {boleto fatura ...}`, then
   `messages/{id}?format=full` and `messages/{id}/attachments/{id}`.
-- PDF and image attachments go through `BillExtractor` (an LLM call with a
-  response schema asking for the digitable line and the Pix copy and paste
-  code). The body text is scanned for both codes with regular expressions.
+- PDF and image attachments go through `BillExtractor`: the PDF text layer is
+  scanned for both codes first, then an LLM call with a response schema asks
+  for the digitable line, the Pix copy and paste code, payee, amount and due
+  date. The body text is scanned for both codes with regular expressions and
+  completes the first attachment bill it does not contradict.
   Every code is validated with the domain decoders (check digits, BR Code CRC)
   and dropped when it does not validate.
 - Docs: https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list,
