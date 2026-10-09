@@ -26,9 +26,9 @@ const fakeScannerKey = Key('fake-code-scanner');
 
 /// A fictional bolepix Pix payload, the code the fake camera reads.
 const sampleScannedCode =
-    '00020101021226860014br.gov.bcb.pix2564pix.exemplo.com.br/qr/v2/cobv/'
-    '5f0c2a8e-61b2-4c1d-9a7e-3d2b8c1e4f505204000053039865405289'
-    '905802BR5914ENERGIA LUMINA6013FLORIANOPOLIS62070503***6304B7C1';
+    '00020101021226880014br.gov.bcb.pix2566pix.exemplo.com.br/qr/v2/cobv/'
+    '5f0c2a8e-61b2-4c1d-9a7e-3d2b8c1e4f505204000053039865406287'
+    '.405802BR5914ENERGIA LUMINA6013FLORIANOPOLIS62070503***63046AD7';
 
 final codeScannerProvider = Provider<CodeScannerBuilder>(
   (ref) => fakeCodeScanner(sampleScannedCode),

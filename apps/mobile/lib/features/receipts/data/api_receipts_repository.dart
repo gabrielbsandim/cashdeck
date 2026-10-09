@@ -1,4 +1,3 @@
-import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
@@ -48,26 +47,16 @@ final class ApiReceiptsRepository implements ReceiptsRepository {
   Future<Result<Receipt>> receipt(String billId) =>
       guardRequest(() => _receipt(billId));
 
-  /// The server keeps no rendered proof, so the first attached file is what
-  /// can be shared; without one there is nothing to send yet.
+  /// The server renders it from the rail proof, or from the bill when it was
+  /// marked paid by hand; it answers 422 while the bill is open.
   @override
-  Future<Result<LocalFile>> document(String billId) =>
-      guardRequest<LocalFile?>(() async {
-        final receipt = await _receipt(billId);
-        final attachment = receipt.attachments.firstOrNull;
-        if (attachment == null) return null;
-        return await downloadFile(
-          _dio,
-          '${_bill(billId)}/attachments/${Uri.encodeComponent(attachment.id)}',
-          fallbackName: attachment.fileName,
-        );
-      }).then(
-        (result) => switch (result) {
-          Ok(value: final file?) => Ok(file),
-          Ok() => const Err(UnsupportedFailure()),
-          Err(:final failure) => Err(failure),
-        },
-      );
+  Future<Result<LocalFile>> document(String billId) => guardRequest(
+    () => downloadFile(
+      _dio,
+      '${_bill(billId)}/receipt/pdf',
+      fallbackName: 'comprovante-$billId.pdf',
+    ),
+  );
 
   @override
   Future<Result<Receipt>> attach(String billId, LocalFile file) =>

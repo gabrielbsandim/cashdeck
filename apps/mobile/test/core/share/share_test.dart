@@ -57,10 +57,10 @@ void main() {
     expect(await FakeLinkOpener(succeeds: false).open(Uri()), isFalse);
   });
 
-  test('reads only PDFs and images shared in', () async {
+  test('reads PDFs, images and text shared in, nothing else', () async {
     Future<List<int>> read(String path) async => [7, 8];
 
-    final file = await readSharedFile(
+    final file = await readShared(
       SharedMediaFile(
         path: '/cache/boleto.pdf',
         type: SharedMediaType.file,
@@ -68,46 +68,62 @@ void main() {
       ),
       read: read,
     );
-    expect(file?.name, 'boleto.pdf');
-    expect(file?.bytes, [7, 8]);
+    final shared = (file! as SharedFile).file;
+    expect(shared.name, 'boleto.pdf');
+    expect(shared.bytes, [7, 8]);
     expect(
-      await readSharedFile(
-        SharedMediaFile(path: '/cache/nota.txt', type: SharedMediaType.text),
+      await readShared(
+        SharedMediaFile(path: '/cache/nota.txt', type: SharedMediaType.file),
         read: read,
       ),
       isNull,
     );
+    expect(
+      await readShared(
+        SharedMediaFile(path: ' Pague: 000201 ', type: SharedMediaType.text),
+      ),
+      const SharedText('Pague: 000201'),
+    );
+    expect(
+      await readShared(SharedMediaFile(path: '  ', type: SharedMediaType.text)),
+      isNull,
+    );
   });
 
-  test('the platform intake yields the launch files, then new ones', () async {
+  test('the platform intake yields the launch items, then new ones', () async {
     final folder = Directory.systemTemp.createTempSync('intake');
     addTearDown(() => folder.deleteSync(recursive: true));
     final shared = File('${folder.path}/fatura.pdf')..writeAsBytesSync([9]);
     final incoming = StreamController<List<SharedMediaFile>>();
     ReceiveSharingIntent.setMockValues(
       initialMedia: [
-        SharedMediaFile(path: '/nope/a.txt', type: SharedMediaType.text),
+        SharedMediaFile(path: 'linha digitável', type: SharedMediaType.text),
+        SharedMediaFile(path: '/nope/a.txt', type: SharedMediaType.file),
       ],
       mediaStream: incoming.stream,
     );
-    final files = <LocalFile>[];
+    final items = <SharedContent>[];
     final done = Completer<void>();
-    PlatformShareIntake().files().listen(files.add, onDone: done.complete);
+    PlatformShareIntake().received().listen(items.add, onDone: done.complete);
     incoming.add([
       SharedMediaFile(path: shared.path, type: SharedMediaType.file),
     ]);
     unawaited(incoming.close());
     await done.future;
 
-    expect(files.single.name, 'fatura.pdf');
-    expect(files.single.bytes, [9]);
+    expect(items.first, const SharedText('linha digitável'));
+    final file = (items.last as SharedFile).file;
+    expect(file.name, 'fatura.pdf');
+    expect(file.bytes, [9]);
   });
 
   test('the fake intake emits what it receives', () async {
     final intake = FakeShareIntake();
-    final next = intake.files().first;
-    intake.receive(pdf);
+    final next = intake.received().take(2).toList();
+    intake
+      ..receive(pdf)
+      ..receiveText('000201');
 
-    expect(await next, pdf);
+    expect(await next, [SharedFile(pdf), const SharedText('000201')]);
   });
 }

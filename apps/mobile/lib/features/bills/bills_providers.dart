@@ -25,6 +25,6 @@ final markBillPaidProvider = Provider<MarkBillPaid>(
   (ref) => MarkBillPaid(ref.watch(billsRepositoryProvider)),
 );
 
-final confirmBillPaymentProvider = Provider<ConfirmBillPayment>(
-  (ref) => ConfirmBillPayment(ref.watch(billsRepositoryProvider)),
+final payBillProvider = Provider<PayBill>(
+  (ref) => PayBill(ref.watch(billsRepositoryProvider)),
 );

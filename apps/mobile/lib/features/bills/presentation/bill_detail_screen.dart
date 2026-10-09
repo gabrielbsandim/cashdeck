@@ -4,10 +4,13 @@ import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
+import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
@@ -23,6 +26,7 @@ import 'package:cashdeck/features/bills/domain/payment_ladder.dart';
 import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
+import 'package:cashdeck/features/receipts/receipts_providers.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +38,8 @@ class BillDetailScreen extends ConsumerWidget {
 
   static const copyCodeKey = Key('bill-copy-code');
   static const copyPixKey = Key('bill-copy-pix');
+  static const viewReceiptKey = Key('bill-view-receipt');
+  static const shareReceiptKey = Key('bill-share-receipt');
 
   final String billId;
 
@@ -90,7 +96,7 @@ class _BillDetail extends ConsumerWidget {
     final confirmed = await showCdConfirmSheet(
       context,
       title: l10n.confirmBillTitle(bill.payee),
-      reason: l10n.confirmReasonNewPayee,
+      reason: confirmationReasonLabel(l10n, bill.confirmationReason),
       rows: [
         CdConfirmRow(
           l10n.confirmRowAmount,
@@ -100,8 +106,8 @@ class _BillDetail extends ConsumerWidget {
       ],
       confirmLabel: l10n.confirmAndPayButton,
     );
-    if (confirmed != true || !context.mounted) return;
-    final failure = await notifier.confirm();
+    if (confirmed == null || !confirmed || !context.mounted) return;
+    final failure = await notifier.pay(confirmed: confirmed);
     if (!context.mounted) return;
     await showCdToast(
       context,
@@ -110,6 +116,19 @@ class _BillDetail extends ConsumerWidget {
           : Symbols.error_rounded,
       message: failure?.userMessage(l10n) ?? l10n.billConfirmedToast,
     );
+  }
+
+  /// The server renders the receipt PDF from the rail proof, or from the
+  /// bill when it was marked paid by hand.
+  Future<void> _shareReceipt(BuildContext context, WidgetRef ref) async {
+    final result = await ref.read(receiptsRepositoryProvider).document(bill.id);
+    switch (result) {
+      case Ok(:final value):
+        await ref.read(fileSharerProvider).shareFile(value);
+      case Err(:final failure):
+        if (!context.mounted) return;
+        await showOutcomeToast(context, failure, success: '');
+    }
   }
 
   @override
@@ -186,6 +205,33 @@ class _BillDetail extends ConsumerWidget {
                 : l10n.paymentCodeLabel,
             valid: true,
             buttonKey: BillDetailScreen.copyCodeKey,
+          ),
+        ],
+        if (bill.status == BillStatus.paid) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: CdButton.tonal(
+                  key: BillDetailScreen.viewReceiptKey,
+                  expand: true,
+                  icon: Symbols.receipt_long_rounded,
+                  label: l10n.billReceiptView,
+                  onPressed: () =>
+                      context.push(AppRoutes.billReceipt(bill.id)).ignore(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: CdButton.outlined(
+                  key: BillDetailScreen.shareReceiptKey,
+                  expand: true,
+                  icon: Symbols.share_rounded,
+                  label: l10n.billReceiptShare,
+                  onPressed: () => _shareReceipt(context, ref),
+                ),
+              ),
+            ],
           ),
         ],
         const SizedBox(height: AppSpacing.xl),

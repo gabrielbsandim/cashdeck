@@ -1,5 +1,5 @@
-import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -44,8 +44,13 @@ final class ApiTransfersRepository implements TransfersRepository {
     return transferFromJson(asJsonMap(unwrapData(response.data)));
   });
 
-  /// The contract names the document but has no route to download it yet.
+  /// The one page statement the server renders for the transfer.
   @override
-  Future<Result<LocalFile>> document(String id) async =>
-      const Err(UnsupportedFailure());
+  Future<Result<LocalFile>> document(String id) => guardRequest(
+    () => downloadFile(
+      _dio,
+      '$path/${Uri.encodeComponent(id)}/document',
+      fallbackName: 'transferencia-$id.pdf',
+    ),
+  );
 }

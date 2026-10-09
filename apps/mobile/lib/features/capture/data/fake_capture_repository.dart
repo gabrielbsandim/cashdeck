@@ -2,8 +2,9 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
-import 'package:cashdeck/features/capture/domain/scanned_code.dart';
+import 'package:cashdeck/features/capture/domain/pix_br_code.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 final class FakeCaptureRepository implements CaptureRepository {
@@ -102,20 +103,39 @@ final class FakeCaptureRepository implements CaptureRepository {
     );
   }
 
+  /// Mirrors the server: an empty file fails, one over the cap is too large
+  /// and a file named like `sem-codigo` has no code to read.
   @override
-  Future<Result<void>> submitFile(LocalFile file, EntityKind owner) async {
+  Future<Result<CaptureOutcome>> submitFile(
+    LocalFile file,
+    EntityKind owner,
+  ) async {
     await Future<void>.delayed(latency);
     if (file.bytes.isEmpty) return const Err(ValidationFailure('empty file'));
+    if (file.bytes.length > maxUploadBytes) {
+      return Ok(CaptureFileTooLarge(file.bytes.length));
+    }
+    if (file.name.contains('sem-codigo')) {
+      return const Ok(CaptureNothingFound());
+    }
     submitted.add(file);
-    return const Ok(null);
+    return Ok(BillCaptured(billId: 'captured-file-${submitted.length}'));
   }
 
-  final List<ScannedCode> codes = [];
+  final List<BillDraft> drafts = [];
 
+  /// Like the server, a Pix QR without an amount and a bare key wait for
+  /// the amount before the bill exists.
   @override
-  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner) async {
+  Future<Result<CaptureOutcome>> capture(BillDraft draft) async {
     await Future<void>.delayed(latency);
-    codes.add(code);
-    return const Ok(null);
+    final pix = draft.pixCode;
+    final qr = pix == null ? null : parsePixBrCode(pix);
+    final openQr = draft.paymentCode == null && qr != null && qr.amount == null;
+    final needsAmount =
+        (draft.pixKey != null || openQr) && draft.amount == null;
+    if (needsAmount) return const Ok(CaptureDetailsNeeded(amount: true));
+    drafts.add(draft);
+    return Ok(BillCaptured(billId: 'captured-${drafts.length}'));
   }
 }

@@ -19,16 +19,34 @@ Every feature has an `Api*Repository` in its `data/` folder, selected by
 base64 payload (`core/network/file_transfer.dart`); downloads read the raw
 body and the `Content-Disposition` file name.
 
-Where the contract has no route yet, the repository answers
-`UnsupportedFailure` instead of guessing:
+Where the contract has no route yet, a repository answers
+`UnsupportedFailure` instead of guessing. No repository does today.
 
-- Sharing a bill PDF or photo into the app (capture `submitFile`).
-- The bank proof as a PDF: the receipt shares its first attachment instead.
-- Downloading a transfer's document.
+Certificate uploads (rails and invoice issuer) ask for the expiry date, since
+a .pfx does not let the server read it.
 
-Codes the camera reads go to `POST /bills` with the entity id from
-`GET /entities`. Certificate uploads (rails and invoice issuer) ask for the
-expiry date, since a .pfx does not let the server read it.
+## Capture
+
+- `POST /api/v1/capture/files` takes the upload body plus `entity` (`PF` or
+  `PJ`). A PDF goes as is; a photo above 900 KB is re-encoded as JPEG
+  (longest side 2000 px) first. Anything still above 3.3 MB decoded is refused
+  before sending, since base64 must fit the 4.5 MB Vercel body. 201 is a new
+  bill, 200 a duplicate, 413 too large, 422 no code in the file.
+- `POST /api/v1/bills` carries what the camera, the share sheet or the paste
+  screen read: `entityId` (from `GET /entities`), `source` (`CAMERA`,
+  `SHARE` or `MANUAL`), one of `paymentCode`, `pixCode` or `pixKey` (a
+  bolepix sends both codes), and the optional `amountCents`, `dueDate` and
+  `payee`. 201 is new, 200 a duplicate.
+  A 422 with `error.code` `AMOUNT_REQUIRED` (a Pix key or an open QR) or
+  `DUE_DATE_REQUIRED` opens a sheet that asks it, the due date starting at
+  today, and the same body goes again with the answer.
+- Shared text is searched for a Pix copy-and-paste with a valid CRC or a 44,
+  47 or 48 digit line, and opens the paste screen with it.
+
+## Downloads
+
+- `GET /api/v1/bills/{id}/receipt/pdf` is the bank proof a paid bill shares.
+- `GET /api/v1/transfers/{id}/document` is the transfer's document.
 
 The profiles screen lists both entities with `GET /entities` and saves one
 with `PATCH /entities/{id}`: `name`, the unmasked `taxId` (checked locally
@@ -62,6 +80,18 @@ server schemas with `pnpm -C apps/api openapi:export`.
 where a list item carries no `plan` or `attempts`. `GET /api/v1/bills/{id}`
 returns `{ "data": BillDetail }`.
 
+The list sorts by `dueDate` and filters one `status` at a time, so the app
+walks the statuses with open ones first (`NEEDS_CONFIRMATION`,
+`AWAITING_BANK_APPROVAL`, `ASSISTED`, `OPEN`, then `PROCESSING`, `PAID`,
+`CANCELLED`) and pages with its own cursor, `<status index>:<server cursor>`.
+The list loads more as the user nears its end.
+
+`POST /api/v1/bills/{id}/pay` sends `{ "confirmed": true }` only after the
+user accepts the confirmation sheet. The sheet shows `confirmationReason`
+(`NEW_PAYEE | ABOVE_THRESHOLD | AMOUNT_DEVIATION | CAP_EXCEEDED`) when the
+server sends it, and a generic reason otherwise; the field is not in the
+contract yet.
+
 ```json
 {
   "id": "bill-1",
@@ -78,7 +108,9 @@ returns `{ "data": BillDetail }`.
   "paidAt": "ISO 8601 or null",
   "paidBy": "RAIL | USER | null",
   "plan": {
-    "steps": [{ "mode": "AUTOMATIC | BANK_APPROVAL | ASSISTED", "rail": "ASAAS" }],
+    "steps": [
+      { "mode": "AUTOMATIC | BANK_APPROVAL | ASSISTED", "rail": "ASAAS" }
+    ],
     "currentStep": 0
   },
   "attempts": [

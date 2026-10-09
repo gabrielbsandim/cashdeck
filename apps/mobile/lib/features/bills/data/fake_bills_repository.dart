@@ -10,18 +10,25 @@ import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 /// Fictional bills around today, one per state of the payment ladder. Marks
 /// and confirmations live in memory for the session.
 final class FakeBillsRepository implements BillsRepository {
-  new(this._clock, {this.latency = const Duration(milliseconds: 300)});
+  new(
+    this._clock, {
+    this.latency = const Duration(milliseconds: 300),
+    this.pageSize = 50,
+  });
 
   final Clock _clock;
   final Duration latency;
+
+  /// Pages are cut after sorting open bills first, like the server walk.
+  final int pageSize;
   final Map<String, Bill> _changed = {};
 
   /// A fictional BR Code from the internet bill, a boleto that also pays by
   /// Pix.
   static const bolepixCode =
-      '00020101021226860014br.gov.bcb.pix2564pix.exemplo.com.br/qr/v2/cobv/'
-      '5f0c2a8e-61b2-4c1d-9a7e-3d2b8c1e4f50520400005303986540511990'
-      '5802BR5917INTERNET FIBRA SUL6013FLORIANOPOLIS62070503***63041D3A';
+      '00020101021226880014br.gov.bcb.pix2566pix.exemplo.com.br/qr/v2/cobv/'
+      '5f0c2a8e-61b2-4c1d-9a7e-3d2b8c1e4f505204000053039865406119'
+      '.905802BR5918INTERNET FIBRA SUL6013FLORIANOPOLIS62070503***6304A763';
 
   static const List<LadderStep> _personalPlan = [
     LadderStep.automatic,
@@ -122,6 +129,7 @@ final class FakeBillsRepository implements BillsRepository {
         status: BillStatus.needsConfirmation,
         source: BillSource.chat,
         plan: _personalPlan,
+        confirmationReason: ConfirmationReason.newPayee,
       ),
       Bill(
         id: 'bill-condo',
@@ -233,9 +241,23 @@ final class FakeBillsRepository implements BillsRepository {
   Future<void> _wait() => Future<void>.delayed(latency);
 
   @override
-  Future<Result<List<Bill>>> list() async {
+  Future<Result<BillPage>> list({EntityKind? owner, String? cursor}) async {
     await _wait();
-    return Ok(_bills());
+    final start = int.tryParse(cursor ?? '0') ?? 0;
+    final all = [
+      for (final bill in _bills())
+        if (owner == null || bill.owner == owner) bill,
+    ]..sort(byUrgency);
+    final end = start + pageSize;
+    return Ok(
+      BillPage(
+        bills: all.sublist(
+          start.clamp(0, all.length),
+          end.clamp(0, all.length),
+        ),
+        nextCursor: end < all.length ? '$end' : null,
+      ),
+    );
   }
 
   @override
@@ -257,11 +279,13 @@ final class FakeBillsRepository implements BillsRepository {
     return found;
   }
 
+  /// Without [confirmed] a bill waiting for the user stays waiting, as the
+  /// server keeps it; with it the ladder schedules the payment.
   @override
-  Future<Result<Bill>> confirmPayment(String id) async {
+  Future<Result<Bill>> pay(String id, {required bool confirmed}) async {
     final found = await get(id);
-    if (found case Ok(:final value)) {
-      final confirmed = Bill(
+    if (found case Ok(:final value) when confirmed) {
+      final scheduled = Bill(
         id: value.id,
         payee: value.payee,
         amount: value.amount,
@@ -275,8 +299,8 @@ final class FakeBillsRepository implements BillsRepository {
         pixCode: value.pixCode,
         attempts: value.attempts,
       );
-      _changed[id] = confirmed;
-      return Ok(confirmed);
+      _changed[id] = scheduled;
+      return Ok(scheduled);
     }
     return found;
   }

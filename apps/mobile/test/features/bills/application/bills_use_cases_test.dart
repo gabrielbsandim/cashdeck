@@ -2,6 +2,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,37 +18,75 @@ void main() {
   final sooner = testBill(id: 'sooner', dueDate: testToday.addDays(1));
   final company = testBill(id: 'company', owner: EntityKind.company);
 
+  setUpAll(() => registerFallbackValue(EntityKind.personal));
+
   setUp(() {
     repository = MockBillsRepository();
-    when(repository.list)
-        .thenAnswer((_) async => Ok([paid, later, company, sooner]));
+    when(
+      () => repository.list(
+        owner: any(named: 'owner'),
+        cursor: any(named: 'cursor'),
+      ),
+    ).thenAnswer(
+      (_) async => Ok(
+        BillPage(bills: [paid, later, company, sooner], nextCursor: 'next'),
+      ),
+    );
   });
 
   test('lists the scope, open bills first by due date', () async {
     final result = await ListBills(repository).call(EntityScope.personal);
 
-    expect(result, Ok([sooner, later, paid]));
+    expect(
+      result,
+      Ok(BillPage(bills: [sooner, later, paid], nextCursor: 'next')),
+    );
+    verify(
+      () => repository.list(
+        owner: EntityKind.personal,
+        cursor: any(named: 'cursor'),
+      ),
+    ).called(1);
   });
 
-  test('the consolidated scope keeps both entities', () async {
-    final result = await ListBills(repository).call(EntityScope.consolidated);
+  test('the consolidated scope keeps both entities and pages on', () async {
+    final result = await ListBills(repository)
+        .call(EntityScope.consolidated, cursor: 'next');
 
-    expect((result as Ok<List<Bill>>).value, hasLength(4));
+    expect((result as Ok<BillPage>).value.bills, hasLength(4));
+    final owners = verify(
+      () => repository.list(
+        owner: captureAny(named: 'owner'),
+        cursor: 'next',
+      ),
+    ).captured;
+    expect(owners, [null]);
   });
 
   test('passes a failure through', () async {
-    when(repository.list).thenAnswer((_) async => const Err(NetworkFailure()));
+    when(
+      () => repository.list(
+        owner: EntityKind.company,
+        cursor: any(named: 'cursor'),
+      ),
+    ).thenAnswer((_) async => const Err(NetworkFailure()));
 
     final result = await ListBills(repository).call(EntityScope.company);
 
-    expect(result, const Err<List<Bill>>(NetworkFailure()));
+    expect(result, const Err<BillPage>(NetworkFailure()));
   });
 
-  test('gets, marks paid and confirms one bill', () async {
+  test('a next page merges in once, still open first', () {
+    final again = testBill(id: 'later', dueDate: testToday.addDays(5));
+
+    expect(mergeBills([later, paid], [sooner, again]), [sooner, later, paid]);
+  });
+
+  test('gets, marks paid and pays one bill', () async {
     when(() => repository.get('later')).thenAnswer((_) async => Ok(later));
     when(() => repository.markPaid('later'))
         .thenAnswer((_) async => Ok(later.markedPaid(testNow)));
-    when(() => repository.confirmPayment('later'))
+    when(() => repository.pay('later', confirmed: true))
         .thenAnswer((_) async => Ok(later));
 
     expect(await GetBill(repository).call('later'), Ok(later));
@@ -55,7 +94,7 @@ void main() {
       await MarkBillPaid(repository).call('later'),
       Ok(later.markedPaid(testNow)),
     );
-    expect(await ConfirmBillPayment(repository).call('later'), Ok(later));
+    expect(await PayBill(repository).call('later', confirmed: true), Ok(later));
   });
 
   test('the bills needing the user are the ones it has to act on', () {

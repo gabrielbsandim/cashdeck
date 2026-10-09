@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const sharedFile = '/shared-file';
   static const alerts = '/alerts';
   static const alertSettings = '$alerts/settings';
+  static const pasteCode = '/paste-code';
 
   static const entityProfiles = '$more/profiles';
   static const captureSources = '$more/capture';

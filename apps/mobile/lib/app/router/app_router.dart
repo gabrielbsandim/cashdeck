@@ -11,6 +11,7 @@ import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
+import 'package:cashdeck/features/capture/presentation/paste_code_screen.dart';
 import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
 import 'package:cashdeck/features/capture/presentation/shared_file_screen.dart';
 import 'package:cashdeck/features/card_import/presentation/manual_card_bill_import_screen.dart';
@@ -98,6 +99,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             state.extra is LocalFile ? null : AppRoutes.home,
         builder: (_, state) =>
             SharedFileScreen(file: state.extra! as LocalFile),
+      ),
+      GoRoute(
+        path: AppRoutes.pasteCode,
+        builder: (_, state) => PasteCodeScreen(
+          sharedText: switch (state.extra) {
+            final String text => text,
+            _ => null,
+          },
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (_, state, shell) =>

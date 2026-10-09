@@ -7,24 +7,75 @@ import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/bills_providers.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 
-class BillsController extends AsyncNotifier<List<Bill>> {
+/// The bills loaded so far and where the next page starts.
+final class BillsListing extends Equatable {
+  const new({
+    required this.bills,
+    this.nextCursor,
+    this.loadingMore = false,
+    this.moreFailure,
+  });
+
+  final List<Bill> bills;
+  final String? nextCursor;
+  final bool loadingMore;
+
+  /// The last load-more failed; the loaded bills stay and it can be retried.
+  final AppFailure? moreFailure;
+
+  bool get hasMore => nextCursor != null;
+
   @override
-  Future<List<Bill>> build() async {
+  List<Object?> get props => [bills, nextCursor, loadingMore, moreFailure];
+}
+
+class BillsController extends AsyncNotifier<BillsListing> {
+  @override
+  Future<BillsListing> build() async {
     final scope = ref.watch(entityScopeProvider);
     final result = await ref.watch(listBillsProvider).call(scope);
     return switch (result) {
-      Ok(:final value) => value,
+      Ok(:final value) => BillsListing(
+        bills: value.bills,
+        nextCursor: value.nextCursor,
+      ),
       Err(:final failure) => throw LoadFailure(failure),
     };
   }
+
+  /// Appends the next page; a second call while one runs is ignored.
+  Future<void> loadMore() async {
+    final current = state.value;
+    final cursor = current?.nextCursor;
+    if (current == null || cursor == null || current.loadingMore) return;
+    state = AsyncData(
+      BillsListing(bills: current.bills, nextCursor: cursor, loadingMore: true),
+    );
+    final result = await ref
+        .read(listBillsProvider)
+        .call(ref.read(entityScopeProvider), cursor: cursor);
+    if (!ref.mounted) return;
+    state = AsyncData(switch (result) {
+      Ok(:final value) => BillsListing(
+        bills: mergeBills(current.bills, value.bills),
+        nextCursor: value.nextCursor,
+      ),
+      Err(:final failure) => BillsListing(
+        bills: current.bills,
+        nextCursor: cursor,
+        moreFailure: failure,
+      ),
+    });
+  }
 }
 
-final AsyncNotifierProvider<BillsController, List<Bill>>
+final AsyncNotifierProvider<BillsController, BillsListing>
 billsControllerProvider =
-    AsyncNotifierProvider.autoDispose<BillsController, List<Bill>>(
+    AsyncNotifierProvider.autoDispose<BillsController, BillsListing>(
       BillsController.new,
       retry: noRetry,
     );
@@ -33,7 +84,7 @@ billsControllerProvider =
 final Provider<int> billsNeedingYouCountProvider = Provider.autoDispose<int>((
   ref,
 ) {
-  final bills = ref.watch(billsControllerProvider).value ?? const [];
+  final bills = ref.watch(billsControllerProvider).value?.bills ?? const [];
   final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
   return billsNeedingYou(bills, today).length;
 });
@@ -74,8 +125,11 @@ class BillDetailController extends AsyncNotifier<Bill> {
     }
   }
 
-  Future<AppFailure?> confirm() async {
-    final result = await ref.read(confirmBillPaymentProvider).call(billId);
+  /// Runs the ladder; [confirmed] is the answer the user gave in the sheet.
+  Future<AppFailure?> pay({required bool confirmed}) async {
+    final result = await ref
+        .read(payBillProvider)
+        .call(billId, confirmed: confirmed);
     ref.invalidate(billsControllerProvider);
     return _apply(result);
   }

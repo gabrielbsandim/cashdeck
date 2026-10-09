@@ -1,8 +1,12 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
+import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
@@ -27,6 +31,8 @@ class BillsScreen extends ConsumerWidget {
   const new({super.key});
 
   static Key tileKey(String billId) => Key('bill-$billId');
+  static const pasteKey = Key('bills-paste');
+  static const loadMoreKey = Key('bills-load-more');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,18 +44,27 @@ class BillsScreen extends ConsumerWidget {
         title: Text(l10n.billsTitle),
         actions: const [PrivacyToggle()],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        key: BillsScreen.pasteKey,
+        icon: const Icon(Symbols.content_paste_rounded),
+        label: Text(l10n.pasteCodeButton),
+        onPressed: () => context.push(AppRoutes.pasteCode).ignore(),
+      ),
       body: Column(
         children: [
           const EntitySwitcher(),
           const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: switch (bills) {
-              AsyncData(:final value) when value.isEmpty => CdEmptyState(
+              AsyncData(:final value) when value.bills.isEmpty => CdEmptyState(
                 icon: Symbols.receipt_long_rounded,
                 title: l10n.billsEmptyTitle,
                 message: l10n.billsEmptyMessage,
               ),
-              AsyncData(:final value) => _BillList(bills: value, today: today),
+              AsyncData(:final value) => _BillList(
+                listing: value,
+                today: today,
+              ),
               AsyncError(:final error) => CdErrorState(
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(billsControllerProvider),
@@ -63,15 +78,21 @@ class BillsScreen extends ConsumerWidget {
   }
 }
 
-class _BillList extends StatelessWidget {
-  const new({required this.bills, required this.today});
+class _BillList extends ConsumerWidget {
+  const new({required this.listing, required this.today});
 
-  final List<Bill> bills;
+  final BillsListing listing;
   final CalendarDate today;
 
+  /// Starts the next page this far before the end, so scrolling rarely
+  /// waits on it.
+  static const _prefetch = 600.0;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final controller = ref.read(billsControllerProvider.notifier);
+    final bills = listing.bills;
     final needing = billsNeedingYou(bills, today);
     final settled = bills.where((bill) => bill.isSettled).toList();
     final upcoming = bills
@@ -82,25 +103,55 @@ class _BillList extends StatelessWidget {
       (l10n.billsGroupUpcoming, upcoming),
       (l10n.billsGroupSettled, settled),
     ];
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenGutter,
-        AppSpacing.sm,
-        AppSpacing.screenGutter,
-        AppSpacing.xl,
-      ),
-      children: [
-        for (final (title, group) in groups)
-          if (group.isNotEmpty) ...[
-            CdSectionHeader(title: title, small: true),
-            const SizedBox(height: AppSpacing.sm),
-            for (final bill in group) ...[
-              BillTile(bill: bill, today: today),
+    final failure = listing.moreFailure;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.metrics.extentAfter < _prefetch) {
+          controller.loadMore().ignore();
+        }
+        return false;
+      },
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.sm,
+          AppSpacing.screenGutter,
+          AppSpacing.xxl * 2,
+        ),
+        children: [
+          for (final (title, group) in groups)
+            if (group.isNotEmpty) ...[
+              CdSectionHeader(title: title, small: true),
               const SizedBox(height: AppSpacing.sm),
+              for (final bill in group) ...[
+                BillTile(bill: bill, today: today),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              const SizedBox(height: AppSpacing.lg),
             ],
-            const SizedBox(height: AppSpacing.lg),
-          ],
-      ],
+          if (failure != null)
+            Text(
+              failure.userMessage(l10n),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: context.palette.onSurfaceVariant,
+              ),
+            ),
+          if (listing.hasMore)
+            Center(
+              child: listing.loadingMore
+                  ? const Padding(
+                      padding: EdgeInsets.all(AppSpacing.md),
+                      child: CircularProgressIndicator(),
+                    )
+                  : CdButton.text(
+                      key: BillsScreen.loadMoreKey,
+                      label: l10n.billsLoadMore,
+                      onPressed: () => controller.loadMore().ignore(),
+                    ),
+            ),
+        ],
+      ),
     );
   }
 }

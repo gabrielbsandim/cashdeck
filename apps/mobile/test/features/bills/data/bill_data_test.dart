@@ -7,6 +7,7 @@ import 'package:cashdeck/features/bills/data/api_bills_repository.dart';
 import 'package:cashdeck/features/bills/data/bill_dtos.dart';
 import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -166,20 +167,97 @@ void main() {
   });
 
   group('ApiBillsRepository', () {
-    test('lists bills from the data envelope', () async {
+    final entities = {
+      'data': [
+        {'id': 'personal', 'kind': 'PF', 'name': 'Pessoal'},
+      ],
+    };
+
+    test('walks the statuses that need the user first', () async {
+      final dio = stubDio((options) {
+        if (options.path == '/api/v1/entities') {
+          return StubResponse(200, entities);
+        }
+        final query = options.queryParameters;
+        return switch ((query['status'], query['cursor'])) {
+          ('NEEDS_CONFIRMATION', null) => StubResponse(200, {
+            'data': [billJson(id: 'a', status: 'NEEDS_CONFIRMATION')],
+            'nextCursor': '1',
+          }),
+          ('NEEDS_CONFIRMATION', '1') => StubResponse(200, {
+            'data': [billJson(id: 'b', status: 'NEEDS_CONFIRMATION')],
+            'nextCursor': null,
+          }),
+          _ => const StubResponse(200, {
+            'data': <Object?>[],
+            'nextCursor': null,
+          }),
+        };
+      });
+
+      final result = await ApiBillsRepository(dio)
+          .list(owner: EntityKind.personal);
+      final page = (result as Ok<BillPage>).value;
+
+      expect(page.bills.map((bill) => bill.id), ['a', 'b']);
+      expect(page.nextCursor, isNull);
+      final requests = adapterOf(dio).requests.skip(1).toList();
+      expect(requests.map((request) => request.queryParameters['status']), [
+        'NEEDS_CONFIRMATION',
+        'NEEDS_CONFIRMATION',
+        ...ApiBillsRepository.statusOrder.skip(1),
+      ]);
+      expect(requests.first.queryParameters['entityId'], 'personal');
+      expect(requests.first.queryParameters['limit'], 50);
+      expect(requests[1].queryParameters['cursor'], '1');
+      expect(requests[1].queryParameters['limit'], 49);
+    });
+
+    test('stops at a full page and resumes from its cursor', () async {
       final dio = stubDio(
-        (_) => StubResponse(200, {
-          'data': [billJson(id: 'a'), billJson(id: 'b')],
+        (options) => StubResponse(200, {
+          'data': [billJson(id: 'x-${options.queryParameters['status']}')],
+          'nextCursor': options.queryParameters['status'] == 'OPEN'
+              ? 'open-2'
+              : null,
         }),
       );
+      final repository = ApiBillsRepository(dio, pageSize: 1);
 
-      final result = await ApiBillsRepository(dio).list();
+      final first = (await repository.list() as Ok<BillPage>).value;
+      expect(first.bills.single.id, 'x-NEEDS_CONFIRMATION');
+      expect(first.nextCursor, '1');
+      expect(adapterOf(dio).requests.single.queryParameters, {
+        'status': 'NEEDS_CONFIRMATION',
+        'limit': 1,
+      });
 
-      expect((result as Ok<List<Bill>>).value.map((bill) => bill.id), [
-        'a',
-        'b',
-      ]);
-      expect(adapterOf(dio).requests.single.path, ApiBillsRepository.path);
+      final open = (await repository.list(cursor: '3') as Ok<BillPage>).value;
+      expect(open.nextCursor, '3:open-2');
+      final last = (await repository.list(cursor: '6') as Ok<BillPage>).value;
+      expect(last.nextCursor, isNull);
+      expect(
+        await repository.list(cursor: '9'),
+        const Err<BillPage>(UnexpectedFailure()),
+      );
+      expect(
+        await repository.list(cursor: 'x:1'),
+        const Err<BillPage>(UnexpectedFailure()),
+      );
+    });
+
+    test('reads why a payment waits, when the server says', () {
+      JsonMap waiting(String? reason) => {
+        ...billJson(status: 'NEEDS_CONFIRMATION'),
+        'confirmationReason': reason,
+      };
+
+      expect(
+        billFromJson(waiting('ABOVE_THRESHOLD')).confirmationReason,
+        ConfirmationReason.aboveThreshold,
+      );
+      expect(billFromJson(waiting('SOMETHING_NEW')).confirmationReason, isNull);
+      expect(billFromJson(billJson()).confirmationReason, isNull);
     });
 
     test('gets one bill by id', () async {
@@ -191,7 +269,7 @@ void main() {
       expect(adapterOf(dio).requests.single.path, '/api/v1/bills/bill%201');
     });
 
-    test('marks paid and confirms through their endpoints', () async {
+    test('marks paid and pays with the confirmation flag', () async {
       final dio = stubDio(
         (_) => StubResponse(200, {
           'data': {
@@ -204,14 +282,19 @@ void main() {
       final repository = ApiBillsRepository(dio);
 
       final paid = (await repository.markPaid('bill-1') as Ok<Bill>).value;
-      await repository.confirmPayment('bill-1');
+      await repository.pay('bill-1', confirmed: false);
+      await repository.pay('bill-1', confirmed: true);
 
       expect(paid.paidBy, PaidBy.user);
       expect(paid.paidAt, DateTime.utc(2026, 10, 8, 15));
-      expect(adapterOf(dio).requests.map((request) => request.path), [
+      final requests = adapterOf(dio).requests;
+      expect(requests.map((request) => request.path), [
         '/api/v1/bills/bill-1/mark-paid',
         '/api/v1/bills/bill-1/pay',
+        '/api/v1/bills/bill-1/pay',
       ]);
+      expect(requests[1].data, {'confirmed': false});
+      expect(requests[2].data, {'confirmed': true});
     });
 
     test('maps a 404 and a malformed body', () async {
@@ -224,7 +307,7 @@ void main() {
       );
       expect(
         await ApiBillsRepository(malformed).list(),
-        const Err<List<Bill>>(UnexpectedFailure()),
+        const Err<BillPage>(UnexpectedFailure()),
       );
     });
   });
@@ -236,7 +319,7 @@ void main() {
     );
 
     test('covers both entities and every ladder state', () async {
-      final bills = (await repository.list() as Ok<List<Bill>>).value;
+      final bills = (await repository.list() as Ok<BillPage>).value.bills;
 
       expect(
         bills.map((bill) => bill.owner).toSet(),
@@ -254,16 +337,43 @@ void main() {
       expect(bills.any((bill) => bill.isOverdue(testToday)), isTrue);
     });
 
+    test('pages by owner, open bills first', () async {
+      final paged = FakeBillsRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+        pageSize: 2,
+      );
+
+      final first =
+          (await paged.list(owner: EntityKind.company) as Ok<BillPage>).value;
+      final rest = (await paged.list(
+        owner: EntityKind.company,
+        cursor: '2',
+      ) as Ok<BillPage>).value;
+
+      expect(first.nextCursor, '2');
+      expect(first.bills.every((bill) => !bill.isSettled), isTrue);
+      expect(rest.nextCursor, isNull);
+      expect(
+        [...first.bills, ...rest.bills].map((bill) => bill.owner).toSet(),
+        {EntityKind.company},
+      );
+    });
+
     test('a mark or a confirmation sticks for the session', () async {
       final local = FakeBillsRepository(FixedClock(testNow));
 
       final paid = (await local.markPaid('bill-rent') as Ok<Bill>).value;
+      final waiting =
+          (await local.pay('bill-gym', confirmed: false) as Ok<Bill>).value;
       final confirmed =
-          (await local.confirmPayment('bill-gym') as Ok<Bill>).value;
+          (await local.pay('bill-gym', confirmed: true) as Ok<Bill>).value;
       final again = (await local.get('bill-rent') as Ok<Bill>).value;
 
       expect(paid.status, BillStatus.paid);
       expect(paid.paidBy, PaidBy.user);
+      expect(waiting.status, BillStatus.needsConfirmation);
+      expect(waiting.confirmationReason, ConfirmationReason.newPayee);
       expect(confirmed.status, BillStatus.scheduled);
       expect(again, paid);
       expect(
@@ -271,7 +381,7 @@ void main() {
         const Err<Bill>(NotFoundFailure()),
       );
       expect(
-        await local.confirmPayment('missing'),
+        await local.pay('missing', confirmed: true),
         const Err<Bill>(NotFoundFailure()),
       );
     });

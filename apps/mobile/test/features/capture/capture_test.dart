@@ -7,8 +7,8 @@ import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/data/fake_capture_repository.dart';
+import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
-import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter/material.dart';
@@ -49,11 +49,13 @@ final class _FlakyCapture implements CaptureRepository {
       const Err(NetworkFailure());
 
   @override
-  Future<Result<void>> submitFile(LocalFile file, EntityKind owner) async =>
-      const Err(NetworkFailure());
+  Future<Result<CaptureOutcome>> submitFile(
+    LocalFile file,
+    EntityKind owner,
+  ) async => const Err(NetworkFailure());
 
   @override
-  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner) async =>
+  Future<Result<CaptureOutcome>> capture(BillDraft draft) async =>
       const Err(NetworkFailure());
 }
 

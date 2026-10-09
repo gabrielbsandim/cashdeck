@@ -1,21 +1,24 @@
-import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/capture/data/capture_dtos.dart';
+import 'package:cashdeck/features/capture/data/upload_fit.dart';
+import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
-import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/entities/data/entity_directory.dart';
 import 'package:cashdeck/features/entities/data/entity_dtos.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:dio/dio.dart';
 
 final class ApiCaptureRepository implements CaptureRepository {
-  new(this._dio) : _entities = EntityDirectory(_dio);
+  new(this._dio, {this._shrink = shrinkImage})
+    : _entities = EntityDirectory(_dio);
 
   final Dio _dio;
   final EntityDirectory _entities;
+  final ImageShrinker _shrink;
 
   static const path = '/api/v1/capture';
   static const billsPath = '/api/v1/bills';
@@ -67,24 +70,44 @@ final class ApiCaptureRepository implements CaptureRepository {
         return Uri.parse(url);
       });
 
-  /// The contract has no endpoint that reads a shared PDF or photo yet.
   @override
-  Future<Result<void>> submitFile(LocalFile file, EntityKind owner) async =>
-      const Err(UnsupportedFailure());
+  Future<Result<CaptureOutcome>> submitFile(
+    LocalFile file,
+    EntityKind owner,
+  ) async {
+    final upload = await fitForUpload(file, shrink: _shrink);
+    if (upload == null) return Ok(CaptureFileTooLarge(file.bytes.length));
+    return await guardRequest(
+      () => _send('$path/files', {
+        ...uploadBody(upload),
+        'entity': entityKindToJson(owner),
+      }, size: upload.bytes.length),
+    );
+  }
 
   @override
-  Future<Result<void>> submitCode(ScannedCode code, EntityKind owner) =>
+  Future<Result<CaptureOutcome>> capture(BillDraft draft) =>
       guardRequest(() async {
-        await _dio.post<Object?>(
-          billsPath,
-          data: {
-            'entityId': await _entities.idOf(owner),
-            'source': 'CAMERA',
-            switch (code.kind) {
-              ScannedKind.pix => 'pixCode',
-              ScannedKind.boleto || ScannedKind.taxGuide => 'paymentCode',
-            }: code.value,
-          },
-        );
+        final body = {
+          'entityId': await _entities.idOf(draft.owner),
+          ...captureBody(draft),
+        };
+        return await _send(billsPath, body);
       });
+
+  /// A file upload passes [size]; its 413 and its 422 without a known code
+  /// mean too large and nothing readable.
+  Future<CaptureOutcome> _send(String to, JsonMap body, {int? size}) async {
+    try {
+      final response = await _dio.post<Object?>(to, data: body);
+      return BillCaptured(
+        billId: readString(asJsonMap(unwrapData(response.data)), 'id'),
+        duplicate: response.statusCode == 200,
+      );
+    } on DioException catch (exception) {
+      final outcome = captureOutcomeOf(exception.response, fileSize: size);
+      if (outcome == null) rethrow;
+      return outcome;
+    }
+  }
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cashdeck/app/router/app_router.dart';
 import 'package:cashdeck/app/router/app_routes.dart';
-import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
@@ -31,22 +30,22 @@ class CashdeckApp extends ConsumerStatefulWidget {
 
 class _CashdeckAppState extends ConsumerState<CashdeckApp> {
   late final AppLifecycleListener _lifecycle;
-  StreamSubscription<LocalFile>? _shared;
+  StreamSubscription<SharedContent>? _shared;
 
   @override
   void initState() {
     super.initState();
     final lock = ref.read(appLockProvider.notifier);
     _lifecycle = AppLifecycleListener(onHide: lock.hidden, onShow: lock.shown);
-    _shared = ref
-        .read(shareIntakeProvider)
-        .files()
-        .listen(
-          (file) => ref
-              .read(appRouterProvider)
-              .push(AppRoutes.sharedFile, extra: file)
-              .ignore(),
-        );
+    _shared = ref.read(shareIntakeProvider).received().listen(_open);
+  }
+
+  void _open(SharedContent content) {
+    final (Object extra, path) = switch (content) {
+      SharedFile(:final file) => (file, AppRoutes.sharedFile),
+      SharedText(:final text) => (text, AppRoutes.pasteCode),
+    };
+    ref.read(appRouterProvider).push(path, extra: extra).ignore();
   }
 
   @override

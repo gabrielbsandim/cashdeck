@@ -10,6 +10,7 @@ import 'package:cashdeck/features/accountant_export/data/fake_accountant_export_
 import 'package:cashdeck/features/accountant_export/domain/accountant_export.dart';
 import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/invoices/data/fake_issuer_repository.dart';
@@ -27,7 +28,7 @@ void main() {
 
   test('a personal bill never plans a bank approval', () async {
     final bills = FakeBillsRepository(clock, latency: Duration.zero);
-    final all = (await bills.list() as Ok<List<Bill>>).value;
+    final all = (await bills.list() as Ok<BillPage>).value.bills;
 
     for (final bill in all.where((b) => b.owner == EntityKind.personal)) {
       expect(

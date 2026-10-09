@@ -52,6 +52,15 @@ const Map<String, PaymentMethod> _methods = {
 
 const Map<String, PaidBy> _paidBy = {'RAIL': PaidBy.rail, 'USER': PaidBy.user};
 
+/// Not in the v1 contract yet; an unknown or missing value reads as null, so
+/// the sheet falls back to a generic reason instead of failing the bill.
+const Map<String, ConfirmationReason> _confirmationReasons = {
+  'NEW_PAYEE': ConfirmationReason.newPayee,
+  'ABOVE_THRESHOLD': ConfirmationReason.aboveThreshold,
+  'AMOUNT_DEVIATION': ConfirmationReason.amountDeviation,
+  'CAP_EXCEEDED': ConfirmationReason.capExceeded,
+};
+
 PaymentAttempt attemptFromJson(JsonMap json) => PaymentAttempt(
   step: lookupValue(_steps, readString(json, 'mode')),
   rail: readString(json, 'rail'),
@@ -96,4 +105,5 @@ Bill billFromJson(JsonMap json) => Bill(
     null => null,
     final raw => lookupValue(_paidBy, raw),
   },
+  confirmationReason: _confirmationReasons[json['confirmationReason']],
 );

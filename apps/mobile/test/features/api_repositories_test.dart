@@ -18,7 +18,8 @@ import 'package:cashdeck/features/automation/data/api_automation_repository.dart
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/data/api_capture_repository.dart';
-import 'package:cashdeck/features/capture/domain/scanned_code.dart';
+import 'package:cashdeck/features/capture/data/upload_fit.dart';
+import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/card_import/card_import_providers.dart';
 import 'package:cashdeck/features/card_import/data/api_card_import_repository.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
@@ -477,27 +478,51 @@ void main() {
       expect(_sent(dio, 4), {'entity': 'PF'});
     });
 
-    test('a scanned code becomes a bill on the entity id', () async {
+    final entities = [
+      {'id': 'personal', 'kind': 'PF', 'name': 'Pessoal'},
+      {'id': 'company', 'kind': 'PJ', 'name': 'Empresa'},
+    ];
+
+    test('a code becomes a bill on the entity id', () async {
       final dio = _api({
-        'GET /api/v1/entities': [
-          {'id': 'personal', 'kind': 'PF', 'name': 'Pessoal'},
-          {'id': 'company', 'kind': 'PJ', 'name': 'Empresa'},
-        ],
-        'POST /api/v1/bills': <String, Object?>{},
+        'GET /api/v1/entities': entities,
+        'POST /api/v1/bills': const StubResponse(201, {
+          'data': {'id': 'b1'},
+        }),
       });
       final repository = ApiCaptureRepository(dio);
 
-      await repository.submitCode(
-        const ScannedCode(kind: ScannedKind.pix, value: '000201'),
-        EntityKind.personal,
+      final captured = await repository.capture(
+        const BillDraft(
+          owner: EntityKind.personal,
+          channel: CaptureChannel.camera,
+          pixCode: '000201',
+        ),
       );
-      await repository.submitCode(
-        const ScannedCode(kind: ScannedKind.boleto, value: '123'),
-        EntityKind.company,
+      await repository.capture(
+        const BillDraft(
+          owner: EntityKind.company,
+          channel: CaptureChannel.manual,
+          paymentCode: '123',
+          pixCode: '000201',
+          amount: Money(990),
+          dueDate: CalendarDate(2026, 10, 9),
+          payee: ' Escola Exemplo ',
+        ),
+      );
+      await repository.capture(
+        const BillDraft(
+          owner: EntityKind.personal,
+          channel: CaptureChannel.share,
+          pixKey: 'contas@exemplo.com',
+          payee: ' ',
+        ),
       );
 
+      expect(captured, const Ok<CaptureOutcome>(BillCaptured(billId: 'b1')));
       expect(_calls(dio), [
         'GET /api/v1/entities',
+        'POST /api/v1/bills',
         'POST /api/v1/bills',
         'POST /api/v1/bills',
       ]);
@@ -506,24 +531,183 @@ void main() {
         'source': 'CAMERA',
         'pixCode': '000201',
       });
-      expect(_sent(dio, 2)['paymentCode'], '123');
+      expect(_sent(dio, 2), {
+        'entityId': 'company',
+        'source': 'MANUAL',
+        'paymentCode': '123',
+        'pixCode': '000201',
+        'amountCents': 990,
+        'dueDate': '2026-10-09',
+        'payee': 'Escola Exemplo',
+      });
+      expect(_sent(dio, 3), {
+        'entityId': 'personal',
+        'source': 'SHARE',
+        'pixKey': 'contas@exemplo.com',
+      });
     });
 
-    test('a missing entity and a shared file are not sent', () async {
+    test('a duplicate answers 200 and keeps the first bill', () async {
+      final repository = ApiCaptureRepository(
+        _api({
+          'GET /api/v1/entities': entities,
+          'POST /api/v1/bills': {'id': 'b0'},
+        }),
+      );
+
+      expect(
+        await repository.capture(
+          const BillDraft(
+            owner: EntityKind.personal,
+            channel: CaptureChannel.camera,
+            paymentCode: '1',
+          ),
+        ),
+        const Ok<CaptureOutcome>(BillCaptured(billId: 'b0', duplicate: true)),
+      );
+    });
+
+    test(
+      'the server asking for the amount or the date is an outcome',
+      () async {
+        StubResponse error(int status, String code) => StubResponse(status, {
+          'error': {'code': code, 'message': 'x'},
+        });
+        Future<Result<CaptureOutcome>> answer(StubResponse response) =>
+            ApiCaptureRepository(
+              _api({
+                'GET /api/v1/entities': entities,
+                'POST /api/v1/bills': response,
+              }),
+            ).capture(
+              const BillDraft(
+                owner: EntityKind.personal,
+                channel: CaptureChannel.camera,
+                pixCode: '000201',
+              ),
+            );
+
+        expect(
+          await answer(error(422, 'AMOUNT_REQUIRED')),
+          const Ok<CaptureOutcome>(CaptureDetailsNeeded(amount: true)),
+        );
+        expect(
+          await answer(error(422, 'DUE_DATE_REQUIRED')),
+          const Ok<CaptureOutcome>(CaptureDetailsNeeded(amount: false)),
+        );
+        expect(
+          await answer(error(422, 'VALIDATION_ERROR')),
+          const Err<CaptureOutcome>(ValidationFailure('x')),
+        );
+        expect(
+          await answer(const StubResponse(422, 'texto')),
+          const Err<CaptureOutcome>(UnexpectedFailure()),
+        );
+        expect(
+          await answer(const StubResponse(422, {'error': 'x'})),
+          const Err<CaptureOutcome>(UnexpectedFailure()),
+        );
+      },
+    );
+
+    test('a shared file goes up as base64 with the entity', () async {
+      final dio = _api({
+        'POST /api/v1/capture/files': const StubResponse(201, {
+          'data': {'id': 'b2'},
+        }),
+      });
+      final repository = ApiCaptureRepository(dio);
+      final pdf = LocalFile(
+        name: 'conta.pdf',
+        bytes: Uint8List.fromList([1, 2]),
+        mimeType: 'application/pdf',
+      );
+
+      expect(
+        await repository.submitFile(pdf, EntityKind.company),
+        const Ok<CaptureOutcome>(BillCaptured(billId: 'b2')),
+      );
+      expect(_sent(dio, 0), {
+        'fileName': 'conta.pdf',
+        'mimeType': 'application/pdf',
+        'base64': base64Encode([1, 2]),
+        'entity': 'PJ',
+      });
+    });
+
+    test('a file the server cannot take or read is an outcome', () async {
+      Future<Result<CaptureOutcome>> answer(StubResponse response) =>
+          ApiCaptureRepository(_api({'POST /api/v1/capture/files': response}))
+              .submitFile(
+                LocalFile(name: 'conta.pdf', bytes: Uint8List(3)),
+                EntityKind.personal,
+              );
+
+      expect(
+        await answer(const StubResponse(413)),
+        const Ok<CaptureOutcome>(CaptureFileTooLarge(3)),
+      );
+      expect(
+        await answer(
+          const StubResponse(422, {
+            'error': {'code': 'VALIDATION_ERROR', 'message': 'No code'},
+          }),
+        ),
+        const Ok<CaptureOutcome>(CaptureNothingFound()),
+      );
+      expect(
+        await answer(const StubResponse(500)),
+        const Err<CaptureOutcome>(ServerFailure()),
+      );
+    });
+
+    test('a file over the cap is refused before sending', () async {
+      final dio = _api({});
+      final repository = ApiCaptureRepository(dio);
+
+      expect(
+        await repository.submitFile(
+          LocalFile(name: 'grande.pdf', bytes: Uint8List(maxUploadBytes + 1)),
+          EntityKind.personal,
+        ),
+        const Ok<CaptureOutcome>(CaptureFileTooLarge(maxUploadBytes + 1)),
+      );
+      expect(_calls(dio), isEmpty);
+    });
+
+    test('a big photo is shrunk to JPEG before it goes up', () async {
+      final dio = _api({
+        'POST /api/v1/capture/files': {'id': 'b3'},
+      });
+      final repository = ApiCaptureRepository(
+        dio,
+        shrink: (_) async => Uint8List.fromList([9]),
+      );
+
+      await repository.submitFile(
+        LocalFile(name: 'foto.heic', bytes: Uint8List(shrinkAbove + 1)),
+        EntityKind.personal,
+      );
+
+      expect(_sent(dio, 0)['fileName'], 'foto.jpg');
+      expect(_sent(dio, 0)['mimeType'], 'image/jpeg');
+      expect(_sent(dio, 0)['base64'], base64Encode([9]));
+    });
+
+    test('a missing entity is not sent', () async {
       final repository = ApiCaptureRepository(
         _api({'GET /api/v1/entities': <Object?>[]}),
       );
 
       expect(
-        await repository.submitCode(
-          const ScannedCode(kind: ScannedKind.taxGuide, value: '8'),
-          EntityKind.company,
+        await repository.capture(
+          const BillDraft(
+            owner: EntityKind.company,
+            channel: CaptureChannel.camera,
+            paymentCode: '8',
+          ),
         ),
-        const Err<void>(UnexpectedFailure()),
-      );
-      expect(
-        await repository.submitFile(_pfx, EntityKind.company),
-        const Err<void>(UnsupportedFailure()),
+        const Err<CaptureOutcome>(UnexpectedFailure()),
       );
     });
   });
@@ -550,13 +734,16 @@ void main() {
       ],
     };
 
-    test('reads, attaches and downloads the first file', () async {
+    test('reads, attaches and downloads the rendered receipt', () async {
       final dio = _api({
         'GET /api/v1/bills/b1/receipt': receipt,
         'POST /api/v1/bills/b1/attachments': {'id': 'a2'},
-        'GET /api/v1/bills/b1/attachments/a1': StubResponse(
+        'GET /api/v1/bills/b1/receipt/pdf': StubResponse(
           200,
           Uint8List.fromList([1]),
+          const {
+            'content-disposition': ['attachment; filename="recibo-b1.pdf"'],
+          },
         ),
       });
       final repository = ApiReceiptsRepository(dio);
@@ -565,27 +752,26 @@ void main() {
       expect(read.proof?.transactionId, isNull);
       expect(read.attachments.single.fileName, 'comprovante.pdf');
       expect(await repository.attach('b1', _pfx), isA<Ok<Receipt>>());
-      expect(_ok(await repository.document('b1')).name, 'comprovante.pdf');
+      expect(_ok(await repository.document('b1')).name, 'recibo-b1.pdf');
     });
 
-    test('no attachment leaves nothing to share; errors pass', () async {
-      final bare = ApiReceiptsRepository(
+    test('an open bill has no receipt yet; the name falls back', () async {
+      final open = ApiReceiptsRepository(
         _api({
-          'GET /api/v1/bills/b1/receipt': {
-            'billId': 'b1',
-            'proof': null,
-            'attachments': <Object?>[],
-          },
+          'GET /api/v1/bills/b1/receipt/pdf': const StubResponse(422, {
+            'error': {'code': 'VALIDATION_ERROR', 'message': 'Not paid yet'},
+          }),
+          'GET /api/v1/bills/b2/receipt/pdf': StubResponse(
+            200,
+            Uint8List.fromList([2]),
+          ),
         }),
       );
       expect(
-        await bare.document('b1'),
-        const Err<LocalFile>(UnsupportedFailure()),
+        await open.document('b1'),
+        const Err<LocalFile>(UnexpectedFailure()),
       );
-      expect(
-        await ApiReceiptsRepository(_api({})).document('b1'),
-        const Err<LocalFile>(NotFoundFailure()),
-      );
+      expect(_ok(await open.document('b2')).name, 'comprovante-b2.pdf');
     });
   });
 
@@ -646,7 +832,7 @@ void main() {
   });
 
   group('the other API repositories', () {
-    test('transfers read the detail; the document has no route', () async {
+    test('transfers read the detail and download the statement', () async {
       final party = {
         'owner': 'PJ',
         'holder': 'Empresa Exemplo',
@@ -666,15 +852,22 @@ void main() {
             'document': 'ata.pdf',
             'neutral': true,
           },
+          'GET /api/v1/transfers/t1/document': StubResponse(
+            200,
+            Uint8List.fromList([3]),
+          ),
         }),
       );
 
       final transfer = _ok(await repository.transfer('t1'));
       expect(transfer.to.owner, EntityKind.personal);
       expect(transfer.neutral, isTrue);
+      final document = _ok(await repository.document('t1'));
+      expect(document.name, 'transferencia-t1.pdf');
+      expect(document.bytes, [3]);
       expect(
-        await repository.document('t1'),
-        const Err<LocalFile>(UnsupportedFailure()),
+        await repository.document('t2'),
+        const Err<LocalFile>(NotFoundFailure()),
       );
     });
 

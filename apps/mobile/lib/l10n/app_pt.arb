@@ -1280,6 +1280,82 @@
   "scanPixRead": "QR Pix lido. A conta aparece em A pagar.",
   "scanBoletoRead": "Código de barras lido. A conta aparece em A pagar.",
   "scanTaxRead": "Guia lida. A conta aparece em A pagar.",
+  "pasteCodeTitle": "Colar código",
+  "pasteCodeButton": "Colar código",
+  "pasteCodeFieldLabel": "Pix copia e cola, linha digitável ou chave Pix",
+  "pasteCodeFieldHint": "Cole aqui o código da conta",
+  "pasteFromClipboard": "Colar da área de transferência",
+  "pasteCodeFromClipboard": "Colado da área de transferência",
+  "pasteCodeUnknown": "Não reconhecemos este código. Confira se copiou a linha inteira.",
+  "pasteCodeBadPix": "Este Pix copia e cola está incompleto ou foi alterado: o dígito verificador não confere.",
+  "pasteKindPix": "Pix copia e cola",
+  "pasteKindBoleto": "Boleto",
+  "pasteKindTaxGuide": "Guia ou conta de consumo",
+  "pasteKindPixKey": "Chave Pix · {type}",
+  "@pasteKindPixKey": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "pixKeyCpf": "CPF",
+  "pixKeyCnpj": "CNPJ",
+  "pixKeyEmail": "E-mail",
+  "pixKeyPhone": "Celular",
+  "pixKeyRandom": "Chave aleatória",
+  "pixInfoTitle": "Dados do Pix",
+  "pixInfoRecipient": "Recebedor",
+  "pixInfoCity": "Cidade",
+  "pixInfoAmount": "Valor",
+  "pixInfoAmountOpen": "Você informa o valor",
+  "pixInfoKey": "Chave",
+  "pixInfoDynamic": "QR dinâmico: o banco confirma os dados na hora de pagar.",
+  "bolepixFieldLabel": "Pix copia e cola do boleto (opcional)",
+  "bolepixFieldHelper": "Boleto com QR Pix é pago por Pix primeiro.",
+  "captureAmountLabel": "Valor",
+  "captureAmountFromCode": "Opcional, o servidor lê do código",
+  "captureAmountRequired": "Informe o valor",
+  "captureDueDateLabel": "Vencimento",
+  "captureDueDateFromCode": "Lido do código",
+  "captureDueDateChange": "Alterar",
+  "capturePayeeLabel": "Recebedor (opcional)",
+  "captureOwnerLabel": "De quem é esta conta?",
+  "captureSaveButton": "Adicionar conta",
+  "captureSavedToast": "Conta adicionada a A pagar.",
+  "captureDuplicateToast": "Esta conta já estava em A pagar.",
+  "captureDetailsTitle": "Falta o valor",
+  "captureDetailsDueTitle": "Falta o vencimento",
+  "captureDetailsBody": "Este Pix não traz o valor. Informe quanto e quando pagar.",
+  "captureDetailsDueBody": "Informe quando pagar esta conta.",
+  "captureDetailsSubmit": "Continuar",
+  "sharedFileTooLarge": "Arquivo grande demais ({size}). O limite é {limit}. Envie um PDF menor, uma foto da conta ou cole o código.",
+  "@sharedFileTooLarge": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedFileNothingFound": "Não encontramos um código neste arquivo. Cole o código da conta.",
+  "fileSizeMb": "{size} MB",
+  "@fileSizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "billsLoadMore": "Carregar mais",
+  "confirmReasonAboveThreshold": "Acima do valor que pede confirmação",
+  "confirmReasonAmountDeviation": "Valor diferente do habitual",
+  "confirmReasonCap": "Acima do limite do trilho",
+  "confirmReasonGeneric": "Uma regra de segurança pede sua confirmação",
+  "billReceiptView": "Ver comprovante",
+  "billReceiptShare": "Compartilhar PDF",
   "errorUnsupported": "Seu servidor ainda não oferece isso. Atualize o Cashdeck no servidor.",
   "syncLineNever": "{count, plural, =1{1 conta} other{{count} contas}} · ainda não sincronizado",
   "@syncLineNever": {

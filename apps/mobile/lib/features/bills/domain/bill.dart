@@ -32,6 +32,14 @@ enum PaymentMethod { pix, boleto }
 /// Who settled a paid bill: a rail on its own, or the user by hand.
 enum PaidBy { rail, user }
 
+/// Why step 1 waits for the user before it pays (plan 5.3).
+enum ConfirmationReason {
+  newPayee,
+  aboveThreshold,
+  amountDeviation,
+  capExceeded,
+}
+
 final class PaymentAttempt extends Equatable {
   const new({
     required this.step,
@@ -69,6 +77,7 @@ final class Bill extends Equatable {
     this.attempts = const [],
     this.paidAt,
     this.paidBy,
+    this.confirmationReason,
   });
 
   final String id;
@@ -94,6 +103,10 @@ final class Bill extends Equatable {
   final DateTime? paidAt;
   final PaidBy? paidBy;
 
+  /// Set while [status] is [BillStatus.needsConfirmation], when the server
+  /// says why; null reads as a generic safety rule.
+  final ConfirmationReason? confirmationReason;
+
   bool get isBolepix => kind == BillKind.boleto && pixCode != null;
 
   bool get isTax =>
@@ -115,6 +128,7 @@ final class Bill extends Equatable {
     attempts: attempts,
     paidAt: at,
     paidBy: PaidBy.user,
+    confirmationReason: confirmationReason,
   );
 
   bool get isSettled =>
@@ -138,5 +152,12 @@ final class Bill extends Equatable {
     attempts,
     paidAt,
     paidBy,
+    confirmationReason,
   ];
+}
+
+/// Open bills before settled ones, each group by due date.
+int byUrgency(Bill a, Bill b) {
+  if (a.isSettled != b.isSettled) return a.isSettled ? 1 : -1;
+  return a.dueDate.compareTo(b.dueDate);
 }

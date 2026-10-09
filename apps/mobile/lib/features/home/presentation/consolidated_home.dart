@@ -33,7 +33,7 @@ class ConsolidatedHome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final today = homeToday(ref);
-    final bills = ref.watch(billsControllerProvider).value ?? const [];
+    final bills = ref.watch(billsControllerProvider).value?.bills ?? const [];
     final entities = context.entities;
     return HomeScroll(
       children: [

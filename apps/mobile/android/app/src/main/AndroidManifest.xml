@@ -40,6 +40,12 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="image/*"/>
             </intent-filter>
+            <!-- A Pix copy-and-paste or a boleto line shared as text. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
             <!-- The mailbox OAuth callback redirects to cashdeck://capture. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

@@ -162,3 +162,16 @@ String entityKindLabel(AppLocalizations l10n, EntityKind kind) =>
       EntityKind.personal => l10n.entityPersonal,
       EntityKind.company => l10n.entityCompany,
     };
+
+/// Why the confirmation sheet asks; a server that does not say gets the
+/// generic safety line.
+String confirmationReasonLabel(
+  AppLocalizations l10n,
+  ConfirmationReason? reason,
+) => switch (reason) {
+  ConfirmationReason.newPayee => l10n.confirmReasonNewPayee,
+  ConfirmationReason.aboveThreshold => l10n.confirmReasonAboveThreshold,
+  ConfirmationReason.amountDeviation => l10n.confirmReasonAmountDeviation,
+  ConfirmationReason.capExceeded => l10n.confirmReasonCap,
+  null => l10n.confirmReasonGeneric,
+};

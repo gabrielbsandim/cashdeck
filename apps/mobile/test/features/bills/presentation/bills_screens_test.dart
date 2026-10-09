@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
@@ -17,6 +20,7 @@ import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +96,49 @@ void main() {
 
       expect(app.location, AppRoutes.billReceipt('bill-rent'));
       expect(find.byType(ReceiptViewerScreen), findsOneWidget);
+    });
+
+    testWidgets('a paid bill views and shares its receipt', (tester) async {
+      final sharer = FakeFileSharer();
+      final app = await pumpRoute(
+        tester,
+        AppRoutes.bill('bill-condo'),
+        overrides: [fileSharerProvider.overrideWithValue(sharer)],
+      );
+
+      await tester.tap(find.byKey(BillDetailScreen.shareReceiptKey));
+      await settle(tester);
+      expect(sharer.files.single.name, endsWith('.pdf'));
+
+      await tester.tap(find.byKey(BillDetailScreen.viewReceiptKey));
+      await settle(tester);
+      expect(app.location, AppRoutes.billReceipt('bill-condo'));
+    });
+
+    testWidgets('pages the list with the button until it ends', (tester) async {
+      await pumpRoute(
+        tester,
+        AppRoutes.bills,
+        overrides: [
+          billsRepositoryProvider.overrideWithValue(
+            FakeBillsRepository(
+              FixedClock(testNow),
+              latency: Duration.zero,
+              pageSize: 3,
+            ),
+          ),
+        ],
+      );
+      final tiles = find.byWidgetPredicate((widget) => widget is BillTile);
+      expect(tiles, findsNWidgets(3));
+
+      while (find.byKey(BillsScreen.loadMoreKey).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(BillsScreen.loadMoreKey));
+        await settle(tester);
+      }
+
+      expect(tiles.evaluate().length, greaterThan(3));
+      expect(find.text(l10n.billsGroupSettled), findsOneWidget);
     });
 
     testWidgets('a bank approval step offers the bank and a recheck', (
@@ -213,10 +260,17 @@ void main() {
       clockProvider.overrideWithValue(FixedClock(testNow)),
     ];
 
+    setUpAll(() => registerFallbackValue(EntityKind.personal));
     setUp(() => repository = MockBillsRepository());
 
+    Future<Result<BillPage>> Function() listCall() =>
+        () => repository.list(
+          owner: any(named: 'owner'),
+          cursor: any(named: 'cursor'),
+        );
+
     testWidgets('shows the empty state', (tester) async {
-      when(repository.list).thenAnswer((_) async => const Ok([]));
+      when(listCall()).thenAnswer((_) async => const Ok(BillPage(bills: [])));
 
       await tester.pumpApp(const BillsScreen(), overrides: overrides());
       await tester.pump();
@@ -225,14 +279,14 @@ void main() {
     });
 
     testWidgets('a failed list offers a retry', (tester) async {
-      when(repository.list)
-          .thenAnswer((_) async => const Err(NetworkFailure()));
+      when(listCall()).thenAnswer((_) async => const Err(NetworkFailure()));
 
       await tester.pumpApp(const BillsScreen(), overrides: overrides());
       await tester.pump();
       expect(find.text(l10n.errorNetwork), findsOneWidget);
 
-      when(repository.list).thenAnswer((_) async => Ok([testBill()]));
+      when(listCall())
+          .thenAnswer((_) async => Ok(BillPage(bills: [testBill()])));
       await tester.tap(find.byKey(CdErrorState.retryKey));
       await tester.pump();
       await tester.pump();
@@ -368,7 +422,7 @@ void main() {
       when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
       when(() => repository.markPaid('bill-1'))
           .thenAnswer((_) async => const Err(ServerFailure()));
-      when(repository.list).thenAnswer((_) async => Ok([bill]));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
 
       await tester.pumpApp(
         const BillDetailScreen(billId: 'bill-1'),
@@ -384,12 +438,122 @@ void main() {
       verify(() => repository.markPaid('bill-1')).called(1);
     });
 
+    Answer<Future<Result<BillPage>>> pages(
+      Map<String?, Future<Result<BillPage>> Function()> byCursor,
+    ) =>
+        (invocation) => byCursor[invocation.namedArguments[#cursor]]!();
+
+    List<Bill> many(int count, {int from = 0}) => [
+      for (var index = from; index < from + count; index++)
+        testBill(id: 'bill-$index', dueDate: testToday.addDays(index + 5)),
+    ];
+
+    testWidgets('a failed page keeps what loaded and tries again', (
+      tester,
+    ) async {
+      var failNext = true;
+      when(listCall()).thenAnswer(
+        pages({
+          null: () async => Ok(BillPage(bills: many(1), nextCursor: 'c1')),
+          'c1': () async {
+            if (!failNext) return Ok(BillPage(bills: many(1, from: 1)));
+            failNext = false;
+            return const Err(NetworkFailure());
+          },
+        }),
+      );
+
+      await tester.pumpApp(const BillsScreen(), overrides: overrides());
+      await tester.pump();
+      await tester.tap(find.byKey(BillsScreen.loadMoreKey));
+      await tester.pump();
+
+      expect(find.text(l10n.errorNetwork), findsOneWidget);
+      expect(find.byKey(BillsScreen.tileKey('bill-0')), findsOneWidget);
+
+      await tester.tap(find.byKey(BillsScreen.loadMoreKey));
+      await tester.pump();
+
+      expect(find.byKey(BillsScreen.tileKey('bill-1')), findsOneWidget);
+      expect(find.byKey(BillsScreen.loadMoreKey), findsNothing);
+      expect(find.text(l10n.errorNetwork), findsNothing);
+    });
+
+    testWidgets('a page in flight shows progress and is asked once', (
+      tester,
+    ) async {
+      final next = Completer<Result<BillPage>>();
+      when(listCall()).thenAnswer(
+        pages({
+          null: () async => Ok(BillPage(bills: many(1), nextCursor: 'c1')),
+          'c1': () => next.future,
+        }),
+      );
+
+      await tester.pumpApp(const BillsScreen(), overrides: overrides());
+      await tester.pump();
+      await tester.tap(find.byKey(BillsScreen.loadMoreKey));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      next.complete(Ok(BillPage(bills: many(1, from: 1))));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      verify(
+        () => repository.list(
+          owner: any(named: 'owner'),
+          cursor: 'c1',
+        ),
+      ).called(1);
+    });
+
+    testWidgets('scrolling near the end loads the next page', (tester) async {
+      when(listCall()).thenAnswer(
+        pages({
+          null: () async => Ok(BillPage(bills: many(40), nextCursor: 'c1')),
+          'c1': () async => Ok(BillPage(bills: many(1, from: 40))),
+        }),
+      );
+
+      await tester.pumpApp(const BillsScreen(), overrides: overrides());
+      await tester.pump();
+      await tester.drag(find.byType(ListView), const Offset(0, -6000));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => repository.list(
+          owner: any(named: 'owner'),
+          cursor: 'c1',
+        ),
+      ).called(1);
+    });
+
+    testWidgets('sharing a receipt the bank has not sent says why', (
+      tester,
+    ) async {
+      when(() => repository.get('bill-1'))
+          .thenAnswer((_) async => Ok(testBill(status: BillStatus.paid)));
+
+      await tester.pumpApp(
+        const BillDetailScreen(billId: 'bill-1'),
+        overrides: overrides(),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(BillDetailScreen.shareReceiptKey));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text(l10n.errorNotFound), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('a failed confirmation says why', (tester) async {
       final bill = testBill(status: BillStatus.needsConfirmation);
       when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
-      when(() => repository.confirmPayment('bill-1'))
+      when(() => repository.pay('bill-1', confirmed: true))
           .thenAnswer((_) async => const Err(NetworkFailure()));
-      when(repository.list).thenAnswer((_) async => Ok([bill]));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
 
       await tester.pumpApp(
         const BillDetailScreen(billId: 'bill-1'),
@@ -398,6 +562,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(PaymentLadderView.confirmKey));
       await tester.pumpAndSettle();
+      expect(find.text(l10n.confirmReasonGeneric), findsOneWidget);
       await tester.tap(find.byKey(CdConfirmSheet.confirmKey));
       await tester.pumpAndSettle();
 
@@ -433,7 +598,8 @@ final class _Single implements BillsRepository {
   final BillsRepository inner;
 
   @override
-  Future<Result<List<Bill>>> list() async => Ok([bill]);
+  Future<Result<BillPage>> list({EntityKind? owner, String? cursor}) async =>
+      Ok(BillPage(bills: [bill]));
 
   @override
   Future<Result<Bill>> get(String id) async => Ok(bill);
@@ -442,5 +608,6 @@ final class _Single implements BillsRepository {
   Future<Result<Bill>> markPaid(String id) => inner.markPaid(id);
 
   @override
-  Future<Result<Bill>> confirmPayment(String id) => inner.confirmPayment(id);
+  Future<Result<Bill>> pay(String id, {required bool confirmed}) =>
+      inner.pay(id, confirmed: confirmed);
 }
