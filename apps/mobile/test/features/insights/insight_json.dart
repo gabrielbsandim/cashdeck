@@ -171,6 +171,14 @@ JsonMap subscriptionJson({String? id, JsonMap? previous}) => {
   'accountId': 'checking',
   'categoryId': null,
   'transactionIds': ['stream-10'],
+  'nextChargeOn': '2026-11-07',
+  'charges': [
+    {
+      'transactionId': 'stream-10',
+      'bookedOn': '2026-10-07',
+      'amount': brl(3500),
+    },
+  ],
 };
 
 JsonMap subscriptionsJson() => {

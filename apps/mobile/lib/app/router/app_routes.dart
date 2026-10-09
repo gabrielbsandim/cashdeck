@@ -43,5 +43,8 @@ abstract final class AppRoutes {
   static String chatThread(String threadId) =>
       '$chat/${Uri.encodeComponent(threadId)}';
 
+  static String subscription(String key) =>
+      '$subscriptions/${Uri.encodeComponent(key)}';
+
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
 }

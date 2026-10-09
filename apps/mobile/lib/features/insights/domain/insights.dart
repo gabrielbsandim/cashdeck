@@ -489,6 +489,22 @@ final class Installments extends Equatable {
 
 enum SubscriptionMonthStatus { paid, upcoming, late }
 
+/// One past charge of a subscription, as a positive amount.
+final class SubscriptionCharge extends Equatable {
+  const new({
+    required this.transactionId,
+    required this.bookedOn,
+    required this.amount,
+  });
+
+  final String transactionId;
+  final CalendarDate bookedOn;
+  final Money amount;
+
+  @override
+  List<Object?> get props => [transactionId, bookedOn, amount];
+}
+
 final class Subscription extends Equatable {
   const new({
     required this.key,
@@ -504,6 +520,8 @@ final class Subscription extends Equatable {
     this.lastChargeOn,
     this.accountId,
     this.categoryId,
+    this.nextChargeOn,
+    this.charges = const [],
   });
 
   /// Null for a suggestion the user has not decided on.
@@ -521,7 +539,21 @@ final class Subscription extends Equatable {
   final String? categoryId;
   final List<String> transactionIds;
 
+  /// Null from a server that predates it.
+  final CalendarDate? nextChargeOn;
+
+  /// Newest first, within the months the server looks back on.
+  final List<SubscriptionCharge> charges;
+
   bool get isSuggestion => id == null;
+
+  Money get yearly => Money(amount.cents * 12, currency: amount.currency);
+
+  /// What [charges] add up to.
+  Money get spent => Money(
+    charges.fold(0, (total, charge) => total + charge.amount.cents),
+    currency: amount.currency,
+  );
 
   @override
   List<Object?> get props => [
@@ -538,6 +570,8 @@ final class Subscription extends Equatable {
     accountId,
     categoryId,
     transactionIds,
+    nextChargeOn,
+    charges,
   ];
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
@@ -6,6 +8,7 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/insights/cd_column_bars.dart';
 import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
@@ -19,6 +22,7 @@ import 'package:cashdeck/features/insights/presentation/insights_controller.dart
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
 import 'package:cashdeck/features/insights/presentation/installments_screen.dart';
+import 'package:cashdeck/features/insights/presentation/subscription_detail_screen.dart';
 import 'package:cashdeck/features/insights/presentation/subscriptions_screen.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
@@ -79,10 +83,11 @@ MonthlyInsights _monthly({
 
 Subscription _subscription({
   String? id,
+  String key = 'music',
   List<String> transactionIds = const [],
 }) => Subscription(
   id: id,
-  key: 'music',
+  key: key,
   owner: EntityKind.personal,
   name: 'Música Onda',
   amount: const Money(2_190),
@@ -196,7 +201,7 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.byKey(SubscriptionsScreen.confirmKey));
+      await tester.tap(find.byKey(SubscriptionsScreen.confirmKey('gym')));
       await settle(tester);
       expect(find.text(l10n.subscriptionsConfirmed), findsOneWidget);
       expect(find.text(l10n.subscriptionsSuggestionTitle), findsNothing);
@@ -204,9 +209,18 @@ void main() {
 
       await tester.tap(find.byKey(SubscriptionsScreen.rowKey('stream')));
       await settle(tester);
-      await tester.tap(find.byKey(SubscriptionsScreen.removeKey));
+      expect(find.byType(SubscriptionDetailScreen), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(SubscriptionDetailScreen.removeKey),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(SubscriptionDetailScreen.removeKey));
+      await settle(tester);
+      await tester.tap(find.byKey(SubscriptionDetailScreen.removeConfirmKey));
       await settle(tester);
       expect(find.text(l10n.subscriptionsRemoved), findsOneWidget);
+      expect(find.byType(SubscriptionDetailScreen), findsNothing);
       expect(find.byKey(SubscriptionsScreen.rowKey('stream')), findsNothing);
 
       await tester.tap(find.byKey(SubscriptionsScreen.calendarKey));
@@ -220,21 +234,64 @@ void main() {
       expect(find.byKey(SubscriptionsScreen.rowKey('cloud')), findsNothing);
     });
 
-    testWidgets('Assinaturas ignores a suggestion and closes the sheet', (
+    testWidgets('Assinaturas ignores a suggestion and opens a charge', (
       tester,
     ) async {
-      await pumpRoute(tester, AppRoutes.subscriptions);
+      final app = await pumpRoute(tester, AppRoutes.subscriptions);
 
-      await tester.tap(find.byKey(SubscriptionsScreen.dismissKey));
+      await tester.tap(find.byKey(SubscriptionsScreen.dismissKey('gym')));
       await settle(tester);
       expect(find.text(l10n.subscriptionsDismissed), findsOneWidget);
       expect(find.text(l10n.subscriptionsSuggestionTitle), findsNothing);
 
       await tester.tap(find.byKey(SubscriptionsScreen.rowKey('music')));
       await settle(tester);
-      await tester.tapAt(const Offset(10, 10));
+      expect(find.byKey(SubscriptionDetailScreen.priceKey), findsOneWidget);
+      expect(find.text(l10n.subscriptionsEveryDay(12)), findsOneWidget);
+      expect(
+        find.byKey(SubscriptionDetailScreen.chargeKey('music-charge')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          l10n.subscriptionDetailChargeUp(MoneyFormat.format(const Money(200))),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.subscriptionDetailSpent(5)), findsOneWidget);
+
+      await tester.tap(find.byType(BackButton));
       await settle(tester);
       expect(find.byKey(SubscriptionsScreen.rowKey('music')), findsOneWidget);
+
+      await tester.tap(find.byKey(SubscriptionsScreen.rowKey('music')));
+      await settle(tester);
+      await tester.tap(
+        find.byKey(SubscriptionDetailScreen.chargeKey('music-charge')),
+      );
+      await settle(tester);
+      expect(app.location, AppRoutes.transaction('music-charge'));
+    });
+
+    testWidgets('a suggestion opens, confirms and stays, or goes away', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.subscription('gym'));
+
+      expect(find.text(l10n.subscriptionDetailSuggestionHint), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(SubscriptionDetailScreen.confirmKey),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(SubscriptionDetailScreen.confirmKey));
+      await settle(tester);
+      expect(find.text(l10n.subscriptionsConfirmed), findsOneWidget);
+      expect(find.text(l10n.subscriptionDetailSuggestionHint), findsNothing);
+      expect(find.byKey(SubscriptionDetailScreen.removeKey), findsOneWidget);
+
+      await pumpRoute(tester, AppRoutes.subscription('nothing-here'));
+      expect(find.text(l10n.subscriptionDetailNotFound), findsOneWidget);
     });
 
     testWidgets('Cartões leads with the bill to pay, its history and charges', (
@@ -418,16 +475,77 @@ void main() {
       app.invalidate(subscriptionsControllerProvider);
       await settle(tester);
 
-      await tester.tap(find.byKey(SubscriptionsScreen.confirmKey));
+      await tester.tap(find.byKey(SubscriptionsScreen.confirmKey('music')));
       await settle(tester);
       expect(find.text(l10n.subscriptionsConfirmed), findsNothing);
       expect(find.text(l10n.subscriptionsSuggestionTitle), findsOneWidget);
 
-      await tester.tap(find.byKey(SubscriptionsScreen.rowKey('music')).last);
+      await tester.tap(find.byKey(SubscriptionsScreen.rowKey('music')));
       await settle(tester);
-      await tester.tap(find.byKey(SubscriptionsScreen.removeKey));
+      await tester.scrollUntilVisible(
+        find.byKey(SubscriptionDetailScreen.removeKey),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(SubscriptionDetailScreen.removeKey));
+      await settle(tester);
+      await tester.tap(find.byKey(SubscriptionDetailScreen.removeConfirmKey));
       await settle(tester);
       expect(find.text(l10n.errorNetwork), findsOneWidget);
+      expect(find.byType(SubscriptionDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('only the tapped suggestion spins while it waits', (
+      tester,
+    ) async {
+      final pending = Completer<Result<String>>();
+      when(() => repository.subscriptions(any())).thenAnswer(
+        (_) async => Ok(
+          Subscriptions(
+            monthly: const Money(0),
+            yearly: const Money(0),
+            previousMonth: const Money(0),
+            items: const [],
+            suggestions: [
+              _subscription(transactionIds: ['tx-1']),
+              _subscription(key: 'cloud', transactionIds: ['tx-2']),
+            ],
+          ),
+        ),
+      );
+      when(() => repository.confirmSubscription('tx-1'))
+          .thenAnswer((_) => pending.future);
+      await pumpRoute(tester, AppRoutes.subscriptions, overrides: overrides());
+
+      await tester.tap(find.byKey(SubscriptionsScreen.confirmKey('music')));
+      await tester.pump();
+
+      Finder spinnerIn(Key key) => find.descendant(
+        of: find.byKey(key),
+        matching: find.byType(CircularProgressIndicator),
+      );
+      CdButton button(Key key) => tester.widget<CdButton>(find.byKey(key));
+      expect(
+        spinnerIn(SubscriptionsScreen.confirmKey('music')),
+        findsOneWidget,
+      );
+      expect(spinnerIn(SubscriptionsScreen.dismissKey('music')), findsNothing);
+      expect(spinnerIn(SubscriptionsScreen.confirmKey('cloud')), findsNothing);
+      expect(spinnerIn(SubscriptionsScreen.dismissKey('cloud')), findsNothing);
+      expect(button(SubscriptionsScreen.dismissKey('music')).onPressed, isNull);
+      expect(
+        button(SubscriptionsScreen.confirmKey('cloud')).onPressed,
+        isNotNull,
+      );
+      expect(button(SubscriptionsScreen.confirmKey('cloud')).loading, isFalse);
+
+      pending.complete(const Err(NotFoundFailure()));
+      await settle(tester);
+      expect(spinnerIn(SubscriptionsScreen.confirmKey('music')), findsNothing);
+      expect(
+        button(SubscriptionsScreen.confirmKey('music')).onPressed,
+        isNotNull,
+      );
     });
 
     test(

@@ -305,6 +305,16 @@ final class FakeInsightsRepository implements InsightsRepository {
       _ when day < today.day => SubscriptionMonthStatus.late,
       _ => SubscriptionMonthStatus.upcoming,
     };
+    final paid = status == SubscriptionMonthStatus.paid;
+    final latest = YearMonth.of(today).add(paid ? 0 : -1);
+    final charges = [
+      for (var back = 0; back < 5; back++)
+        SubscriptionCharge(
+          transactionId: back == 0 ? '$key-charge' : '$key-charge-$back',
+          bookedOn: latest.add(-back).firstDay.addDays(day - 1),
+          amount: Money(back == 0 ? cents : before),
+        ),
+    ];
     return Subscription(
       id: confirmed ? key : null,
       key: key,
@@ -314,10 +324,12 @@ final class FakeInsightsRepository implements InsightsRepository {
       previousAmount: Money(before),
       priceChanged: cents != before,
       dayOfMonth: day,
-      lastChargeOn: YearMonth.of(today).add(-1).firstDay.addDays(day - 1),
+      lastChargeOn: charges.first.bookedOn,
+      nextChargeOn: latest.add(1).firstDay.addDays(day - 1),
       thisMonth: status,
-      accountId: 'aurora-card',
-      transactionIds: ['$key-charge'],
+      accountId: 'acc-pf-card',
+      transactionIds: [for (final charge in charges) charge.transactionId],
+      charges: charges,
     );
   }
 

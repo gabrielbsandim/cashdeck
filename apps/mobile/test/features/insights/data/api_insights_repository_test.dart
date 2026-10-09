@@ -116,6 +116,17 @@ void main() {
     expect(subscriptions.suggestions.single.isSuggestion, isTrue);
     expect(subscriptions.suggestions.single.previousAmount, isNull);
     expect(subscriptions.items.single.thisMonth, SubscriptionMonthStatus.paid);
+    expect(
+      subscriptions.items.single.nextChargeOn,
+      const CalendarDate(2026, 11, 7),
+    );
+    expect(subscriptions.items.single.charges, const [
+      SubscriptionCharge(
+        transactionId: 'stream-10',
+        bookedOn: CalendarDate(2026, 10, 7),
+        amount: Money(3500),
+      ),
+    ]);
   });
 
   test('reads the bills of each card', () async {

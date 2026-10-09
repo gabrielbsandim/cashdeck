@@ -1990,14 +1990,6 @@
   },
   "subscriptionsConfirm": "Confirmar",
   "subscriptionsDismiss": "Ignorar",
-  "subscriptionsDay": "Dia {day}",
-  "@subscriptionsDay": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "subscriptionsPaid": "Pago",
   "subscriptionsUpcoming": "Próxima",
   "subscriptionsLate": "Atrasada",
@@ -2016,6 +2008,101 @@
   "subscriptionsDismissed": "Sugestão ignorada",
   "subscriptionsRemoved": "Assinatura removida",
   "subscriptionsNoneOnDay": "Nada cobrado neste dia",
+  "subscriptionsCount": "{count, plural, =1{1 assinatura} other{{count} assinaturas}}",
+  "@subscriptionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionsEveryDay": "Todo dia {day}",
+  "@subscriptionsEveryDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionsNextOn": "Próxima em {date}",
+  "@subscriptionsNextOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionDetailNext": "Próxima cobrança",
+  "subscriptionDetailMonthly": "Por mês",
+  "subscriptionDetailYearly": "Por ano",
+  "subscriptionDetailSpent": "Pago em {count, plural, =1{1 cobrança} other{{count} cobranças}}",
+  "@subscriptionDetailSpent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionDetailPriceUp": "O preço subiu",
+  "subscriptionDetailPriceDown": "O preço caiu",
+  "subscriptionDetailPriceChange": "Era {previous}, agora é {amount}.",
+  "@subscriptionDetailPriceChange": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionDetailMonths": "Últimos meses",
+  "subscriptionDetailCharges": "Histórico de cobranças",
+  "subscriptionDetailNoCharges": "Nenhuma cobrança nos últimos meses.",
+  "subscriptionDetailChargeUp": "Subiu {delta}",
+  "@subscriptionDetailChargeUp": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionDetailChargeDown": "Caiu {delta}",
+  "@subscriptionDetailChargeDown": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionDetailNotSubscription": "Não é assinatura",
+  "subscriptionDetailRemoveHint": "Sai da lista e não volta a ser sugerida.",
+  "subscriptionDetailSuggestionHint": "Confirme para acompanhar as próximas cobranças.",
+  "subscriptionDetailNotFound": "Esta assinatura não está mais na lista.",
+  "subscriptionMonthCharged": "{month}: cobrada",
+  "@subscriptionMonthCharged": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionMonthMissed": "{month}: sem cobrança",
+  "@subscriptionMonthMissed": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionMonthNext": "{month}: próxima",
+  "@subscriptionMonthNext": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "cardsBills": "Faturas",
   "cardsLimits": "Limites",
   "cardsBillDates": "Fecha {closes} · vence {due}",

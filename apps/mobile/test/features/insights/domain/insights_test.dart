@@ -171,6 +171,38 @@ void main() {
     expect(_plan(number: 3), isNot(_plan()));
   });
 
+  test('a subscription adds up its year and its charges', () {
+    const charge = SubscriptionCharge(
+      transactionId: 't',
+      bookedOn: CalendarDate(2026, 9, 7),
+      amount: Money(90),
+    );
+    const subscription = Subscription(
+      key: 'k',
+      owner: EntityKind.personal,
+      name: 'Stream',
+      amount: Money(100),
+      priceChanged: true,
+      dayOfMonth: 7,
+      thisMonth: SubscriptionMonthStatus.paid,
+      transactionIds: ['t', 'u'],
+      nextChargeOn: CalendarDate(2026, 11, 7),
+      charges: [
+        charge,
+        SubscriptionCharge(
+          transactionId: 'u',
+          bookedOn: CalendarDate(2026, 10, 7),
+          amount: Money(100),
+        ),
+      ],
+    );
+    expect(subscription.yearly, const Money(1_200));
+    expect(subscription.spent, const Money(190));
+    expect(_subscription().spent, const Money(0));
+    expect(charge, charge);
+    expect(charge.props, isNotEmpty);
+  });
+
   test('a card looks first at the bill to pay and averages closed ones', () {
     CardBill bill(CardBillState state, int cents) => CardBill(
       dueOn: const CalendarDate(2026, 10, 14),
@@ -208,7 +240,7 @@ void main() {
     expect(_plan().left, 2);
     expect(_subscription().isSuggestion, isTrue);
     expect(_subscription(), _subscription());
-    expect(_subscription().props, hasLength(13));
+    expect(_subscription().props, hasLength(15));
     expect(_subscription(id: 'r').isSuggestion, isFalse);
   });
 }

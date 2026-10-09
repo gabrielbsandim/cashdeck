@@ -254,6 +254,15 @@ Subscription subscriptionFromJson(JsonMap json) {
     accountId: readOptionalString(json, 'accountId'),
     categoryId: readOptionalString(json, 'categoryId'),
     transactionIds: readStringList(json, 'transactionIds'),
+    nextChargeOn: readOptionalDate(json, 'nextChargeOn'),
+    charges: [
+      for (final charge in readMapList(json, 'charges'))
+        SubscriptionCharge(
+          transactionId: readString(charge, 'transactionId'),
+          bookedOn: readDate(charge, 'bookedOn'),
+          amount: readMoney(charge, 'amount'),
+        ),
+    ],
   );
 }
 
