@@ -255,7 +255,7 @@ Asaas balance already covers them.
 | `NOTAAS_ALIQUOTA_ISS` | ISS rate for domestic invoices (required for them) |
 | `NOTAAS_LOCAL_PRESTACAO` | optional IBGE code of the place of service |
 | `NOTAAS_EXPORT_COUNTRY` | ISO2 country of export clients, default `US` |
-| `NOTAAS_WEBHOOK_SECRET` | secret for `verifyNotaasSignature` |
+| `NOTAAS_WEBHOOK_SECRET` | HMAC secret of the webhook (see [Webhooks](#webhooks)) |
 
 - `POST /api/v1/emitir` (`tomador`, `servico.codigo`, `valores.total`,
   `valores.aliquotaIss`, `competencia`, `referencia` = idempotency key), answers
@@ -263,6 +263,8 @@ Asaas balance already covers them.
   `processing` to PROCESSING, `issued` to ISSUED (with `numeroNfe`, `pdfUrl`,
   `xmlUrl`), `error` to REJECTED, `cancelled` to CANCELLED.
   `POST /cancelar` with `invoiceId` and `motivo` (15 to 255 characters).
+- `download(url)` fetches the PDF and XML URLs from the status answer; the
+  `x-api-key` header is sent only when the URL is on the Notaas origin.
 - Exports: `valores.exportacao.codigoMoeda` (BACEN code: USD 220, EUR 978) and
   `valorServicoMoeda`; `valores.total` is the BRL amount from
   `InvoiceDraft.brlAmountCents`.
@@ -273,7 +275,8 @@ Asaas balance already covers them.
   https://docs.notaas.com.br/docs/webhooks.
 - **Unconfirmed:** whether `referencia` deduplicates a retried emission; the
   required export fields `modoPrestacao` and `vinculoPartes`; coverage of the
-  reference municipality.
+  reference municipality; whether the document URLs need the API key or are
+  public links.
 
 ### Firebase Cloud Messaging (`FcmNotifier`, Notifier)
 
@@ -288,3 +291,75 @@ Asaas balance already covers them.
   404 or `UNREGISTERED` is passed to `onInvalidToken` for removal.
 - Docs: https://firebase.google.com/docs/cloud-messaging/send/v1-api,
   https://developers.google.com/identity/protocols/oauth2/service-account.
+
+## Webhooks
+
+`POST https://<api domain>/api/webhooks/<provider>`. The routes skip the bearer
+token and authenticate each call with the provider's own proof, compared in
+constant time. A failed check, or a secret that is not configured, answers 401.
+Event ids go into `webhook_events` (unique per tenant, provider and event id),
+so a replay answers 200 and does nothing. The reader in
+`packages/infrastructure/src/webhooks` only turns the body into a signal; the
+work re-reads the provider API (rail status, Pluggy item, Notaas invoice), so
+an authentic body can trigger a refresh but never settle a payment by itself.
+The crons stay the backstop.
+
+### Secrets
+
+Each secret goes through `CredentialResolver` like any other credential. The
+payloads carry no entity hint, so the default is one secret per provider for
+the tenant (`NAME`, sealed in the app or in the environment). When the
+personal and company entities use separate provider accounts, register each
+URL with `?entity=<entityId>` and store `NAME@<entityId>`: the entity named in
+the URL picks its own secret first and falls back to `NAME`. The query only
+selects which secret to check against, so it grants nothing by itself.
+
+| Provider | URL to register | Secret | Proof |
+|---|---|---|---|
+| Asaas | `/api/webhooks/asaas` | `ASAAS_WEBHOOK_TOKEN` | the `authToken` set on the webhook, sent back in `asaas-access-token` |
+| Mercado Pago | `/api/webhooks/mercado-pago` | `MERCADO_PAGO_WEBHOOK_SECRET` | `x-signature: ts=<ts>,v1=<hex>`, HMAC-SHA256 of `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` |
+| Inter Empresas | `/api/webhooks/inter?token=<secret>` | `INTER_WEBHOOK_TOKEN` | the token in the registered URL (or the `x-cashdeck-webhook-token` header) |
+| Pluggy | `/api/webhooks/pluggy` | `PLUGGY_WEBHOOK_SECRET` | `x-cashdeck-webhook-token` header, set in `headers` when the webhook is created |
+| Notaas | `/api/webhooks/notaas` | `NOTAAS_WEBHOOK_SECRET` | `X-Notaas-Signature: sha256=<hex HMAC of the raw body>` |
+
+### What each event does
+
+- **Asaas:** the event `id` is the event id (a SHA-256 of the body when
+  absent). A body with `transfer.id`, `bill.id` or `pixTransaction.id`
+  reconciles the `ASAAS` attempt whose external id ends in that id
+  (`transfer:<id>`, `bill:<id>`, `pix:<id>`); anything else is ignored. Asaas
+  pauses the queue after 15 consecutive failed deliveries, which is why the
+  route answers before the work. Docs:
+  https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook.
+- **Mercado Pago:** `data.id` (query or body) is matched against the payout id
+  of the stored `payout/transaction` pair. The event id is the body `id`, then
+  `x-request-id`. Docs:
+  https://www.mercadopago.com.br/developers/en/docs/your-integrations/notifications/webhooks.
+- **Inter Empresas:** the body is an array (or one object) of payment items;
+  `codigoSolicitacao` or `codigoTransacao` reconciles the `INTER_EMPRESAS`
+  attempt (`pix:`, `pagamento:`, `darf:`). Each item's event id is the SHA-256
+  of the item, so a new status of the same payment is processed again.
+- **Pluggy:** `item/updated`, `transactions/created`, `transactions/updated`
+  and `transactions/deleted` sync the connection with that `itemId`; other
+  events are stored and ignored. The event id is `eventId`. Docs:
+  https://docs.pluggy.ai/docs/webhooks.
+- **Notaas:** `data.invoiceId` (or `invoiceId`) refreshes that invoice with
+  `GET /invoices/{id}/status` and stores the PDF and XML once issued. The event
+  id is `X-Notaas-Delivery`.
+
+### Unconfirmed
+
+- Asaas: that a Pix QR code payment is reported through transfer events, and
+  the name of the bill payment object (`bill`).
+- Mercado Pago: the manifest template and `ts` units come from the published
+  algorithm, not checked against a live delivery; which topic money-out
+  (payouts) notifications use; whether `data.id` is the payout id.
+- Inter: the whole webhook contract. The registration endpoint
+  (`PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
+  `boleto-pagamento`), whether a query string survives in the registered URL,
+  and the payload fields were not confirmed in the reference. Inter calls over
+  mTLS presenting its own certificate, which a Vercel function cannot verify,
+  so the URL token is the only proof.
+- Pluggy: signs nothing; the documented alternative is allowlisting its source
+  IP, which the route does not do.
+- Notaas: the event names and the `data.invoiceId` field.

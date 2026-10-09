@@ -16,6 +16,7 @@ The API runs on Vercel and the database on Neon Postgres.
   | `/api/cron/capture` | `30 9 * * *` |
   | `/api/cron/payment-ladder` | `0 11 * * 1-5` |
   | `/api/cron/reconcile-payments` | `0 21 * * 1-5` |
+  | `/api/cron/invoices` | `0 12 * * 1-5` |
 
   Vercel sends `Authorization: Bearer $CRON_SECRET`; a cron without the secret
   answers 401.
@@ -72,6 +73,7 @@ read from are in [providers.md](providers.md).
 | `C6_CLIENT_ID`, `C6_CLIENT_SECRET`, `C6_CERT`, `C6_KEY`, `C6_TOKEN_URL`, `C6_UPLOADER_NAME`, `C6_ENVIRONMENT` | no | Tenant-wide C6 fallback and DDA |
 | `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REDIRECT_URI` | for Gmail capture | Google OAuth client |
 | `NOTAAS_API_KEY`, `NOTAAS_WEBHOOK_SECRET`, `NOTAAS_ALIQUOTA_ISS`, `NOTAAS_LOCAL_PRESTACAO`, `NOTAAS_EXPORT_COUNTRY` | for invoices | NFS-e issuer |
+| `ASAAS_WEBHOOK_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET`, `INTER_WEBHOOK_TOKEN`, `PLUGGY_WEBHOOK_SECRET` | for webhooks | Shared secrets of each provider webhook; without one that webhook answers 401 |
 | `FCM_SERVICE_ACCOUNT_JSON` | for push | Firebase service account |
 
 Rail credentials saved from the app live in the database, sealed with
@@ -86,6 +88,40 @@ add `https://<api domain>/api/v1/capture/mailboxes/oauth/callback` as an
 authorized redirect URI. Use the same URL as `GMAIL_REDIRECT_URI`. The app opens
 the consent page from `POST /capture/mailboxes/oauth/start` and comes back
 through `cashdeck://capture`.
+
+## Webhooks
+
+Webhooks make payments, Open Finance and invoices update minutes after the
+provider knows, instead of at the next cron. They are optional: without them
+the crons do the same work on their schedule. For each provider you use:
+
+1. Generate a secret (`openssl rand -hex 32`) and store it, either in the
+   Vercel project under the name below or from the app as a sealed credential.
+   For separate PF and PJ accounts at the same provider, store
+   `NAME@<entityId>` and add `?entity=<entityId>` to that account's URL.
+2. Register the URL at the provider:
+   - **Asaas** (each account, under Integrations, Webhooks): URL
+     `https://<api domain>/api/webhooks/asaas`, authentication token = the
+     secret (`ASAAS_WEBHOOK_TOKEN`), events for transfers and bill payments.
+   - **Mercado Pago** (Your integrations, Webhooks): URL
+     `https://<api domain>/api/webhooks/mercado-pago`; copy the signing secret
+     the panel shows into `MERCADO_PAGO_WEBHOOK_SECRET`.
+   - **Inter Empresas** (banking webhook API, once per type):
+     `https://<api domain>/api/webhooks/inter?token=<INTER_WEBHOOK_TOKEN>`.
+   - **Pluggy** (`POST /webhooks` with `event: "all"`): URL
+     `https://<api domain>/api/webhooks/pluggy` and
+     `headers: { "x-cashdeck-webhook-token": "<PLUGGY_WEBHOOK_SECRET>" }`;
+     headers can only be set through the API.
+   - **Notaas** (webhook endpoints): URL
+     `https://<api domain>/api/webhooks/notaas`; the endpoint secret goes into
+     `NOTAAS_WEBHOOK_SECRET`.
+3. Send a test event from the provider panel. The answer is 200 with
+   `received: 1`; a 401 means the secret differs. The migration
+   `20261014120000_webhooks_invoice_lifecycle` must be applied first, since
+   event ids are stored in `webhook_events`.
+
+The provider-specific details and what is still unconfirmed are in
+[providers.md](providers.md#webhooks).
 
 ## After the first deploy
 

@@ -34,7 +34,8 @@ Self-hosted and single-household: the server has one access token, set in the
 `CASHDECK_API_TOKEN` environment variable. Every request sends
 `Authorization: Bearer <token>`. The only routes that skip it are
 `GET /health`, `GET /openapi` and the mailbox OAuth callback (which checks a
-signed `state` instead). If the server has no token configured, every guarded
+signed `state` instead). Crons and provider webhooks live outside `/api/v1`
+and have their own checks (see [Crons](#crons) and [Webhooks](#webhooks)). If the server has no token configured, every guarded
 route answers 503 `NOT_CONFIGURED`. Biometric unlock is local to the app.
 
 ### GET /auth/check
@@ -488,6 +489,52 @@ as an authorized redirect URI of the Google OAuth client.
 - `POST /invoices/issuer/test`: `{ protocol: string, elapsedMs: int }`, or 502
   `PROVIDER_ERROR` with the issuer's message.
 - `GET /invoices?status=&month=&cursor=&limit=`: `[{ id, client: string, amount: Money, status: "DRAFT"|"PROCESSING"|"ISSUED"|"REJECTED"|"CANCELLED", number: string | null, competence: month, issueOn: date, recurring: bool, isExport: bool, pdfUrl: string | null }]`.
+- `POST /invoices/{id}/cancel`: body `{ reason: string }` (15 to 255
+  characters). A `DRAFT` is cancelled locally; an `ISSUED` invoice is cancelled
+  at the issuer and takes the status it reports. Any other status answers 422.
+  Writes an `invoice.cancel` audit event. Returns the invoice view.
+- `GET /invoices/{id}/pdf`, `GET /invoices/{id}/xml`: the stored document
+  (`application/pdf`, `application/xml`). Both are downloaded from the issuer
+  when the invoice becomes `ISSUED`; a missing one is fetched on demand. 404
+  while the invoice has no document.
+
+Status lifecycle: issuing moves a draft to what the issuer answers (usually
+`PROCESSING`). The Notaas webhook and the `/api/cron/invoices` poll call the
+issuer for every `PROCESSING` invoice and record `ISSUED` (number, PDF and XML),
+`REJECTED` or `CANCELLED`, each change audited as `invoice.status`.
+
+### Recurring invoice templates
+
+`InvoiceTemplate`:
+
+```json
+{
+  "id": string,
+  "client": { "id": string, "name": string, "taxId": string | null, "country": string },
+  "description": string, "serviceCode": string,
+  "amount": Money, "billing": "FIXED" | "HOURLY", "hours": number | null,
+  "cycleAmount": Money, "dayOfMonth": int, "active": bool
+}
+```
+
+`HOURLY` treats `amount` as the rate per hour and bills the rate times `hours`;
+`cycleAmount` is what each draft carries.
+
+- `GET /invoices/templates`: `[InvoiceTemplate]`, by day of month.
+- `POST /invoices/templates`: body `{ client: { name, taxId?, country? }, description, serviceCode, amountCents, currency? = "BRL", billing? = "FIXED", hours? = null, dayOfMonth: 1..31, active? = true }`.
+  The client is matched by name or created. Returns `InvoiceTemplate`, 201.
+- `GET /invoices/templates/{id}`: `InvoiceTemplate`.
+- `PATCH /invoices/templates/{id}`: any subset of the create body. 422 when an
+  `HOURLY` template has no hours.
+- `DELETE /invoices/templates/{id}`: `{ id }`. Drafts already created stay.
+
+Create, update and delete write `invoice-template.*` audit events. The
+`/api/cron/invoices` job creates one `DRAFT` per active template and month
+once the template's day has come (a day the month lacks means its last day,
+and a run after a weekend catches up), audited as `invoice.draft`. The draft
+shows in `GET /home/company` under `drafts` with `recurring: true` and is
+issued with `POST /home/company/drafts/{id}/approve`; cancelling the draft
+keeps the month from being drafted again.
 
 ## Payroll (Fator R)
 
@@ -559,3 +606,20 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
 | `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
+| `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
+
+## Webhooks
+
+`POST /api/webhooks/{provider}` for `asaas`, `inter`, `mercado-pago`, `pluggy`
+and `notaas`. They do not take the bearer token: each provider proves the call
+with its signature or shared secret (see [providers.md](providers.md#webhooks)),
+and a call that fails the check, or arrives while the secret is not configured,
+answers 401 `UNAUTHORIZED`. A body that is not JSON answers 400.
+
+An authentic delivery answers 200 at once with
+`{ "data": { "received": int, "duplicates": int } }`; the work runs after the
+answer. Event ids are stored per provider, so a replay is counted as a
+duplicate and does nothing. The body is only a trigger: payment events
+reconcile the named payment by asking the rail, Pluggy item events sync that
+item, Notaas events refresh that invoice from the issuer. The crons above stay
+the backstop for an event that is lost or fails.
