@@ -46,18 +46,12 @@ class _PaymentRailsScreenState extends ConsumerState<PaymentRailsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final palette = context.palette;
     final rails = ref.watch(railsControllerProvider(_owner));
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.onboardingStep(5, 6))),
+      appBar: AppBar(title: Text(l10n.railsTitle)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.screenGutter),
         children: [
-          Text(
-            l10n.railsTitle,
-            style: AppTextStyles.headlineMd.copyWith(color: palette.onSurface),
-          ),
-          const SizedBox(height: AppSpacing.md),
           CdSegmented<EntityKind>(
             segments: [
               CdSegment(

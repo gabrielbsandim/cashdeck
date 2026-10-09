@@ -1042,6 +1042,12 @@ void main() {
         'lineIds': ['l1'],
       });
 
+      final read = ApiCardImportRepository(
+        _api({'POST /api/v1/card-statements': _statement}),
+      );
+      final pdf = LocalFile(name: 'fatura.pdf', bytes: Uint8List(4));
+      expect(_ok(await read.upload(pdf, EntityKind.company)).id, statement.id);
+
       final none = ApiCardImportRepository(
         _api({'GET /api/v1/card-statements/latest': null}),
       );

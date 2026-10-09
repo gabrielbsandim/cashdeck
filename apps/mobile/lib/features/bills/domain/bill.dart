@@ -29,8 +29,9 @@ enum AttemptOutcome { succeeded, failed, waiting }
 /// ladder tries it before the barcode.
 enum PaymentMethod { pix, boleto }
 
-/// Who settled a paid bill: a rail on its own, or the user by hand.
-enum PaidBy { rail, user }
+/// Who settled a paid bill: a rail on its own, the user by hand, or the
+/// bank statement showing the debit.
+enum PaidBy { rail, user, statement }
 
 /// Why step 1 waits for the user before it pays (plan 5.3).
 enum ConfirmationReason {

@@ -159,9 +159,11 @@ class _ReceiptViewerScreenState extends ConsumerState<ReceiptViewerScreen> {
     final tab = _tab ?? (proof == null ? _Tab.attachments : _Tab.bank);
     final (label, tone) = bill.status == BillStatus.paid
         ? (
-            bill.paidBy == PaidBy.user
-                ? l10n.receiptPaidByYou
-                : l10n.receiptPaidAutomatic,
+            switch (bill.paidBy) {
+              PaidBy.user => l10n.receiptPaidByYou,
+              PaidBy.statement => l10n.receiptPaidInStatement,
+              PaidBy.rail || null => l10n.receiptPaidAutomatic,
+            },
             MoneyTone.paid,
           )
         : billStatusOf(l10n, bill, today);

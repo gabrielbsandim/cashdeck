@@ -239,29 +239,34 @@ class _FilterBar extends ConsumerWidget {
       (false, null) => l10n.transactionsFilterCategory,
     };
     final categorySet = filters.uncategorized || filters.categoryId != null;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenGutter),
-      child: Row(
-        children: [
-          CdFilterChip(
-            key: TransactionsScreen.accountFilterKey,
-            label: account?.name ?? l10n.transactionsFilterAccount,
-            icon: Symbols.account_balance_rounded,
-            dropdown: true,
-            selected: filters.accountId != null,
-            onTap: () => _pickAccount(context, ref),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          CdFilterChip(
-            key: TransactionsScreen.categoryFilterKey,
-            label: categoryLabel,
-            icon: Symbols.category_rounded,
-            dropdown: true,
-            selected: categorySet,
-            onTap: () => _pickCategory(context, ref),
-          ),
-        ],
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenGutter,
+        ),
+        child: Row(
+          children: [
+            CdFilterChip(
+              key: TransactionsScreen.accountFilterKey,
+              label: account?.name ?? l10n.transactionsFilterAccount,
+              icon: Symbols.account_balance_rounded,
+              dropdown: true,
+              selected: filters.accountId != null,
+              onTap: () => _pickAccount(context, ref),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            CdFilterChip(
+              key: TransactionsScreen.categoryFilterKey,
+              label: categoryLabel,
+              icon: Symbols.category_rounded,
+              dropdown: true,
+              selected: categorySet,
+              onTap: () => _pickCategory(context, ref),
+            ),
+          ],
+        ),
       ),
     );
   }

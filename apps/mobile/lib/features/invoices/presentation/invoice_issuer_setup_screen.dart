@@ -327,13 +327,14 @@ class _CertificateCard extends StatelessWidget {
                         color: palette.onSurface,
                       ),
                     ),
-                    Text(
-                      setup.certificateName ?? l10n.noCertificateYet,
-                      style: AppTextStyles.code.copyWith(
-                        fontSize: 13,
-                        color: palette.onSurfaceVariant,
+                    if (setup.certificateName case final name?)
+                      Text(
+                        name,
+                        style: AppTextStyles.code.copyWith(
+                          fontSize: 13,
+                          color: palette.onSurfaceVariant,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: AppSpacing.xs),
                     CdStatusBadge(
                       tone: tone,

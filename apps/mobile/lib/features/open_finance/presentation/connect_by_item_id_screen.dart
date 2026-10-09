@@ -97,15 +97,10 @@ class _ConnectByItemIdScreenState extends ConsumerState<ConnectByItemIdScreen> {
     final lookup = _lookup;
     final invalid = _itemId.length >= 36 && !isValidItemId(_itemId);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.onboardingStep(3, 6))),
+      appBar: AppBar(title: Text(l10n.itemIdTitle)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.screenGutter),
         children: [
-          Text(
-            l10n.itemIdTitle,
-            style: AppTextStyles.headlineMd.copyWith(color: palette.onSurface),
-          ),
-          const SizedBox(height: AppSpacing.lg),
           CdCard(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

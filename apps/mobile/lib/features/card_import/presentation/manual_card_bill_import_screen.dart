@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -19,6 +20,8 @@ import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/card_import/card_import_providers.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,15 +36,50 @@ final FutureProvider<CardStatement> cardStatementProvider =
     );
 
 /// Reviews a card statement read from its PDF and turns it into a bill.
-class ManualCardBillImportScreen extends ConsumerWidget {
+class ManualCardBillImportScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
   static const createKey = Key('card-create-bill');
+  static const uploadKey = Key('card-upload-statement');
 
   static Key lineKey(String id) => Key('card-line-$id');
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ManualCardBillImportScreen> createState() =>
+      _ManualCardBillImportScreenState();
+}
+
+class _ManualCardBillImportScreenState
+    extends ConsumerState<ManualCardBillImportScreen> {
+  var _uploading = false;
+
+  Future<void> _upload() async {
+    final l10n = AppLocalizations.of(context);
+    final file = await ref.read(fileChooserProvider).choose(const [
+      'pdf',
+      'jpg',
+      'jpeg',
+      'png',
+    ]);
+    if (file == null || !mounted) return;
+    final owner = ref.read(entityScopeProvider) == EntityScope.company
+        ? EntityKind.company
+        : EntityKind.personal;
+    setState(() => _uploading = true);
+    final result = await ref
+        .read(cardImportRepositoryProvider)
+        .upload(file, owner);
+    if (!mounted) return;
+    setState(() => _uploading = false);
+    ref.invalidate(cardStatementProvider);
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.cardImportUploadedToast);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final statement = ref.watch(cardStatementProvider);
     final value = statement.value;
@@ -55,14 +93,30 @@ class ManualCardBillImportScreen extends ConsumerWidget {
         title: value == null
             ? Text(l10n.cardImportShortTitle)
             : _Title(statement: value),
+        actions: [
+          IconButton(
+            key: ManualCardBillImportScreen.uploadKey,
+            tooltip: l10n.cardImportUpload,
+            icon: const Icon(Symbols.upload_file_rounded),
+            onPressed: _uploading ? null : _upload,
+          ),
+        ],
       ),
       body: switch (statement) {
+        _ when _uploading => CdEmptyState(
+          icon: Symbols.hourglass_top_rounded,
+          title: l10n.cardImportReadingTitle,
+          message: l10n.cardImportReadingMessage,
+        ),
         AsyncData(:final value) => _Review(statement: value),
         AsyncError(:final error) when failureOf(error) is NotFoundFailure =>
           CdEmptyState(
             icon: Symbols.credit_card_rounded,
             title: l10n.cardImportEmptyTitle,
             message: l10n.cardImportEmptyMessage,
+            actionLabel: l10n.cardImportUpload,
+            actionIcon: Symbols.upload_file_rounded,
+            onAction: _upload,
           ),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),

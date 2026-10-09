@@ -1,6 +1,8 @@
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
 
 final class StatementLine extends Equatable {
@@ -97,6 +99,9 @@ final class StatementTotals extends Equatable {
 
 abstract interface class CardImportRepository {
   Future<Result<CardStatement>> statement();
+
+  /// Sends the statement PDF or photo for the server to read into a draft.
+  Future<Result<CardStatement>> upload(LocalFile file, EntityKind owner);
 
   /// Creates the bill for the [lineIds] picked, due on the statement's date;
   /// the server computes the total. Returns the bill id.

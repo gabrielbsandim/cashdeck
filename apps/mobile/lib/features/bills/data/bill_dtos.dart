@@ -51,7 +51,11 @@ const Map<String, PaymentMethod> _methods = {
   'BOLETO': PaymentMethod.boleto,
 };
 
-const Map<String, PaidBy> _paidBy = {'RAIL': PaidBy.rail, 'USER': PaidBy.user};
+const Map<String, PaidBy> _paidBy = {
+  'RAIL': PaidBy.rail,
+  'USER': PaidBy.user,
+  'STATEMENT': PaidBy.statement,
+};
 
 /// Not in the v1 contract yet; an unknown or missing value reads as null, so
 /// the sheet falls back to a generic reason instead of failing the bill.

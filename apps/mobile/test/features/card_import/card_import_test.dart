@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/file_chooser.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -10,6 +14,7 @@ import 'package:cashdeck/features/card_import/card_import_providers.dart';
 import 'package:cashdeck/features/card_import/data/fake_card_import_repository.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
 import 'package:cashdeck/features/card_import/presentation/manual_card_bill_import_screen.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,6 +34,12 @@ final class _Flaky implements CardImportRepository {
   Future<Result<CardStatement>> statement() async {
     if (failStatement) return Err(failure);
     return await _inner.statement();
+  }
+
+  @override
+  Future<Result<CardStatement>> upload(LocalFile file, EntityKind owner) async {
+    failStatement = false;
+    return await _inner.upload(file, owner);
   }
 
   @override
@@ -169,6 +180,44 @@ void main() {
 
     expect(find.text(l10n.cardImportEmptyTitle), findsOneWidget);
     expect(find.byKey(CdErrorState.retryKey), findsNothing);
+  });
+
+  testWidgets('uploads a statement and reviews what was read', (tester) async {
+    final flaky = _Flaky()..failure = const NotFoundFailure();
+    final chooser = FakeFileChooser(
+      LocalFile(name: 'fatura.pdf', bytes: Uint8List(4)),
+    );
+    await pumpRoute(
+      tester,
+      AppRoutes.cardImport,
+      overrides: [
+        cardImportRepositoryProvider.overrideWithValue(flaky),
+        fileChooserProvider.overrideWithValue(chooser),
+      ],
+    );
+
+    await tester.tap(find.text(l10n.cardImportUpload));
+    await settle(tester);
+
+    expect(chooser.requests.single, contains('pdf'));
+    expect(find.text(l10n.cardImportTitle('Cartão Viagem')), findsOneWidget);
+    expect(find.text(l10n.cardImportUploadedToast), findsOneWidget);
+    await waitForToast(tester);
+  });
+
+  testWidgets('a cancelled pick sends nothing', (tester) async {
+    final chooser = FakeFileChooser();
+    await pumpRoute(
+      tester,
+      AppRoutes.cardImport,
+      overrides: [fileChooserProvider.overrideWithValue(chooser)],
+    );
+
+    await tester.tap(find.byKey(ManualCardBillImportScreen.uploadKey));
+    await settle(tester);
+
+    expect(chooser.requests, hasLength(1));
+    expect(find.text(l10n.cardImportUploadedToast), findsNothing);
   });
 
   testWidgets('the close button leaves', (tester) async {

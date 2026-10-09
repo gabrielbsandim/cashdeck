@@ -51,6 +51,15 @@ void main() {
       );
     });
 
+    test('a bill settled from the bank statement says so', () {
+      final bill = billFromJson({
+        ...billJson(status: 'PAID'),
+        'paidBy': 'STATEMENT',
+      });
+
+      expect(bill.paidBy, PaidBy.statement);
+    });
+
     test('a missing attempts list is empty', () {
       expect(billFromJson(billJson()).attempts, isEmpty);
       final bolepix = billFromJson({

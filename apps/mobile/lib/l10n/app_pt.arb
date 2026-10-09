@@ -184,17 +184,6 @@
       }
     }
   },
-  "onboardingStep": "Passo {step} de {total}",
-  "@onboardingStep": {
-    "placeholders": {
-      "step": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "millis": "{ms} ms",
   "@millis": {
     "placeholders": {
@@ -227,6 +216,7 @@
   },
   "billPaidByYou": "Pago por você",
   "billPaidAutomatically": "Pago automaticamente",
+  "billPaidInStatement": "Visto no extrato do banco",
   "billHintAssisted": "Passo {step} · código pronto",
   "@billHintAssisted": {
     "placeholders": {
@@ -970,6 +960,7 @@
   "receiptTitle": "Comprovante",
   "receiptPaidAutomatic": "Pago · automático",
   "receiptPaidByYou": "Pago · por você",
+  "receiptPaidInStatement": "Pago · visto no extrato",
   "receiptFromBank": "Do banco",
   "receiptAttachments": "Anexos · {count}",
   "@receiptAttachments": {
@@ -1549,6 +1540,10 @@
   "railUnavailable": "Não oferecido",
   "budgetsEmpty": "Nenhum orçamento neste mês. Peça no Chat para criar um.",
   "budgetsAskChat": "Abrir o Chat",
+  "cardImportUpload": "Enviar fatura",
+  "cardImportUploadedToast": "Fatura lida",
+  "cardImportReadingTitle": "Lendo a fatura",
+  "cardImportReadingMessage": "O assistente está lendo as linhas, leva alguns segundos.",
   "cardImportShortTitle": "Fatura do cartão",
   "cardImportEmptyTitle": "Nenhuma fatura para revisar",
   "cardImportEmptyMessage": "Quando uma fatura em PDF for lida, ela aparece aqui para você escolher as linhas e gerar a conta.",

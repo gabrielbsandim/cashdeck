@@ -1,9 +1,11 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 final class FakeCardImportRepository implements CardImportRepository {
   new(this._clock, {this.latency = const Duration(milliseconds: 300)});
@@ -48,6 +50,10 @@ final class FakeCardImportRepository implements CardImportRepository {
       ),
     );
   }
+
+  @override
+  Future<Result<CardStatement>> upload(LocalFile file, EntityKind owner) =>
+      statement();
 
   @override
   Future<Result<String>> createBill(

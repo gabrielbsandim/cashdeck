@@ -35,6 +35,11 @@ void main() {
       l10n.billKindPixQr,
     );
     expect(billPayeeOf(l10n, testBill()), 'Payee Example');
+    expect(
+      billPayeeOf(l10n, testBill(payee: 'billing@example-health.com.br')),
+      'Example-health',
+    );
+    expect(billPayeeOf(l10n, testBill(payee: 'not @ mail')), 'not @ mail');
   });
 
   test('overdue wins over the stored status, step 3 reads as assisted', () {
@@ -83,6 +88,10 @@ void main() {
 
     expect(billLadderHint(l10n, byUser), l10n.billPaidByYou);
     expect(billLadderHint(l10n, byRail), l10n.billPaidAutomatically);
+    expect(
+      billLadderHint(l10n, _paidBy(PaidBy.statement)),
+      l10n.billPaidInStatement,
+    );
     expect(billLadderHint(l10n, cancelled), '');
     expect(billLadderHint(l10n, assisted), l10n.billHintAssisted(3));
     expect(billLadderHint(l10n, tried), l10n.billHintStep(1, 'Pix via API'));
@@ -149,4 +158,20 @@ void main() {
     expect(hints.toSet(), hasLength(LadderStep.values.length));
     expect(entities.toSet(), hasLength(EntityKind.values.length));
   });
+}
+
+Bill _paidBy(PaidBy by) {
+  final bill = testBill(status: BillStatus.paid);
+  return Bill(
+    id: bill.id,
+    owner: bill.owner,
+    kind: bill.kind,
+    payee: bill.payee,
+    amount: bill.amount,
+    dueDate: bill.dueDate,
+    status: bill.status,
+    source: bill.source,
+    plan: bill.plan,
+    paidBy: by,
+  );
 }

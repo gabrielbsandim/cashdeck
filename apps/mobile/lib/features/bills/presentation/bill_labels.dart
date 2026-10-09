@@ -55,9 +55,11 @@ import 'package:material_symbols_icons/symbols.dart';
 /// Where the bill is on the ladder, as the line under a bill card reads.
 String billLadderHint(AppLocalizations l10n, Bill bill) {
   if (bill.status == BillStatus.paid) {
-    return bill.paidBy == PaidBy.user
-        ? l10n.billPaidByYou
-        : l10n.billPaidAutomatically;
+    return switch (bill.paidBy) {
+      PaidBy.user => l10n.billPaidByYou,
+      PaidBy.statement => l10n.billPaidInStatement,
+      PaidBy.rail || null => l10n.billPaidAutomatically,
+    };
   }
   if (bill.debitsItself) return l10n.billAutoDebitHint;
   final step = currentStepOf(bill);
@@ -121,8 +123,21 @@ String billKindLabelOf(AppLocalizations l10n, Bill bill) =>
     bill.isBolepix ? l10n.billKindBolepix : billKindLabel(l10n, bill.kind);
 
 /// Who the bill pays, or what it is when the capture found no payee.
-String billPayeeOf(AppLocalizations l10n, Bill bill) =>
-    bill.payee.trim().isEmpty ? billKindLabelOf(l10n, bill) : bill.payee;
+String billPayeeOf(AppLocalizations l10n, Bill bill) {
+  final payee = bill.payee.trim();
+  if (payee.isEmpty) return billKindLabelOf(l10n, bill);
+  return _senderName(payee) ?? payee;
+}
+
+/// A bill captured from email can carry only the sender address as payee;
+/// the domain reads better: billing@amil.com.br shows as Amil.
+String? _senderName(String payee) {
+  final match = RegExp(r'^[^@\s]+@([a-z0-9-]+)\.')
+      .firstMatch(payee.toLowerCase());
+  final name = match?.group(1);
+  if (name == null) return null;
+  return name[0].toUpperCase() + name.substring(1);
+}
 
 String paymentMethodLabel(AppLocalizations l10n, PaymentMethod method) =>
     switch (method) {

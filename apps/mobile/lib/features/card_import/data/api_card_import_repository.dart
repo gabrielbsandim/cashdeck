@@ -1,8 +1,12 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
+import 'package:cashdeck/features/entities/data/entity_dtos.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:dio/dio.dart';
 
 CardStatement cardStatementFromJson(JsonMap json) => CardStatement(
@@ -32,6 +36,9 @@ final class ApiCardImportRepository implements CardImportRepository {
 
   static const path = '/api/v1/card-statements';
 
+  /// The AI reads every line before it answers, longer than a plain request.
+  static const readTimeout = Duration(seconds: 90);
+
   /// No draft waiting reads as not found, which the screen already shows.
   @override
   Future<Result<CardStatement>> statement() =>
@@ -45,6 +52,17 @@ final class ApiCardImportRepository implements CardImportRepository {
           Err(:final failure) => Err(failure),
         },
       );
+
+  @override
+  Future<Result<CardStatement>> upload(LocalFile file, EntityKind owner) =>
+      guardRequest(() async {
+        final response = await _dio.post<Object?>(
+          path,
+          data: {...uploadBody(file), 'entity': entityKindToJson(owner)},
+          options: Options(receiveTimeout: readTimeout),
+        );
+        return cardStatementFromJson(asJsonMap(unwrapData(response.data)));
+      });
 
   @override
   Future<Result<String>> createBill(

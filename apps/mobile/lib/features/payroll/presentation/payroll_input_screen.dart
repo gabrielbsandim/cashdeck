@@ -203,7 +203,8 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        CdSectionHeader(title: l10n.payrollPreviousMonths, small: true),
+        if (widget.sheet.history.isNotEmpty)
+          CdSectionHeader(title: l10n.payrollPreviousMonths, small: true),
         for (final month in widget.sheet.history.take(3))
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),

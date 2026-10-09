@@ -138,14 +138,21 @@ class _NavItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              item.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.labelMd.copyWith(
-                letterSpacing: 0,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? palette.onSurface : palette.onSurfaceVariant,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  style: AppTextStyles.labelMd.copyWith(
+                    letterSpacing: 0,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected
+                        ? palette.onSurface
+                        : palette.onSurfaceVariant,
+                  ),
+                ),
               ),
             ),
           ],
