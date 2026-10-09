@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { entityKindSchema, isoDate, moneyViewSchema } from '@/dtos/common'
+import {
+  entityKindSchema,
+  isoDate,
+  isoMonth,
+  moneyViewSchema,
+} from '@/dtos/common'
 
 export const INSIGHT_PERIODS = ['1w', '1m', '6m', '1y'] as const
 export type InsightPeriod = (typeof INSIGHT_PERIODS)[number]
@@ -67,3 +72,69 @@ export const insightsOverviewSchema = z.object({
 })
 
 export type InsightsOverview = z.infer<typeof insightsOverviewSchema>
+
+export const insightsScopeQuerySchema = z.object({
+  entity: entityKindSchema.optional(),
+})
+
+export const installmentPlanViewSchema = z.object({
+  key: z.string(),
+  accountId: z.string(),
+  card: z.string(),
+  cardSuffix: z.string().nullable(),
+  entityKind: entityKindSchema,
+  name: z.string(),
+  categoryId: z.string().nullable(),
+  number: z.int(),
+  count: z.int(),
+  amount: moneyViewSchema,
+  paid: moneyViewSchema,
+  remaining: moneyViewSchema,
+  total: moneyViewSchema,
+  purchaseOn: isoDate.nullable(),
+  lastBilledOn: isoDate,
+  finalMonth: isoMonth,
+  transactionIds: z.array(z.string()),
+})
+
+export const installmentsViewSchema = z.object({
+  months: z.array(z.object({ month: isoMonth, total: moneyViewSchema })),
+  plans: z.array(installmentPlanViewSchema),
+})
+
+export type InstallmentsView = z.infer<typeof installmentsViewSchema>
+
+export const SUBSCRIPTION_MONTH_STATUSES = ['PAID', 'UPCOMING', 'LATE'] as const
+
+export const subscriptionViewSchema = z.object({
+  id: z.string().nullable(),
+  key: z.string(),
+  entityKind: entityKindSchema,
+  name: z.string(),
+  amount: moneyViewSchema,
+  previousAmount: moneyViewSchema.nullable(),
+  priceChanged: z.boolean(),
+  dayOfMonth: z.int(),
+  lastChargeOn: isoDate.nullable(),
+  thisMonth: z.enum(SUBSCRIPTION_MONTH_STATUSES),
+  accountId: z.string().nullable(),
+  categoryId: z.string().nullable(),
+  transactionIds: z.array(z.string()),
+})
+
+export type SubscriptionView = z.infer<typeof subscriptionViewSchema>
+
+export const subscriptionsViewSchema = z.object({
+  monthly: moneyViewSchema,
+  yearly: moneyViewSchema,
+  previousMonth: moneyViewSchema,
+  changePercent: z.int().nullable(),
+  items: z.array(subscriptionViewSchema),
+  suggestions: z.array(subscriptionViewSchema),
+})
+
+export type SubscriptionsView = z.infer<typeof subscriptionsViewSchema>
+
+export const subscriptionDecisionSchema = z.object({
+  transactionId: z.string().min(1),
+})

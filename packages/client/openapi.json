@@ -2429,6 +2429,898 @@
         }
       }
     },
+    "/installments": {
+      "get": {
+        "operationId": "listInstallments",
+        "summary": "Card purchases in installments and what they commit ahead",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Card purchases in installments and what they commit ahead",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "months": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$"
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "total"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "plans": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "accountId": {
+                                "type": "string"
+                              },
+                              "card": {
+                                "type": "string"
+                              },
+                              "cardSuffix": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "categoryId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "number": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "paid": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "remaining": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "purchaseOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "lastBilledOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "finalMonth": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$"
+                              },
+                              "transactionIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "accountId",
+                              "card",
+                              "cardSuffix",
+                              "entityKind",
+                              "name",
+                              "categoryId",
+                              "number",
+                              "count",
+                              "amount",
+                              "paid",
+                              "remaining",
+                              "total",
+                              "purchaseOn",
+                              "lastBilledOn",
+                              "finalMonth",
+                              "transactionIds"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "months",
+                        "plans"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/subscriptions": {
+      "get": {
+        "operationId": "listSubscriptions",
+        "summary": "Confirmed subscriptions and detected suggestions",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmed subscriptions and detected suggestions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "monthly": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "yearly": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "previousMonth": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "changePercent": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "previousAmount": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "priceChanged": {
+                                "type": "boolean"
+                              },
+                              "dayOfMonth": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "lastChargeOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "thisMonth": {
+                                "type": "string",
+                                "enum": [
+                                  "PAID",
+                                  "UPCOMING",
+                                  "LATE"
+                                ]
+                              },
+                              "accountId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "categoryId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "transactionIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "key",
+                              "entityKind",
+                              "name",
+                              "amount",
+                              "previousAmount",
+                              "priceChanged",
+                              "dayOfMonth",
+                              "lastChargeOn",
+                              "thisMonth",
+                              "accountId",
+                              "categoryId",
+                              "transactionIds"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "suggestions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "previousAmount": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "priceChanged": {
+                                "type": "boolean"
+                              },
+                              "dayOfMonth": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "lastChargeOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "thisMonth": {
+                                "type": "string",
+                                "enum": [
+                                  "PAID",
+                                  "UPCOMING",
+                                  "LATE"
+                                ]
+                              },
+                              "accountId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "categoryId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "transactionIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "key",
+                              "entityKind",
+                              "name",
+                              "amount",
+                              "previousAmount",
+                              "priceChanged",
+                              "dayOfMonth",
+                              "lastChargeOn",
+                              "thisMonth",
+                              "accountId",
+                              "categoryId",
+                              "transactionIds"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "monthly",
+                        "yearly",
+                        "previousMonth",
+                        "changePercent",
+                        "items",
+                        "suggestions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "confirmSubscription",
+        "summary": "Mark the charge of a transaction as recurring",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transactionId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "transactionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mark the charge of a transaction as recurring",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/subscriptions/dismiss": {
+      "post": {
+        "operationId": "dismissSubscription",
+        "summary": "Stop suggesting the charge of a transaction",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transactionId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "transactionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stop suggesting the charge of a transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}": {
+      "delete": {
+        "operationId": "removeSubscription",
+        "summary": "Stop tracking a subscription",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stop tracking a subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/accounts": {
       "get": {
         "operationId": "listAccounts",

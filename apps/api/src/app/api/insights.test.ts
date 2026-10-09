@@ -24,6 +24,13 @@ import { POST as confirmAction } from '@/app/api/v1/chat/actions/[id]/confirm/ro
 import { POST as cancelAction } from '@/app/api/v1/chat/actions/[id]/cancel/route'
 import { POST as syncConnection } from '@/app/api/v1/open-finance/connections/[id]/sync/route'
 import { GET as insightsOverview } from '@/app/api/v1/insights/overview/route'
+import { GET as listInstallments } from '@/app/api/v1/installments/route'
+import {
+  GET as listSubscriptions,
+  POST as confirmSubscription,
+} from '@/app/api/v1/subscriptions/route'
+import { POST as dismissSubscription } from '@/app/api/v1/subscriptions/dismiss/route'
+import { DELETE as removeSubscription } from '@/app/api/v1/subscriptions/[id]/route'
 
 const TOKEN = 'test-token-0123456789'
 
@@ -185,6 +192,36 @@ describe('insights', () => {
     })
     const bad = await call(insightsOverview, 'GET', { query: '?period=2d' })
     expect(bad.status).toBe(422)
+  })
+
+  it('lists installments and decides on subscriptions', async () => {
+    await seedTransactions()
+    const installments = await call(listInstallments, 'GET', {
+      query: '?entity=PF',
+    })
+    expect(installments.status).toBe(200)
+    expect(installments.body.data.months).toHaveLength(12)
+    const confirmed = await call(confirmSubscription, 'POST', {
+      body: { transactionId: 't3' },
+    })
+    expect(confirmed.status).toBe(201)
+    const dismissed = await call(dismissSubscription, 'POST', {
+      body: { transactionId: 't1' },
+    })
+    expect(dismissed.status).toBe(200)
+    const listed = await call(listSubscriptions, 'GET', { query: '?entity=PF' })
+    expect(listed.body.data.items).toEqual([
+      expect.objectContaining({
+        id: confirmed.body.data.id,
+        name: 'Posto Azul',
+      }),
+    ])
+    const removed = await call(removeSubscription, 'DELETE', {
+      params: { id: confirmed.body.data.id },
+    })
+    expect(removed.status).toBe(200)
+    const empty = await call(listSubscriptions, 'GET')
+    expect(empty.body.data.items).toEqual([])
   })
 })
 

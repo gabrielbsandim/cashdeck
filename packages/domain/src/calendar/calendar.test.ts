@@ -3,6 +3,7 @@ import {
   addDays,
   daysBetween,
   localDate,
+  shiftMonth,
   toLocalDate,
   weekday,
 } from '@/calendar/local-date'
@@ -27,6 +28,8 @@ describe('local dates', () => {
     expect(daysBetween('2026-10-01', '2026-10-08')).toBe(7)
     expect(weekday('2026-10-08')).toBe(4)
     expect(localDate(2026, 2, 29)).toBe('2026-03-01')
+    expect(shiftMonth('2026-11', 3)).toBe('2027-02')
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12')
     expect(() => addDays('8/10/2026', 1)).toThrow('is not an ISO date')
   })
 })

@@ -28,6 +28,7 @@ const DELEGATES = [
   'invoiceTemplate',
   'webhookEvent',
   'creditCardBill',
+  'recurrence',
 ] as const
 const METHODS = [
   'upsert',
@@ -688,5 +689,73 @@ describe('card bills', () => {
       where: { tenantId: TENANT, accountId: { in: ['card'] } },
       orderBy: { dueDate: 'desc' },
     })
+  })
+})
+
+describe('recurrences', () => {
+  it('keeps one per entity and key with its decision', async () => {
+    const { db, repos } = mockClient()
+    const row = {
+      id: 'r1',
+      tenantId: TENANT,
+      entityId: 'pf',
+      key: 'musica exemplo',
+      description: 'MUSICA EXEMPLO',
+      amountCents: 2_390n,
+      dayOfMonth: 12,
+      confirmed: true,
+      dismissed: false,
+      lastSeenOn: new Date('2026-09-12T00:00:00.000Z'),
+    }
+    const recurrence = {
+      id: 'r1',
+      tenantId: TENANT,
+      entityId: 'pf',
+      key: 'musica exemplo',
+      name: 'MUSICA EXEMPLO',
+      amount: Money.of(2_390),
+      dayOfMonth: 12,
+      status: 'CONFIRMED' as const,
+      lastSeenOn: '2026-09-12',
+    }
+    db.recurrence.upsert.mockResolvedValueOnce(row)
+    expect(await repos.recurrences.save({ ...recurrence, id: 'new' })).toEqual(
+      recurrence,
+    )
+    expect(db.recurrence.upsert.mock.calls[0]?.[0]).toMatchObject({
+      where: {
+        tenantId_entityId_key: {
+          tenantId: TENANT,
+          entityId: 'pf',
+          key: 'musica exemplo',
+        },
+      },
+      create: { id: 'new', confirmed: true, dismissed: false },
+      update: { amountCents: 2_390n },
+    })
+    db.recurrence.upsert.mockResolvedValueOnce({
+      ...row,
+      confirmed: false,
+      dismissed: true,
+      lastSeenOn: null,
+    })
+    expect(
+      await repos.recurrences.save({
+        ...recurrence,
+        status: 'DISMISSED',
+        lastSeenOn: null,
+      }),
+    ).toMatchObject({ status: 'DISMISSED', lastSeenOn: null })
+    expect(db.recurrence.upsert.mock.calls[1]?.[0].update).toMatchObject({
+      dismissed: true,
+      lastSeenOn: null,
+    })
+    db.recurrence.findMany.mockResolvedValueOnce([row])
+    expect(await repos.recurrences.list(TENANT)).toEqual([recurrence])
+    db.recurrence.findFirst
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce(null)
+    expect(await repos.recurrences.findById(TENANT, 'r1')).toEqual(recurrence)
+    expect(await repos.recurrences.findById(TENANT, 'x')).toBeNull()
   })
 })

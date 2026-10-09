@@ -287,12 +287,16 @@ model Recurrence {
   id          String    @id
   tenantId    String    @map("tenant_id")
   entityId    String    @map("entity_id")
+  // The normalized words of the charge description that match its repeats.
+  key         String
   description String
   amountCents BigInt    @map("amount_cents")
   dayOfMonth  Int       @map("day_of_month")
   confirmed   Boolean   @default(false)
+  dismissed   Boolean   @default(false)
   lastSeenOn  DateTime? @map("last_seen_on") @db.Date
 
+  @@unique([tenantId, entityId, key])
   @@index([tenantId, entityId])
   @@map("recurrences")
 }

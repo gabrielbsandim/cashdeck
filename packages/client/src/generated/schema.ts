@@ -174,6 +174,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/installments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Card purchases in installments and what they commit ahead */
+        get: operations["listInstallments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Confirmed subscriptions and detected suggestions */
+        get: operations["listSubscriptions"];
+        put?: never;
+        /** Mark the charge of a transaction as recurring */
+        post: operations["confirmSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop suggesting the charge of a transaction */
+        post: operations["dismissSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop tracking a subscription */
+        delete: operations["removeSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts": {
         parameters: {
             query?: never;
@@ -2065,6 +2134,285 @@ export interface operations {
                                 };
                                 count: number;
                             };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listInstallments: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Card purchases in installments and what they commit ahead */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            months: {
+                                month: string;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            plans: {
+                                key: string;
+                                accountId: string;
+                                card: string;
+                                cardSuffix: string | null;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                name: string;
+                                categoryId: string | null;
+                                number: number;
+                                count: number;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                paid: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                purchaseOn: string | null;
+                                lastBilledOn: string;
+                                finalMonth: string;
+                                transactionIds: string[];
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listSubscriptions: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmed subscriptions and detected suggestions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            monthly: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearly: {
+                                cents: number;
+                                currency: string;
+                            };
+                            previousMonth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            changePercent: number | null;
+                            items: {
+                                id: string | null;
+                                key: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                name: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                previousAmount: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                priceChanged: boolean;
+                                dayOfMonth: number;
+                                lastChargeOn: string | null;
+                                /** @enum {string} */
+                                thisMonth: "PAID" | "UPCOMING" | "LATE";
+                                accountId: string | null;
+                                categoryId: string | null;
+                                transactionIds: string[];
+                            }[];
+                            suggestions: {
+                                id: string | null;
+                                key: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                name: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                previousAmount: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                priceChanged: boolean;
+                                dayOfMonth: number;
+                                lastChargeOn: string | null;
+                                /** @enum {string} */
+                                thisMonth: "PAID" | "UPCOMING" | "LATE";
+                                accountId: string | null;
+                                categoryId: string | null;
+                                transactionIds: string[];
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    confirmSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    transactionId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Mark the charge of a transaction as recurring */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    dismissSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    transactionId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Stop suggesting the charge of a transaction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stop tracking a subscription */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
                         };
                     };
                 };

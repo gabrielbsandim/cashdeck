@@ -25,6 +25,7 @@ import {
   type DocumentStore,
   type InstitutionRepository,
   type InvoiceRepository,
+  type RecurrenceRepository,
   type TransactionRepository,
   type TransferRepository,
 } from '@/ports/records'
@@ -62,6 +63,7 @@ export type Deps = {
   institutions: InstitutionRepository
   transactions: TransactionRepository
   cardBills: CardBillRepository
+  recurrences: RecurrenceRepository
   connections: ConnectionRepository
   transfers: TransferRepository
   invoices: InvoiceRepository

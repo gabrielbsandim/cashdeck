@@ -92,6 +92,29 @@ export interface CardBillRepository {
   list(tenantId: string, accountIds: readonly string[]): Promise<CardBill[]>
 }
 
+export const RECURRENCE_STATUSES = ['CONFIRMED', 'DISMISSED'] as const
+export type RecurrenceStatus = (typeof RECURRENCE_STATUSES)[number]
+
+// A charge the user confirmed as recurring, or a suggestion they dismissed.
+export type Recurrence = {
+  id: string
+  tenantId: string
+  entityId: string
+  key: string
+  name: string
+  amount: Money
+  dayOfMonth: number
+  status: RecurrenceStatus
+  lastSeenOn: LocalDate | null
+}
+
+export interface RecurrenceRepository {
+  list(tenantId: string): Promise<Recurrence[]>
+  findById(tenantId: string, id: string): Promise<Recurrence | null>
+  // One per entity and key; a known one is overwritten and keeps its id.
+  save(recurrence: Recurrence): Promise<Recurrence>
+}
+
 export const TRANSFER_KINDS = ['PROFIT_DISTRIBUTION', 'PRO_LABORE'] as const
 export type TransferKind = (typeof TRANSFER_KINDS)[number]
 

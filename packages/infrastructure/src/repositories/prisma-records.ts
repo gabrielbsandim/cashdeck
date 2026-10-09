@@ -21,6 +21,8 @@ import {
   type InvoiceRepository,
   type InvoiceStatus,
   type InvoiceTemplate,
+  type Recurrence,
+  type RecurrenceRepository,
   type TemplateBilling,
   type WebhookEventStore,
   type WebhookProvider,
@@ -750,11 +752,82 @@ export class PrismaCardBillRepository implements CardBillRepository {
   }
 }
 
+type RecurrenceRow = {
+  id: string
+  tenantId: string
+  entityId: string
+  key: string
+  description: string
+  amountCents: bigint
+  dayOfMonth: number
+  confirmed: boolean
+  dismissed: boolean
+  lastSeenOn: Date | null
+}
+
+const recurrenceFromRow = (row: RecurrenceRow): Recurrence => ({
+  id: row.id,
+  tenantId: row.tenantId,
+  entityId: row.entityId,
+  key: row.key,
+  name: row.description,
+  amount: Money.of(Number(row.amountCents)),
+  dayOfMonth: row.dayOfMonth,
+  status: row.dismissed ? 'DISMISSED' : 'CONFIRMED',
+  lastSeenOn: row.lastSeenOn ? fromDbDate(row.lastSeenOn) : null,
+})
+
+export class PrismaRecurrenceRepository implements RecurrenceRepository {
+  constructor(private readonly db: PrismaClient) {}
+
+  async list(tenantId: string): Promise<Recurrence[]> {
+    const rows = await this.db.recurrence.findMany({ where: { tenantId } })
+    return rows.map(recurrenceFromRow)
+  }
+
+  async findById(tenantId: string, id: string): Promise<Recurrence | null> {
+    const row = await this.db.recurrence.findFirst({ where: { tenantId, id } })
+    return row && recurrenceFromRow(row)
+  }
+
+  async save(recurrence: Recurrence): Promise<Recurrence> {
+    const fields = {
+      description: recurrence.name,
+      amountCents: BigInt(recurrence.amount.cents),
+      dayOfMonth: recurrence.dayOfMonth,
+      confirmed: recurrence.status === 'CONFIRMED',
+      dismissed: recurrence.status === 'DISMISSED',
+      lastSeenOn: recurrence.lastSeenOn
+        ? toDbDate(recurrence.lastSeenOn)
+        : null,
+    }
+    const row = await this.db.recurrence.upsert({
+      where: {
+        tenantId_entityId_key: {
+          tenantId: recurrence.tenantId,
+          entityId: recurrence.entityId,
+          key: recurrence.key,
+        },
+      },
+      create: {
+        id: recurrence.id,
+        tenantId: recurrence.tenantId,
+        entityId: recurrence.entityId,
+        key: recurrence.key,
+        ...fields,
+      },
+      update: fields,
+    })
+    return recurrenceFromRow(row)
+  }
+}
+
 export function createPrismaRecords(db: PrismaClient) {
   return {
     institutions: new PrismaInstitutionRepository(db),
     transactions: new PrismaTransactionRepository(db),
     cardBills: new PrismaCardBillRepository(db),
+    recurrences: new PrismaRecurrenceRepository(db),
     connections: new PrismaConnectionRepository(db),
     transfers: new PrismaTransferRepository(db),
     invoices: new PrismaInvoiceRepository(db),

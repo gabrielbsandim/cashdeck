@@ -26,6 +26,8 @@ import {
   type InvoiceFilter,
   type InvoiceRepository,
   type InvoiceTemplate,
+  type Recurrence,
+  type RecurrenceRepository,
   type TransactionFilter,
   type TransactionRepository,
   type TransferRepository,
@@ -54,6 +56,10 @@ class TenantMap<T extends { tenantId: string; id: string }> {
   protected of(tenantId: string): T[] {
     return [...this.rows.values()].filter(row => row.tenantId === tenantId)
   }
+
+  rowsOf(tenantId: string): T[] {
+    return this.of(tenantId)
+  }
 }
 
 export class InMemoryInstitutionRepository
@@ -79,6 +85,30 @@ export class InMemoryInstitutionRepository
     }
     await this.save(branded)
     return branded
+  }
+}
+
+export class InMemoryRecurrenceRepository implements RecurrenceRepository {
+  private readonly rows = new TenantMap<Recurrence>()
+
+  async list(tenantId: string): Promise<Recurrence[]> {
+    return this.rows.rowsOf(tenantId)
+  }
+
+  async findById(tenantId: string, id: string): Promise<Recurrence | null> {
+    return this.rows.findById(tenantId, id)
+  }
+
+  async save(recurrence: Recurrence): Promise<Recurrence> {
+    const known = this.rows
+      .rowsOf(recurrence.tenantId)
+      .find(
+        row =>
+          row.entityId === recurrence.entityId && row.key === recurrence.key,
+      )
+    const stored = { ...recurrence, id: known?.id ?? recurrence.id }
+    await this.rows.save(stored)
+    return stored
   }
 }
 

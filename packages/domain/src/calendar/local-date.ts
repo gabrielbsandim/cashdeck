@@ -44,3 +44,9 @@ export function weekday(date: LocalDate): number {
 export function localDate(year: number, month: number, day: number): LocalDate {
   return fromUtc(Date.UTC(year, month - 1, day))
 }
+
+// A YYYY-MM month moved by whole months.
+export function shiftMonth(month: string, months: number): string {
+  const [year, value] = month.split('-').map(Number) as [number, number]
+  return localDate(year, value + months, 1).slice(0, 7)
+}
