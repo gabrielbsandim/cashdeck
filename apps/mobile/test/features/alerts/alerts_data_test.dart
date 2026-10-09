@@ -90,26 +90,34 @@ void main() {
 
   test('registering a device needs a token and a server answer', () async {
     final repository = MockAlertsRepository();
-    when(() => repository.registerDevice(any(), any()))
-        .thenAnswer((_) async => const Ok(null));
+    when(
+      () =>
+          repository.registerDevice(any(), any(), locale: any(named: 'locale')),
+    ).thenAnswer((_) async => const Ok(null));
     expect(
       await RegisterPushDevice(repository, const DisabledPushMessaging())(
         platform: 'ANDROID',
+        locale: 'en',
       ),
       isFalse,
     );
     expect(
       await RegisterPushDevice(repository, const TokenPush('tok'))(
         platform: 'ANDROID',
+        locale: 'en',
       ),
       isTrue,
     );
-    verify(() => repository.registerDevice('tok', 'ANDROID')).called(1);
-    when(() => repository.registerDevice(any(), any()))
-        .thenAnswer((_) async => const Err(NetworkFailure()));
+    verify(() => repository.registerDevice('tok', 'ANDROID', locale: 'en'))
+        .called(1);
+    when(
+      () =>
+          repository.registerDevice(any(), any(), locale: any(named: 'locale')),
+    ).thenAnswer((_) async => const Err(NetworkFailure()));
     expect(
       await RegisterPushDevice(repository, const DisabledPushMessaging())(
         platform: 'IOS',
+        locale: 'pt',
         token: 'fresh',
       ),
       isFalse,
@@ -144,8 +152,9 @@ void main() {
       (settings as Ok<Map<AlertKind, bool>>).value.values,
       everyElement(isFalse),
     );
-    await repository.registerDevice('tok', 'ANDROID');
+    await repository.registerDevice('tok', 'ANDROID', locale: 'en');
     expect(repository.devices, ['ANDROID:tok']);
+    expect(repository.locales, {'tok': 'en'});
     await repository.removeDevice('tok');
     expect(repository.devices, isEmpty);
   });
@@ -231,10 +240,14 @@ void main() {
     expect(adapterOf(dio).requests.last.data, {
       'muted': {'BILL_DUE_SOON': true},
     });
-    expect(await repository.registerDevice('tok', 'ANDROID'), isA<Ok<void>>());
+    expect(
+      await repository.registerDevice('tok', 'ANDROID', locale: 'pt'),
+      isA<Ok<void>>(),
+    );
     expect(adapterOf(dio).requests.last.data, {
       'token': 'tok',
       'platform': 'ANDROID',
+      'locale': 'pt',
     });
     expect(await repository.removeDevice('a:b'), isA<Ok<void>>());
   });

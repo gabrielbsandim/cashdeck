@@ -104,13 +104,16 @@ final class ApiAlertsRepository implements AlertsRepository {
   );
 
   @override
-  Future<Result<void>> registerDevice(String token, String platform) =>
-      guardRequest(() async {
-        await _dio.post<Object?>(
-          devicesPath,
-          data: {'token': token, 'platform': platform},
-        );
-      });
+  Future<Result<void>> registerDevice(
+    String token,
+    String platform, {
+    required String locale,
+  }) => guardRequest(() async {
+    await _dio.post<Object?>(
+      devicesPath,
+      data: {'token': token, 'platform': platform, 'locale': locale},
+    );
+  });
 
   @override
   Future<Result<void>> removeDevice(String token) => guardRequest(() async {

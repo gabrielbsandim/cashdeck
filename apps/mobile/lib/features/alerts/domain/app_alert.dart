@@ -107,7 +107,12 @@ abstract interface class AlertsRepository {
     required bool muted,
   });
 
-  Future<Result<void>> registerDevice(String token, String platform);
+  /// [locale] picks the language of this device's push text.
+  Future<Result<void>> registerDevice(
+    String token,
+    String platform, {
+    required String locale,
+  });
 
   Future<Result<void>> removeDevice(String token);
 }

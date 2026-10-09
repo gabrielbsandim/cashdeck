@@ -13,6 +13,7 @@ final class FakeAlertsRepository implements AlertsRepository {
   final List<AppAlert> _alerts;
   final Set<AlertKind> _muted = {};
   final List<String> devices = [];
+  final Map<String, String> locales = {};
 
   static List<AppAlert> _seed(DateTime now) => [
     AppAlert(
@@ -97,8 +98,13 @@ final class FakeAlertsRepository implements AlertsRepository {
   }
 
   @override
-  Future<Result<void>> registerDevice(String token, String platform) {
+  Future<Result<void>> registerDevice(
+    String token,
+    String platform, {
+    required String locale,
+  }) {
     devices.add('$platform:$token');
+    locales[token] = locale;
     return _settle(null);
   }
 

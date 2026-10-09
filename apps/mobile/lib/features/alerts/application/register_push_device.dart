@@ -10,10 +10,18 @@ final class RegisterPushDevice {
   final AlertsRepository _repository;
   final PushMessaging _push;
 
-  Future<bool> call({required String platform, String? token}) async {
+  Future<bool> call({
+    required String platform,
+    required String locale,
+    String? token,
+  }) async {
     final current = token ?? await _push.token();
     if (current == null) return false;
-    final result = await _repository.registerDevice(current, platform);
+    final result = await _repository.registerDevice(
+      current,
+      platform,
+      locale: locale,
+    );
     return result is Ok;
   }
 }

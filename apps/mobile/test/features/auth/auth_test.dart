@@ -55,7 +55,7 @@ void main() {
       FixedClock(testNow),
       latency: Duration.zero,
     );
-    await alerts.registerDevice('tok', 'ANDROID');
+    await alerts.registerDevice('tok', 'ANDROID', locale: 'pt');
     final seen = <List<String>>[];
     final signOut = SignOut(
       UnregisterPushDevice(alerts, const _TokenPush()),

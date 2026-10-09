@@ -121,10 +121,11 @@ class AlertRow extends StatelessWidget {
       'd MMM, HH:mm',
       Localizations.localeOf(context).toLanguageTag(),
     ).format(alert.createdAt.toLocal());
+    final text = alertText(AppLocalizations.of(context), alert);
     return CdListRow(
       icon: alertKindIcon(alert.kind),
-      title: alert.title,
-      subtitle: '${alert.body}\n$when',
+      title: text.title,
+      subtitle: '${text.body}\n$when',
       onTap: onTap,
       trailing: alert.unread
           ? Container(

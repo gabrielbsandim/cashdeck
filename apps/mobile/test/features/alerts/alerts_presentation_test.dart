@@ -19,6 +19,7 @@ import 'package:cashdeck/features/alerts/presentation/push_listener.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/settings/presentation/more_screen.dart';
+import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -84,11 +85,153 @@ void main() {
     expect(pushPlatformOf(TargetPlatform.android), 'ANDROID');
     expect(pushPlatformOf(TargetPlatform.iOS), 'IOS');
     expect(pushPlatformOf(TargetPlatform.linux), 'WEB');
+    expect(pushLocaleOf(const Locale('pt', 'BR')), 'pt');
+    expect(pushLocaleOf(const Locale('en', 'BR')), 'en');
+    expect(pushLocaleOf(const Locale('es')), 'en');
     expect(pushLocation(const PushMessage()), AppRoutes.alerts);
     expect(
       pushLocation(const PushMessage(data: {'billId': 'b 1'})),
       AppRoutes.bill('b 1'),
     );
+  });
+
+  test('alert texts follow the app language and keep the server text', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    AlertText textOf(AlertKind kind, Map<String, String> data) => alertText(
+      en,
+      AppAlert(
+        id: 'a',
+        kind: kind,
+        title: 'Servidor',
+        body: 'Texto do servidor',
+        createdAt: testNow,
+        data: data,
+      ),
+    );
+    const bill = {
+      'payee': 'Utility',
+      'amount': r'R$ 10,00',
+      'dueDate': '06/10',
+    };
+    const due = r'Utility · R$ 10,00';
+    final cases = <AlertKind, (Map<String, String>, AlertText)>{
+      AlertKind.billCaptured: (
+        bill,
+        (title: 'New bill captured', body: '$due, due 06/10.'),
+      ),
+      AlertKind.billNeedsAmount: (
+        {'payee': 'Utility', 'source': 'e-mail'},
+        (
+          title: 'Bill without an amount',
+          body:
+              'Utility arrived by email without an amount; add the bill in '
+              'the app.',
+        ),
+      ),
+      AlertKind.billDueSoon: (
+        bill,
+        (title: 'Bill due tomorrow', body: '$due is still unpaid.'),
+      ),
+      AlertKind.paymentNeedsConfirmation: (
+        bill,
+        (
+          title: 'Confirm the payment',
+          body: '$due needs your confirmation before it is paid.',
+        ),
+      ),
+      AlertKind.paymentPaid: (
+        bill,
+        (title: 'Bill paid', body: '$due was paid.'),
+      ),
+      AlertKind.paymentMovedDown: (
+        {...bill, 'rail': 'Asaas'},
+        (
+          title: 'Payment changed route',
+          body: '$due: Asaas failed, the bill moved to the next step.',
+        ),
+      ),
+      AlertKind.paymentAssisted: (
+        {...bill, 'method': 'PIX'},
+        (
+          title: 'Pay manually',
+          body: '$due: use the Pix copy and paste in your bank app.',
+        ),
+      ),
+      AlertKind.approvalPending: (
+        bill,
+        (
+          title: 'Approval pending in the bank',
+          body: '$due awaits your approval in internet banking.',
+        ),
+      ),
+      AlertKind.lowBalance: (
+        {'shortfall': r'R$ 5,00', 'dueDate': '06/10'},
+        (
+          title: 'Low reserve balance',
+          body: r'R$ 5,00 short in the reserve for the bills due 06/10.',
+        ),
+      ),
+      AlertKind.invoiceIssued: (
+        {'invoice': 'Nota 12', 'client': 'Client', 'amount': r'R$ 1,00'},
+        (title: 'Invoice issued', body: r'Invoice 12 to Client · R$ 1,00.'),
+      ),
+      AlertKind.invoiceFailed: (
+        {'invoice': 'Nota', 'client': 'Client', 'amount': r'R$ 1,00'},
+        (
+          title: 'Invoice not issued',
+          body: r'Invoice to Client · R$ 1,00 was rejected.',
+        ),
+      ),
+      AlertKind.cardBillClosed: (
+        {'card': 'Bank 1234', 'closing': '01/10', 'dueDate': '08/10'},
+        (
+          title: 'Card bill closed',
+          body: 'Bank 1234: closed on 01/10, due 08/10.',
+        ),
+      ),
+    };
+    for (final MapEntry(key: kind, value: (data, text)) in cases.entries) {
+      expect(textOf(kind, data), text, reason: kind.name);
+    }
+    expect(
+      textOf(AlertKind.paymentAssisted, {...bill, 'method': 'BARCODE'}).body,
+      '$due: use the barcode in your bank app.',
+    );
+    expect(
+      textOf(AlertKind.paymentAssisted, {...bill, 'method': 'NONE'}).body,
+      '$due: pay in your bank app and mark it as paid.',
+    );
+    expect(
+      textOf(AlertKind.billNeedsAmount, {
+        'payee': 'Utility',
+        'source': 'DDA',
+        'sourceKind': 'DDA',
+      }).body,
+      contains('arrived by DDA'),
+    );
+    expect(
+      textOf(AlertKind.billNeedsAmount, {
+        'payee': 'Utility',
+        'source': 'DDA',
+      }).body,
+      contains('arrived by DDA'),
+    );
+    expect(
+      textOf(AlertKind.invoiceIssued, {
+        'invoice': 'Nota 7',
+        'number': '7',
+        'client': 'Client',
+        'amount': r'R$ 1,00',
+      }).body,
+      startsWith('Invoice 7 '),
+    );
+    expect(
+      textOf(AlertKind.invoiceIssued, {'client': 'Client', 'amount': '1'}).body,
+      startsWith('Invoice to'),
+    );
+    const stored = (title: 'Servidor', body: 'Texto do servidor');
+    expect(textOf(AlertKind.billDueSoon, const {}), stored);
+    expect(textOf(AlertKind.other, bill), stored);
   });
 
   test('every kind has a label and an icon', () {
@@ -308,6 +451,7 @@ void main() {
       ],
     );
     expect(repository.devices, ['ANDROID:push-token']);
+    expect(repository.locales['push-token'], 'pt');
 
     push.refreshes.add('fresh-token');
     await settle(tester);

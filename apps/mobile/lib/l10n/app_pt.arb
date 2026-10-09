@@ -1554,5 +1554,159 @@
   "accountTypeWallet": "Carteira",
   "billAutoDebit": "Débito automático",
   "billAutoDebitExplain": "O banco debita sozinho; o app só dá baixa quando o débito aparecer no extrato",
-  "billAutoDebitHint": "O banco debita no vencimento"
+  "billAutoDebitHint": "O banco debita no vencimento",
+  "alertTextBillCapturedTitle": "Nova conta capturada",
+  "alertTextBillCapturedBody": "{due}, vence em {dueDate}.",
+  "@alertTextBillCapturedBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      },
+      "dueDate": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextBillNeedsAmountTitle": "Conta sem valor",
+  "alertTextBillNeedsAmountBody": "{payee} chegou por {source} sem valor; registre a conta no app.",
+  "@alertTextBillNeedsAmountBody": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextBillDueSoonTitle": "Conta vence amanhã",
+  "alertTextBillDueSoonBody": "{due} ainda não foi paga.",
+  "@alertTextBillDueSoonBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextNeedsConfirmationTitle": "Confirme o pagamento",
+  "alertTextNeedsConfirmationBody": "{due} precisa da sua confirmação antes de ser paga.",
+  "@alertTextNeedsConfirmationBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextPaidTitle": "Conta paga",
+  "alertTextPaidBody": "{due} foi paga.",
+  "@alertTextPaidBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextMovedDownTitle": "Pagamento mudou de caminho",
+  "alertTextMovedDownBody": "{due}: {rail} falhou, a conta seguiu para o próximo passo.",
+  "@alertTextMovedDownBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      },
+      "rail": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextAssistedTitle": "Pague manualmente",
+  "alertTextAssistedBody": "{due}: {hint}",
+  "@alertTextAssistedBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      },
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextHintPix": "use o Pix copia e cola no app do banco.",
+  "alertTextHintBarcode": "use o código de barras no app do banco.",
+  "alertTextHintNone": "pague pelo app do banco e marque como paga.",
+  "alertTextApprovalTitle": "Aprovação pendente no banco",
+  "alertTextApprovalBody": "{due} aguarda sua aprovação no internet banking.",
+  "@alertTextApprovalBody": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextLowBalanceTitle": "Saldo baixo na reserva",
+  "alertTextLowBalanceBody": "Faltam {shortfall} na reserva para as contas de {dueDate}.",
+  "@alertTextLowBalanceBody": {
+    "placeholders": {
+      "shortfall": {
+        "type": "String"
+      },
+      "dueDate": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextInvoiceIssuedTitle": "Nota fiscal emitida",
+  "alertTextInvoiceIssuedBody": "{invoice} para {client} · {amount}.",
+  "@alertTextInvoiceIssuedBody": {
+    "placeholders": {
+      "invoice": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextInvoiceFailedTitle": "Nota fiscal não emitida",
+  "alertTextInvoiceFailedBody": "{invoice} para {client} · {amount} foi recusada.",
+  "@alertTextInvoiceFailedBody": {
+    "placeholders": {
+      "invoice": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextInvoice": "Nota",
+  "alertTextInvoiceNumber": "Nota {number}",
+  "@alertTextInvoiceNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextCardClosedTitle": "Fatura do cartão fechou",
+  "alertTextCardClosedBody": "{card}: fechou em {closing}, vence em {dueDate}.",
+  "@alertTextCardClosedBody": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "closing": {
+        "type": "String"
+      },
+      "dueDate": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextSourceEmail": "e-mail"
 }

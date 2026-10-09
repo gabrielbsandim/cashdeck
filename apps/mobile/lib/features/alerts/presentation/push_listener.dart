@@ -24,6 +24,9 @@ String pushPlatformOf(TargetPlatform platform) => switch (platform) {
   _ => 'WEB',
 };
 
+/// The server writes push text in Portuguese or English only.
+String pushLocaleOf(Locale locale) => locale.languageCode == 'pt' ? 'pt' : 'en';
+
 /// Starts push once, registers the token whenever a session exists, shows a
 /// toast for a push that arrives in the foreground and follows a tapped one.
 /// A registration that failed (no token yet, no network) is retried on resume.
@@ -69,10 +72,14 @@ class _PushListenerState extends ConsumerState<PushListener> {
   }
 
   Future<void> _register([String? token]) async {
-    if (ref.read(serverSessionProvider) == null) return;
+    if (!mounted || ref.read(serverSessionProvider) == null) return;
     _registered = await ref
         .read(registerPushDeviceProvider)
-        .call(platform: pushPlatformOf(defaultTargetPlatform), token: token);
+        .call(
+          platform: pushPlatformOf(defaultTargetPlatform),
+          locale: pushLocaleOf(Localizations.localeOf(context)),
+          token: token,
+        );
   }
 
   void _arrived(PushMessage message) {
