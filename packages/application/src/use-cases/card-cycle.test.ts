@@ -44,6 +44,14 @@ describe('card cycle', () => {
       '2026-10-15',
     )
     expect(nextDue(card('a'), [], day)).toBeNull()
+    expect(nextDue(card('a', credit('2026-09-15')), [], day)).toBe('2026-10-15')
+    expect(
+      nextDue(
+        card('a', credit('2026-09-15')),
+        [stored('a', '2026-08-15')],
+        day,
+      ),
+    ).toBe('2026-10-15')
   })
 
   it('reads the stored bills of each card only', async () => {

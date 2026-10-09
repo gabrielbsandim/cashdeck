@@ -11,7 +11,7 @@ import {
 import { money } from '@/dtos/common'
 import { type CardBillState, type CardBillsView } from '@/dtos/insights'
 import { type CardBill } from '@/ports/records'
-import { dueAfter, latestDue, sameDayIn } from '@/use-cases/card-cycle'
+import { projectedDue, reportedDue, sameDayIn } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import { insightScope } from '@/use-cases/insights'
 import { monthOf, today } from '@/use-cases/shared'
@@ -61,13 +61,12 @@ function openBill(
   gap: number,
   day: LocalDate,
 ): Dated | null {
-  const credit = card.credit
-  const latest = latestDue(stored)
-  const dueOn = credit?.dueOn ?? (latest ? dueAfter(latest, day) : null)
+  const reported = reportedDue(card, day)
+  const dueOn = reported ?? projectedDue(card, stored, day)
   if (!dueOn) {
     return null
   }
-  const reportedClosesOn = credit?.dueOn ? credit.closesOn : null
+  const reportedClosesOn = reported ? (card.credit?.closesOn ?? null) : null
   return {
     closesOn: reportedClosesOn ?? addDays(dueOn, -gap),
     reportedClosesOn,

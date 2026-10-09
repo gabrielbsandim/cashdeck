@@ -30,26 +30,42 @@ export function dueAfter(latest: LocalDate, day: LocalDate): LocalDate {
   return sameDayIn(month, latest.slice(8))
 }
 
-// The issuer's date when it sends one, else the next unpaid stored bill, else
-// the cycle projected from the bill history.
+// A reported due date already behind us is the last bill, not the open one.
+export function reportedDue(card: Account, day: LocalDate): LocalDate | null {
+  const due = card.credit?.dueOn ?? null
+  return due !== null && due >= day ? due : null
+}
+
+// The cycle after the newest date the issuer reported, stored or on the card.
+export function projectedDue(
+  card: Account,
+  stored: readonly CardBill[],
+  day: LocalDate,
+): LocalDate | null {
+  const known = [latestDue(stored), card.credit?.dueOn ?? null]
+    .filter((due): due is LocalDate => due !== null)
+    .sort()
+    .at(-1)
+  return known ? dueAfter(known, day) : null
+}
+
+// The issuer's current date, else the next unpaid stored bill, else the cycle
+// projected from the bill history.
 export function nextDue(
   card: Account,
   stored: readonly CardBill[],
   day: LocalDate,
 ): LocalDate | null {
-  if (card.credit?.dueOn) {
-    return card.credit.dueOn
+  const reported = reportedDue(card, day)
+  if (reported) {
+    return reported
   }
   const pending = stored
     .map(bill => bill.dueOn)
     .filter(due => due >= day)
     .sort()
     .at(0)
-  if (pending) {
-    return pending
-  }
-  const latest = latestDue(stored)
-  return latest ? dueAfter(latest, day) : null
+  return pending ?? projectedDue(card, stored, day)
 }
 
 export async function cardDues(
