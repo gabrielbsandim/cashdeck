@@ -3613,6 +3613,206 @@
         }
       }
     },
+    "/card-bills": {
+      "get": {
+        "operationId": "listCardBills",
+        "summary": "Each card with its open bill and the closed ones before it",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Each card with its open bill and the closed ones before it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cards": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "suffix": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "bills": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "closesOn": {
+                                      "nullable": true,
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    },
+                                    "dueOn": {
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    },
+                                    "total": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cents": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "minLength": 3,
+                                          "maxLength": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "cents",
+                                        "currency"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minimum": {
+                                      "nullable": true,
+                                      "type": "object",
+                                      "properties": {
+                                        "cents": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "minLength": 3,
+                                          "maxLength": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "cents",
+                                        "currency"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "state": {
+                                      "type": "string",
+                                      "enum": [
+                                        "OPEN",
+                                        "CLOSED",
+                                        "PAST"
+                                      ]
+                                    },
+                                    "range": {
+                                      "type": "object",
+                                      "properties": {
+                                        "from": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "to": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "from",
+                                        "to"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "closesOn",
+                                    "dueOn",
+                                    "total",
+                                    "minimum",
+                                    "state",
+                                    "range"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "name",
+                              "suffix",
+                              "entityKind",
+                              "bills"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "cards"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/subscriptions": {
       "get": {
         "operationId": "listSubscriptions",

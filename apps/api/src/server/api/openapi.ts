@@ -53,6 +53,7 @@ import {
   monthlyInsightsSchema,
   insightsScopeQuerySchema,
   installmentsViewSchema,
+  cardBillsViewSchema,
   subscriptionDecisionSchema,
   subscriptionsViewSchema,
   personalSummarySchema,
@@ -232,6 +233,14 @@ const OPERATIONS: Operation[] = [
     summary: 'Card purchases in installments and what they commit ahead',
     query: insightsScopeQuerySchema,
     response: installmentsViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/card-bills',
+    id: 'listCardBills',
+    summary: 'Each card with its open bill and the closed ones before it',
+    query: insightsScopeQuerySchema,
+    response: cardBillsViewSchema,
   },
   {
     method: 'get',

@@ -208,6 +208,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/card-bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each card with its open bill and the closed ones before it */
+        get: operations["listCardBills"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/subscriptions": {
         parameters: {
             query?: never;
@@ -2416,6 +2433,65 @@ export interface operations {
                                 lastBilledOn: string;
                                 finalMonth: string;
                                 transactionIds: string[];
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listCardBills: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each card with its open bill and the closed ones before it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            cards: {
+                                accountId: string;
+                                name: string;
+                                suffix: string | null;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                bills: {
+                                    closesOn: string | null;
+                                    dueOn: string;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    minimum: {
+                                        cents: number;
+                                        currency: string;
+                                    } | null;
+                                    /** @enum {string} */
+                                    state: "OPEN" | "CLOSED" | "PAST";
+                                    range: {
+                                        from: string;
+                                        to: string;
+                                    };
+                                }[];
                             }[];
                         };
                     };

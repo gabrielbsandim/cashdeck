@@ -236,3 +236,31 @@ export const monthlyInsightsSchema = z.object({
 })
 
 export type MonthlyInsights = z.infer<typeof monthlyInsightsSchema>
+
+export const CARD_BILL_STATES = ['OPEN', 'CLOSED', 'PAST'] as const
+export type CardBillState = (typeof CARD_BILL_STATES)[number]
+
+export const cardBillViewSchema = z.object({
+  closesOn: isoDate.nullable(),
+  dueOn: isoDate,
+  total: moneyViewSchema,
+  minimum: moneyViewSchema.nullable(),
+  state: z.enum(CARD_BILL_STATES),
+  // The booking days whose charges this bill holds, for the list of charges.
+  range: rangeSchema,
+})
+
+export const cardBillsViewSchema = z.object({
+  cards: z.array(
+    z.object({
+      accountId: z.string(),
+      name: z.string(),
+      suffix: z.string().nullable(),
+      entityKind: entityKindSchema,
+      // Newest first; the open bill leads when the issuer reports its dates.
+      bills: z.array(cardBillViewSchema),
+    }),
+  ),
+})
+
+export type CardBillsView = z.infer<typeof cardBillsViewSchema>

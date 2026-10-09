@@ -26,6 +26,7 @@ import { POST as syncConnection } from '@/app/api/v1/open-finance/connections/[i
 import { GET as insightsOverview } from '@/app/api/v1/insights/overview/route'
 import { GET as monthlyInsights } from '@/app/api/v1/insights/months/route'
 import { GET as listInstallments } from '@/app/api/v1/installments/route'
+import { GET as listCardBills } from '@/app/api/v1/card-bills/route'
 import {
   GET as listSubscriptions,
   POST as confirmSubscription,
@@ -214,6 +215,8 @@ describe('insights', () => {
     })
     expect(installments.status).toBe(200)
     expect(installments.body.data.months).toHaveLength(12)
+    const cardBills = await call(listCardBills, 'GET', { query: '?entity=PF' })
+    expect(cardBills).toEqual({ status: 200, body: { data: { cards: [] } } })
     const confirmed = await call(confirmSubscription, 'POST', {
       body: { transactionId: 't3' },
     })
