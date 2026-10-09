@@ -94,8 +94,8 @@ describe('rails', () => {
       'sealed:ASAAS_API_KEY:key-1234',
     )
     const test = await rails.test(TENANT, 'PF.ASAAS.PIX_API')
-    expect(test.checks[0]).toMatchObject({ kind: 'CERTIFICATE', passed: false })
-    expect(test.checks[1]).toMatchObject({ kind: 'API_KEY', passed: true })
+    expect(test.checks.map(check => check.kind)).not.toContain('CERTIFICATE')
+    expect(test.checks[0]).toMatchObject({ kind: 'API_KEY', passed: true })
   })
 
   it('funds the reserve only when both rails and a reserve account exist', async () => {

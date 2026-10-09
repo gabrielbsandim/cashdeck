@@ -358,13 +358,18 @@ export function makeRails(deps: RailDeps) {
     const certificateValid =
       stored.certificateName !== null &&
       (stored.certificateValidUntil ?? day) >= day
+    const certificateCheck = ref.fields.certificate
+      ? [
+          {
+            kind: 'CERTIFICATE' as const,
+            passed: certificateValid,
+            millis: null,
+          },
+        ]
+      : []
     return {
       checks: [
-        {
-          kind: 'CERTIFICATE' as const,
-          passed: certificateValid,
-          millis: null,
-        },
+        ...certificateCheck,
         {
           kind: 'API_KEY' as const,
           passed: stored.apiKeyHint !== null || stored.hasClientCredentials,
