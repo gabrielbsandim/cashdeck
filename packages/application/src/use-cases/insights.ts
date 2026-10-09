@@ -54,6 +54,9 @@ const FLOW_ACCOUNT_TYPES = new Set<Account['type']>([
 const TOP_MERCHANTS = 3
 const BILLS_DUE_DAYS = 7
 const BILL_PAGE = { limit: 200 }
+// History that starts this long after the previous period opens covers only
+// part of it, and a change against a partial period means nothing.
+const HISTORY_SLACK_DAYS = 7
 
 export type FlowEntry = {
   transaction: Transaction
@@ -360,7 +363,12 @@ export function makeInsightsOverview(deps: InsightsDeps) {
       ),
     }
     const expenses = within(entries, 'EXPENSE', range)
-    const previousExpenses = within(entries, 'EXPENSE', sameSpan)
+    const covered = entries.some(
+      entry =>
+        entry.transaction.bookedOn <=
+        addDays(previousRange.from, HISTORY_SLACK_DAYS),
+    )
+    const previousExpenses = covered ? within(entries, 'EXPENSE', sameSpan) : []
     const total = totalOf(expenses)
     const previous = totalOf(previousExpenses)
     const income = totalOf(within(entries, 'INCOME', range))
@@ -377,10 +385,9 @@ export function makeInsightsOverview(deps: InsightsDeps) {
         previous: cents(previous),
         changePercent: percentChange(total, previous),
         series: cumulative(expenses, range),
-        previousSeries: cumulative(
-          within(entries, 'EXPENSE', previousRange),
-          previousRange,
-        ),
+        previousSeries: covered
+          ? cumulative(within(entries, 'EXPENSE', previousRange), previousRange)
+          : [],
         topMerchants: topMerchants(expenses),
       },
       categories: categoryItems(expenses, previousExpenses, categories),

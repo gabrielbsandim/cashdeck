@@ -199,6 +199,30 @@ describe('insights overview', () => {
     expect(overview.spend.changePercent).toBeNull()
   })
 
+  it('compares nothing when history starts inside the previous period', async () => {
+    const deps = await seeded()
+    await deps.transactions.save(
+      transaction({
+        id: 'first-synced',
+        accountId: 'checking',
+        amount: Money.of(-500),
+        bookedOn: '2025-10-20',
+        categoryId: 'food',
+      }),
+    )
+    const overview = await makeInsightsOverview(deps)(TENANT, {
+      entity: 'PF',
+      period: '1y',
+    })
+    expect(overview.spend.previous.cents).toBe(0)
+    expect(overview.spend.changePercent).toBeNull()
+    expect(overview.spend.previousSeries).toEqual([])
+    expect(overview.categories.items.map(item => item.changePercent)).toEqual([
+      null,
+      null,
+    ])
+  })
+
   it('answers an entity without accounts with zeros', async () => {
     const deps = fullDeps()
     const overview = await makeInsightsOverview(deps)(TENANT, {
