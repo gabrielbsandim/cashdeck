@@ -48,12 +48,13 @@ final class ScriptedPush implements PushMessaging {
   final foregroundMessages = StreamController<PushMessage>.broadcast();
   final openedMessages = StreamController<PushMessage>.broadcast();
   final refreshes = StreamController<String>.broadcast();
+  String? nextToken = 'push-token';
 
   @override
   Future<bool> start() async => available;
 
   @override
-  Future<String?> token() async => 'push-token';
+  Future<String?> token() async => nextToken;
 
   @override
   Stream<String> tokenRefreshes() => refreshes.stream;
@@ -343,6 +344,38 @@ void main() {
     push.launch.complete(null);
     await settle(tester);
     expect(app.location, AppRoutes.home);
+  });
+
+  testWidgets('a registration without a token is retried on resume', (
+    tester,
+  ) async {
+    final push = ScriptedPush()..nextToken = null;
+    final repository = FakeAlertsRepository(
+      FixedClock(testNow),
+      latency: Duration.zero,
+    );
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      overrides: [
+        pushMessagingProvider.overrideWithValue(push),
+        alertsRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    expect(repository.devices, isEmpty);
+
+    Future<void> resume() async {
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await settle(tester);
+    }
+
+    push.nextToken = 'push-token';
+    await resume();
+    expect(repository.devices, ['ANDROID:push-token']);
+    await resume();
+    expect(repository.devices, ['ANDROID:push-token']);
   });
 
   testWidgets('a cold start push opens its bill', (tester) async {

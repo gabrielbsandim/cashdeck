@@ -26,6 +26,7 @@ String pushPlatformOf(TargetPlatform platform) => switch (platform) {
 
 /// Starts push once, registers the token whenever a session exists, shows a
 /// toast for a push that arrives in the foreground and follows a tapped one.
+/// A registration that failed (no token yet, no network) is retried on resume.
 class PushListener extends ConsumerStatefulWidget {
   const new({required this.child, required this.onOpen, super.key});
 
@@ -38,11 +39,19 @@ class PushListener extends ConsumerStatefulWidget {
 
 class _PushListenerState extends ConsumerState<PushListener> {
   final List<StreamSubscription<Object?>> _subscriptions = [];
+  late final AppLifecycleListener _lifecycle;
+  var _registered = false;
 
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _retry);
     unawaited(_start());
+  }
+
+  void _retry() {
+    if (_registered) return;
+    unawaited(_register());
   }
 
   Future<void> _start() async {
@@ -61,7 +70,7 @@ class _PushListenerState extends ConsumerState<PushListener> {
 
   Future<void> _register([String? token]) async {
     if (ref.read(serverSessionProvider) == null) return;
-    await ref
+    _registered = await ref
         .read(registerPushDeviceProvider)
         .call(platform: pushPlatformOf(defaultTargetPlatform), token: token);
   }
@@ -86,6 +95,7 @@ class _PushListenerState extends ConsumerState<PushListener> {
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     for (final subscription in _subscriptions) {
       unawaited(subscription.cancel());
     }
@@ -95,6 +105,7 @@ class _PushListenerState extends ConsumerState<PushListener> {
   @override
   Widget build(BuildContext context) {
     ref.listen(serverSessionProvider, (previous, next) {
+      if (next == null) _registered = false;
       if (previous != null || next == null) return;
       unawaited(_register());
     });
