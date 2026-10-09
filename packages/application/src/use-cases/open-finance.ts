@@ -169,27 +169,37 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     }
   }
 
+  // An account whose name carries no bank, such as a card named after its
+  // product, takes the one bank its siblings on the same item resolved to.
   async function institutionResolver(
     tenantId: string,
     institution: Institution,
-  ): Promise<(accountName: string) => Promise<Institution | null>> {
+    offered: readonly ProviderAccount[],
+  ): Promise<(accountName: string) => Institution | null> {
     if (!isAggregator(institution.name)) {
-      return async () => null
+      return () => null
     }
     const known = await connectors()
-    return async accountName => {
-      const connector = matchConnector(accountName, known)
+    const owners = new Map<string, Institution>()
+    for (const account of offered) {
+      const connector = matchConnector(account.name, known)
       if (!connector) {
-        return null
+        continue
       }
-      return deps.institutions.ensure({
-        id: deps.ids.next(),
-        tenantId,
-        name: connector.name,
-        manual: false,
-        ...brandingOf(connector),
-      })
+      owners.set(
+        account.name,
+        await deps.institutions.ensure({
+          id: deps.ids.next(),
+          tenantId,
+          name: connector.name,
+          manual: false,
+          ...brandingOf(connector),
+        }),
+      )
     }
+    const banks = new Map([...owners.values()].map(bank => [bank.id, bank]))
+    const sole = banks.size === 1 ? [...banks.values()][0] : undefined
+    return accountName => owners.get(accountName) ?? sole ?? null
   }
 
   const toTransaction = (
@@ -306,9 +316,9 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     const chosen = offered.filter(account =>
       input.accountIds.includes(account.externalId),
     )
-    const resolve = await institutionResolver(tenantId, institution)
+    const resolve = await institutionResolver(tenantId, institution, offered)
     for (const account of chosen) {
-      const owner = await resolve(account.name)
+      const owner = resolve(account.name)
       await deps.accounts.save(
         createAccount({
           id: deps.ids.next(),
@@ -358,7 +368,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
 
   type AccountSync = {
     connection: Connection
-    resolve: (accountName: string) => Promise<Institution | null>
+    resolve: (accountName: string) => Institution | null
     range: { from: string; to: string }
   }
 
@@ -371,7 +381,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     if (!remote) {
       return 0
     }
-    const owner = await context.resolve(remote.name)
+    const owner = context.resolve(remote.name)
     const fetched = await deps.openFinance.listTransactions(
       connectionOf(context.connection.itemId),
       remote.externalId,
@@ -424,8 +434,8 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     const context: AccountSync = {
       connection,
       resolve: institution
-        ? await institutionResolver(tenantId, institution)
-        : async () => null,
+        ? await institutionResolver(tenantId, institution, remote)
+        : () => null,
       range: { from: syncStart(connection, day, options.days), to: day },
     }
     let transactions = 0

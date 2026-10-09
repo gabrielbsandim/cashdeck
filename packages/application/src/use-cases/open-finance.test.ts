@@ -221,7 +221,7 @@ describe('open finance', () => {
     await expect(of.sync(TENANT, connectionId)).rejects.toThrow(NotFoundError)
   })
 
-  it('names each aggregated account after its bank and keeps card details', async () => {
+  it('names each aggregated account after its bank, cards included, and keeps card details', async () => {
     const aggregated = new FakeOpenFinanceProvider(
       [
         {
@@ -317,11 +317,7 @@ describe('open finance', () => {
       connectorId: 1,
       imageUrl: 'https://logo.example/1.svg',
     })
-    const mirror = await deps.institutions.findById(
-      TENANT,
-      card?.institutionId ?? '',
-    )
-    expect(mirror).toMatchObject({ name: 'MeuPluggy', connectorId: 200 })
+    expect(card?.institutionId).toBe(checking?.institutionId)
     expect(card).toMatchObject({
       numberSuffix: '4321',
       credit: { brand: 'VISA', dueOn: '2026-10-27', openBill: null },
@@ -340,6 +336,67 @@ describe('open finance', () => {
       ['2026-09-27', 4_200, undefined],
       ['2026-08-27', 3_100, 500],
     ])
+  })
+
+  it('leaves an unnamed card on the mirror when its item spans two banks', async () => {
+    const mixed = new FakeOpenFinanceProvider(
+      [
+        {
+          externalId: 'acc-1',
+          name: 'BANCO EXEMPLO S.A.',
+          type: 'CHECKING',
+          balanceCents: 1000,
+          currency: 'BRL',
+        },
+        {
+          externalId: 'acc-2',
+          name: 'OUTRO BANCO',
+          type: 'CHECKING',
+          balanceCents: 2000,
+          currency: 'BRL',
+        },
+        {
+          externalId: 'card-1',
+          name: 'PRODUTO CARTAO',
+          type: 'CREDIT_CARD',
+          balanceCents: -500,
+          currency: 'BRL',
+        },
+      ],
+      [],
+      [{ ...item, institutionName: 'MeuPluggy' }],
+    )
+    mixed.connectors = [
+      { id: 1, name: 'Banco Exemplo', imageUrl: null, primaryColor: null },
+      { id: 2, name: 'Outro', imageUrl: null, primaryColor: null },
+    ]
+    const { deps, of } = setup(mixed)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['card-1'],
+    })
+    const connection = await deps.connections.findById(TENANT, connectionId)
+    await of.sync(TENANT, connectionId)
+    const [card] = await deps.accounts.list(TENANT)
+    expect(card?.institutionId).toBe(connection?.institutionId)
+  })
+
+  it('keeps a name the user gave an account across syncs', async () => {
+    const { deps, of } = setup()
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['card-1'],
+    })
+    const [card] = await deps.accounts.list(TENANT)
+    await deps.accounts.save({
+      ...(card as NonNullable<typeof card>),
+      name: 'Travel card',
+    })
+    await of.sync(TENANT, connectionId)
+    const [synced] = await deps.accounts.list(TENANT)
+    expect(synced?.name).toBe('Travel card')
   })
 
   it('sums the charges the issuer has not billed yet as the open bill', async () => {
