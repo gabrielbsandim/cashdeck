@@ -12,7 +12,10 @@ import 'package:cashdeck/core/widgets/insights/cd_institution_logo.dart';
 import 'package:cashdeck/core/widgets/insights/cd_segment_bar.dart';
 import 'package:cashdeck/core/widgets/insights/cd_timeline.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../support/pump_app.dart';
@@ -99,6 +102,44 @@ void main() {
 
       expect(find.text('BA'), findsOneWidget);
       expect(find.text('NP'), findsOneWidget);
+    });
+
+    test('tells an SVG logo by its path', () {
+      expect(CdInstitutionLogo.isSvg('https://cdn.test/icons/726.svg'), isTrue);
+      expect(CdInstitutionLogo.isSvg('https://cdn.test/a.SVG?v=2'), isTrue);
+      expect(
+        CdInstitutionLogo.isSvg('https://cdn.test/icons/804.png'),
+        isFalse,
+      );
+    });
+
+    testWidgets('draws an SVG logo, the monogram while it loads', (
+      tester,
+    ) async {
+      CdInstitutionLogo.debugSvgClient = MockClient(
+        (_) async => http.Response(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"> '
+          '<style>.a{fill:#3263C3}</style> '
+          '<rect class="a" width="10" height="10"/></svg>',
+          200,
+        ),
+      );
+      addTearDown(() => CdInstitutionLogo.debugSvgClient = null);
+      await tester.pumpApp(
+        const CdInstitutionLogo(
+          name: 'Banco Aurora',
+          colors: colors,
+          imageUrl: 'https://example.test/logo.svg',
+        ),
+      );
+      expect(find.byType(SvgPicture), findsOneWidget);
+      expect(find.text('BA'), findsOneWidget);
+
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pump();
+      expect(find.text('BA'), findsNothing);
     });
   });
 

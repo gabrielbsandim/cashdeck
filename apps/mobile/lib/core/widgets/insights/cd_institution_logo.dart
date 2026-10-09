@@ -1,9 +1,13 @@
 import 'package:cashdeck/core/theme/app_chart_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
+import 'package:cashdeck/core/widgets/insights/svg_logo_loader.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 
 /// A bank in a circle: its logo from the connector when there is one, its
-/// monogram on the series tint otherwise, and while the logo loads.
+/// monogram on the series tint otherwise, and while the logo loads. Connector
+/// logos come as PNG or SVG, and only the first decodes as an image.
 class CdInstitutionLogo extends StatelessWidget {
   const new({
     required this.name,
@@ -44,6 +48,35 @@ class CdInstitutionLogo extends StatelessWidget {
     return picked.map((word) => word[0]).join().toUpperCase();
   }
 
+  /// Lets a test serve SVG logos without the network.
+  @visibleForTesting
+  static http.Client? debugSvgClient;
+
+  static bool isSvg(String url) =>
+      Uri.tryParse(url)?.path.toLowerCase().endsWith('.svg') ?? false;
+
+  Widget _logo(String url, Widget fallback) {
+    if (isSvg(url)) {
+      return SvgPicture(
+        SvgLogoLoader(url, httpClient: debugSvgClient),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholderBuilder: (_) => fallback,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    }
+    return Image.network(
+      url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      frameBuilder: (_, child, frame, synchronous) =>
+          frame == null && !synchronous ? fallback : child,
+      errorBuilder: (_, _, _) => fallback,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fallback = Container(
@@ -73,15 +106,7 @@ class CdInstitutionLogo extends StatelessWidget {
           width: size,
           height: size,
           color: context.palette.surfaceContainerLowest,
-          child: Image.network(
-            url,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            frameBuilder: (_, child, frame, synchronous) =>
-                frame == null && !synchronous ? fallback : child,
-            errorBuilder: (_, _, _) => fallback,
-          ),
+          child: _logo(url, fallback),
         ),
       ),
     );
