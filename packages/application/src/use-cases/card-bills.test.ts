@@ -53,6 +53,7 @@ describe('card bills', () => {
     await deps.accounts.save(card('b', 500, null))
     await deps.accounts.save(card('c', -100, credit(null, '2026-10-15')))
     await deps.accounts.save(card('d', 500, credit('2026-10-29', '2026-11-05')))
+    await deps.accounts.save(card('e', -100, null))
     await deps.accounts.save(account({ id: 'checking', entityId: 'pf' }))
     await deps.cardBills.saveAll([
       stored('a', '2026-09-22', '2026-09-12', 90_000),
@@ -60,12 +61,13 @@ describe('card bills', () => {
       stored('b', '2026-10-10', '2026-10-03', 20_000),
       stored('b', '2026-04-07', '2026-03-31', 10_000),
       stored('c', '2026-10-15', '2026-10-05', 30_000),
+      stored('c', '2026-09-15', null, 30_000),
     ])
 
     const view = await makeListCardBills(deps)(TENANT, 'PF')
 
     const byId = new Map(view.cards.map(item => [item.accountId, item]))
-    expect(view.cards).toHaveLength(4)
+    expect(view.cards).toHaveLength(5)
     expect(byId.get('a')).toEqual({
       accountId: 'a',
       name: 'Cartao a',
@@ -99,6 +101,14 @@ describe('card bills', () => {
       ],
     })
     expect(byId.get('b')?.bills).toEqual([
+      {
+        closesOn: null,
+        dueOn: '2026-11-10',
+        total: cents(0),
+        minimum: null,
+        state: 'OPEN',
+        range: { from: '2026-10-04', to: '2026-11-03' },
+      },
       expect.objectContaining({
         state: 'CLOSED',
         range: { from: '2026-04-01', to: '2026-10-03' },
@@ -109,7 +119,13 @@ describe('card bills', () => {
     ])
     expect(byId.get('c')?.bills).toEqual([
       expect.objectContaining({ total: cents(30_000), state: 'CLOSED' }),
+      expect.objectContaining({
+        dueOn: '2026-09-15',
+        state: 'PAST',
+        range: { from: '2026-08-06', to: '2026-09-05' },
+      }),
     ])
+    expect(byId.get('e')?.bills).toEqual([])
     expect(byId.get('d')?.bills).toEqual([
       expect.objectContaining({
         total: cents(0),

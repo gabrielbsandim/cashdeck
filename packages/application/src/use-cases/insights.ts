@@ -20,6 +20,7 @@ import {
   type InsightsOverview,
   type InsightsOverviewQuery,
 } from '@/dtos/insights'
+import { cardDues, type CardDues } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import {
   addMonths,
@@ -32,7 +33,13 @@ import {
 
 export type InsightsDeps = Pick<
   Deps,
-  'entities' | 'accounts' | 'transactions' | 'categories' | 'bills' | 'clock'
+  | 'entities'
+  | 'accounts'
+  | 'transactions'
+  | 'categories'
+  | 'bills'
+  | 'cardBills'
+  | 'clock'
 >
 
 export type DayRange = { from: LocalDate; to: LocalDate }
@@ -242,9 +249,13 @@ function categoryItems(
   return { total: cents(total), items }
 }
 
-function earliestDue(cards: readonly Account[], day: LocalDate) {
+function earliestDue(
+  cards: readonly Account[],
+  dues: CardDues,
+  day: LocalDate,
+) {
   const dates = cards
-    .map(card => card.credit?.dueOn ?? null)
+    .map(card => dues.get(card.id) ?? null)
     .filter((due): due is LocalDate => due !== null)
     .sort()
   return dates.find(due => due >= day) ?? dates.at(0) ?? null
@@ -252,6 +263,7 @@ function earliestDue(cards: readonly Account[], day: LocalDate) {
 
 export function cardsSummary(
   accounts: readonly Account[],
+  dues: CardDues,
   day: LocalDate,
 ): InsightsOverview['cards'] {
   const cards = accounts.filter(account => account.type === 'CREDIT_CARD')
@@ -271,7 +283,7 @@ export function cardsSummary(
   const withLimit = lines.length > 0
   return {
     bill: cents(owed),
-    dueOn: earliestDue(cards, day),
+    dueOn: earliestDue(cards, dues, day),
     count: cards.length,
     limit: withLimit ? cents(limit) : null,
     used: withLimit ? cents(limit - available) : null,
@@ -376,7 +388,11 @@ export function makeInsightsOverview(deps: InsightsDeps) {
         expenses: cents(total),
         result: cents(income - total),
       },
-      cards: cardsSummary(scope.accounts, day),
+      cards: cardsSummary(
+        scope.accounts,
+        await cardDues(deps, tenantId, scope.accounts, day),
+        day,
+      ),
       billsDue: {
         days: BILLS_DUE_DAYS,
         total: cents(bills.reduce((sum, bill) => sum + bill.amount.cents, 0)),

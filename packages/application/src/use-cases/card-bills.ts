@@ -11,9 +11,10 @@ import {
 import { money } from '@/dtos/common'
 import { type CardBillState, type CardBillsView } from '@/dtos/insights'
 import { type CardBill } from '@/ports/records'
+import { dueAfter, latestDue, sameDayIn } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import { insightScope } from '@/use-cases/insights'
-import { lastDay, monthOf, today } from '@/use-cases/shared'
+import { monthOf, today } from '@/use-cases/shared'
 
 type CardBillDeps = Pick<Deps, 'entities' | 'accounts' | 'cardBills' | 'clock'>
 
@@ -29,19 +30,21 @@ type Dated = {
   minimum: Money | null
 }
 
-function gapOf(credit: CreditLine | null): number {
-  if (!credit?.closesOn || !credit.dueOn) {
-    return DEFAULT_GAP_DAYS
+// The card's own gap first, else the usual gap of the bills it reported.
+function gapOf(credit: CreditLine | null, stored: readonly CardBill[]): number {
+  if (credit?.closesOn && credit.dueOn) {
+    return daysBetween(credit.closesOn, credit.dueOn)
   }
-  return daysBetween(credit.closesOn, credit.dueOn)
+  const gaps = stored
+    .flatMap(bill =>
+      bill.closesOn ? [daysBetween(bill.closesOn, bill.dueOn)] : [],
+    )
+    .sort((a, b) => a - b)
+  return gaps.at(Math.floor(gaps.length / 2)) ?? DEFAULT_GAP_DAYS
 }
 
-function monthBefore(day: LocalDate): LocalDate {
-  const month = shiftMonth(monthOf(day), -1)
-  const sameDay = `${month}-${day.slice(8)}`
-  const last = lastDay(month)
-  return sameDay < last ? sameDay : last
-}
+const monthBefore = (day: LocalDate) =>
+  sameDayIn(shiftMonth(monthOf(day), -1), day.slice(8))
 
 function stateOf(bill: Dated, day: LocalDate): CardBillState {
   if (day <= bill.closesOn) {
@@ -50,23 +53,32 @@ function stateOf(bill: Dated, day: LocalDate): CardBillState {
   return day <= bill.dueOn ? 'CLOSED' : 'PAST'
 }
 
-// The bill the issuer is still filling, worth what the card owes now.
-function openBill(card: Account, gap: number): Dated | null {
+// The bill the issuer is still filling, worth what the card owes now. Without
+// the issuer's dates it is the cycle after the last bill it reported.
+function openBill(
+  card: Account,
+  stored: readonly CardBill[],
+  gap: number,
+  day: LocalDate,
+): Dated | null {
   const credit = card.credit
-  if (!credit?.dueOn) {
+  const latest = latestDue(stored)
+  const dueOn = credit?.dueOn ?? (latest ? dueAfter(latest, day) : null)
+  if (!dueOn) {
     return null
   }
+  const reportedClosesOn = credit?.dueOn ? credit.closesOn : null
   return {
-    closesOn: credit.closesOn ?? addDays(credit.dueOn, -gap),
-    reportedClosesOn: credit.closesOn,
-    dueOn: credit.dueOn,
+    closesOn: reportedClosesOn ?? addDays(dueOn, -gap),
+    reportedClosesOn,
+    dueOn,
     total: Money.of(Math.max(0, -card.balance.cents), card.balance.currency),
     minimum: null,
   }
 }
 
 function billsOf(card: Account, stored: readonly CardBill[], day: LocalDate) {
-  const gap = gapOf(card.credit)
+  const gap = gapOf(card.credit, stored)
   const dated: Dated[] = stored.map(bill => ({
     closesOn: bill.closesOn ?? addDays(bill.dueOn, -gap),
     reportedClosesOn: bill.closesOn,
@@ -74,7 +86,7 @@ function billsOf(card: Account, stored: readonly CardBill[], day: LocalDate) {
     total: bill.total,
     minimum: bill.minimum,
   }))
-  const open = openBill(card, gap)
+  const open = openBill(card, stored, gap, day)
   const known = new Set(dated.map(bill => bill.dueOn))
   const bills = [...(open && !known.has(open.dueOn) ? [open] : []), ...dated]
     .sort((a, b) => b.dueOn.localeCompare(a.dueOn))

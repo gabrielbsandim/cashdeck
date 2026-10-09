@@ -237,7 +237,7 @@ describe('insight helpers', () => {
       type: 'CREDIT_CARD',
       balance: Money.of(500),
     })
-    expect(cardsSummary([plain], '2026-10-08')).toEqual({
+    expect(cardsSummary([plain], new Map(), '2026-10-08')).toEqual({
       bill: cents(0),
       dueOn: null,
       count: 1,
@@ -250,6 +250,9 @@ describe('insight helpers', () => {
       type: 'CREDIT_CARD',
       credit: { ...CREDIT, dueOn: '2026-09-27' },
     })
-    expect(cardsSummary([past, plain], '2026-10-08')?.dueOn).toBe('2026-09-27')
+    const dues = new Map([['past', '2026-09-27']])
+    expect(cardsSummary([past, plain], dues, '2026-10-08')?.dueOn).toBe(
+      '2026-09-27',
+    )
   })
 })
