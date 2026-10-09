@@ -130,7 +130,7 @@ void main() {
     );
 
     expect(category.props, hasLength(5));
-    expect(account.props, hasLength(5));
+    expect(account.props, hasLength(7));
     expect(page.hasMore, isTrue);
     expect(const TransactionPage(items: []).hasMore, isFalse);
     expect(page.props, hasLength(2));

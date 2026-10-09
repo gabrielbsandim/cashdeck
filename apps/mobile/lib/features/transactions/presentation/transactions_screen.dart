@@ -290,7 +290,8 @@ class _TransactionList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
-    final categories = ref.watch(categoriesProvider).value ?? const [];
+    final loaded = ref.watch(categoriesProvider).value;
+    final categories = loaded ?? const <Category>[];
     final consolidated =
         ref.watch(entityScopeProvider) == EntityScope.consolidated;
     return ListView(
@@ -317,7 +318,7 @@ class _TransactionList extends ConsumerWidget {
                   ? EntityKindBadge(kind: transaction.owner, size: 40)
                   : null,
               title: transaction.description,
-              subtitle: transactionCategoryLabel(l10n, transaction, categories),
+              subtitle: transactionCategoryLabel(l10n, transaction, loaded),
               amount: transaction.amount,
               kind: amountKindOf(transaction),
               onTap: () => _open(context, transaction),

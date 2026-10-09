@@ -66,16 +66,18 @@ Category? categoryOf(Transaction transaction, List<Category> categories) {
   return categories.where((category) => category.id == id).firstOrNull;
 }
 
+/// Empty while [categories] is still loading, so a known category never
+/// flashes as removed.
 String transactionCategoryLabel(
   AppLocalizations l10n,
   Transaction transaction,
-  List<Category> categories,
+  List<Category>? categories,
 ) {
+  if (transaction.isUncategorized) return l10n.transactionUncategorized;
+  if (categories == null) return '';
   final category = categoryOf(transaction, categories);
-  if (category != null) return categoryName(l10n, category);
-  return transaction.isUncategorized
-      ? l10n.transactionUncategorized
-      : l10n.transactionCategoryUnknown;
+  if (category == null) return l10n.transactionCategoryUnknown;
+  return categoryName(l10n, category);
 }
 
 /// Who chose the category, with the model's confidence when it did.

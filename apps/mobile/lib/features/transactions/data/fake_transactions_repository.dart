@@ -36,6 +36,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       owner: EntityKind.personal,
       institution: 'Banco Aurora',
       type: AccountType.checking,
+      balance: Money(482_015),
     ),
     TransactionAccount(
       id: 'acc-pf-card',
@@ -43,6 +44,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       owner: EntityKind.personal,
       institution: 'Horizonte',
       type: AccountType.creditCard,
+      balance: Money(-189_045),
     ),
     TransactionAccount(
       id: 'acc-pj-checking',
@@ -50,6 +52,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       owner: EntityKind.company,
       institution: 'Banco Aurora',
       type: AccountType.checking,
+      balance: Money(1_820_000),
     ),
   ];
 

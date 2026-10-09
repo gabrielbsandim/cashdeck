@@ -97,6 +97,8 @@ final class TransactionAccount extends Equatable {
     required this.owner,
     required this.institution,
     this.type,
+    this.balance = const Money(0),
+    this.isReserve = false,
   });
 
   final String id;
@@ -106,9 +108,29 @@ final class TransactionAccount extends Equatable {
 
   /// Null when the server sent a type this build does not know.
   final AccountType? type;
+  final Money balance;
+  final bool isReserve;
+
+  /// Counts toward the home balance, as the server's cash account types do.
+  bool get isCash =>
+      !balance.isForeign &&
+      switch (type) {
+        AccountType.checking ||
+        AccountType.savings ||
+        AccountType.wallet => true,
+        _ => false,
+      };
 
   @override
-  List<Object?> get props => [id, name, owner, institution, type];
+  List<Object?> get props => [
+    id,
+    name,
+    owner,
+    institution,
+    type,
+    balance,
+    isReserve,
+  ];
 }
 
 /// What the list shows: the scope, the filters and the text searched.

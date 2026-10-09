@@ -190,7 +190,7 @@ class _Body extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
-    final categories = ref.watch(categoriesProvider).value ?? const [];
+    final loaded = ref.watch(categoriesProvider).value;
     final accounts = ref.watch(transactionAccountsProvider).value ?? const [];
     final account = accounts
         .where((item) => item.id == transaction.accountId)
@@ -205,7 +205,7 @@ class _Body extends ConsumerWidget {
       children: [
         Center(
           child: CdIconTile(
-            categoryIcon(categoryOf(transaction, categories)),
+            categoryIcon(categoryOf(transaction, loaded ?? const [])),
             size: 56,
           ),
         ),
@@ -251,7 +251,7 @@ class _Body extends ConsumerWidget {
                 key: TransactionDetailScreen.categoryKey,
                 padding: EdgeInsets.zero,
                 icon: Symbols.category_rounded,
-                title: transactionCategoryLabel(l10n, transaction, categories),
+                title: transactionCategoryLabel(l10n, transaction, loaded),
                 subtitle: source ?? l10n.transactionCategoryHint,
                 chevron: true,
                 onTap: saving ? null : onCategory,

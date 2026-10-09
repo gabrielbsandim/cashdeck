@@ -117,6 +117,8 @@ void main() {
                 'entityKind': 'PJ',
                 'institution': 'Banco',
                 'type': 'CREDIT_CARD',
+                'balance': {'cents': -1200, 'currency': 'BRL'},
+                'isReserve': false,
               },
             ],
           }),
@@ -165,6 +167,8 @@ void main() {
       expect(update.similarUpdated, 3);
       expect(accounts.single.owner, EntityKind.company);
       expect(accounts.single.type, AccountType.creditCard);
+      expect(accounts.single.balance, const Money(-1200));
+      expect(accounts.single.isCash, isFalse);
       expect(categories.single.key, 'groceries');
     });
 

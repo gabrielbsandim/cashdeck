@@ -64,6 +64,8 @@ TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   owner: readEntityKind(json, 'entityKind'),
   institution: readString(json, 'institution'),
   type: _accountTypes[readOptionalString(json, 'type')],
+  balance: readMoney(json, 'balance'),
+  isReserve: readBool(json, 'isReserve'),
 );
 
 /// The query string of `GET /transactions`; empty filters are left out.
