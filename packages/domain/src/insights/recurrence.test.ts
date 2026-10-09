@@ -61,6 +61,18 @@ describe('recurrence', () => {
       lastChargeOn: '2026-09-15',
       months: 2,
       transactionIds: ['new', 'old'],
+      charges: [
+        {
+          transactionId: 'new',
+          bookedOn: '2026-09-15',
+          amount: Money.of(4_490),
+        },
+        {
+          transactionId: 'old',
+          bookedOn: '2026-08-12',
+          amount: Money.of(3_990),
+        },
+      ],
     })
     expect(
       summarizeCharges('k', [tx('one', '2026-09-15', -100)]).previousAmount,
@@ -77,6 +89,8 @@ describe('recurrence', () => {
         tx('busy-extra', '2026-09-20', -500, 'PADARIA EXEMPLO'),
         tx('busy-more', '2026-09-21', -500, 'PADARIA EXEMPLO'),
         ...monthly('income', [5_000, 5_000, 5_000], 'SALARIO EXEMPLO'),
+        ...monthly('power', [-26_200, -24_100, -27_900], 'ENERGIA EXEMPLO'),
+        ...monthly('fx', [-10_120, -10_340, -10_060], 'NUVEM EXEMPLO'),
         tx('split', '2026-09-10', -100, 'PARCELADO EXEMPLO', {
           installment: true,
         }),
@@ -84,7 +98,10 @@ describe('recurrence', () => {
       ],
       '2026-10-08',
     )
-    expect(found.map(charge => charge.key)).toEqual(['streaming exemplo'])
+    expect(found.map(charge => charge.key)).toEqual([
+      'streaming exemplo',
+      'nuvem exemplo',
+    ])
     expect(
       detectRecurring(monthly('s', [-3_990, -3_990, -3_990]), '2026-12-31'),
     ).toEqual([])
