@@ -1,8 +1,10 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/insights/cd_institution_logo.dart';
+import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -12,9 +14,11 @@ import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_detail_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_pickers.dart';
+import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_screen.dart';
 import 'package:cashdeck/features/transactions/transactions_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/app_harness.dart';
@@ -67,6 +71,24 @@ Future<void> _consolidated(WidgetTester tester) async {
 Future<void> _search(WidgetTester tester, String text) async {
   await tester.enterText(find.byKey(TransactionsScreen.searchKey), text);
   await tester.pump(TransactionsScreen.searchDelay);
+  await settle(tester);
+}
+
+/// Taps both ends on the calendar; October, the current month, comes last.
+/// The test font is wider than a real one, so the picker header needs room.
+Future<void> _pickDays(WidgetTester tester, int from, int to) async {
+  tester.view.physicalSize = const Size(2400, 6000);
+  await tester.pump();
+  await tester.tap(find.byKey(TransactionsScreen.daysFilterKey));
+  await settle(tester);
+  expect(find.text(l10n.transactionsDaysHelp), findsOneWidget);
+  final picker = find.byType(DateRangePickerDialog);
+  final material = MaterialLocalizations.of(tester.element(picker));
+  await tester.tap(find.text('$from').last);
+  await tester.pump();
+  await tester.tap(find.text('$to').last);
+  await tester.pump();
+  await tester.tap(find.text(material.saveButtonLabel));
   await settle(tester);
 }
 
@@ -316,6 +338,48 @@ void main() {
     expect(find.text(l10n.transactionsEmptyTitle), findsOneWidget);
   });
 
+  testWidgets('a day or a range of days narrows the list until cleared', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.transactions);
+    expect(find.byTooltip(l10n.transactionsFilterDays), findsOneWidget);
+    expect(find.byKey(TransactionsScreen.daysChipKey), findsNothing);
+
+    await _pickDays(tester, 7, 7);
+    expect(find.text('7 de out.'), findsOneWidget);
+    expect(find.text(l10n.relativeYesterdayTitle), findsOneWidget);
+    expect(find.text(l10n.relativeTodayTitle), findsNothing);
+    expect(find.text('Mercado Bom Preço'), findsOneWidget);
+
+    await _search(tester, 'nada parecido');
+    expect(find.text(l10n.transactionsNoMatchTitle), findsOneWidget);
+    await _search(tester, '');
+    expect(find.text('Mercado Bom Preço'), findsOneWidget);
+
+    await _pickDays(tester, 1, 6);
+    expect(find.text('1 de out. a 6 de out.'), findsOneWidget);
+    expect(find.text(l10n.relativeYesterdayTitle), findsNothing);
+    expect(find.byType(CdTransactionRow), findsWidgets);
+
+    expect(find.byTooltip(l10n.transactionsClearDays), findsOneWidget);
+    await tester.tap(find.byKey(TransactionsScreen.daysChipKey));
+    await settle(tester);
+    expect(find.byKey(TransactionsScreen.daysChipKey), findsNothing);
+    expect(find.text(l10n.relativeTodayTitle), findsOneWidget);
+  });
+
+  testWidgets('clearing the filters drops the days too', (tester) async {
+    await pumpRoute(tester, AppRoutes.transactions);
+    await _pickDays(tester, 7, 7);
+    await _search(tester, 'Padaria');
+    expect(find.text(l10n.transactionsNoMatchTitle), findsOneWidget);
+
+    await tester.tap(find.text(l10n.transactionsClearFilters));
+    await settle(tester);
+    expect(find.byKey(TransactionsScreen.daysChipKey), findsNothing);
+    expect(find.text(l10n.relativeTodayTitle), findsOneWidget);
+  });
+
   testWidgets('pulling the list fetches it again', (tester) async {
     final repository = _Scripted();
     await pumpRoute(
@@ -336,6 +400,48 @@ void main() {
     expect(find.byType(RefreshProgressIndicator), findsNothing);
   });
 
+  test(
+    'the days filter keeps the other filters and refuses a reversed range',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final subscription = container.listen(
+        transactionFiltersProvider,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+      final filters = container.read(transactionFiltersProvider.notifier)
+        ..selectAccount('acc-pf-card')
+        ..selectDays(testToday.addDays(-3), testToday);
+      expect(
+        container.read(transactionFiltersProvider),
+        TransactionFilters(
+          accountId: 'acc-pf-card',
+          from: testToday.addDays(-3),
+          to: testToday,
+        ),
+      );
+      filters
+        ..search('pão')
+        ..selectCategory('cat-groceries');
+      expect(container.read(transactionFiltersProvider).to, testToday);
+      expect(
+        container
+            .read(transactionFiltersProvider)
+            .queryFor(EntityScope.personal)
+            .filtered,
+        isTrue,
+      );
+      expect(
+        () => filters.selectDays(testToday, testToday.addDays(-1)),
+        throwsArgumentError,
+      );
+      filters.clearDays();
+      expect(container.read(transactionFiltersProvider).from, isNull);
+      expect(container.read(transactionFiltersProvider).search, 'pão');
+    },
+  );
+
   test('labels cover every source, kind and day', () {
     const today = testToday;
     expect(
@@ -351,6 +457,16 @@ void main() {
       isNot(l10n.relativeTodayTitle),
     );
     expect(categoryName(l10n, const Category(id: 'x', name: 'Pets')), 'Pets');
+    expect(
+      daysLabel(
+        l10n,
+        from: const CalendarDate(2025, 12, 30),
+        to: today,
+        today: today,
+        locale: 'pt-BR',
+      ),
+      '30 de dez. de 2025 a 8 de out.',
+    );
     for (final key in FakeCategoriesRepository.keys) {
       expect(
         categoryName(l10n, Category(id: key, key: key, name: key)),

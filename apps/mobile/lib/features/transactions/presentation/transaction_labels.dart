@@ -116,6 +116,26 @@ String dayLabel(
   };
 }
 
+/// The days filter on its chip: one day or both ends, with the year only
+/// when it is not the current one.
+String daysLabel(
+  AppLocalizations l10n, {
+  required CalendarDate from,
+  required CalendarDate to,
+  required CalendarDate today,
+  required String locale,
+}) {
+  String day(CalendarDate date) {
+    final format = date.year == today.year
+        ? DateFormat.MMMd(locale)
+        : DateFormat.yMMMd(locale);
+    return format.format(DateTime(date.year, date.month, date.day));
+  }
+
+  if (from == to) return day(from);
+  return l10n.transactionsDaysRange(day(from), day(to));
+}
+
 String? accountTypeLabel(AppLocalizations l10n, AccountType? type) =>
     switch (type) {
       AccountType.checking => l10n.accountTypeChecking,

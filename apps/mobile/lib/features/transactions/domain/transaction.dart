@@ -293,7 +293,12 @@ final class TransactionQuery extends Equatable {
   };
 
   bool get filtered =>
-      accountId != null || categoryId != null || uncategorized || search != '';
+      accountId != null ||
+      categoryId != null ||
+      uncategorized ||
+      search != '' ||
+      from != null ||
+      to != null;
 
   bool matches(Transaction transaction) {
     final term = search.trim().toLowerCase();

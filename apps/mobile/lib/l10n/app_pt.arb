@@ -1476,6 +1476,20 @@
   "transactionsFilterCategory": "Categoria",
   "transactionsAllCategories": "Todas as categorias",
   "transactionsLoadMore": "Carregar mais",
+  "transactionsFilterDays": "Filtrar por data",
+  "transactionsDaysHelp": "Um dia: toque duas vezes",
+  "transactionsDaysRange": "{from} a {to}",
+  "@transactionsDaysRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionsClearDays": "Limpar datas",
   "applyToSimilarTitle": "Aplicar a transações semelhantes?",
   "applyToSimilarMessage": "A nova categoria vira uma regra para esta descrição. Ela também pode ir para as transações parecidas que você ainda não ajustou.",
   "applyToSimilarYes": "Aplicar às semelhantes",

@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
@@ -15,6 +16,8 @@ final class TransactionFilters extends Equatable {
     this.categoryId,
     this.uncategorized = false,
     this.search = '',
+    this.from,
+    this.to,
   });
 
   final String? accountId;
@@ -22,16 +25,29 @@ final class TransactionFilters extends Equatable {
   final bool uncategorized;
   final String search;
 
+  /// Booking days to keep, both included; both null or both set.
+  final CalendarDate? from;
+  final CalendarDate? to;
+
   TransactionQuery queryFor(EntityScope scope) => TransactionQuery(
     scope: scope,
     accountId: accountId,
     categoryId: categoryId,
     uncategorized: uncategorized,
     search: search,
+    from: from,
+    to: to,
   );
 
   @override
-  List<Object?> get props => [accountId, categoryId, uncategorized, search];
+  List<Object?> get props => [
+    accountId,
+    categoryId,
+    uncategorized,
+    search,
+    from,
+    to,
+  ];
 }
 
 class TransactionFiltersController extends Notifier<TransactionFilters> {
@@ -46,6 +62,8 @@ class TransactionFiltersController extends Notifier<TransactionFilters> {
     categoryId: state.categoryId,
     uncategorized: state.uncategorized,
     search: text.trim(),
+    from: state.from,
+    to: state.to,
   );
 
   void selectAccount(String? accountId) => state = TransactionFilters(
@@ -53,6 +71,8 @@ class TransactionFiltersController extends Notifier<TransactionFilters> {
     categoryId: state.categoryId,
     uncategorized: state.uncategorized,
     search: state.search,
+    from: state.from,
+    to: state.to,
   );
 
   /// One category, only the uncategorized ones, or every category.
@@ -62,6 +82,28 @@ class TransactionFiltersController extends Notifier<TransactionFilters> {
         categoryId: uncategorized ? null : categoryId,
         uncategorized: uncategorized,
         search: state.search,
+        from: state.from,
+        to: state.to,
+      );
+
+  /// From [from] to [to], both included; the same day twice keeps one day.
+  void selectDays(CalendarDate from, CalendarDate to) {
+    if (to.isBefore(from)) {
+      throw ArgumentError.value(to, 'to', 'Expected on or after from');
+    }
+    state = _withDays(from, to);
+  }
+
+  void clearDays() => state = _withDays(null, null);
+
+  TransactionFilters _withDays(CalendarDate? from, CalendarDate? to) =>
+      TransactionFilters(
+        accountId: state.accountId,
+        categoryId: state.categoryId,
+        uncategorized: state.uncategorized,
+        search: state.search,
+        from: from,
+        to: to,
       );
 
   void clear() => state = const TransactionFilters();

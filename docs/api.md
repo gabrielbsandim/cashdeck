@@ -219,7 +219,8 @@ never overwrites it.
 
 Newest first. `categoryId` keeps one category, `uncategorized=true` keeps the
 ones without (it wins over `categoryId`), `search` matches the description or
-the note, case-insensitive. `data`: array of
+the note, case-insensitive. `from` and `to` are booking days (`YYYY-MM-DD`),
+both included, so the same day twice keeps that day. `data`: array of
 
 ```json
 {

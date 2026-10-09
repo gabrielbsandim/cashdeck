@@ -38,6 +38,8 @@ class TransactionsScreen extends ConsumerStatefulWidget {
   static const searchKey = Key('transactions-search');
   static const accountFilterKey = Key('transactions-filter-account');
   static const categoryFilterKey = Key('transactions-filter-category');
+  static const daysFilterKey = Key('transactions-filter-days');
+  static const daysChipKey = Key('transactions-days-chip');
   static const loadMoreKey = Key('transactions-load-more');
   static const allOptionKey = Key('transactions-filter-all');
   static const uncategorizedOptionKey = Key(
@@ -50,6 +52,9 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 
   /// How long typing pauses before the search runs.
   static const searchDelay = Duration(milliseconds: 350);
+
+  /// How far back the days filter reaches.
+  static const pickableYears = 5;
 
   static final List<ProviderBase<AsyncValue<Object?>>> refreshed = [
     transactionsControllerProvider,
@@ -95,12 +100,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               AppSpacing.screenGutter,
               0,
             ),
-            child: CdSearchField(
-              key: TransactionsScreen.searchKey,
-              controller: _search,
-              hint: l10n.transactionsSearchHint,
-              onChanged: _onSearch,
-              loading: transactions.isLoading && transactions.hasValue,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CdSearchField(
+                    key: TransactionsScreen.searchKey,
+                    controller: _search,
+                    hint: l10n.transactionsSearchHint,
+                    onChanged: _onSearch,
+                    loading: transactions.isLoading && transactions.hasValue,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                const _DaysButton(),
+              ],
             ),
           ),
           const _FilterBar(),
@@ -233,6 +246,8 @@ class _FilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
     final filters = ref.watch(transactionFiltersProvider);
     final accounts = ref.watch(transactionAccountsProvider).value ?? const [];
     final categories = ref.watch(categoriesProvider).value ?? const [];
@@ -248,6 +263,16 @@ class _FilterBar extends ConsumerWidget {
       (false, null) => l10n.transactionsFilterCategory,
     };
     final categorySet = filters.uncategorized || filters.categoryId != null;
+    final days = switch ((filters.from, filters.to)) {
+      (final from?, final to?) => daysLabel(
+        l10n,
+        from: from,
+        to: to,
+        today: today,
+        locale: locale,
+      ),
+      _ => null,
+    };
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: SingleChildScrollView(
@@ -257,6 +282,19 @@ class _FilterBar extends ConsumerWidget {
         ),
         child: Row(
           children: [
+            if (days != null) ...[
+              Tooltip(
+                message: l10n.transactionsClearDays,
+                child: CdFilterChip(
+                  key: TransactionsScreen.daysChipKey,
+                  label: days,
+                  icon: Symbols.calendar_month_rounded,
+                  onRemove: () =>
+                      ref.read(transactionFiltersProvider.notifier).clearDays(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
             CdFilterChip(
               key: TransactionsScreen.accountFilterKey,
               label: account?.name ?? l10n.transactionsFilterAccount,
@@ -277,6 +315,55 @@ class _FilterBar extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DaysButton extends ConsumerWidget {
+  const new();
+
+  Future<void> _pick(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final filters = ref.read(transactionFiltersProvider);
+    final today = CalendarDate.brazilToday(ref.read(clockProvider).now());
+    DateTime local(CalendarDate day) => DateTime(day.year, day.month, day.day);
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(
+        today.year - TransactionsScreen.pickableYears,
+        today.month,
+        today.day,
+      ),
+      lastDate: local(today),
+      currentDate: local(today),
+      initialDateRange: switch ((filters.from, filters.to)) {
+        (final from?, final to?) => DateTimeRange(
+          start: local(from),
+          end: local(to),
+        ),
+        _ => null,
+      },
+      helpText: l10n.transactionsDaysHelp,
+    );
+    if (picked == null || !context.mounted) return;
+    ref
+        .read(transactionFiltersProvider.notifier)
+        .selectDays(
+          CalendarDate.fromDateTime(picked.start),
+          CalendarDate.fromDateTime(picked.end),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final filters = ref.watch(transactionFiltersProvider);
+    return IconButton(
+      key: TransactionsScreen.daysFilterKey,
+      tooltip: l10n.transactionsFilterDays,
+      isSelected: filters.from != null,
+      icon: const Icon(Symbols.calendar_month_rounded),
+      onPressed: () => _pick(context, ref),
     );
   }
 }

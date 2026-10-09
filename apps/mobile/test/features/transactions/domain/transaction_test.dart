@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +45,14 @@ void main() {
       TransactionQuery(scope: EntityScope.personal, categoryId: 'c'),
       TransactionQuery(scope: EntityScope.personal, uncategorized: true),
       TransactionQuery(scope: EntityScope.personal, search: 'x'),
+      TransactionQuery(
+        scope: EntityScope.personal,
+        from: CalendarDate(2026, 10, 1),
+      ),
+      TransactionQuery(
+        scope: EntityScope.personal,
+        to: CalendarDate(2026, 10, 1),
+      ),
     ]) {
       expect(query.filtered, isTrue);
     }
