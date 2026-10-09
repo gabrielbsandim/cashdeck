@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { Money } from '@cashdeck/domain'
 import { account, bill, fullDeps } from '@/testing/deps.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
+import { makeSetAutoDebit } from '@/use-cases/auto-debit'
+import { makeGetBill } from '@/use-cases/bills'
 import { makeRunDailyAlerts } from '@/use-cases/daily-alerts'
 
 const TOMORROW = '2026-10-09'
@@ -53,6 +55,17 @@ describe('daily alerts', () => {
       dueDate: '09/10',
     })
     expect(await run(TENANT)).toEqual({ dueSoon: 0, lowBalance: 0 })
+  })
+
+  it('stays quiet about a bill the bank debits by itself', async () => {
+    const deps = fullDeps()
+    await deps.bills.save(bill({ id: 'debit', dueDate: TOMORROW }))
+    await makeSetAutoDebit(deps, makeGetBill(deps))(TENANT, 'debit', true)
+
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+      dueSoon: 0,
+      lowBalance: 0,
+    })
   })
 
   it('stays quiet when the reserve covers the day', async () => {

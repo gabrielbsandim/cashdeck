@@ -16,7 +16,9 @@ import {
   type PaymentRepository,
   type PaymentSettingsProvider,
 } from '@/ports/repositories'
+import { type DocumentStore } from '@/ports/records'
 import { type Clock, type IdGenerator } from '@/ports/system'
+import { loadAutoDebit } from '@/use-cases/auto-debit'
 import {
   type ConfirmationDeps,
   makeConfirmationCheck,
@@ -36,14 +38,17 @@ async function entityKindOf(
 
 export function makeDescribeBill(deps: {
   entities: FinancialEntityRepository
+  documents: DocumentStore
 }) {
   return async function describeBill(
     tenantId: string,
     bill: Bill,
   ): Promise<BillView> {
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
     return toBillView(
       bill,
       await entityKindOf(deps.entities, tenantId, bill.entityId),
+      isAutoDebit(bill),
     )
   }
 }
@@ -53,6 +58,7 @@ export function makeGetBill(
     payments: PaymentRepository
     entities: FinancialEntityRepository
     settings: PaymentSettingsProvider
+    documents: DocumentStore
   },
 ) {
   const confirmationReasons = makeConfirmationCheck(deps)
@@ -74,19 +80,26 @@ export function makeGetBill(
     if (!bill) {
       throw new NotFoundError('Bill')
     }
-    const [entityKind, plan, attempts, reason] = await Promise.all([
-      entityKindOf(deps.entities, tenantId, bill.entityId),
-      deps.payments.findPlan(tenantId, billId),
-      deps.payments.listAttempts(tenantId, billId),
-      reasonOf(tenantId, bill),
-    ])
-    return toBillDetailView(bill, entityKind, plan, attempts, reason)
+    const [entityKind, plan, attempts, reason, isAutoDebit] = await Promise.all(
+      [
+        entityKindOf(deps.entities, tenantId, bill.entityId),
+        deps.payments.findPlan(tenantId, billId),
+        deps.payments.listAttempts(tenantId, billId),
+        reasonOf(tenantId, bill),
+        loadAutoDebit(deps, tenantId),
+      ],
+    )
+    return toBillDetailView(bill, entityKind, plan, attempts, {
+      autoDebit: isAutoDebit(bill),
+      confirmationReason: reason,
+    })
   }
 }
 
 export function makeListBills(deps: {
   bills: BillRepository
   entities: FinancialEntityRepository
+  documents: DocumentStore
 }) {
   return async function listBills(
     tenantId: string,
@@ -94,6 +107,7 @@ export function makeListBills(deps: {
     page: PageRequest,
   ): Promise<Page<BillView>> {
     const found = await deps.bills.list(tenantId, filter, page)
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
     const kinds = new Map<string, EntityKind>()
     const items: BillView[] = []
     for (const bill of found.items) {
@@ -101,7 +115,7 @@ export function makeListBills(deps: {
         kinds.get(bill.entityId) ??
         (await entityKindOf(deps.entities, tenantId, bill.entityId))
       kinds.set(bill.entityId, kind)
-      items.push(toBillView(bill, kind))
+      items.push(toBillView(bill, kind, isAutoDebit(bill)))
     }
     return { items, nextCursor: found.nextCursor }
   }

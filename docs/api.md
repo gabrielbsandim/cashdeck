@@ -319,6 +319,13 @@ when a bill is captured, so `plan` is never null.
 - `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
   `attachmentId` points at a file already attached; `proof` is free text (an
   end-to-end id, say). Returns `BillView`.
+- `PUT /bills/{id}/auto-debit`: body `{ enabled: bool }`. Marks every
+  recipient of the bill, for its entity, as debited by the bank by itself, so
+  this bill and the next ones from that payee carry `autoDebit: true`. The
+  ladder never pays an auto-debit bill nor asks to confirm it (a
+  `NEEDS_CONFIRMATION` one goes back to `OPEN`), the reserve does not fund it,
+  the due-soon alert skips it, and the statement match waits up to 15 days
+  after the due date for the debit. Returns `BillDetailView`.
 
 `BillView`:
 
@@ -330,7 +337,8 @@ when a bill is captured, so `plan` is never null.
   "source": "GMAIL"|"SHARE"|"CAMERA"|"CHAT"|"DDA"|"MANUAL",
   "payee": string | null, "amount": Money, "dueDate": date, "code": string | null,
   "pixCode": string | null,
-  "createdAt": timestamp, "paidAt": timestamp | null, "paidBy": "RAIL"|"USER" | null
+  "createdAt": timestamp, "paidAt": timestamp | null, "paidBy": "RAIL"|"USER" | null,
+  "autoDebit": bool
 }
 ```
 
@@ -405,7 +413,7 @@ accounts. `data`: `{ connectionId: string, imported: int }`, 201.
 Refreshes balances and the last 30 days of transactions (since the last sync
 when there is one), then marks paid the open bills of that entity that an
 outgoing transaction of the same amount paid, booked from 10 days before to 7
-days after the due date. `data`:
+days after the due date (15 for an auto-debit bill). `data`:
 `{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.
 
 ### DELETE /open-finance/connections/{id}

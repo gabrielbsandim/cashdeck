@@ -7,10 +7,14 @@ import {
   toLocalDate,
 } from '@cashdeck/domain'
 import { billAlert, formatDay, formatMoney } from '@/use-cases/alert-events'
+import { loadAutoDebit } from '@/use-cases/auto-debit'
 import { type Deps } from '@/use-cases/deps'
 import { allPages } from '@/use-cases/shared'
 
-type DailyAlertDeps = Pick<Deps, 'bills' | 'accounts' | 'clock' | 'alerts'>
+type DailyAlertDeps = Pick<
+  Deps,
+  'bills' | 'accounts' | 'clock' | 'alerts' | 'documents'
+>
 
 export type DailyAlertsResult = { dueSoon: number; lowBalance: number }
 
@@ -75,7 +79,11 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
     tenantId: string,
   ): Promise<DailyAlertsResult> {
     const tomorrow = addDays(toLocalDate(deps.clock.now()), 1)
-    const bills = await dueOn(tenantId, tomorrow)
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
+    // The bank debits these by itself: nothing to pay and nothing to fund.
+    const bills = (await dueOn(tenantId, tomorrow)).filter(
+      bill => !isAutoDebit(bill),
+    )
     const result: DailyAlertsResult = { dueSoon: 0, lowBalance: 0 }
     for (const bill of bills) {
       const alert = billAlert(

@@ -61,6 +61,7 @@ type ProcessDeps = Pick<
   | 'invoices'
   | 'issuer'
   | 'audit'
+  | 'documents'
   | 'clock'
   | 'ids'
 >

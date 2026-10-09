@@ -27,6 +27,7 @@ import {
   type RailResult,
 } from '@/ports/payment-rail'
 import { type RailStatusReader } from '@/ports/rail-status'
+import { type DocumentStore } from '@/ports/records'
 import { type ReserveFunder } from '@/ports/reserve-funder'
 import {
   type Actor,
@@ -40,6 +41,7 @@ import {
   SYSTEM_ACTOR,
 } from '@/ports/repositories'
 import { type Clock, type IdGenerator } from '@/ports/system'
+import { type AutoDebitCheck, loadAutoDebit } from '@/use-cases/auto-debit'
 import {
   type BuildPaymentPlanDeps,
   makeBuildPaymentPlan,
@@ -63,6 +65,7 @@ export type RunPaymentLadderDeps = BuildPaymentPlanDeps & {
   railStatus: ReadonlyMap<RailId, RailStatusReader>
   fundings: FundingRepository
   funder: ReserveFunder
+  documents: DocumentStore
   clock: Clock
   ids: IdGenerator
 }
@@ -360,6 +363,22 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     return { bill: waiting, plan: at, attempts: [], instructions: null }
   }
 
+  async function leaveToBank(run: Run, plan: PaymentPlan): Promise<LadderRun> {
+    const open = transitionBill(run.bill, 'OPEN')
+    if (open !== run.bill) {
+      await deps.bills.save(open)
+    }
+    await deps.audit.record(
+      event(run, {
+        action: 'payment.left_to_auto_debit',
+        rail: null,
+        result: 'AUTO_DEBIT',
+        details: { recipients: recipientKeys(run.bill) },
+      }),
+    )
+    return { bill: open, plan, attempts: [], instructions: null }
+  }
+
   async function askForConfirmation(
     run: Run,
     plan: PaymentPlan,
@@ -410,6 +429,10 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     if (pending) {
       return resume(run, plan, pending)
     }
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
+    if (isAutoDebit(bill)) {
+      return leaveToBank(run, plan)
+    }
     const current = settings.killSwitch ? jumpToAssisted(plan) : plan
     const reasons =
       run.confirmed || isAtAssistedStep(current)
@@ -431,10 +454,14 @@ export function makePrepareFunding(deps: PrepareFundingDeps) {
   const confirmationReasons = makeConfirmationCheck(deps)
   const funding = makeReserveFunding(deps)
 
-  async function fundable(tenantId: string, bill: Bill): Promise<boolean> {
+  async function fundable(
+    tenantId: string,
+    bill: Bill,
+    isAutoDebit: AutoDebitCheck,
+  ): Promise<boolean> {
     const entity = await deps.entities.findById(tenantId, bill.entityId)
     const settings = await deps.settings.get(tenantId, bill.entityId)
-    if (!entity || settings.killSwitch) {
+    if (!entity || settings.killSwitch || isAutoDebit(bill)) {
       return false
     }
     const attempts = await deps.payments.listAttempts(tenantId, bill.id)
@@ -455,9 +482,10 @@ export function makePrepareFunding(deps: PrepareFundingDeps) {
     tenantId: string,
     bills: readonly Bill[],
   ): Promise<FundingSummary> {
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
     const chosen: Bill[] = []
     for (const bill of bills) {
-      if (await fundable(tenantId, bill)) {
+      if (await fundable(tenantId, bill, isAutoDebit)) {
         chosen.push(bill)
       }
     }

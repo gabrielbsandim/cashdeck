@@ -4,15 +4,20 @@ import { type Transaction } from '@/entities/transaction'
 
 export const STATEMENT_MATCH_WINDOW = { before: 10, after: 7 } as const
 
+// A bank's own debit can post a week or two after the due date.
+export const AUTO_DEBIT_MATCH_AFTER = 15
+
 export type StatementMatch = { bill: Bill; transaction: Transaction }
 
 type Candidate = StatementMatch & { distance: number }
 
-function candidateOf(bill: Bill, transaction: Transaction): Candidate | null {
+function candidateOf(
+  bill: Bill,
+  transaction: Transaction,
+  after: number,
+): Candidate | null {
   const offset = daysBetween(bill.dueDate, transaction.bookedOn)
-  const inWindow =
-    offset >= -STATEMENT_MATCH_WINDOW.before &&
-    offset <= STATEMENT_MATCH_WINDOW.after
+  const inWindow = offset >= -STATEMENT_MATCH_WINDOW.before && offset <= after
   const paysIt =
     transaction.amount.currency === bill.amount.currency &&
     transaction.amount.cents === -bill.amount.cents
@@ -27,9 +32,14 @@ function candidateOf(bill: Bill, transaction: Transaction): Candidate | null {
 export function matchBillsToStatement(
   bills: readonly Bill[],
   transactions: readonly Transaction[],
+  isAutoDebit: (bill: Bill) => boolean = () => false,
 ): StatementMatch[] {
+  const windowAfter = (bill: Bill) =>
+    isAutoDebit(bill) ? AUTO_DEBIT_MATCH_AFTER : STATEMENT_MATCH_WINDOW.after
   const candidates = bills
-    .flatMap(bill => transactions.map(tx => candidateOf(bill, tx)))
+    .flatMap(bill =>
+      transactions.map(tx => candidateOf(bill, tx, windowAfter(bill))),
+    )
     .filter((candidate): candidate is Candidate => candidate !== null)
     .sort((a, b) => a.distance - b.distance)
   const usedBills = new Set<string>()

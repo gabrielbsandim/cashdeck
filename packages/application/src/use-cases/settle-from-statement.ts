@@ -1,5 +1,6 @@
 import {
   addDays,
+  AUTO_DEBIT_MATCH_AFTER,
   type Bill,
   type BillStatus,
   CASH_ACCOUNT_TYPES,
@@ -7,6 +8,7 @@ import {
   matchBillsToStatement,
   STATEMENT_MATCH_WINDOW,
 } from '@cashdeck/domain'
+import { loadAutoDebit } from '@/use-cases/auto-debit'
 import { type Deps } from '@/use-cases/deps'
 
 // A bill already handed to a rail is settled by the rail, not the statement.
@@ -19,7 +21,13 @@ const BILL_PAGE = { limit: 100 }
 
 type SettleDeps = Pick<
   Deps,
-  'bills' | 'accounts' | 'transactions' | 'audit' | 'clock' | 'ids'
+  | 'bills'
+  | 'accounts'
+  | 'transactions'
+  | 'documents'
+  | 'audit'
+  | 'clock'
+  | 'ids'
 >
 
 const sortedDates = (bills: readonly Bill[]) =>
@@ -50,10 +58,11 @@ export function makeSettleFromStatement(deps: SettleDeps) {
     const transactions = await deps.transactions.all(tenantId, {
       accountIds: accounts.map(account => account.id),
       from: addDays(dates[0] as string, -STATEMENT_MATCH_WINDOW.before),
-      to: addDays(dates.at(-1) as string, STATEMENT_MATCH_WINDOW.after),
+      to: addDays(dates.at(-1) as string, AUTO_DEBIT_MATCH_AFTER),
     })
     const at = deps.clock.now()
-    const matches = matchBillsToStatement(bills, transactions)
+    const isAutoDebit = await loadAutoDebit(deps, tenantId)
+    const matches = matchBillsToStatement(bills, transactions, isAutoDebit)
     for (const { bill, transaction } of matches) {
       await deps.bills.save(markBillPaid(bill, 'USER', at))
       await deps.audit.record({

@@ -230,6 +230,8 @@ Pix route and the funding transfer, with no code change.
 - A bank approval batch still pending at the cutoff (16:00 in Sao Paulo on the
   due date by default) falls to assisted.
 - A global kill switch pauses all automatic steps; bills fall to assisted.
+- A payee marked as bank auto-debit is never paid by the app: its bills wait,
+  without alerts or funding, until the debit shows in the statement.
 - Webhooks and polling reconcile the final status; a bill is `PAID` only when a rail
   confirms or the user marks it with proof.
 

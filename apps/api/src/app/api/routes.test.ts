@@ -7,6 +7,7 @@ import { GET as listBills, POST as captureBill } from '@/app/api/v1/bills/route'
 import { GET as getBill } from '@/app/api/v1/bills/[id]/route'
 import { POST as payBill } from '@/app/api/v1/bills/[id]/pay/route'
 import { POST as markPaid } from '@/app/api/v1/bills/[id]/mark-paid/route'
+import { PUT as setAutoDebit } from '@/app/api/v1/bills/[id]/auto-debit/route'
 import { GET as paymentCron } from '@/app/api/cron/payment-ladder/route'
 
 const BOLETO_LINE = '00190000090280001234256789012178916050000012345'
@@ -121,6 +122,16 @@ describe('api routes', () => {
       ),
     )
     expect(paid.body.data).toMatchObject({ status: 'PAID', paidBy: 'USER' })
+
+    const flag = (enabled: unknown) =>
+      new Request(`http://localhost/api/v1/bills/${id}/auto-debit`, {
+        method: 'PUT',
+        headers: { ...AUTH, 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      })
+    const flagged = await json(await setAutoDebit(flag(true), params(id)))
+    expect(flagged.body.data).toMatchObject({ id, autoDebit: true })
+    expect((await setAutoDebit(flag('yes'), params(id))).status).toBe(422)
   })
 
   it('returns the error envelope', async () => {

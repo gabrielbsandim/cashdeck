@@ -47,6 +47,15 @@ describe('matchBillsToStatement', () => {
     ])
   })
 
+  it('waits longer for a bank debit to post', () => {
+    const debit = bill('claro', 20880, '2026-10-08')
+    const late = [tx('late', -20880, '2026-10-22')]
+    expect(matchBillsToStatement([debit], late)).toEqual([])
+    expect(
+      pairs(matchBillsToStatement([debit], late, b => b.id === 'claro')),
+    ).toEqual([['claro', 'late']])
+  })
+
   it('keeps to the window around the due date and to the currency', () => {
     const due = bill('b', 1000, '2026-10-20')
     expect(

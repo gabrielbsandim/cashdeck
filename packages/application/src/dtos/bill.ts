@@ -65,6 +65,7 @@ export const billViewSchema = z.object({
   createdAt: z.string(),
   paidAt: z.string().nullable(),
   paidBy: z.enum(['RAIL', 'USER']).nullable(),
+  autoDebit: z.boolean(),
 })
 
 export type BillView = z.infer<typeof billViewSchema>
@@ -113,7 +114,11 @@ export const billDetailViewSchema = billViewSchema.extend({
 
 export type BillDetailView = z.infer<typeof billDetailViewSchema>
 
-export function toBillView(bill: Bill, entityKind: EntityKind): BillView {
+export function toBillView(
+  bill: Bill,
+  entityKind: EntityKind,
+  autoDebit: boolean,
+): BillView {
   return {
     id: bill.id,
     entityId: bill.entityId,
@@ -129,6 +134,7 @@ export function toBillView(bill: Bill, entityKind: EntityKind): BillView {
     createdAt: bill.createdAt.toISOString(),
     paidAt: bill.paidAt?.toISOString() ?? null,
     paidBy: bill.paidBy,
+    autoDebit,
   }
 }
 
@@ -137,11 +143,11 @@ export function toBillDetailView(
   entityKind: EntityKind,
   plan: PaymentPlan | null,
   attempts: PaymentAttempt[],
-  confirmationReason: ConfirmationReason | null = null,
+  extra: { autoDebit: boolean; confirmationReason: ConfirmationReason | null },
 ): BillDetailView {
   return {
-    ...toBillView(bill, entityKind),
-    confirmationReason,
+    ...toBillView(bill, entityKind, extra.autoDebit),
+    confirmationReason: extra.confirmationReason,
     plan: plan && { steps: [...plan.steps], currentStep: plan.currentStep },
     attempts: attemptHistory(attempts).map(attempt => ({
       id: attempt.id,

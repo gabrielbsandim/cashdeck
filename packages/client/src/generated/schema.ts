@@ -364,6 +364,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bills/{id}/auto-debit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Leave this payee to the bank debit, or take it back */
+        put: operations["setBillAutoDebit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bills/{id}/receipt": {
         parameters: {
             query?: never;
@@ -2514,6 +2531,7 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -2587,6 +2605,7 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
                         };
                     };
                 };
@@ -2643,6 +2662,7 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
                             /** @enum {string|null} */
                             confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
@@ -2737,6 +2757,7 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
                             /** @enum {string|null} */
                             confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
@@ -2839,6 +2860,102 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setBillAutoDebit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Leave this payee to the bank debit, or take it back */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            entityId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            /** @enum {string} */
+                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
+                            /** @enum {string} */
+                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
+                            /** @enum {string} */
+                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
+                            payee: string | null;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dueDate: string;
+                            code: string | null;
+                            pixCode: string | null;
+                            createdAt: string;
+                            paidAt: string | null;
+                            /** @enum {string|null} */
+                            paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
+                            /** @enum {string|null} */
+                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            plan: {
+                                steps: {
+                                    /** @enum {string} */
+                                    mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                    /** @enum {string} */
+                                    rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                    /** @enum {string} */
+                                    method: "PIX" | "BOLETO";
+                                }[];
+                                currentStep: number;
+                            } | null;
+                            attempts: {
+                                id: string;
+                                stepIndex: number;
+                                /** @enum {string} */
+                                rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                /** @enum {string} */
+                                mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                /** @enum {string} */
+                                method: "PIX" | "BOLETO";
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                /** @enum {string} */
+                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
+                                reason: string | null;
+                                externalId: string | null;
+                                at: string;
+                            }[];
                         };
                     };
                 };
@@ -3858,6 +3975,7 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            autoDebit: boolean;
                         };
                     };
                 };

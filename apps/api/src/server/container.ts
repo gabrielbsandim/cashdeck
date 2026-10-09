@@ -45,6 +45,7 @@ import {
   makeConsolidatedSummary,
   makeCreateManualAccount,
   makeDescribeBill,
+  makeSetAutoDebit,
   makeDocuments,
   makeGetBill,
   makeGetTransfer,
@@ -287,6 +288,7 @@ export function buildContainer(
     getBill: makeGetBill(deps),
     listBills: makeListBills(deps),
     markBillPaid: makeMarkBillPaid(deps),
+    setAutoDebit: makeSetAutoDebit(deps, makeGetBill(deps)),
     runPaymentLadder,
     runDuePayments: makeRunDuePayments({
       ...deps,

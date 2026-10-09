@@ -82,7 +82,11 @@ import {
   updateTransactionSchema,
   uploadSchema,
 } from '@cashdeck/application'
-import { markPaidSchema, payBillSchema } from '@/server/api/schemas'
+import {
+  autoDebitSchema,
+  markPaidSchema,
+  payBillSchema,
+} from '@/server/api/schemas'
 
 export const API_VERSION = 'v1'
 
@@ -319,6 +323,14 @@ const OPERATIONS: Operation[] = [
     summary: 'Mark a bill paid by hand',
     body: markPaidSchema,
     response: billViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/bills/{id}/auto-debit',
+    id: 'setBillAutoDebit',
+    summary: 'Leave this payee to the bank debit, or take it back',
+    body: autoDebitSchema,
+    response: billDetailViewSchema,
   },
   {
     method: 'get',

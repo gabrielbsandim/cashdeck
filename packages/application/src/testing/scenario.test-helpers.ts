@@ -18,6 +18,7 @@ import {
   InMemoryPaymentRepository,
   StaticPaymentSettings,
 } from '@/testing/repositories'
+import { InMemoryDocumentStore } from '@/testing/records'
 import { FixedClock, SequentialIdGenerator } from '@/testing/system'
 
 export const TENANT = 't1'
@@ -72,6 +73,7 @@ export function scenario(
       ...settings,
     }),
     rails: new Map<RailId, PaymentRail>(rails.map(rail => [rail.id, rail])),
+    documents: new InMemoryDocumentStore(),
     clock: new FixedClock(NOW),
     ids: new SequentialIdGenerator(),
   }

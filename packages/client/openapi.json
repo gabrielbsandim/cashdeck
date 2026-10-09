@@ -3668,6 +3668,9 @@
                               "RAIL",
                               "USER"
                             ]
+                          },
+                          "autoDebit": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -3684,7 +3687,8 @@
                           "pixCode",
                           "createdAt",
                           "paidAt",
-                          "paidBy"
+                          "paidBy",
+                          "autoDebit"
                         ],
                         "additionalProperties": false
                       }
@@ -3902,6 +3906,9 @@
                             "RAIL",
                             "USER"
                           ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -3918,7 +3925,8 @@
                         "pixCode",
                         "createdAt",
                         "paidAt",
-                        "paidBy"
+                        "paidBy",
+                        "autoDebit"
                       ],
                       "additionalProperties": false
                     }
@@ -4082,6 +4090,9 @@
                             "RAIL",
                             "USER"
                           ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
                         },
                         "confirmationReason": {
                           "nullable": true,
@@ -4260,6 +4271,7 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
+                        "autoDebit",
                         "confirmationReason",
                         "plan",
                         "attempts"
@@ -4441,6 +4453,9 @@
                             "RAIL",
                             "USER"
                           ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
                         },
                         "confirmationReason": {
                           "nullable": true,
@@ -4652,6 +4667,7 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
+                        "autoDebit",
                         "confirmationReason",
                         "plan",
                         "attempts",
@@ -4839,6 +4855,9 @@
                             "RAIL",
                             "USER"
                           ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -4855,7 +4874,374 @@
                         "pixCode",
                         "createdAt",
                         "paidAt",
-                        "paidBy"
+                        "paidBy",
+                        "autoDebit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/bills/{id}/auto-debit": {
+      "put": {
+        "operationId": "setBillAutoDebit",
+        "summary": "Leave this payee to the bank debit, or take it back",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Leave this payee to the bank debit, or take it back",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "type": "string"
+                        },
+                        "entityKind": {
+                          "type": "string",
+                          "enum": [
+                            "PF",
+                            "PJ"
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "BOLETO",
+                            "PIX_KEY",
+                            "PIX_QR",
+                            "TAX_BARCODE",
+                            "DARF_NO_BARCODE"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "OPEN",
+                            "NEEDS_CONFIRMATION",
+                            "PROCESSING",
+                            "AWAITING_BANK_APPROVAL",
+                            "ASSISTED",
+                            "PAID",
+                            "CANCELLED"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "GMAIL",
+                            "SHARE",
+                            "CAMERA",
+                            "CHAT",
+                            "DDA",
+                            "MANUAL"
+                          ]
+                        },
+                        "payee": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "dueDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "paidAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "paidBy": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "RAIL",
+                            "USER"
+                          ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
+                        },
+                        "confirmationReason": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "NEW_PAYEE",
+                            "ABOVE_THRESHOLD",
+                            "AMOUNT_DEVIATION",
+                            "CAP_EXCEEDED"
+                          ]
+                        },
+                        "plan": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "steps": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AUTOMATIC",
+                                      "BANK_APPROVAL",
+                                      "ASSISTED"
+                                    ]
+                                  },
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "MERCADO_PAGO_PAYOUTS",
+                                      "ASAAS",
+                                      "INTER_EMPRESAS",
+                                      "C6_EMPRESAS",
+                                      "ASSISTED"
+                                    ]
+                                  },
+                                  "method": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PIX",
+                                      "BOLETO"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mode",
+                                  "rail",
+                                  "method"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "currentStep": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "steps",
+                            "currentStep"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "attempts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "stepIndex": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "rail": {
+                                "type": "string",
+                                "enum": [
+                                  "MERCADO_PAGO_PAYOUTS",
+                                  "ASAAS",
+                                  "INTER_EMPRESAS",
+                                  "C6_EMPRESAS",
+                                  "ASSISTED"
+                                ]
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "AUTOMATIC",
+                                  "BANK_APPROVAL",
+                                  "ASSISTED"
+                                ]
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "PIX",
+                                  "BOLETO"
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "outcome": {
+                                "type": "string",
+                                "enum": [
+                                  "PAID",
+                                  "SUBMITTED",
+                                  "PENDING_APPROVAL",
+                                  "ASSISTED",
+                                  "FAILED",
+                                  "IN_FLIGHT"
+                                ]
+                              },
+                              "reason": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "externalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "stepIndex",
+                              "rail",
+                              "mode",
+                              "method",
+                              "amount",
+                              "outcome",
+                              "reason",
+                              "externalId",
+                              "at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "entityId",
+                        "entityKind",
+                        "kind",
+                        "status",
+                        "source",
+                        "payee",
+                        "amount",
+                        "dueDate",
+                        "code",
+                        "pixCode",
+                        "createdAt",
+                        "paidAt",
+                        "paidBy",
+                        "autoDebit",
+                        "confirmationReason",
+                        "plan",
+                        "attempts"
                       ],
                       "additionalProperties": false
                     }
@@ -7551,6 +7937,9 @@
                             "RAIL",
                             "USER"
                           ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -7567,7 +7956,8 @@
                         "pixCode",
                         "createdAt",
                         "paidAt",
-                        "paidBy"
+                        "paidBy",
+                        "autoDebit"
                       ],
                       "additionalProperties": false
                     }

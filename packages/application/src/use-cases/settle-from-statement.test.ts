@@ -7,6 +7,8 @@ import {
   transaction,
 } from '@/testing/deps.test-helpers'
 import { NOW, TENANT } from '@/testing/scenario.test-helpers'
+import { makeSetAutoDebit } from '@/use-cases/auto-debit'
+import { makeGetBill } from '@/use-cases/bills'
 import { makeSettleFromStatement } from '@/use-cases/settle-from-statement'
 
 describe('settleFromStatement', () => {
@@ -73,6 +75,27 @@ describe('settleFromStatement', () => {
       ['amil', { transactionId: 't1' }],
       ['desk', { transactionId: 't2' }],
     ])
+  })
+
+  it('waits two weeks for a bank debit to post', async () => {
+    const deps = fullDeps()
+    await deps.accounts.save(account({ id: 'chk', entityId: 'pf' }))
+    const due = { amount: Money.of(20880), dueDate: '2026-10-08' }
+    await deps.bills.save(bill({ id: 'phone', ...due }))
+    await deps.transactions.save(
+      transaction({
+        id: 'debit',
+        accountId: 'chk',
+        amount: Money.of(-20880),
+        bookedOn: '2026-10-22',
+      }),
+    )
+    const settle = makeSettleFromStatement(deps)
+    expect(await settle(TENANT, 'pf')).toBe(0)
+
+    await makeSetAutoDebit(deps, makeGetBill(deps))(TENANT, 'phone', true)
+
+    expect(await settle(TENANT, 'pf')).toBe(1)
   })
 
   it('does nothing without an unsettled bill', async () => {

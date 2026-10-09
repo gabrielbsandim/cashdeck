@@ -39,6 +39,7 @@ type OpenFinanceDeps = Pick<
   | 'ids'
   | 'bills'
   | 'audit'
+  | 'documents'
 >
 
 // The provider already reports a card balance as negative, since it is owed.
