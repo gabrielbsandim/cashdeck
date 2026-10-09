@@ -76,9 +76,7 @@ void main() {
     );
     expect(app.location, AppRoutes.unlock);
     expect(find.text(ServerCredentials.demo.host), findsOneWidget);
-
-    await tester.tap(find.byKey(UnlockScreen.sensorKey));
-    await settle(tester);
+    expect(biometrics.reasons, hasLength(1));
     expect(find.text(l10n.confirmDenied), findsOneWidget);
 
     biometrics.approve = true;
@@ -92,7 +90,12 @@ void main() {
     final app = await pumpRoute(
       tester,
       AppRoutes.home,
-      overrides: [initiallyLockedProvider.overrideWithValue(true)],
+      overrides: [
+        initiallyLockedProvider.overrideWithValue(true),
+        biometricAuthenticatorProvider.overrideWithValue(
+          FakeBiometricAuthenticator(approve: false),
+        ),
+      ],
     );
 
     await tester.tap(find.byKey(UnlockScreen.signOutKey));
@@ -103,7 +106,15 @@ void main() {
   });
 
   testWidgets('More locks the app and signs out', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.more);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.more,
+      overrides: [
+        biometricAuthenticatorProvider.overrideWithValue(
+          FakeBiometricAuthenticator(approve: false),
+        ),
+      ],
+    );
 
     await tester.tap(find.byKey(MoreScreen.rowKey(AppRoutes.unlock)));
     await settle(tester);

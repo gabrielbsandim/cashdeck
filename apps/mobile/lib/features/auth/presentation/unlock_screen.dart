@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/session/server_session.dart';
@@ -14,7 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// The lock at launch and after five idle minutes: the device check, which
-/// takes the PIN when biometrics fail.
+/// takes the PIN when biometrics fail, opens as soon as the screen shows.
 class UnlockScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
@@ -27,12 +29,24 @@ class UnlockScreen extends ConsumerStatefulWidget {
 
 class _UnlockScreenState extends ConsumerState<UnlockScreen> {
   String? _error;
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_sensor());
+    });
+  }
 
   Future<void> _sensor() async {
+    if (_checking) return;
+    _checking = true;
     final l10n = AppLocalizations.of(context);
     final ok = await ref
         .read(biometricAuthenticatorProvider)
         .authenticate(l10n.unlockReason);
+    _checking = false;
     if (!mounted) return;
     if (!ok) {
       setState(() => _error = l10n.confirmDenied);

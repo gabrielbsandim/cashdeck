@@ -2,6 +2,7 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/features/automation/automation_providers.dart';
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
@@ -85,7 +86,15 @@ void main() {
     AppRoutes.unlock,
   ]) {
     testWidgets('opens $route', (tester) async {
-      final app = await pumpRoute(tester, AppRoutes.more);
+      final app = await pumpRoute(
+        tester,
+        AppRoutes.more,
+        overrides: [
+          biometricAuthenticatorProvider.overrideWithValue(
+            FakeBiometricAuthenticator(approve: false),
+          ),
+        ],
+      );
 
       await tester.tap(find.byKey(MoreScreen.rowKey(route)));
       await settle(tester);
