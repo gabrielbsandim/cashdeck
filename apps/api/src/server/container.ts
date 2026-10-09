@@ -46,6 +46,7 @@ import {
   makeCompanySummary,
   makeConsolidatedSummary,
   makeInsightsOverview,
+  makeMonthlyInsights,
   makeListInstallments,
   makeSubscriptions,
   makeCreateManualAccount,
@@ -323,6 +324,7 @@ export function buildContainer(
     companySummary: makeCompanySummary(deps),
     consolidatedSummary: makeConsolidatedSummary(deps),
     insightsOverview: makeInsightsOverview(deps),
+    monthlyInsights: makeMonthlyInsights(deps),
     listInstallments: makeListInstallments(deps),
     subscriptions: makeSubscriptions(deps),
     openFinance: categorizeAfterSync(

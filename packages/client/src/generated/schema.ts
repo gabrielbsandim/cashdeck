@@ -174,6 +174,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/insights/months": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Month by month results, savings rate, fixed cost and highlights */
+        get: operations["getMonthlyInsights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/installments": {
         parameters: {
             query?: never;
@@ -2134,6 +2151,199 @@ export interface operations {
                                 };
                                 count: number;
                             };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMonthlyInsights: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                month?: string;
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Month by month results, savings rate, fixed cost and highlights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            months: {
+                                month: string;
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                result: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            savings: {
+                                percent: number | null;
+                                averagePercent: number | null;
+                                trend: {
+                                    month: string;
+                                    percent: number | null;
+                                }[];
+                            };
+                            changes: {
+                                rose: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    average: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    delta: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                fell: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    average: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    delta: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                            };
+                            fixedCost: {
+                                subscriptions: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                installments: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                bills: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                sharePercent: number | null;
+                            };
+                            leftThisMonth: {
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                billsDue: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                cardBill: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                left: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
+                            companyToPersonal: {
+                                transfers: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                taxes: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
+                            insights: ({
+                                /** @enum {string} */
+                                type: "CATEGORY_ABOVE_AVERAGE";
+                                /** @enum {string} */
+                                tone: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+                                categoryId: string;
+                                name: string;
+                                percent: number;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | {
+                                /** @enum {string} */
+                                type: "INSTALLMENTS_COMMITTED";
+                                /** @enum {string} */
+                                tone: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+                                month: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | {
+                                /** @enum {string} */
+                                type: "SAVINGS_RATE";
+                                /** @enum {string} */
+                                tone: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+                                percent: number;
+                                averagePercent: number;
+                            } | {
+                                /** @enum {string} */
+                                type: "SUBSCRIPTION_PRICE_UP";
+                                /** @enum {string} */
+                                tone: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+                                name: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                previousAmount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            })[];
                         };
                     };
                 };

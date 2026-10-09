@@ -138,3 +138,101 @@ export type SubscriptionsView = z.infer<typeof subscriptionsViewSchema>
 export const subscriptionDecisionSchema = z.object({
   transactionId: z.string().min(1),
 })
+
+export const monthlyInsightsQuerySchema = z.object({
+  entity: entityKindSchema.optional(),
+  month: isoMonth.optional(),
+  months: z.coerce
+    .number()
+    .pipe(z.union([z.literal(6), z.literal(12)]))
+    .default(6),
+})
+
+export type MonthlyInsightsQuery = z.infer<typeof monthlyInsightsQuerySchema>
+
+const categoryChangeSchema = z.object({
+  categoryId: z.string(),
+  key: z.string().nullable(),
+  name: z.string(),
+  icon: z.string().nullable(),
+  total: moneyViewSchema,
+  average: moneyViewSchema,
+  delta: moneyViewSchema,
+})
+
+const toneSchema = z.enum(['POSITIVE', 'NEGATIVE', 'NEUTRAL'])
+
+export const insightSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('CATEGORY_ABOVE_AVERAGE'),
+    tone: toneSchema,
+    categoryId: z.string(),
+    name: z.string(),
+    percent: z.int(),
+    amount: moneyViewSchema,
+  }),
+  z.object({
+    type: z.literal('INSTALLMENTS_COMMITTED'),
+    tone: toneSchema,
+    month: isoMonth,
+    amount: moneyViewSchema,
+  }),
+  z.object({
+    type: z.literal('SAVINGS_RATE'),
+    tone: toneSchema,
+    percent: z.int(),
+    averagePercent: z.int(),
+  }),
+  z.object({
+    type: z.literal('SUBSCRIPTION_PRICE_UP'),
+    tone: toneSchema,
+    name: z.string(),
+    amount: moneyViewSchema,
+    previousAmount: moneyViewSchema,
+  }),
+])
+
+export type Insight = z.infer<typeof insightSchema>
+
+export const monthlyInsightsSchema = z.object({
+  month: isoMonth,
+  months: z.array(
+    z.object({
+      month: isoMonth,
+      income: moneyViewSchema,
+      expenses: moneyViewSchema,
+      result: moneyViewSchema,
+    }),
+  ),
+  savings: z.object({
+    percent: z.int().nullable(),
+    averagePercent: z.int().nullable(),
+    trend: z.array(z.object({ month: isoMonth, percent: z.int().nullable() })),
+  }),
+  changes: z.object({
+    rose: z.array(categoryChangeSchema),
+    fell: z.array(categoryChangeSchema),
+  }),
+  fixedCost: z.object({
+    subscriptions: moneyViewSchema,
+    installments: moneyViewSchema,
+    bills: moneyViewSchema,
+    total: moneyViewSchema,
+    income: moneyViewSchema,
+    sharePercent: z.int().nullable(),
+  }),
+  leftThisMonth: z
+    .object({
+      balance: moneyViewSchema,
+      billsDue: moneyViewSchema,
+      cardBill: moneyViewSchema,
+      left: moneyViewSchema,
+    })
+    .nullable(),
+  companyToPersonal: z
+    .object({ transfers: moneyViewSchema, taxes: moneyViewSchema })
+    .nullable(),
+  insights: z.array(insightSchema),
+})
+
+export type MonthlyInsights = z.infer<typeof monthlyInsightsSchema>

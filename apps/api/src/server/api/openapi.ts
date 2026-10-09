@@ -49,6 +49,8 @@ import {
   payrollSheetViewSchema,
   insightsOverviewQuerySchema,
   insightsOverviewSchema,
+  monthlyInsightsQuerySchema,
+  monthlyInsightsSchema,
   insightsScopeQuerySchema,
   installmentsViewSchema,
   subscriptionDecisionSchema,
@@ -214,6 +216,14 @@ const OPERATIONS: Operation[] = [
     summary: 'Spending, categories and cash flow of a period',
     query: insightsOverviewQuerySchema,
     response: insightsOverviewSchema,
+  },
+  {
+    method: 'get',
+    path: '/insights/months',
+    id: 'getMonthlyInsights',
+    summary: 'Month by month results, savings rate, fixed cost and highlights',
+    query: monthlyInsightsQuerySchema,
+    response: monthlyInsightsSchema,
   },
   {
     method: 'get',

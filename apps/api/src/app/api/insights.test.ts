@@ -24,6 +24,7 @@ import { POST as confirmAction } from '@/app/api/v1/chat/actions/[id]/confirm/ro
 import { POST as cancelAction } from '@/app/api/v1/chat/actions/[id]/cancel/route'
 import { POST as syncConnection } from '@/app/api/v1/open-finance/connections/[id]/sync/route'
 import { GET as insightsOverview } from '@/app/api/v1/insights/overview/route'
+import { GET as monthlyInsights } from '@/app/api/v1/insights/months/route'
 import { GET as listInstallments } from '@/app/api/v1/installments/route'
 import {
   GET as listSubscriptions,
@@ -191,6 +192,18 @@ describe('insights', () => {
       billsDue: { days: 7 },
     })
     const bad = await call(insightsOverview, 'GET', { query: '?period=2d' })
+    expect(bad.status).toBe(422)
+  })
+
+  it('answers the monthly insights', async () => {
+    await seedTransactions()
+    const months = await call(monthlyInsights, 'GET', {
+      query: '?entity=PF&months=12',
+    })
+    expect(months.status).toBe(200)
+    expect(months.body.data.months).toHaveLength(12)
+    expect(months.body.data.companyToPersonal).toBeNull()
+    const bad = await call(monthlyInsights, 'GET', { query: '?months=7' })
     expect(bad.status).toBe(422)
   })
 

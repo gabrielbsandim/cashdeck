@@ -1,6 +1,7 @@
 import {
   type Account,
   addDays,
+  type Bill,
   type Category,
   classifyFlow,
   creditUsedPercent,
@@ -94,7 +95,7 @@ const earlier = (a: LocalDate, b: LocalDate) => (a < b ? a : b)
 const inRange = (day: LocalDate, range: DayRange) =>
   day >= range.from && day <= range.to
 
-const cents = (value: number) => money(Money.of(value))
+export const cents = (value: number) => money(Money.of(value))
 
 export function percentChange(current: number, previous: number) {
   if (previous === 0) {
@@ -211,9 +212,9 @@ function topMerchants(expenses: readonly FlowEntry[]) {
     }))
 }
 
-const UNCATEGORIZED = ''
+export const UNCATEGORIZED = ''
 
-const categoryOf = (transaction: Transaction) =>
+export const categoryOf = (transaction: Transaction) =>
   transaction.categoryId ?? UNCATEGORIZED
 
 function categoryItems(
@@ -286,11 +287,12 @@ export function cardsSummary(
   }
 }
 
-export async function openBillsDue(
+export async function billsDueIn(
   deps: Pick<InsightsDeps, 'bills'>,
   tenantId: string,
   entities: readonly FinancialEntity[],
   range: DayRange,
+  keep: (bill: Bill) => boolean,
 ) {
   const due = []
   for (const entity of entities) {
@@ -300,13 +302,18 @@ export async function openBillsDue(
       BILL_PAGE,
     )
     due.push(
-      ...page.items.filter(
-        bill => !isSettled(bill) && inRange(bill.dueDate, range),
-      ),
+      ...page.items.filter(bill => keep(bill) && inRange(bill.dueDate, range)),
     )
   }
   return due
 }
+
+export const openBillsDue = (
+  deps: Pick<InsightsDeps, 'bills'>,
+  tenantId: string,
+  entities: readonly FinancialEntity[],
+  range: DayRange,
+) => billsDueIn(deps, tenantId, entities, range, bill => !isSettled(bill))
 
 export async function categoryIndex(
   deps: Pick<InsightsDeps, 'categories'>,
