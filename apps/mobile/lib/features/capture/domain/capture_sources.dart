@@ -1,5 +1,7 @@
 import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
@@ -81,8 +83,14 @@ abstract interface class CaptureRepository {
   Future<Result<Uri>> mailboxAuthorizationUrl(EntityKind owner);
 
   /// A bill PDF or photo the user shared into the app, for the server to read.
-  /// Photos are shrunk to fit the upload cap first.
-  Future<Result<CaptureOutcome>> submitFile(LocalFile file, EntityKind owner);
+  /// Photos are shrunk to fit the upload cap first. [amount] and [dueDate]
+  /// answer a [CaptureDetailsNeeded] for a file whose code carries no amount.
+  Future<Result<CaptureOutcome>> submitFile(
+    LocalFile file,
+    EntityKind owner, {
+    Money? amount,
+    CalendarDate? dueDate,
+  });
 
   /// A code scanned, shared or typed; the server builds the bill from it.
   Future<Result<CaptureOutcome>> capture(BillDraft draft);

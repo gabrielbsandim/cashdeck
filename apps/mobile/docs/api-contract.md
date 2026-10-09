@@ -25,21 +25,30 @@ Where the contract has no route yet, a repository answers
 Certificate uploads (rails and invoice issuer) ask for the expiry date, since
 a .pfx does not let the server read it.
 
+The profiles screen lists both entities with `GET /entities` and saves one
+with `PATCH /entities/{id}`: `name`, the unmasked `taxId` (checked locally
+first) and, for `PJ` only, `taxRegime`.
+
 ## Capture
 
 - `POST /api/v1/capture/files` takes the upload body plus `entity` (`PF` or
   `PJ`). A PDF goes as is; a photo above 900 KB is re-encoded as JPEG
   (longest side 2000 px) first. Anything still above 3.3 MB decoded is refused
   before sending, since base64 must fit the 4.5 MB Vercel body. 201 is a new
-  bill, 200 a duplicate, 413 too large, 422 no code in the file.
+  bill, 200 a known one (a duplicate, or the other half of a bolepix merged
+  into it), 413 too large (Vercel's own limit), 422 `AMOUNT_REQUIRED` asks
+  the amount and any other 422 means no code was read. After the sheet the
+  same file goes again with `amountCents` and `dueDate`.
 - `POST /api/v1/bills` carries what the camera, the share sheet or the paste
   screen read: `entityId` (from `GET /entities`), `source` (`CAMERA`,
   `SHARE` or `MANUAL`), one of `paymentCode`, `pixCode` or `pixKey` (a
   bolepix sends both codes), and the optional `amountCents`, `dueDate` and
   `payee`. 201 is new, 200 a duplicate.
-  A 422 with `error.code` `AMOUNT_REQUIRED` (a Pix key or an open QR) or
-  `DUE_DATE_REQUIRED` opens a sheet that asks it, the due date starting at
-  today, and the same body goes again with the answer.
+  A 422 with `error.code` `AMOUNT_REQUIRED` (a Pix key or an open QR;
+  `details` names the field, kind and payee) opens a sheet that asks the
+  amount and the due date, starting at today, and the same body goes again
+  with the answer. The server has no `DUE_DATE_REQUIRED`: a Pix without a due
+  date is due today.
 - Shared text is searched for a Pix copy-and-paste with a valid CRC or a 44,
   47 or 48 digit line, and opens the paste screen with it.
 
@@ -47,10 +56,6 @@ a .pfx does not let the server read it.
 
 - `GET /api/v1/bills/{id}/receipt/pdf` is the bank proof a paid bill shares.
 - `GET /api/v1/transfers/{id}/document` is the transfer's document.
-
-The profiles screen lists both entities with `GET /entities` and saves one
-with `PATCH /entities/{id}`: `name`, the unmasked `taxId` (checked locally
-first) and, for `PJ` only, `taxRegime`.
 
 ## Envelope
 
@@ -87,10 +92,11 @@ walks the statuses with open ones first (`NEEDS_CONFIRMATION`,
 The list loads more as the user nears its end.
 
 `POST /api/v1/bills/{id}/pay` sends `{ "confirmed": true }` only after the
-user accepts the confirmation sheet. The sheet shows `confirmationReason`
-(`NEW_PAYEE | ABOVE_THRESHOLD | AMOUNT_DEVIATION | CAP_EXCEEDED`) when the
-server sends it, and a generic reason otherwise; the field is not in the
-contract yet.
+user accepts the confirmation sheet. The server computes why a payment needs
+confirming (`NEW_PAYEE`, `ABOVE_THRESHOLD`, `AMOUNT_DEVIATION`) but only
+records it in the audit log, so the sheet shows a generic reason. The app
+already reads an optional `confirmationReason` on the bill for when the view
+exposes it.
 
 ```json
 {
@@ -138,6 +144,8 @@ How the app reads it (`lib/features/bills/data/bill_dtos.dart`):
   scheduled, `AWAITING_BANK_APPROVAL` as awaiting approval.
 - Plan steps collapse to one per `mode`, in order. A missing plan is empty.
 - Attempt outcomes: `PAID` succeeded, `FAILED` failed, the rest waiting.
+  `IN_FLIGHT` (a rail call sent and not yet answered) is waiting, so the bill
+  shows as processing.
 - A null `payee` reads as blank, `code` is the payment code.
 
 An unknown enum value is a format error (`UnexpectedFailure`), so a new value

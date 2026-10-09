@@ -7,16 +7,19 @@ import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/scan/code_scanner.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/data/fake_capture_repository.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
 import 'package:cashdeck/features/capture/domain/scanned_code.dart';
+import 'package:cashdeck/features/capture/presentation/capture_details_sheet.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
 import 'package:cashdeck/features/capture/presentation/shared_file_screen.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,8 +35,10 @@ final class _StubFiles extends Fake implements CaptureRepository {
   @override
   Future<Result<CaptureOutcome>> submitFile(
     LocalFile file,
-    EntityKind owner,
-  ) async => result;
+    EntityKind owner, {
+    Money? amount,
+    CalendarDate? dueDate,
+  }) async => result;
 }
 
 void main() {
@@ -325,6 +330,45 @@ void main() {
       await settle(tester);
 
       expect(find.text(tooLarge('3,3')), findsOneWidget);
+    });
+
+    testWidgets('a code without an amount asks it and sends again', (
+      tester,
+    ) async {
+      final repository = FakeCaptureRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+      final app = await share(
+        tester,
+        LocalFile(name: 'pix-sem-valor.pdf', bytes: Uint8List(10)),
+        capture: repository,
+      );
+
+      await tester.tap(find.byKey(SharedFileScreen.sendKey));
+      await settle(tester);
+      expect(find.text(l10n.captureDetailsTitle), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+      expect(app.location, AppRoutes.sharedFile);
+      expect(repository.submitted, isEmpty);
+
+      await tester.tap(find.byKey(SharedFileScreen.sendKey));
+      await settle(tester);
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(CaptureDetailsSheet.amountKey),
+          matching: find.byType(TextField),
+        ),
+        '4590',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(CaptureDetailsSheet.submitKey));
+      await settle(tester);
+
+      expect(app.location, AppRoutes.bills);
+      expect(repository.submitted.single.name, 'pix-sem-valor.pdf');
+      await waitForToast(tester);
     });
 
     testWidgets('a file without a code points to pasting it', (tester) async {

@@ -656,9 +656,39 @@ void main() {
         const Ok<CaptureOutcome>(CaptureNothingFound()),
       );
       expect(
+        await answer(
+          const StubResponse(422, {
+            'error': {
+              'code': 'AMOUNT_REQUIRED',
+              'message': 'No amount',
+              'details': {'field': 'amountCents', 'kind': 'PIX_QR'},
+            },
+          }),
+        ),
+        const Ok<CaptureOutcome>(CaptureDetailsNeeded(amount: true)),
+      );
+      expect(
         await answer(const StubResponse(500)),
         const Err<CaptureOutcome>(ServerFailure()),
       );
+    });
+
+    test('a file goes again with the amount and due date asked', () async {
+      final dio = _api({
+        'POST /api/v1/capture/files': const StubResponse(201, {
+          'data': {'id': 'b4'},
+        }),
+      });
+
+      await ApiCaptureRepository(dio).submitFile(
+        LocalFile(name: 'conta.pdf', bytes: Uint8List(3)),
+        EntityKind.personal,
+        amount: const Money(4590),
+        dueDate: const CalendarDate(2026, 10, 8),
+      );
+
+      expect(_sent(dio, 0)['amountCents'], 4590);
+      expect(_sent(dio, 0)['dueDate'], '2026-10-08');
     });
 
     test('a file over the cap is refused before sending', () async {

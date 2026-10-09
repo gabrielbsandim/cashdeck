@@ -42,6 +42,7 @@ const Map<String, AttemptOutcome> _outcomes = {
   'SUBMITTED': AttemptOutcome.waiting,
   'PENDING_APPROVAL': AttemptOutcome.waiting,
   'ASSISTED': AttemptOutcome.waiting,
+  'IN_FLIGHT': AttemptOutcome.waiting,
   'FAILED': AttemptOutcome.failed,
 };
 

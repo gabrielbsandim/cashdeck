@@ -1,6 +1,8 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
@@ -108,8 +110,10 @@ final class FakeCaptureRepository implements CaptureRepository {
   @override
   Future<Result<CaptureOutcome>> submitFile(
     LocalFile file,
-    EntityKind owner,
-  ) async {
+    EntityKind owner, {
+    Money? amount,
+    CalendarDate? dueDate,
+  }) async {
     await Future<void>.delayed(latency);
     if (file.bytes.isEmpty) return const Err(ValidationFailure('empty file'));
     if (file.bytes.length > maxUploadBytes) {
@@ -117,6 +121,9 @@ final class FakeCaptureRepository implements CaptureRepository {
     }
     if (file.name.contains('sem-codigo')) {
       return const Ok(CaptureNothingFound());
+    }
+    if (file.name.contains('sem-valor') && amount == null) {
+      return const Ok(CaptureDetailsNeeded(amount: true));
     }
     submitted.add(file);
     return Ok(BillCaptured(billId: 'captured-file-${submitted.length}'));

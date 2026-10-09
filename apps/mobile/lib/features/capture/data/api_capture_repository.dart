@@ -1,8 +1,10 @@
 import 'package:cashdeck/core/files/local_file.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/capture/data/capture_dtos.dart';
 import 'package:cashdeck/features/capture/data/upload_fit.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
@@ -73,14 +75,18 @@ final class ApiCaptureRepository implements CaptureRepository {
   @override
   Future<Result<CaptureOutcome>> submitFile(
     LocalFile file,
-    EntityKind owner,
-  ) async {
+    EntityKind owner, {
+    Money? amount,
+    CalendarDate? dueDate,
+  }) async {
     final upload = await fitForUpload(file, shrink: _shrink);
     if (upload == null) return Ok(CaptureFileTooLarge(file.bytes.length));
     return await guardRequest(
       () => _send('$path/files', {
         ...uploadBody(upload),
         'entity': entityKindToJson(owner),
+        'amountCents': ?amount?.cents,
+        'dueDate': ?dueDate?.iso,
       }, size: upload.bytes.length),
     );
   }

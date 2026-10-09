@@ -135,6 +135,7 @@ void main() {
         'PAID': AttemptOutcome.succeeded,
         'SUBMITTED': AttemptOutcome.waiting,
         'PENDING_APPROVAL': AttemptOutcome.waiting,
+        'IN_FLIGHT': AttemptOutcome.waiting,
         'ASSISTED': AttemptOutcome.waiting,
         'FAILED': AttemptOutcome.failed,
       };

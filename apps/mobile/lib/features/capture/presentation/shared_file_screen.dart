@@ -1,10 +1,12 @@
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
@@ -13,6 +15,7 @@ import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
+import 'package:cashdeck/features/capture/presentation/capture_details_sheet.dart';
 import 'package:cashdeck/features/capture/presentation/capture_flow.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -47,15 +50,22 @@ class _SharedFileScreenState extends ConsumerState<SharedFileScreen> {
       widget.file.extension == 'pdf' &&
       widget.file.bytes.length > maxUploadBytes;
 
-  Future<void> _send() async {
+  Future<void> _send({CaptureDetails? details}) async {
     final l10n = AppLocalizations.of(context);
     setState(() => _sending = true);
     final result = await ref
         .read(captureRepositoryProvider)
-        .submitFile(widget.file, _owner);
+        .submitFile(
+          widget.file,
+          _owner,
+          amount: details?.amount,
+          dueDate: details?.dueDate,
+        );
     if (!mounted) return;
     setState(() => _sending = false);
     switch (result) {
+      case Ok(value: CaptureDetailsNeeded(:final amount)):
+        await _askDetails(askAmount: amount);
       case Ok(value: BillCaptured(:final duplicate)):
         context.go(AppRoutes.bills);
         await showOutcomeToast(
@@ -70,6 +80,18 @@ class _SharedFileScreenState extends ConsumerState<SharedFileScreen> {
       case Err(:final failure):
         await showOutcomeToast(context, failure, success: '');
     }
+  }
+
+  /// The server read a code without an amount; the same file goes again
+  /// with what the user fills in. Closing the sheet keeps the screen.
+  Future<void> _askDetails({required bool askAmount}) async {
+    final details = await showCaptureDetailsSheet(
+      context,
+      askAmount: askAmount,
+      today: CalendarDate.brazilToday(ref.read(clockProvider).now()),
+    );
+    if (details == null || !mounted) return;
+    await _send(details: details);
   }
 
   String? _problemMessage(AppLocalizations l10n) {

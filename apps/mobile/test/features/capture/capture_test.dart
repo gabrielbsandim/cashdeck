@@ -2,7 +2,9 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/links/link_opener.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
@@ -51,8 +53,10 @@ final class _FlakyCapture implements CaptureRepository {
   @override
   Future<Result<CaptureOutcome>> submitFile(
     LocalFile file,
-    EntityKind owner,
-  ) async => const Err(NetworkFailure());
+    EntityKind owner, {
+    Money? amount,
+    CalendarDate? dueDate,
+  }) async => const Err(NetworkFailure());
 
   @override
   Future<Result<CaptureOutcome>> capture(BillDraft draft) async =>
