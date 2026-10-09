@@ -104,6 +104,7 @@ final class FakeHomeRepository implements HomeRepository {
       invoiceCount: 3,
       dasEstimate: const Money(146_022),
       dasDue: today.addDays(43),
+      inss: TaxEstimate(amount: const Money(93_231), due: today.addDays(11)),
       drafts: [
         if (!_done.contains('draft-pomar'))
           InvoiceDraft(

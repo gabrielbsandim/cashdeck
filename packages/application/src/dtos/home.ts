@@ -60,6 +60,7 @@ export const companySummarySchema = z.object({
   invoiceCount: z.int(),
   dasEstimate: moneyViewSchema,
   dasDue: isoDate,
+  inss: z.object({ estimate: moneyViewSchema, due: isoDate }).nullable(),
   annex: z.enum(['III', 'V']),
   drafts: z.array(
     z.object({

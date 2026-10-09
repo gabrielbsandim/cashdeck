@@ -133,6 +133,7 @@ void main() {
       invoiceCount: 1,
       dasEstimate: const Money(1),
       dasDue: testToday,
+      inss: const TaxEstimate(amount: Money(1), due: testToday),
       drafts: const [
         InvoiceDraft(
           id: 'draft',
@@ -155,7 +156,8 @@ void main() {
     expect(personal(), personal());
     expect(company(), company());
     expect(personal().props, hasLength(6));
-    expect(company().props, hasLength(8));
+    expect(company().props, hasLength(9));
+    expect(company().inss?.props, hasLength(2));
     expect(reserve.props, hasLength(6));
     expect(budget.props, hasLength(4));
     expect(company().drafts.single.props, hasLength(5));

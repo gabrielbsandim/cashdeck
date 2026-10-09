@@ -13,6 +13,7 @@ import {
   type LocalDate,
   Money,
   projectBalances,
+  proLaboreInss,
   type Transaction,
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
@@ -22,8 +23,10 @@ import {
   type PersonalSummary,
 } from '@/dtos/home'
 import { type Deps } from '@/use-cases/deps'
+import { payrollWindow } from '@/use-cases/payroll'
 import { issQuote } from '@/use-cases/revenue'
 import {
+  addMonths,
   brlOf,
   firstDay,
   lastDay,
@@ -294,10 +297,32 @@ export function makeCompanySummary(
         estimateDas({ annex, domesticRbt12, exportRbt12, domestic, exports }),
       ),
       dasDue: dasDueDate(month),
+      inss: await inssOf(deps, tenantId, day),
       annex,
       drafts: await draftsOf(deps, tenantId, scope.entity.id),
       unbilled: await unbilledOf(deps, tenantId, cash, day),
     }
+  }
+}
+
+// The pro-labore guide still to pay: last month's until its due date passes.
+// A month without payroll entered repeats the latest pro-labore before it.
+async function inssOf(
+  deps: Pick<Deps, 'documents'>,
+  tenantId: string,
+  day: LocalDate,
+): Promise<CompanySummary['inss']> {
+  const previous = addMonths(monthOf(day), -1)
+  const competence = dasDueDate(previous) >= day ? previous : monthOf(day)
+  const entry = (await payrollWindow(deps, tenantId, competence)).find(
+    candidate => candidate.proLaboreCents > 0,
+  )
+  if (!entry) {
+    return null
+  }
+  return {
+    estimate: money(proLaboreInss(Money.of(entry.proLaboreCents))),
+    due: dasDueDate(competence),
   }
 }
 

@@ -85,6 +85,7 @@ final JsonMap _company = {
   'invoiceCount': 1,
   'dasEstimate': _money(5),
   'dasDue': '2026-11-20',
+  'inss': {'estimate': _money(2), 'due': '2026-10-20'},
   'annex': 'III',
   'drafts': [
     {
@@ -339,6 +340,7 @@ void main() {
       final company = _ok(await repository.company());
       expect(company.sync.syncedAt, isNull);
       expect(company.drafts.single.recurring, isTrue);
+      expect(company.inss?.due, const CalendarDate(2026, 10, 20));
       final consolidated = _ok(await repository.consolidated());
       expect(
         consolidated.transfers.single.kind,

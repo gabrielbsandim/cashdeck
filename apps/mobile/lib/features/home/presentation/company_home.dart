@@ -87,6 +87,12 @@ class CompanyHome extends ConsumerWidget {
             ),
           ],
         ),
+        if (summary.inss case final inss?)
+          _StatTile(
+            label: l10n.inssEstimated,
+            amount: inss.amount,
+            caption: l10n.dasDueOn(inss.due.dayMonth),
+          ),
         DueSoonSection(
           bills: taxes,
           today: today,

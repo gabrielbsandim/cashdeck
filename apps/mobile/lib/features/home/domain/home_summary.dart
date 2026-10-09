@@ -233,6 +233,7 @@ final class CompanySummary extends HomeSummary {
     required this.dasDue,
     required this.drafts,
     required this.unbilled,
+    this.inss,
   });
 
   final Money cash;
@@ -244,6 +245,9 @@ final class CompanySummary extends HomeSummary {
   final List<InvoiceDraft> drafts;
   final List<UnbilledReceipt> unbilled;
 
+  /// The pro-labore INSS guide still to pay; null until payroll is entered.
+  final TaxEstimate? inss;
+
   @override
   List<Object?> get props => [
     cash,
@@ -254,7 +258,18 @@ final class CompanySummary extends HomeSummary {
     dasDue,
     drafts,
     unbilled,
+    inss,
   ];
+}
+
+final class TaxEstimate extends Equatable {
+  const new({required this.amount, required this.due});
+
+  final Money amount;
+  final CalendarDate due;
+
+  @override
+  List<Object?> get props => [amount, due];
 }
 
 enum InternalTransferKind { profitDistribution, proLabore }

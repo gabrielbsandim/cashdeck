@@ -42,6 +42,7 @@ import {
   fromDbDate,
   toDbDate,
   transactionFromRow,
+  type TransactionRow,
   transactionToRow,
 } from '@/repositories/mappers'
 
@@ -157,19 +158,49 @@ export class PrismaTransactionRepository implements TransactionRepository {
     if (result.count === transactions.length) {
       return result.count
     }
-    for (const transaction of transactions) {
-      await this.fillDetails(transaction)
-    }
+    await this.fillDetails(transactions)
     return result.count
   }
 
   // A row stored before the provider sent these details takes them now,
-  // without touching what the user edited.
-  private async fillDetails(transaction: Transaction): Promise<void> {
-    const row = transactionToRow(transaction)
-    if (!row.externalId) {
+  // without touching what the user edited. One read finds the rows lacking any.
+  private async fillDetails(transactions: readonly Transaction[]) {
+    const rows = transactions
+      .map(transactionToRow)
+      .filter(row => row.externalId)
+      .filter(row => row.merchant || row.installmentNumber !== null)
+    if (rows.length === 0) {
       return
     }
+    const stored = await this.db.transaction.findMany({
+      where: {
+        tenantId: { in: [...new Set(rows.map(row => row.tenantId))] },
+        externalId: { in: rows.map(row => row.externalId as string) },
+      },
+      select: {
+        accountId: true,
+        externalId: true,
+        merchant: true,
+        installmentNumber: true,
+      },
+    })
+    const keyOf = (row: { accountId: string; externalId: string | null }) =>
+      `${row.accountId}|${row.externalId}`
+    const lacking = new Map(stored.map(row => [keyOf(row), row]))
+    for (const row of rows) {
+      const current = lacking.get(keyOf(row))
+      const needs =
+        current !== undefined &&
+        ((row.merchant !== null && current.merchant === null) ||
+          (row.installmentNumber !== null &&
+            current.installmentNumber === null))
+      if (needs) {
+        await this.fillRow(row)
+      }
+    }
+  }
+
+  private async fillRow(row: TransactionRow) {
     const where = {
       tenantId: row.tenantId,
       accountId: row.accountId,

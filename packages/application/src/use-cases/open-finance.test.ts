@@ -48,7 +48,7 @@ const provider = () =>
         accountExternalId: 'acc-1',
         amountCents: -1,
         currency: 'BRL',
-        bookedOn: '2026-01-01',
+        bookedOn: '2025-09-01',
         description: 'Old',
       },
     ],
@@ -356,6 +356,9 @@ describe('open finance', () => {
     expect(synced.transactions).toBe(4)
     const [stored] = await deps.accounts.list(TENANT)
     expect(stored?.credit?.openBill?.cents).toBe(250)
+    await of.sync(TENANT, connectionId)
+    const [again] = await deps.accounts.list(TENANT)
+    expect(again?.credit?.openBill?.cents).toBe(250)
   })
 
   it('keeps going when connectors, bills or the institution are missing', async () => {

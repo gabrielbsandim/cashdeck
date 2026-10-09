@@ -3,6 +3,7 @@ import { route, searchParams } from '@/server/api/handler'
 import { ok } from '@/server/api/respond'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 export const POST = route<{ id: string }>(
   'open-finance:sync',

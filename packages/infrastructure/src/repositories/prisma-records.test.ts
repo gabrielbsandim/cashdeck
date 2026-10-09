@@ -232,10 +232,36 @@ describe('transactions', () => {
       installment: { number: 2, count: 3, purchaseOn: '2026-08-01' },
     })
     const bare = createTransaction({ ...transaction, externalId: null })
+    const filled = createTransaction({ ...detailed, externalId: 'e2' })
+    const unseen = createTransaction({ ...detailed, externalId: 'e3' })
     db.transaction.createMany.mockResolvedValueOnce({ count: 0 })
+    db.transaction.findMany.mockResolvedValueOnce([
+      {
+        accountId: 'a1',
+        externalId: 'e1',
+        merchant: null,
+        installmentNumber: null,
+      },
+      {
+        accountId: 'a1',
+        externalId: 'e2',
+        merchant: 'Loja',
+        installmentNumber: 2,
+      },
+    ])
     expect(
-      await repos.transactions.saveNew([detailed, bare, transaction]),
+      await repos.transactions.saveNew([
+        detailed,
+        bare,
+        transaction,
+        filled,
+        unseen,
+      ]),
     ).toBe(0)
+    expect(db.transaction.findMany.mock.calls[0]?.[0].where).toEqual({
+      tenantId: { in: [TENANT] },
+      externalId: { in: ['e1', 'e2', 'e3'] },
+    })
     const calls = db.transaction.updateMany.mock.calls.map(call => call[0])
     expect(calls).toEqual([
       {

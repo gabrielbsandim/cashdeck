@@ -245,6 +245,7 @@ void main() {
       invoiceCount: 0,
       dasEstimate: const Money(0),
       dasDue: testToday.addDays(10),
+      inss: TaxEstimate(amount: const Money(55_000), due: testToday.addDays(5)),
       drafts: const [
         InvoiceDraft(
           id: 'draft-pomar',
@@ -262,6 +263,7 @@ void main() {
     await tester.tap(find.byKey(CdErrorState.retryKey));
     await settle(tester);
     await pickScope(tester, EntityScope.company);
+    expect(find.text(l10n.inssEstimated), findsOneWidget);
     await tester.tap(find.byKey(CompanyHome.approveKey('draft-pomar')));
     await settle(tester);
 

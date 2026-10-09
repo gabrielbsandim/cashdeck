@@ -213,7 +213,7 @@ describe('PluggyProvider', () => {
               },
             },
           ],
-          next: `${PLUGGY_URL}/v2/transactions?accountId=a1&after=cursor-2`,
+          next: '?accountId=a1&dateFrom=2026-10-01&after=cursor-2',
         },
       })
     const transactions = await provider(scripted).listTransactions(

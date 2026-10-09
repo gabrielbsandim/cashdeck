@@ -155,7 +155,7 @@ void main() {
     expect(find.byType(CdErrorState), findsOneWidget);
   });
 
-  testWidgets('syncs 90 days of each connection and says how many came', (
+  testWidgets('syncs a year of each connection and says how many came', (
     tester,
   ) async {
     await pumpRoute(tester, AppRoutes.balances);
@@ -167,7 +167,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     await settle(tester);
 
-    expect(find.text(l10n.balancesSynced(60)), findsOneWidget);
+    expect(find.text(l10n.balancesSynced(242)), findsOneWidget);
   });
 
   testWidgets('a failed sync says why and the states read as words', (

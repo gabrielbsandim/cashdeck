@@ -238,6 +238,7 @@ describe('company summary', () => {
       invoiceCount: 2,
       billed: { cents: 100000 + 5400 },
       dasDue: '2026-11-19',
+      inss: { estimate: { cents: 5500 }, due: '2026-10-20' },
     })
     expect(summary.annex).toMatch(/III|V/)
     expect(summary.drafts.map(d => [d.customer, d.recurring])).toEqual(
@@ -253,6 +254,28 @@ describe('company summary', () => {
         receivedOn: '2026-10-05',
       }),
     ])
+  })
+
+  it('leaves the INSS out until a pro-labore is entered', async () => {
+    const deps = fullDeps()
+    deps.clock.set(new Date('2026-10-25T12:00:00Z'))
+    await deps.documents.put(TENANT, PAYROLL_COLLECTION, '2026-08', {
+      month: '2026-08',
+      proLaboreCents: 0,
+      salariesCents: 0,
+      fgtsCents: 0,
+    })
+    expect((await makeCompanySummary(deps)(TENANT)).inss).toBeNull()
+    await deps.documents.put(TENANT, PAYROLL_COLLECTION, '2026-09', {
+      month: '2026-09',
+      proLaboreCents: 100000,
+      salariesCents: 0,
+      fgtsCents: 0,
+    })
+    expect((await makeCompanySummary(deps)(TENANT)).inss).toEqual({
+      estimate: expect.objectContaining({ cents: 11000 }),
+      due: '2026-11-19',
+    })
   })
 })
 

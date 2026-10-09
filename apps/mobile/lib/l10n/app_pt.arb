@@ -607,6 +607,7 @@
     }
   },
   "dasEstimated": "DAS estimado",
+  "inssEstimated": "INSS do pró-labore",
   "dasDueOn": "vence {date}",
   "@dasDueOn": {
     "placeholders": {
@@ -2100,7 +2101,7 @@
   "syncStateUpdating": "Atualizando",
   "syncStateNeedsAction": "Reconectar",
   "syncStateOutdated": "Desatualizada",
-  "balancesSyncHistory": "Buscar 90 dias de histórico",
+  "balancesSyncHistory": "Buscar 1 ano de histórico",
   "balancesSynced": "{count, plural, =0{Nenhuma transação nova} =1{1 transação nova} other{{count} transações novas}}",
   "@balancesSynced": {
     "placeholders": {

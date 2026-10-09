@@ -1825,6 +1825,13 @@ export interface operations {
                                 currency: string;
                             };
                             dasDue: string;
+                            inss: {
+                                estimate: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                due: string;
+                            } | null;
                             /** @enum {string} */
                             annex: "III" | "V";
                             drafts: {
@@ -1898,6 +1905,13 @@ export interface operations {
                                 currency: string;
                             };
                             dasDue: string;
+                            inss: {
+                                estimate: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                due: string;
+                            } | null;
                             /** @enum {string} */
                             annex: "III" | "V";
                             drafts: {
@@ -1971,6 +1985,13 @@ export interface operations {
                                 currency: string;
                             };
                             dasDue: string;
+                            inss: {
+                                estimate: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                due: string;
+                            } | null;
                             /** @enum {string} */
                             annex: "III" | "V";
                             drafts: {

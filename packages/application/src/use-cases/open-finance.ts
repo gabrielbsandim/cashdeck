@@ -33,7 +33,6 @@ import {
 } from '@/use-cases/shared'
 
 export const OPEN_FINANCE_PROVIDER = 'pluggy'
-const FIRST_SYNC_DAYS = 30
 // A card is read two cycles back, so every charge of the open bill is seen.
 const CARD_LOOKBACK_DAYS = 62
 
@@ -116,7 +115,7 @@ const brandingOf = (connector: ProviderConnector | null | undefined) => ({
   primaryColor: connector?.primaryColor ?? null,
 })
 
-// How far back a sync may reach when asked to fetch history again.
+// The year Open Finance shares, read on the first sync or when asked.
 export const MAX_SYNC_DAYS = 365
 
 // An adapter reports an unknown item as NotFoundError or as an HTTP 404.
@@ -384,7 +383,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     if (connection.lastSyncAt) {
       return addDays(today(connection.lastSyncAt), -1)
     }
-    return addDays(day, -FIRST_SYNC_DAYS)
+    return addDays(day, -MAX_SYNC_DAYS)
   }
 
   async function sync(

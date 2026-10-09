@@ -77,6 +77,7 @@ CompanySummary companyFromJson(JsonMap json) => CompanySummary(
   invoiceCount: readInt(json, 'invoiceCount'),
   dasEstimate: readMoney(json, 'dasEstimate'),
   dasDue: readDate(json, 'dasDue'),
+  inss: taxEstimateFromJson(readOptionalMap(json, 'inss')),
   drafts: [
     for (final draft in readMapList(json, 'drafts'))
       InvoiceDraft(
@@ -113,3 +114,11 @@ ConsolidatedSummary consolidatedFromJson(JsonMap json) => ConsolidatedSummary(
       ),
   ],
 );
+
+TaxEstimate? taxEstimateFromJson(JsonMap? json) {
+  if (json == null) return null;
+  return TaxEstimate(
+    amount: readMoney(json, 'estimate'),
+    due: readDate(json, 'due'),
+  );
+}

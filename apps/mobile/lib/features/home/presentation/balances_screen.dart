@@ -44,7 +44,7 @@ class BalancesScreen extends ConsumerStatefulWidget {
   static Key rowKey(String id) => Key('balances-account-$id');
 
   /// How far back a manual sync reaches.
-  static const syncDays = 90;
+  static const syncDays = 365;
 
   @override
   ConsumerState<BalancesScreen> createState() => _BalancesScreenState();

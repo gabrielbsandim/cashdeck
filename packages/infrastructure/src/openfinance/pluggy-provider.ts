@@ -248,16 +248,16 @@ export class PluggyProvider implements OpenFinanceProvider {
   }
 }
 
-// `next` comes back as a URL whose `after` parameter is the cursor; a bare
-// cursor is accepted too in case the format changes.
+// `next` comes back as a query string, or a URL, whose `after` parameter is
+// the cursor; a bare cursor is accepted too in case the format changes.
 function cursorOf(next: string | null | undefined): string | null {
   if (!next) {
     return null
   }
-  if (!next.startsWith('http')) {
+  if (!next.includes('after=')) {
     return next
   }
-  return new URL(next).searchParams.get('after')
+  return new URLSearchParams(next.slice(next.indexOf('?') + 1)).get('after')
 }
 
 // Bill and purchase dates are calendar days sent as midnight timestamps;

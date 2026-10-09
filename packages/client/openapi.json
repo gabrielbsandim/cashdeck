@@ -930,6 +930,41 @@
                           "type": "string",
                           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                         },
+                        "inss": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "estimate": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "due": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "estimate",
+                            "due"
+                          ],
+                          "additionalProperties": false
+                        },
                         "annex": {
                           "type": "string",
                           "enum": [
@@ -1039,6 +1074,7 @@
                         "invoiceCount",
                         "dasEstimate",
                         "dasDue",
+                        "inss",
                         "annex",
                         "drafts",
                         "unbilled"
@@ -1197,6 +1233,41 @@
                           "type": "string",
                           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                         },
+                        "inss": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "estimate": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "due": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "estimate",
+                            "due"
+                          ],
+                          "additionalProperties": false
+                        },
                         "annex": {
                           "type": "string",
                           "enum": [
@@ -1306,6 +1377,7 @@
                         "invoiceCount",
                         "dasEstimate",
                         "dasDue",
+                        "inss",
                         "annex",
                         "drafts",
                         "unbilled"
@@ -1464,6 +1536,41 @@
                           "type": "string",
                           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                         },
+                        "inss": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "estimate": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "due": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "estimate",
+                            "due"
+                          ],
+                          "additionalProperties": false
+                        },
                         "annex": {
                           "type": "string",
                           "enum": [
@@ -1573,6 +1680,7 @@
                         "invoiceCount",
                         "dasEstimate",
                         "dasDue",
+                        "inss",
                         "annex",
                         "drafts",
                         "unbilled"
