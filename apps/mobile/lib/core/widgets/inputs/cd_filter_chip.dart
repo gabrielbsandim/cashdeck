@@ -69,9 +69,13 @@ class CdFilterChip extends StatelessWidget {
                     Icon(leading, size: 18, color: ink),
                     const SizedBox(width: AppSpacing.xs),
                   ],
-                  Text(
-                    label,
-                    style: AppTextStyles.labelLg.copyWith(color: ink),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.labelLg.copyWith(color: ink),
+                    ),
                   ),
                   if (dropdown)
                     Icon(Symbols.arrow_drop_down_rounded, color: ink),

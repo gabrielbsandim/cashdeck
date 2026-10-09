@@ -66,6 +66,16 @@ void main() {
     expect(totals.last, 0);
   });
 
+  test('the personal card has an open bill and six before it', () async {
+    final cards = valueOf(await repository.cardBills(EntityScope.personal));
+    final bills = cards.single.bills;
+    expect(bills.first.state, CardBillState.open);
+    expect(bills[1].state, CardBillState.closed);
+    expect(bills.last.state, CardBillState.past);
+    expect(bills[1].range.from, bills[2].closesOn?.addDays(1));
+    expect(valueOf(await repository.cardBills(EntityScope.company)), isEmpty);
+  });
+
   test('a suggestion can be confirmed, dismissed and removed', () async {
     var subscriptions = valueOf(
       await repository.subscriptions(EntityScope.personal),

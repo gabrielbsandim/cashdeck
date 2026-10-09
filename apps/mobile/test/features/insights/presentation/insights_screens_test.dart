@@ -237,13 +237,53 @@ void main() {
       expect(find.byKey(SubscriptionsScreen.rowKey('music')), findsOneWidget);
     });
 
-    testWidgets('Cartões shows the bill and the limit of each card', (
+    testWidgets('Cartões leads with the bill to pay, its history and charges', (
       tester,
     ) async {
-      await pumpRoute(tester, AppRoutes.cards);
+      final app = await pumpRoute(tester, AppRoutes.cards);
 
       expect(find.byKey(CardsScreen.cardKey('acc-pf-card')), findsOneWidget);
-      expect(find.text(l10n.cardsNoDates), findsOneWidget);
+      expect(
+        find.text(
+          '${l10n.cardsBillOf(monthName(l10n, _october))} · '
+          '${l10n.cardsStateClosed}',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.cardsDueIn(6)), findsOneWidget);
+      expect(
+        find.text(l10n.cardsClosedDates('07/10', '14/10')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          l10n.cardsAverage(6, MoneyFormat.format(const Money(203_768))),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Mercado Bom Preço'), findsWidgets);
+
+      await tester.tap(find.text(shortMonth(l10n, const YearMonth(2026, 11))));
+      await settle(tester);
+      expect(find.text(l10n.cardsBillDates('07/11', '14/11')), findsOneWidget);
+      expect(find.text('Padaria Trigo Bom'), findsWidgets);
+
+      await tester.tap(find.text(shortMonth(l10n, const YearMonth(2026, 9))));
+      await settle(tester);
+      expect(find.text(l10n.cardsPastDue('14/09')), findsOneWidget);
+
+      await tester.tap(find.byKey(CardsScreen.seeInBillsKey));
+      await settle(tester);
+      expect(app.location, AppRoutes.bills);
+    });
+
+    testWidgets('Cartões imports a bill and shows each limit', (tester) async {
+      final app = await pumpRoute(tester, AppRoutes.cards);
+      await tester.tap(find.byKey(CardsScreen.importKey));
+      await settle(tester);
+      expect(app.location, AppRoutes.cardImport);
+      app.router.pop();
+      await settle(tester);
 
       await tester.tap(find.byKey(CardsScreen.limitsTabKey));
       await settle(tester);
@@ -443,46 +483,179 @@ void main() {
           credit: credit,
         );
 
-    testWidgets('reads the bill dates and a card without a limit', (
+    CardBill bill(
+      CardBillState state,
+      int day, {
+      CalendarDate? closesOn,
+      int total = 10_000,
+    }) => CardBill(
+      closesOn: closesOn,
+      dueOn: CalendarDate(2026, 10, day),
+      total: Money(total),
+      state: state,
+      range: const DateSpan(
+        CalendarDate(2026, 9, 1),
+        CalendarDate(2026, 9, 30),
+      ),
+    );
+
+    const charge = Transaction(
+      id: 'charge',
+      accountId: 'a',
+      owner: EntityKind.personal,
+      amount: Money(-4_200),
+      bookedOn: CalendarDate(2026, 9, 12),
+      description: 'Livraria Exemplo',
+      kind: TransactionKind.expense,
+    );
+
+    List<Override> withBills(
+      List<CardBills> cards, {
+      Future<List<Transaction>> Function()? charges,
+      List<TransactionAccount>? accounts,
+    }) => [
+      transactionAccountsProvider.overrideWith(
+        (ref) async => accounts ?? [card('a'), card('b')],
+      ),
+      cardBillsProvider.overrideWith((ref) async => cards),
+      billChargesProvider.overrideWith(
+        (ref, _) => charges?.call() ?? Future.value(<Transaction>[]),
+      ),
+    ];
+
+    testWidgets('reads open and closed bills without a closing day', (
       tester,
     ) async {
       await pumpRoute(
         tester,
         AppRoutes.cards,
-        overrides: [
-          transactionAccountsProvider.overrideWith(
-            (ref) async => [
-              card(
-                'a',
-                credit: const CreditLine(
-                  limit: Money(100_000),
-                  available: Money(90_000),
-                  closesOn: CalendarDate(2026, 10, 7),
-                  dueOn: CalendarDate(2026, 10, 14),
-                ),
-              ),
-              card(
-                'b',
-                credit: const CreditLine(
-                  limit: Money(100_000),
-                  available: Money(100_000),
-                  dueOn: CalendarDate(2026, 10, 20),
-                ),
-              ),
-              card('c'),
+        overrides: withBills([
+          CardBills(
+            accountId: 'a',
+            name: 'Cartão a',
+            suffix: '1234',
+            owner: EntityKind.personal,
+            bills: [bill(CardBillState.open, 20)],
+          ),
+          CardBills(
+            accountId: 'b',
+            name: 'Cartão b',
+            owner: EntityKind.personal,
+            bills: [
+              bill(CardBillState.closed, 9),
+              bill(CardBillState.past, 1, total: 20_000),
             ],
           ),
-        ],
+          const CardBills(
+            accountId: 'c',
+            name: 'Cartão c',
+            owner: EntityKind.personal,
+            bills: [],
+          ),
+        ]),
       );
 
-      expect(find.text(l10n.cardsBillDates('07/10', '14/10')), findsOneWidget);
       expect(find.text(l10n.cardsBillDue('20/10')), findsOneWidget);
-      expect(find.text(l10n.cardsNoDates), findsOneWidget);
+      expect(find.byType(CdColumnBars), findsNothing);
+      expect(find.text(l10n.cardsNoCharges), findsOneWidget);
+
+      await tester.tap(find.byKey(CardsScreen.cardKey('b')));
+      await settle(tester);
+      expect(find.text(l10n.cardsDueIn(1)), findsOneWidget);
+      expect(find.byType(CdColumnBars), findsOneWidget);
+      expect(
+        find.text(
+          l10n.cardsAverage(2, MoneyFormat.format(const Money(15_000))),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(CardsScreen.cardKey('c')));
+      await settle(tester);
+      expect(find.text(l10n.cardsNoBills), findsOneWidget);
+    });
+
+    testWidgets('a charge opens its transaction and a failure retries', (
+      tester,
+    ) async {
+      var fail = true;
+      final app = await pumpRoute(
+        tester,
+        AppRoutes.cards,
+        overrides: withBills(
+          [
+            CardBills(
+              accountId: 'a',
+              name: 'Cartão a',
+              owner: EntityKind.personal,
+              bills: [bill(CardBillState.closed, 9)],
+            ),
+          ],
+          charges: () async {
+            if (fail) throw const LoadFailure(NetworkFailure());
+            return [charge];
+          },
+        ),
+      );
+
+      expect(find.text(l10n.homeSectionFailed), findsOneWidget);
+      fail = false;
+      await tester.tap(find.byKey(CardsScreen.chargesRetryKey));
+      await settle(tester);
+      await tester.tap(find.byKey(CardsScreen.chargeKey('charge')));
+      await settle(tester);
+      expect(app.location, AppRoutes.transaction('charge'));
+    });
+
+    testWidgets('no bills at all still offers the import', (tester) async {
+      await pumpRoute(tester, AppRoutes.cards, overrides: withBills([]));
+      expect(find.text(l10n.cardsNoBills), findsOneWidget);
+      expect(find.byKey(CardsScreen.importKey), findsOneWidget);
+    });
+
+    testWidgets('a failed load of the bills retries', (tester) async {
+      var fail = true;
+      await pumpRoute(
+        tester,
+        AppRoutes.cards,
+        overrides: [
+          transactionAccountsProvider.overrideWith((ref) async => [card('a')]),
+          cardBillsProvider.overrideWith((ref) async {
+            if (fail) throw const LoadFailure(NetworkFailure());
+            return <CardBills>[];
+          }),
+        ],
+      );
+      expect(find.byType(CdErrorState), findsOneWidget);
+      fail = false;
+      await tester.tap(find.text(l10n.retryButton));
+      await settle(tester);
+      expect(find.text(l10n.cardsNoBills), findsOneWidget);
+    });
+
+    testWidgets('reads a card without a limit', (tester) async {
+      await pumpRoute(
+        tester,
+        AppRoutes.cards,
+        overrides: withBills(
+          [],
+          accounts: [
+            card(
+              'a',
+              credit: const CreditLine(
+                limit: Money(100_000),
+                available: Money(90_000),
+              ),
+            ),
+            card('c'),
+          ],
+        ),
+      );
 
       await tester.tap(find.byKey(CardsScreen.limitsTabKey));
       await settle(tester);
       expect(find.text(l10n.cardsNoLimit), findsOneWidget);
-      expect(find.text(l10n.insightsPercent(5)), findsOneWidget);
+      expect(find.text(l10n.insightsPercent(10)), findsOneWidget);
     });
 
     testWidgets('asks for a card when there is none and retries a failure', (

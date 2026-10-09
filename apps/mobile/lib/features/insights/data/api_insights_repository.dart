@@ -64,6 +64,11 @@ final class ApiInsightsRepository implements InsightsRepository {
       );
 
   @override
+  Future<Result<List<CardBills>>> cardBills(EntityScope scope) => guardRequest(
+    () async => cardBillsFromJson(await _get('card-bills', scopeQuery(scope))),
+  );
+
+  @override
   Future<Result<String>> confirmSubscription(String transactionId) =>
       guardRequest(() async {
         final response = await _dio.post<Object?>(

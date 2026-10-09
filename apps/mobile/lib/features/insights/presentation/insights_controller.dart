@@ -2,12 +2,16 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/insights/application/insights_use_cases.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/insights_providers.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/transactions_providers.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 
 class InsightPeriodController extends Notifier<InsightPeriod> {
   @override
@@ -76,6 +80,41 @@ final FutureProvider<Installments> installmentsProvider =
     FutureProvider.autoDispose<Installments>((ref) async {
       final scope = ref.watch(entityScopeProvider);
       return (await ref.watch(loadInstallmentsProvider)(scope)).orThrow;
+    }, retry: noRetry);
+
+final FutureProvider<List<CardBills>> cardBillsProvider =
+    FutureProvider.autoDispose<List<CardBills>>((ref) async {
+      final scope = ref.watch(entityScopeProvider);
+      return (await ref.watch(loadCardBillsProvider)(scope)).orThrow;
+    }, retry: noRetry);
+
+/// A card and the booking days of one of its bills.
+typedef BillCharges = ({String accountId, DateSpan range});
+
+// A bill rarely holds more than a few pages; the cap keeps a wrong range cheap.
+const _maxBillPages = 10;
+
+final FutureProviderFamily<List<Transaction>, BillCharges> billChargesProvider =
+    FutureProvider.autoDispose.family<List<Transaction>, BillCharges>((
+      ref,
+      bill,
+    ) async {
+      final list = ref.watch(listTransactionsProvider);
+      final query = TransactionQuery(
+        scope: EntityScope.consolidated,
+        accountId: bill.accountId,
+        from: bill.range.from,
+        to: bill.range.to,
+      );
+      final charges = <Transaction>[];
+      String? cursor;
+      for (var page = 0; page < _maxBillPages; page++) {
+        final result = (await list(query, cursor: cursor)).orThrow;
+        charges.addAll(result.items);
+        cursor = result.nextCursor;
+        if (cursor == null) break;
+      }
+      return charges;
     }, retry: noRetry);
 
 class SubscriptionsController extends AsyncNotifier<Subscriptions> {

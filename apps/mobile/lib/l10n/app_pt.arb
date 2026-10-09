@@ -2092,7 +2092,7 @@
     }
   },
   "homeNextMonth": "Próximo mês",
-  "homeReserveCaption": "Fora do saldo total",
+  "homeReserveCaption": "Parte do saldo total",
   "homeOtherInstitutions": "Outras",
   "homeInstitutionsSemantics": "Saldo por instituição",
   "homeSectionFailed": "Não foi possível carregar",
@@ -2116,5 +2116,61 @@
   "billsLegendNeedsYou": "Precisa de você",
   "billsLegendUpcoming": "A vencer",
   "billsLegendDebit": "Débito do banco",
-  "billsLegendPaid": "Paga"
+  "billsLegendPaid": "Paga",
+  "cardsBillOf": "Fatura de {month}",
+  "@cardsBillOf": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsStateOpen": "aberta",
+  "cardsStateClosed": "fechada",
+  "cardsStatePast": "anterior",
+  "cardsDueIn": "{days, plural, =0{Vence hoje} =1{Vence amanhã} other{Vence em {days} dias}}",
+  "@cardsDueIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsClosedDates": "Fechou {closes} · vence {due}",
+  "@cardsClosedDates": {
+    "placeholders": {
+      "closes": {
+        "type": "String"
+      },
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsPastDue": "Venceu {due}",
+  "@cardsPastDue": {
+    "placeholders": {
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsAverage": "Média de {count, plural, =1{1 fatura} other{{count} faturas}}: {amount}",
+  "@cardsAverage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsSeeInBills": "Ver em Pagar",
+  "cardsCharges": "Lançamentos da fatura",
+  "cardsNoCharges": "Nenhum lançamento nos dias desta fatura.",
+  "cardsNoBills": "O banco ainda não mandou faturas deste cartão.",
+  "cardsHistorySemantics": "Valor das últimas faturas",
+  "cardsImportTitle": "Cartão sem Open Finance?",
+  "cardsImportMessage": "Importe a fatura em PDF ou CSV"
 }

@@ -35,7 +35,7 @@ import 'package:material_symbols_icons/symbols.dart';
 /// How many institutions the balance bar names before grouping the rest.
 const _namedInstitutions = 4;
 
-/// The cash balance split by institution, the reserve left out as on the
+/// The cash balance split by institution, the reserve included as on the
 /// total above it.
 class InstitutionBar extends ConsumerWidget {
   const new({super.key});
@@ -49,7 +49,7 @@ class InstitutionBar extends ConsumerWidget {
         const <TransactionAccount>[];
     final totals = <String, int>{};
     for (final account in accounts) {
-      if (!account.isCash || account.isReserve) continue;
+      if (!account.isCash) continue;
       if (account.balance.cents <= 0) continue;
       totals.update(
         account.institution,

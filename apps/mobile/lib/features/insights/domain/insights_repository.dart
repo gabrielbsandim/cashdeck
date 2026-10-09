@@ -19,6 +19,8 @@ abstract interface class InsightsRepository {
 
   Future<Result<Subscriptions>> subscriptions(EntityScope scope);
 
+  Future<Result<List<CardBills>>> cardBills(EntityScope scope);
+
   /// Confirms the recurrence [transactionId] belongs to; returns its id.
   Future<Result<String>> confirmSubscription(String transactionId);
 

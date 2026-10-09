@@ -171,6 +171,39 @@ void main() {
     expect(_plan(number: 3), isNot(_plan()));
   });
 
+  test('a card looks first at the bill to pay and averages closed ones', () {
+    CardBill bill(CardBillState state, int cents) => CardBill(
+      dueOn: const CalendarDate(2026, 10, 14),
+      total: Money(cents),
+      state: state,
+      range: const DateSpan(
+        CalendarDate(2026, 9, 8),
+        CalendarDate(2026, 10, 7),
+      ),
+    );
+    CardBills card(List<CardBill> bills) => CardBills(
+      accountId: 'card',
+      name: 'Cartão',
+      owner: EntityKind.personal,
+      bills: bills,
+    );
+
+    final full = card([
+      bill(CardBillState.open, 9_000),
+      bill(CardBillState.closed, 10_000),
+      bill(CardBillState.past, 20_001),
+    ]);
+    expect(full.focus, 1);
+    expect(full.average(), const Money(15_001));
+    expect(full.averaged(), 2);
+    expect(full.average(1), const Money(10_000));
+    expect(card([bill(CardBillState.open, 1)]).focus, 0);
+    expect(card([bill(CardBillState.open, 1)]).average(), isNull);
+    expect(card(const []).focus, isNull);
+    expect(full, card([...full.bills]));
+    expect(full.bills.first, bill(CardBillState.open, 9_000));
+  });
+
   test('a plan counts what is left and a suggestion has no id', () {
     expect(_plan().left, 2);
     expect(_subscription().isSuggestion, isTrue);

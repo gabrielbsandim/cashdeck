@@ -51,7 +51,7 @@ class PersonalHome extends ConsumerWidget {
           children: [
             BalanceHeader(
               label: l10n.totalBalance,
-              balance: summary.balance,
+              balance: summary.total,
               syncLine: syncLineOf(l10n, ref, summary.sync),
             ),
             const SizedBox(height: AppSpacing.md),

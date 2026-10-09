@@ -135,6 +135,8 @@ Map<String, Object> transactionQueryToJson(
     'categoryId': ?query.categoryId,
     if (query.uncategorized) 'uncategorized': 'true',
     if (search.isNotEmpty) 'search': search,
+    'from': ?query.from?.iso,
+    'to': ?query.to?.iso,
     'cursor': ?cursor,
   };
 }

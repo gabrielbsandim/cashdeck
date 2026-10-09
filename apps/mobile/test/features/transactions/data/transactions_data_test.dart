@@ -136,6 +136,8 @@ void main() {
             categoryId: 'c',
             uncategorized: true,
             search: ' padaria ',
+            from: CalendarDate(2026, 9, 8),
+            to: CalendarDate(2026, 10, 7),
           ),
           cursor: '30',
         ),
@@ -146,6 +148,8 @@ void main() {
           'categoryId': 'c',
           'uncategorized': 'true',
           'search': 'padaria',
+          'from': '2026-09-08',
+          'to': '2026-10-07',
           'cursor': '30',
         },
       );

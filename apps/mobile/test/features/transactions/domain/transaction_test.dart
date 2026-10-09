@@ -49,7 +49,7 @@ void main() {
     }
     expect(
       const TransactionQuery(scope: EntityScope.personal).props,
-      hasLength(5),
+      hasLength(7),
     );
   });
 
@@ -61,6 +61,20 @@ void main() {
     const personal = TransactionQuery(scope: EntityScope.personal);
 
     expect(personal.matches(row), isTrue);
+    for (final (from, to, kept) in [
+      (testToday, testToday, true),
+      (testToday.addDays(1), null, false),
+      (null, testToday.addDays(-1), false),
+    ]) {
+      expect(
+        TransactionQuery(
+          scope: EntityScope.personal,
+          from: from,
+          to: to,
+        ).matches(row),
+        kept,
+      );
+    }
     expect(
       const TransactionQuery(scope: EntityScope.company).matches(row),
       isFalse,

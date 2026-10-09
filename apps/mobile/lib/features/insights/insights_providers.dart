@@ -29,6 +29,10 @@ final loadSubscriptionsProvider = Provider<LoadSubscriptions>(
   (ref) => LoadSubscriptions(ref.watch(insightsRepositoryProvider)),
 );
 
+final loadCardBillsProvider = Provider<LoadCardBills>(
+  (ref) => LoadCardBills(ref.watch(insightsRepositoryProvider)),
+);
+
 final decideSubscriptionProvider = Provider<DecideSubscription>(
   (ref) => DecideSubscription(ref.watch(insightsRepositoryProvider)),
 );

@@ -23,6 +23,12 @@ void main() {
         .thenAnswer((_) async => const Err(NetworkFailure()));
     when(() => repository.subscriptions(EntityScope.consolidated))
         .thenAnswer((_) async => const Err(NetworkFailure()));
+    when(() => repository.cardBills(EntityScope.personal))
+        .thenAnswer((_) async => const Ok([]));
+    expect(
+      await LoadCardBills(repository)(EntityScope.personal),
+      isA<Ok<List<CardBills>>>(),
+    );
 
     expect(
       await LoadInsightsOverview(repository)(

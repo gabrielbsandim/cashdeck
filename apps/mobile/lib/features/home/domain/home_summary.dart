@@ -171,6 +171,9 @@ final class PersonalSummary extends HomeSummary {
   final List<BudgetSummary> budgets;
   final List<HomeAlert> alerts;
 
+  /// What Início shows as the total: the spending balance plus the reserve.
+  Money get total => balance + (reserve?.balance ?? const Money(0));
+
   @override
   List<Object?> get props => [
     balance,

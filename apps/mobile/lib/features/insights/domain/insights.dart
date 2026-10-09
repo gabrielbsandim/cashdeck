@@ -568,3 +568,76 @@ final class Subscriptions extends Equatable {
     suggestions,
   ];
 }
+
+enum CardBillState { open, closed, past }
+
+final class CardBill extends Equatable {
+  const new({
+    required this.dueOn,
+    required this.total,
+    required this.state,
+    required this.range,
+    this.closesOn,
+    this.minimum,
+  });
+
+  /// Null when the issuer left the closing day out.
+  final CalendarDate? closesOn;
+  final CalendarDate dueOn;
+  final Money total;
+  final Money? minimum;
+  final CardBillState state;
+
+  /// The booking days whose charges this bill holds.
+  final DateSpan range;
+
+  @override
+  List<Object?> get props => [closesOn, dueOn, total, minimum, state, range];
+}
+
+final class CardBills extends Equatable {
+  const new({
+    required this.accountId,
+    required this.name,
+    required this.owner,
+    required this.bills,
+    this.suffix,
+  });
+
+  final String accountId;
+  final String name;
+  final String? suffix;
+  final EntityKind owner;
+
+  /// Newest first.
+  final List<CardBill> bills;
+
+  /// The bill to look at first: one closed and still to pay, else the open
+  /// one, else the latest.
+  int? get focus {
+    if (bills.isEmpty) return null;
+    final closed = bills.indexWhere(
+      (bill) => bill.state == CardBillState.closed,
+    );
+    return closed < 0 ? 0 : closed;
+  }
+
+  List<CardBill> _closed(int count) => bills
+      .where((bill) => bill.state != CardBillState.open)
+      .take(count)
+      .toList();
+
+  /// Mean of up to [count] bills that already closed; null without any.
+  Money? average([int count = 6]) {
+    final closed = _closed(count);
+    if (closed.isEmpty) return null;
+    final sum = closed.fold(0, (total, bill) => total + bill.total.cents);
+    return Money((sum / closed.length).round());
+  }
+
+  /// How many bills [average] covers.
+  int averaged([int count = 6]) => _closed(count).length;
+
+  @override
+  List<Object?> get props => [accountId, name, suffix, owner, bills];
+}

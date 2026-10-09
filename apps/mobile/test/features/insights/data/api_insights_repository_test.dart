@@ -118,6 +118,26 @@ void main() {
     expect(subscriptions.items.single.thisMonth, SubscriptionMonthStatus.paid);
   });
 
+  test('reads the bills of each card', () async {
+    final dio = stubDio(
+      (options) => StubResponse(200, {
+        'data': options.path.endsWith('card-bills') ? cardBillsJson() : null,
+      }),
+    );
+
+    final cards = valueOf(
+      await ApiInsightsRepository(dio).cardBills(EntityScope.personal),
+    );
+
+    final card = cards.single;
+    expect(card.suffix, '4821');
+    expect(card.owner, EntityKind.personal);
+    expect(card.bills.first.closesOn, isNull);
+    expect(card.bills.last.minimum, const Money(3_000));
+    expect(card.bills.last.state, CardBillState.closed);
+    expect(card.bills.last.range.from, const CalendarDate(2026, 9, 8));
+  });
+
   test('decides and removes subscriptions', () async {
     final dio = stubDio(
       (options) => switch (options.path) {

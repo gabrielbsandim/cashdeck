@@ -268,3 +268,32 @@ Subscriptions subscriptionsFromJson(JsonMap json) => Subscriptions(
     'suggestions',
   ).map(subscriptionFromJson).toList(),
 );
+
+const Map<String, CardBillState> _billStates = {
+  'OPEN': CardBillState.open,
+  'CLOSED': CardBillState.closed,
+  'PAST': CardBillState.past,
+};
+
+CardBill _cardBill(JsonMap json) {
+  final minimum = readOptionalMap(json, 'minimum');
+  return CardBill(
+    closesOn: readOptionalDate(json, 'closesOn'),
+    dueOn: readDate(json, 'dueOn'),
+    total: readMoney(json, 'total'),
+    minimum: minimum == null ? null : moneyFromJson(minimum),
+    state: readEnum(json, 'state', _billStates),
+    range: _span(readMap(json, 'range')),
+  );
+}
+
+List<CardBills> cardBillsFromJson(JsonMap json) => [
+  for (final card in readMapList(json, 'cards'))
+    CardBills(
+      accountId: readString(card, 'accountId'),
+      name: readString(card, 'name'),
+      suffix: readOptionalString(card, 'suffix'),
+      owner: readEntityKind(card, 'entityKind'),
+      bills: readMapList(card, 'bills').map(_cardBill).toList(),
+    ),
+];

@@ -181,3 +181,32 @@ JsonMap subscriptionsJson() => {
   'items': [subscriptionJson(id: 'r1', previous: brl(3000))],
   'suggestions': [subscriptionJson()],
 };
+
+JsonMap cardBillsJson() => {
+  'cards': [
+    {
+      'accountId': 'card',
+      'name': 'Cartão Exemplo',
+      'suffix': '4821',
+      'entityKind': 'PF',
+      'bills': [
+        {
+          'closesOn': null,
+          'dueOn': '2026-11-14',
+          'total': brl(12_000),
+          'minimum': null,
+          'state': 'OPEN',
+          'range': {'from': '2026-10-08', 'to': '2026-11-07'},
+        },
+        {
+          'closesOn': '2026-10-07',
+          'dueOn': '2026-10-14',
+          'total': brl(30_000),
+          'minimum': brl(3_000),
+          'state': 'CLOSED',
+          'range': {'from': '2026-09-08', 'to': '2026-10-07'},
+        },
+      ],
+    },
+  ],
+};

@@ -54,6 +54,16 @@ final class LoadSubscriptions {
       _repository.subscriptions(scope);
 }
 
+/// Each card with its bills, newest first.
+final class LoadCardBills {
+  const new(this._repository);
+
+  final InsightsRepository _repository;
+
+  Future<Result<List<CardBills>>> call(EntityScope scope) =>
+      _repository.cardBills(scope);
+}
+
 enum SubscriptionDecision { confirm, dismiss }
 
 final class DecideSubscription {

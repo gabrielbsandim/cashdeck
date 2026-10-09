@@ -243,10 +243,16 @@ final class TransactionQuery extends Equatable {
     this.categoryId,
     this.uncategorized = false,
     this.search = '',
+    this.from,
+    this.to,
   });
 
   final EntityScope scope;
   final String? accountId;
+
+  /// Booking days to keep, both ends included; null leaves that end open.
+  final CalendarDate? from;
+  final CalendarDate? to;
   final String? categoryId;
   final bool uncategorized;
   final String search;
@@ -269,7 +275,15 @@ final class TransactionQuery extends Equatable {
         (accountId == null || transaction.accountId == accountId) &&
         (categoryId == null || transaction.categoryId == categoryId) &&
         (!uncategorized || transaction.isUncategorized) &&
-        (term.isEmpty || text.contains(term));
+        (term.isEmpty || text.contains(term)) &&
+        _within(transaction.bookedOn);
+  }
+
+  bool _within(CalendarDate day) {
+    final from = this.from;
+    final to = this.to;
+    if (from != null && day.isBefore(from)) return false;
+    return to == null || !to.isBefore(day);
   }
 
   @override
@@ -279,6 +293,8 @@ final class TransactionQuery extends Equatable {
     categoryId,
     uncategorized,
     search,
+    from,
+    to,
   ];
 }
 

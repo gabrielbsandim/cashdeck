@@ -321,6 +321,53 @@ final class FakeInsightsRepository implements InsightsRepository {
     );
   }
 
+  static const _billTotals = [
+    189_045,
+    218_455,
+    196_310,
+    241_920,
+    187_640,
+    205_880,
+    172_400,
+  ];
+
+  @override
+  Future<Result<List<CardBills>>> cardBills(EntityScope scope) async {
+    await _wait();
+    if (!scope.includes(EntityKind.personal)) return const Ok([]);
+    final today = _today;
+    final next = YearMonth.of(today).add(1);
+    CalendarDate closing(int back) {
+      final month = next.add(-back);
+      return CalendarDate(month.year, month.month, 7);
+    }
+
+    CardBillState stateOf(CalendarDate closes, CalendarDate due) {
+      if (!closes.isBefore(today)) return CardBillState.open;
+      return due.isBefore(today) ? CardBillState.past : CardBillState.closed;
+    }
+
+    return Ok([
+      CardBills(
+        accountId: 'acc-pf-card',
+        name: 'Cartão Horizonte',
+        suffix: '9021',
+        owner: EntityKind.personal,
+        bills: [
+          for (final (back, total) in _billTotals.indexed)
+            CardBill(
+              closesOn: closing(back),
+              dueOn: closing(back).addDays(7),
+              total: Money(total),
+              minimum: back == 0 ? null : Money(total ~/ 10),
+              state: stateOf(closing(back), closing(back).addDays(7)),
+              range: DateSpan(closing(back + 1).addDays(1), closing(back)),
+            ),
+        ],
+      ),
+    ]);
+  }
+
   @override
   Future<Result<Subscriptions>> subscriptions(EntityScope scope) async {
     await _wait();
