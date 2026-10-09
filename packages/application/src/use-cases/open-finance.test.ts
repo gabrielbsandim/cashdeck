@@ -146,6 +146,35 @@ describe('open finance', () => {
     expect((await of.list(TENANT))[0]?.lastSyncAt).toBe(NOW.toISOString())
   })
 
+  it('stamps the connection with when the provider last collected data', async () => {
+    const stale = provider()
+    const { of } = setup(stale)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1'],
+    })
+    stale.getItem = async () => ({
+      ...item,
+      status: 'OUTDATED',
+      lastUpdatedAt: '2026-10-08T09:30:00.000Z',
+    })
+    const synced = await of.sync(TENANT, connectionId)
+    expect(synced.syncedAt).toBe(NOW.toISOString())
+    expect((await of.list(TENANT))[0]).toMatchObject({
+      status: 'OUTDATED',
+      lastSyncAt: '2026-10-08T09:30:00.000Z',
+    })
+    stale.getItem = async () => {
+      throw new Error('provider down')
+    }
+    await of.sync(TENANT, connectionId)
+    expect((await of.list(TENANT))[0]).toMatchObject({
+      status: 'UPDATED',
+      lastSyncAt: NOW.toISOString(),
+    })
+  })
+
   it('collects sync failures and removes a connection', async () => {
     const base = provider()
     const flaky: OpenFinanceProvider = {

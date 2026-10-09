@@ -142,6 +142,20 @@ const connectionOf = (itemId: string) => ({
   itemId,
 })
 
+// The provider serves what it collected on its last run, so the connection
+// is stamped with that time and status rather than the moment we read it.
+async function freshnessOf(
+  deps: Pick<Deps, 'openFinance'>,
+  itemId: string,
+  now: Date,
+): Promise<Pick<Connection, 'status' | 'lastSyncAt'>> {
+  const item = await deps.openFinance.getItem(itemId).catch(() => null)
+  if (!item?.lastUpdatedAt) {
+    return { status: item?.status ?? 'UPDATED', lastSyncAt: now }
+  }
+  return { status: item.status, lastSyncAt: new Date(item.lastUpdatedAt) }
+}
+
 export function makeOpenFinance(deps: OpenFinanceDeps) {
   const settleFromStatement = makeSettleFromStatement(deps)
 
@@ -425,8 +439,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     }
     await deps.connections.save({
       ...connection,
-      lastSyncAt: now,
-      status: 'UPDATED',
+      ...(await freshnessOf(deps, connection.itemId, now)),
     })
     return {
       accounts: accounts.length,
