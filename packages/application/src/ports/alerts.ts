@@ -16,6 +16,13 @@ export interface AlertRepository {
   markRead(tenantId: string, id: string, at: Date): Promise<void>
   markAllRead(tenantId: string, at: Date): Promise<number>
   unreadCount(tenantId: string): Promise<number>
+  // Marks read the unread alerts of one bill with these types.
+  markBillRead(
+    tenantId: string,
+    billId: string,
+    types: readonly AlertType[],
+    at: Date,
+  ): Promise<number>
 }
 
 export const DEVICE_PLATFORMS = ['ANDROID', 'IOS', 'WEB'] as const

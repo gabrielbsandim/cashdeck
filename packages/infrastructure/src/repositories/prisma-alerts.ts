@@ -74,6 +74,19 @@ export class PrismaAlertRepository implements AlertRepository {
     return result.count
   }
 
+  async markBillRead(
+    tenantId: string,
+    billId: string,
+    types: readonly AlertType[],
+    at: Date,
+  ): Promise<number> {
+    const result = await this.db.alert.updateMany({
+      where: { tenantId, billId, type: { in: [...types] }, readAt: null },
+      data: { readAt: at },
+    })
+    return result.count
+  }
+
   async unreadCount(tenantId: string): Promise<number> {
     return this.db.alert.count({ where: { tenantId, readAt: null } })
   }

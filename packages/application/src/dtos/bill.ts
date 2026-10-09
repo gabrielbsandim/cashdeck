@@ -64,7 +64,7 @@ export const billViewSchema = z.object({
   pixCode: z.string().nullable(),
   createdAt: z.string(),
   paidAt: z.string().nullable(),
-  paidBy: z.enum(['RAIL', 'USER']).nullable(),
+  paidBy: z.enum(['RAIL', 'USER', 'STATEMENT']).nullable(),
   autoDebit: z.boolean(),
 })
 

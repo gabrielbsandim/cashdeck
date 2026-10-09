@@ -85,6 +85,23 @@ describe('prisma alerts', () => {
     })
     expect(await stores.alertStore.markAllRead(TENANT, NOW)).toBe(3)
     expect(await stores.alertStore.unreadCount(TENANT)).toBe(4)
+    expect(
+      await stores.alertStore.markBillRead(
+        TENANT,
+        'b1',
+        ['BILL_DUE_SOON'],
+        NOW,
+      ),
+    ).toBe(3)
+    expect(db.alert.updateMany.mock.calls[2]?.[0]).toEqual({
+      where: {
+        tenantId: TENANT,
+        billId: 'b1',
+        type: { in: ['BILL_DUE_SOON'] },
+        readAt: null,
+      },
+      data: { readAt: NOW },
+    })
   })
 
   it('registers, lists and removes device tokens', async () => {

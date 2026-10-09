@@ -3666,7 +3666,8 @@
                             "type": "string",
                             "enum": [
                               "RAIL",
-                              "USER"
+                              "USER",
+                              "STATEMENT"
                             ]
                           },
                           "autoDebit": {
@@ -3904,7 +3905,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {
@@ -4088,7 +4090,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {
@@ -4451,7 +4454,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {
@@ -4853,7 +4857,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {
@@ -5055,7 +5060,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {
@@ -7935,7 +7941,8 @@
                           "type": "string",
                           "enum": [
                             "RAIL",
-                            "USER"
+                            "USER",
+                            "STATEMENT"
                           ]
                         },
                         "autoDebit": {

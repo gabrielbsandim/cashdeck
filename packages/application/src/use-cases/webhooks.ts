@@ -54,6 +54,7 @@ type ProcessDeps = Pick<
   | 'connections'
   | 'openFinance'
   | 'bills'
+  | 'alertStore'
   | 'payments'
   | 'railStatus'
   | 'idempotency'

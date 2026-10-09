@@ -7,6 +7,7 @@ import {
 import { type PaymentRail } from '@/ports/payment-rail'
 import { type RailStatusReader } from '@/ports/rail-status'
 import { type PayeeDirectory, type PaymentSettings } from '@/ports/repositories'
+import { InMemoryAlertRepository } from '@/testing/alerts'
 import { FakeReserveFunder } from '@/testing/providers'
 import {
   InMemoryAuditLog,
@@ -53,6 +54,7 @@ export function scenario(
   const bills = new InMemoryBillRepository()
   return {
     bills,
+    alertStore: new InMemoryAlertRepository(),
     payments: new InMemoryPaymentRepository(bills),
     fundings: new InMemoryFundingRepository(),
     funder: new FakeReserveFunder(),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createBill, Money } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
 import { FakePaymentRail } from '@/testing/providers'
+import { alert } from '@/testing/deps.test-helpers'
 import { NOW, scenario, TENANT, trust } from '@/testing/scenario.test-helpers'
 import {
   makeDescribeBill,
@@ -114,10 +115,14 @@ describe('bill queries and manual payment', () => {
   it('marks a bill paid by the user once', async () => {
     const deps = scenario()
     await deps.bills.save(seed('b1', '2026-10-20'))
+    await deps.alertStore.add(
+      alert({ id: 'soon', type: 'BILL_DUE_SOON', billId: 'b1' }),
+    )
     const markPaid = makeMarkBillPaid(deps)
     const paid = await markPaid(TENANT, 'b1', 'receipt.pdf')
     expect(paid).toMatchObject({ status: 'PAID', paidBy: 'USER' })
     expect(await markPaid(TENANT, 'b1')).toBe(paid)
+    expect(await deps.alertStore.unreadCount(TENANT)).toBe(0)
     expect(deps.audit.events).toHaveLength(1)
     expect(deps.audit.events[0]?.details).toEqual({ proof: 'receipt.pdf' })
     await expect(markPaid(TENANT, 'nope')).rejects.toThrow(NotFoundError)

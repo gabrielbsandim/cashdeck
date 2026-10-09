@@ -34,7 +34,8 @@ export const BILL_SOURCES = [
 ] as const
 export type BillSource = (typeof BILL_SOURCES)[number]
 
-export type PaidBy = 'RAIL' | 'USER'
+// STATEMENT: the bank statement showed the debit, nobody paid through the app.
+export type PaidBy = 'RAIL' | 'USER' | 'STATEMENT'
 
 export type Bill = {
   readonly id: string

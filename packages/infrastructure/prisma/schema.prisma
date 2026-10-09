@@ -65,6 +65,7 @@ enum BillSource {
 enum PaidBy {
   RAIL
   USER
+  STATEMENT
 }
 
 enum RailId {

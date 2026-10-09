@@ -30,6 +30,15 @@ export type Alert = {
   readonly readAt: Date | null
 }
 
+// The ones asking for something on a bill; moot once the bill needs nothing.
+export const BILL_ACTION_ALERTS: readonly AlertType[] = [
+  'BILL_NEEDS_AMOUNT',
+  'BILL_DUE_SOON',
+  'PAYMENT_NEEDS_CONFIRMATION',
+  'PAYMENT_ASSISTED',
+  'APPROVAL_PENDING',
+]
+
 export function isAlertType(value: string): value is AlertType {
   return (ALERT_TYPES as readonly string[]).includes(value)
 }

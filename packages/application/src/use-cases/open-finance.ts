@@ -38,6 +38,7 @@ type OpenFinanceDeps = Pick<
   | 'clock'
   | 'ids'
   | 'bills'
+  | 'alertStore'
   | 'audit'
   | 'documents'
 >

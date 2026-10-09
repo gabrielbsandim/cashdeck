@@ -1,10 +1,16 @@
-import { type Bill, type EntityKind, markBillPaid } from '@cashdeck/domain'
+import {
+  type Bill,
+  BILL_ACTION_ALERTS,
+  type EntityKind,
+  markBillPaid,
+} from '@cashdeck/domain'
 import {
   type BillDetailView,
   type BillView,
   toBillDetailView,
   toBillView,
 } from '@/dtos/bill'
+import { type AlertRepository } from '@/ports/alerts'
 import { NotFoundError } from '@/errors/errors'
 import {
   type AuditLog,
@@ -123,6 +129,7 @@ export function makeListBills(deps: {
 
 export function makeMarkBillPaid(deps: {
   bills: BillRepository
+  alertStore: AlertRepository
   audit: AuditLog
   clock: Clock
   ids: IdGenerator
@@ -142,6 +149,12 @@ export function makeMarkBillPaid(deps: {
     const at = deps.clock.now()
     const paid = markBillPaid(bill, 'USER', at)
     await deps.bills.save(paid)
+    await deps.alertStore.markBillRead(
+      tenantId,
+      bill.id,
+      BILL_ACTION_ALERTS,
+      at,
+    )
     await deps.audit.record({
       id: deps.ids.next(),
       tenantId,

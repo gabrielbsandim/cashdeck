@@ -337,7 +337,7 @@ when a bill is captured, so `plan` is never null.
   "source": "GMAIL"|"SHARE"|"CAMERA"|"CHAT"|"DDA"|"MANUAL",
   "payee": string | null, "amount": Money, "dueDate": date, "code": string | null,
   "pixCode": string | null,
-  "createdAt": timestamp, "paidAt": timestamp | null, "paidBy": "RAIL"|"USER" | null,
+  "createdAt": timestamp, "paidAt": timestamp | null, "paidBy": "RAIL"|"USER"|"STATEMENT" | null,
   "autoDebit": bool
 }
 ```

@@ -2530,7 +2530,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                         }[];
                         nextCursor: string | null;
@@ -2604,7 +2604,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                         };
                     };
@@ -2661,7 +2661,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                             /** @enum {string|null} */
                             confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
@@ -2756,7 +2756,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                             /** @enum {string|null} */
                             confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
@@ -2859,7 +2859,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                         };
                     };
@@ -2922,7 +2922,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                             /** @enum {string|null} */
                             confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
@@ -3974,7 +3974,7 @@ export interface operations {
                             createdAt: string;
                             paidAt: string | null;
                             /** @enum {string|null} */
-                            paidBy: "RAIL" | "USER" | null;
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
                         };
                     };

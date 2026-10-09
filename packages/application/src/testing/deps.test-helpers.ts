@@ -1,5 +1,6 @@
 import {
   type Account,
+  type Alert,
   type Bill,
   createBill,
   createAccount,
@@ -134,6 +135,24 @@ export function transaction(
     description: 'Purchase',
     ...overrides,
   })
+}
+
+export function alert(
+  overrides: Partial<Alert> & Pick<Alert, 'id' | 'type'>,
+): Alert {
+  return {
+    tenantId: TENANT,
+    entityId: 'pf',
+    billId: null,
+    invoiceId: null,
+    title: 'Title',
+    body: 'Body',
+    data: {},
+    dedupeKey: null,
+    createdAt: new Date(0),
+    readAt: null,
+    ...overrides,
+  }
 }
 
 export function invoice(overrides: Partial<Invoice> & { id: string }): Invoice {

@@ -2,6 +2,7 @@ import { Money } from '@cashdeck/domain'
 import { describe, expect, it } from 'vitest'
 import {
   account,
+  alert,
   bill,
   fullDeps,
   transaction,
@@ -55,11 +56,24 @@ describe('settleFromStatement', () => {
       }),
     )
 
+    await deps.alertStore.add(
+      alert({ id: 'ask', type: 'PAYMENT_NEEDS_CONFIRMATION', billId: 'desk' }),
+    )
+    await deps.alertStore.add(
+      alert({ id: 'news', type: 'BILL_CAPTURED', billId: 'desk' }),
+    )
+
     const settled = await makeSettleFromStatement(deps)(TENANT, 'pf')
 
     expect(settled).toBe(2)
     const amil = await deps.bills.findById(TENANT, 'amil')
-    expect(amil).toMatchObject({ status: 'PAID', paidBy: 'USER', paidAt: NOW })
+    expect(amil).toMatchObject({
+      status: 'PAID',
+      paidBy: 'STATEMENT',
+      paidAt: NOW,
+    })
+    expect((await deps.alertStore.findById(TENANT, 'ask'))?.readAt).toEqual(NOW)
+    expect((await deps.alertStore.findById(TENANT, 'news'))?.readAt).toBeNull()
     expect((await deps.bills.findById(TENANT, 'desk'))?.status).toBe('PAID')
     expect((await deps.bills.findById(TENANT, 'card-paid'))?.status).toBe(
       'ASSISTED',

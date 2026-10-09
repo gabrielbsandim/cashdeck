@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createBill, Money } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
+import { alert } from '@/testing/deps.test-helpers'
 import { FakePaymentRail, FakeReserveFunder } from '@/testing/providers'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import { makeSetAutoDebit } from '@/use-cases/auto-debit'
@@ -39,8 +40,13 @@ describe('auto debit', () => {
       status: 'NEEDS_CONFIRMATION',
     })
 
+    await deps.alertStore.add(
+      alert({ id: 'ask', type: 'PAYMENT_NEEDS_CONFIRMATION', billId: 'oct' }),
+    )
+
     const detail = await setAutoDebit(TENANT, 'oct', true)
 
+    expect(await deps.alertStore.unreadCount(TENANT)).toBe(0)
     expect(detail).toMatchObject({
       status: 'OPEN',
       autoDebit: true,

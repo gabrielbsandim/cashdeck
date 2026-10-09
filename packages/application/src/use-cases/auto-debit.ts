@@ -1,4 +1,9 @@
-import { type Bill, recipientKeys, transitionBill } from '@cashdeck/domain'
+import {
+  type Bill,
+  BILL_ACTION_ALERTS,
+  recipientKeys,
+  transitionBill,
+} from '@cashdeck/domain'
 import { type BillDetailView } from '@/dtos/bill'
 import { NotFoundError } from '@/errors/errors'
 import { type Deps } from '@/use-cases/deps'
@@ -31,7 +36,10 @@ export async function loadAutoDebit(
 }
 
 export function makeSetAutoDebit(
-  deps: Pick<Deps, 'bills' | 'documents' | 'audit' | 'clock' | 'ids'>,
+  deps: Pick<
+    Deps,
+    'bills' | 'alertStore' | 'documents' | 'audit' | 'clock' | 'ids'
+  >,
   getBill: (tenantId: string, billId: string) => Promise<BillDetailView>,
 ) {
   async function store(bill: Bill, tenantId: string, enabled: boolean) {
@@ -62,6 +70,14 @@ export function makeSetAutoDebit(
     await store(bill, tenantId, enabled)
     if (enabled && bill.status === 'NEEDS_CONFIRMATION') {
       await deps.bills.save(transitionBill(bill, 'OPEN'))
+    }
+    if (enabled) {
+      await deps.alertStore.markBillRead(
+        tenantId,
+        bill.id,
+        BILL_ACTION_ALERTS,
+        deps.clock.now(),
+      )
     }
     await deps.audit.record({
       id: deps.ids.next(),

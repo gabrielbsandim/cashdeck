@@ -2,6 +2,7 @@ import {
   addDays,
   AUTO_DEBIT_MATCH_AFTER,
   type Bill,
+  BILL_ACTION_ALERTS,
   type BillStatus,
   CASH_ACCOUNT_TYPES,
   markBillPaid,
@@ -22,6 +23,7 @@ const BILL_PAGE = { limit: 100 }
 type SettleDeps = Pick<
   Deps,
   | 'bills'
+  | 'alertStore'
   | 'accounts'
   | 'transactions'
   | 'documents'
@@ -64,7 +66,13 @@ export function makeSettleFromStatement(deps: SettleDeps) {
     const isAutoDebit = await loadAutoDebit(deps, tenantId)
     const matches = matchBillsToStatement(bills, transactions, isAutoDebit)
     for (const { bill, transaction } of matches) {
-      await deps.bills.save(markBillPaid(bill, 'USER', at))
+      await deps.bills.save(markBillPaid(bill, 'STATEMENT', at))
+      await deps.alertStore.markBillRead(
+        tenantId,
+        bill.id,
+        BILL_ACTION_ALERTS,
+        at,
+      )
       await deps.audit.record({
         id: deps.ids.next(),
         tenantId,

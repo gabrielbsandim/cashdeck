@@ -1,4 +1,4 @@
-import { type Alert, markAlertRead } from '@cashdeck/domain'
+import { type Alert, type AlertType, markAlertRead } from '@cashdeck/domain'
 import {
   type AlertEmitter,
   type AlertFilter,
@@ -54,6 +54,22 @@ export class InMemoryAlertRepository implements AlertRepository {
 
   async markAllRead(tenantId: string, at: Date): Promise<number> {
     return this.update(tenantId, row => row.readAt === null, at)
+  }
+
+  async markBillRead(
+    tenantId: string,
+    billId: string,
+    types: readonly AlertType[],
+    at: Date,
+  ): Promise<number> {
+    return this.update(
+      tenantId,
+      row =>
+        row.readAt === null &&
+        row.billId === billId &&
+        types.includes(row.type),
+      at,
+    )
   }
 
   async unreadCount(tenantId: string): Promise<number> {
