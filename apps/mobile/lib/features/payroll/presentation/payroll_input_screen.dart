@@ -218,25 +218,23 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
             ],
           ),
         ),
-        if (!_sheet.fullYear) ...[
-          const SizedBox(height: AppSpacing.lg),
-          CdSectionHeader(title: l10n.payrollAnnexTitle, small: true),
-          Text(l10n.payrollAnnexHint, style: secondary),
-          const SizedBox(height: AppSpacing.sm),
-          CdSegmented<SimplesAnnex?>(
-            segments: [
-              CdSegment(null, l10n.payrollAnnexFromPayroll),
-              CdSegment(
-                SimplesAnnex.iii,
-                l10n.annexIii,
-                key: PayrollInputScreen.annexIiiKey,
-              ),
-              CdSegment(SimplesAnnex.v, l10n.annexV),
-            ],
-            selected: _sheet.declaredAnnex,
-            onChanged: _declare,
-          ),
-        ],
+        const SizedBox(height: AppSpacing.lg),
+        CdSectionHeader(title: l10n.payrollAnnexTitle, small: true),
+        Text(l10n.payrollAnnexHint, style: secondary),
+        const SizedBox(height: AppSpacing.sm),
+        CdSegmented<SimplesAnnex?>(
+          segments: [
+            CdSegment(null, l10n.payrollAnnexFromPayroll),
+            CdSegment(
+              SimplesAnnex.iii,
+              l10n.annexIii,
+              key: PayrollInputScreen.annexIiiKey,
+            ),
+            CdSegment(SimplesAnnex.v, l10n.annexV),
+          ],
+          selected: _sheet.declaredAnnex,
+          onChanged: _declare,
+        ),
         const SizedBox(height: AppSpacing.lg),
         if (_sheet.history.isNotEmpty)
           CdSectionHeader(title: l10n.payrollPreviousMonths, small: true),

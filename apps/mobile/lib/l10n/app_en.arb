@@ -861,7 +861,7 @@
   "cardsImportMessage": "Import the bill as PDF or CSV",
   "cardsNotSent": "Not sent by the bank",
   "payrollAnnexTitle": "Annex from your accountant",
-  "payrollAnnexHint": "Until payroll covers 12 months, the invoice ISS and the DAS estimate use this annex.",
+  "payrollAnnexHint": "The invoice ISS and the DAS estimate use this annex. On Payroll, the app computes Fator R once 12 months exist.",
   "payrollAnnexFromPayroll": "Payroll",
   "payrollAnnexSaved": "Annex updated"
 }

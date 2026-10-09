@@ -78,12 +78,14 @@ describe('revenue', () => {
     expect([open.annex, open.issRatePercent]).toEqual(['V', null])
   })
 
-  it('lets a full year of payroll outrank the declared annex', async () => {
+  it('keeps the declared annex over a full year of payroll', async () => {
     const deps = fullDeps()
     const revenue = await seedYear(deps)
+    const computed = await revenue.sheet(TENANT)
+    expect([computed.annex, computed.issRatePercent]).toEqual(['III', 2.02])
     await makePayroll(deps).declare(TENANT, { annex: 'V' })
-    const sheet = await revenue.sheet(TENANT)
-    expect([sheet.annex, sheet.issRatePercent]).toEqual(['III', 2.02])
+    const declared = await revenue.sheet(TENANT)
+    expect(declared.annex).toBe('V')
   })
 
   it('sends the rate with a domestic invoice and none with an export', async () => {

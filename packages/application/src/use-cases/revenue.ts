@@ -24,8 +24,8 @@ export type IssQuote = {
   domesticRbt12: Money
   exportRbt12: Money
   annex: SimplesAnnex
-  // Null until twelve months of payroll exist or the accountant's annex is
-  // declared, since Fator R picks the annex.
+  // The accountant's declared annex wins, since they file the DAS; without
+  // it the rate waits for twelve months of payroll to compute Fator R.
   ratePercent: number | null
 }
 
@@ -48,9 +48,7 @@ export async function issQuote(
   const exportRbt12 = sum(months.map(month => month.exports))
   const payroll = await payrollWindow(deps, tenantId, range.to)
   const complete = payroll.length >= MONTHS
-  const declared = complete
-    ? null
-    : await declaredAnnex(deps, tenantId, entityId)
+  const declared = await declaredAnnex(deps, tenantId, entityId)
   const annex =
     declared ??
     annexFor(

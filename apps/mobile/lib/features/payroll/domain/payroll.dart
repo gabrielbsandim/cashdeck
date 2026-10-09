@@ -79,13 +79,10 @@ final class PayrollSheet extends Equatable {
   final List<PayrollMonth> history;
   final Money revenue12;
 
-  /// The annex the accountant reported, used until a year of payroll exists.
+  /// The annex the accountant reported, which wins over the computed one.
   final SimplesAnnex? declaredAnnex;
 
-  bool get fullYear => history.length >= 11;
-
-  SimplesAnnex annexOf(FatorR fator) =>
-      fullYear ? fator.annex : declaredAnnex ?? fator.annex;
+  SimplesAnnex annexOf(FatorR fator) => declaredAnnex ?? fator.annex;
 
   @override
   List<Object?> get props => [current, history, revenue12, declaredAnnex];

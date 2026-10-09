@@ -594,10 +594,10 @@ keeps the month from being drafted again.
   annex the accountant reported, or null.
 - `PUT /payroll/{YYYY-MM}`: body `{ proLaboreCents, salariesCents, fgtsCents }`.
   Returns the sheet.
-- `PUT /payroll/annex`: body `{ annex: 'III' | 'V' | null }`. Until twelve
-  months of payroll exist, the declared annex picks the ISS rate and the DAS
-  estimate; a full year of payroll then computes Fator R instead. Null clears
-  it. Returns the sheet.
+- `PUT /payroll/annex`: body `{ annex: 'III' | 'V' | null }`. The declared
+  annex picks the ISS rate and the DAS estimate, even over a full year of
+  payroll, since the accountant files the DAS; without it a full year computes
+  Fator R. Null clears it. Returns the sheet.
 
 ## Manual card bill import
 

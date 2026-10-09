@@ -2176,7 +2176,7 @@
   "cardsImportMessage": "Importe a fatura em PDF ou CSV",
   "cardsNotSent": "O banco não enviou",
   "payrollAnnexTitle": "Anexo informado pela contadora",
-  "payrollAnnexHint": "Até a folha somar 12 meses, o ISS das notas e a estimativa do DAS usam este anexo.",
+  "payrollAnnexHint": "O ISS das notas e a estimativa do DAS usam este anexo. Em Folha, o app calcula pelo Fator R quando houver 12 meses.",
   "payrollAnnexFromPayroll": "Folha",
   "payrollAnnexSaved": "Anexo atualizado"
 }

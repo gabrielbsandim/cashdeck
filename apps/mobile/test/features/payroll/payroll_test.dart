@@ -81,7 +81,6 @@ void main() {
     expect(const FatorR(payroll12: Money(1), revenue12: Money(0)).ratio, 0);
     expect(fator.props, hasLength(2));
     expect(sheet.props, hasLength(4));
-    expect(sheet.fullYear, isTrue);
     expect(sheet.annexOf(fator), SimplesAnnex.iii);
     expect(sheet.current.props, hasLength(4));
   });
@@ -137,9 +136,9 @@ void main() {
     await pumpRoute(tester, AppRoutes.payroll);
     expect(find.text(l10n.payrollTitle('outubro')), findsOneWidget);
     expect(find.text(l10n.fatorR('30,7')), findsOneWidget);
-    expect(find.text(l10n.annexIii), findsOneWidget);
+    expect(find.text(l10n.annexIii), findsNWidgets(2));
     expect(find.text('Setembro'), findsOneWidget);
-    expect(find.byKey(PayrollInputScreen.annexIiiKey), findsNothing);
+    expect(find.byKey(PayrollInputScreen.annexIiiKey), findsOneWidget);
 
     await tester.enterText(
       find.descendant(
