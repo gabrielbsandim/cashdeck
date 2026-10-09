@@ -2,15 +2,19 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
+import 'package:cashdeck/features/home/presentation/account_rename_sheet.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/features/open_finance/domain/item_lookup.dart';
 import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
+import 'package:cashdeck/features/transactions/domain/accounts_repository.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/transactions_providers.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +42,20 @@ final class _Accounts implements TransactionsRepository {
     String id,
     TransactionUpdate update,
   ) async => const Err(NetworkFailure());
+}
+
+final class _Renames implements AccountsRepository {
+  new({this.fails = false});
+
+  final bool fails;
+  final calls = <(String, String)>[];
+
+  @override
+  Future<Result<TransactionAccount>> rename(String id, String name) async {
+    calls.add((id, name));
+    if (fails) return const Err(NetworkFailure());
+    return Ok(_billedCard.renamed(name));
+  }
 }
 
 final class _FailingSync implements OpenFinanceRepository {
@@ -91,6 +109,21 @@ const _card = TransactionAccount(
   balance: Money(-5_000),
 );
 
+const _billedCard = TransactionAccount(
+  id: 'billed',
+  name: 'Cartão Faturado',
+  owner: EntityKind.personal,
+  institution: 'Banco Exemplo',
+  type: AccountType.creditCard,
+  balance: Money(-90_000),
+  openBill: Money(2_000),
+);
+
+Finder _nameField() => find.descendant(
+  of: find.byKey(AccountRenameSheet.fieldKey),
+  matching: find.byType(TextFormField),
+);
+
 void main() {
   testWidgets('the home balance opens the balance of each account', (
     tester,
@@ -138,6 +171,108 @@ void main() {
     app.read(entityScopeProvider.notifier).select(EntityScope.consolidated);
     await settle(tester);
     expect(find.byType(EntityKindBadge), findsNWidgets(4));
+  });
+
+  testWidgets('a card shows its open bill as owed, not its balance', (
+    tester,
+  ) async {
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_checking, _billedCard, _card])),
+        ),
+      ],
+    );
+
+    expect(
+      find.text(
+        'Banco Exemplo · ${l10n.accountTypeCreditCard} · '
+        '${l10n.balancesOpenBill}',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Banco Exemplo · ${l10n.accountTypeCreditCard} · '
+        '${l10n.balancesOutsideTotal}',
+      ),
+      findsOneWidget,
+    );
+    final amount = tester.widget<CdAmount>(
+      find.descendant(
+        of: find.byKey(BalancesScreen.rowKey('billed')),
+        matching: find.byType(CdAmount),
+      ),
+    );
+    expect(amount.value, const Money(-2_000));
+  });
+
+  testWidgets('tapping an account renames it', (tester) async {
+    final renames = _Renames();
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_billedCard])),
+        ),
+        accountsRepositoryProvider.overrideWithValue(renames),
+      ],
+    );
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await settle(tester);
+    expect(find.text(l10n.accountRenameTitle), findsOneWidget);
+    expect(find.text(l10n.accountRenameHelper), findsOneWidget);
+    final save = find.byKey(AccountRenameSheet.saveKey);
+    expect(tester.widget<CdButton>(save).onPressed, isNull);
+
+    await tester.enterText(_nameField(), '   ');
+    await tester.pump();
+    expect(tester.widget<CdButton>(save).onPressed, isNull);
+
+    await tester.enterText(_nameField(), '  Viagem ');
+    await tester.pump();
+    await tester.tap(save);
+    await settle(tester);
+
+    expect(renames.calls, [('billed', 'Viagem')]);
+    expect(find.text(l10n.accountRenamed), findsOneWidget);
+  });
+
+  testWidgets('a dismissed sheet renames nothing and a failure says why', (
+    tester,
+  ) async {
+    final renames = _Renames(fails: true);
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_billedCard])),
+        ),
+        accountsRepositoryProvider.overrideWithValue(renames),
+      ],
+    );
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await settle(tester);
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
+    expect(find.text(l10n.accountRenameTitle), findsNothing);
+    expect(renames.calls, isEmpty);
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await settle(tester);
+    await tester.enterText(_nameField(), 'Viagem');
+    await tester.pump();
+    await tester.tap(find.byKey(AccountRenameSheet.saveKey));
+    await settle(tester);
+
+    expect(renames.calls, [('billed', 'Viagem')]);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
   });
 
   testWidgets('shows the empty and the error states', (tester) async {

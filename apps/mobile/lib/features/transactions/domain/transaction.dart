@@ -183,6 +183,7 @@ final class TransactionAccount extends Equatable {
     this.numberSuffix,
     this.logo,
     this.credit,
+    this.openBill,
     this.sync,
     this.connectionId,
   });
@@ -202,6 +203,9 @@ final class TransactionAccount extends Equatable {
   final AccountLogo? logo;
   final CreditLine? credit;
 
+  /// What a card owes on its current bill; null on every other account.
+  final Money? openBill;
+
   /// Null for a manual account.
   final AccountSync? sync;
 
@@ -218,6 +222,29 @@ final class TransactionAccount extends Equatable {
         _ => false,
       };
 
+  /// A card's balance is every installment still ahead, so it shows the open
+  /// bill as owed instead.
+  Money get shownAmount => switch (openBill) {
+    final Money bill => -bill,
+    null => balance,
+  };
+
+  TransactionAccount renamed(String name) => TransactionAccount(
+    id: id,
+    name: name,
+    owner: owner,
+    institution: institution,
+    type: type,
+    balance: balance,
+    isReserve: isReserve,
+    numberSuffix: numberSuffix,
+    logo: logo,
+    credit: credit,
+    openBill: openBill,
+    sync: sync,
+    connectionId: connectionId,
+  );
+
   @override
   List<Object?> get props => [
     id,
@@ -230,6 +257,7 @@ final class TransactionAccount extends Equatable {
     numberSuffix,
     logo,
     credit,
+    openBill,
     sync,
     connectionId,
   ];

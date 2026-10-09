@@ -80,6 +80,10 @@ TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   numberSuffix: readOptionalString(json, 'numberSuffix'),
   logo: _logo(readOptionalMap(json, 'logo')),
   credit: _credit(readOptionalMap(json, 'credit')),
+  openBill: switch (readOptionalMap(json, 'openBill')) {
+    final JsonMap bill => moneyFromJson(bill),
+    null => null,
+  },
   sync: _sync(readOptionalMap(json, 'sync')),
   connectionId: readOptionalString(json, 'connectionId'),
 );

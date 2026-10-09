@@ -1,10 +1,14 @@
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/features/transactions/application/account_use_cases.dart';
 import 'package:cashdeck/features/transactions/application/transactions_use_cases.dart';
+import 'package:cashdeck/features/transactions/data/api_accounts_repository.dart';
 import 'package:cashdeck/features/transactions/data/api_transactions_repository.dart';
 import 'package:cashdeck/features/transactions/data/api_transfers_repository.dart';
+import 'package:cashdeck/features/transactions/data/fake_accounts_repository.dart';
 import 'package:cashdeck/features/transactions/data/fake_transactions_repository.dart';
 import 'package:cashdeck/features/transactions/data/fake_transfers_repository.dart';
+import 'package:cashdeck/features/transactions/domain/accounts_repository.dart';
 import 'package:cashdeck/features/transactions/domain/internal_transfer.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,4 +48,15 @@ final listTransactionAccountsProvider = Provider<ListTransactionAccounts>(
 
 final listCategoriesProvider = Provider<ListCategories>(
   (ref) => ListCategories(ref.watch(categoriesRepositoryProvider)),
+);
+
+final accountsRepositoryProvider = Provider<AccountsRepository>((ref) {
+  return switch (ref.watch(appConfigProvider).backend) {
+    Backend.fake => const FakeAccountsRepository(),
+    Backend.api => ApiAccountsRepository(ref.watch(dioProvider)),
+  };
+});
+
+final renameAccountProvider = Provider<RenameAccount>(
+  (ref) => RenameAccount(ref.watch(accountsRepositoryProvider)),
 );

@@ -175,6 +175,12 @@ built-in `key` is shown with its localized label, a custom category by `name`.
 Account filters read `id`, `name`, `entityKind` and `institution` from
 `GET /api/v1/accounts`.
 
+The balances screen also reads `openBill`: a card shows it as owed instead of
+its `balance`, which counts every installment still ahead. Tapping an account
+renames it with `PATCH /api/v1/accounts/{id}` and `{ name }`, answered with the
+account; a bank sync keeps the name. `logo.imageUrl` may point at a PNG or an
+SVG, and the logo widget picks the decoder by the extension.
+
 ## Chat
 
 - `GET /api/v1/chat/threads` and `GET .../threads/{id}/messages` are paged;

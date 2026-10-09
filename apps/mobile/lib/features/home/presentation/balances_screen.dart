@@ -20,12 +20,14 @@ import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
+import 'package:cashdeck/features/home/presentation/account_rename_sheet.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_insights.dart';
 import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
+import 'package:cashdeck/features/transactions/transactions_providers.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,10 +143,36 @@ Color _syncColor(BuildContext context, SyncState state) => switch (state) {
   SyncState.outdated => context.money.pending,
 };
 
+String? _outsideLabel(AppLocalizations l10n, TransactionAccount account) {
+  if (account.isCash) return null;
+  if (account.openBill != null) return l10n.balancesOpenBill;
+  return l10n.balancesOutsideTotal;
+}
+
 class _Balances extends ConsumerWidget {
   const new({required this.accounts});
 
   final List<TransactionAccount> accounts;
+
+  Future<void> _rename(
+    BuildContext context,
+    WidgetRef ref,
+    TransactionAccount account,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final rename = ref.read(renameAccountProvider);
+    final name = await askAccountName(context, account);
+    if (name == null || !context.mounted) return;
+    final result = await rename(account.id, name);
+    if (!context.mounted) return;
+    ref
+      ..invalidate(transactionAccountsProvider)
+      ..invalidate(homeControllerProvider);
+    await showOutcomeToast(context, switch (result) {
+      Ok() => null,
+      Err(:final failure) => failure,
+    }, success: l10n.accountRenamed);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -180,6 +208,7 @@ class _Balances extends ConsumerWidget {
       final sync = account.sync;
       return CdListRow(
         key: BalancesScreen.rowKey(account.id),
+        onTap: () => _rename(context, ref, account).ignore(),
         leading: consolidated
             ? EntityKindBadge(kind: account.owner, size: 40)
             : CdInstitutionLogo(
@@ -194,13 +223,13 @@ class _Balances extends ConsumerWidget {
           account.institution,
           ?type,
           if (percent != null) l10n.balancesShare(percent),
-          if (!account.isCash) l10n.balancesOutsideTotal,
+          ?_outsideLabel(l10n, account),
         ].join(' · '),
         trailing: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            CdAmount(account.balance, size: CdAmountSize.row),
+            CdAmount(account.shownAmount, size: CdAmountSize.row),
             if (sync != null)
               Text(
                 _syncLabel(l10n, sync.state),
