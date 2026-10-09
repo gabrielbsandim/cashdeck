@@ -1,7 +1,8 @@
+import { Money } from '@cashdeck/domain'
 import { describe, expect, it } from 'vitest'
 import { NotFoundError } from '@/errors/errors'
 import { type OpenFinanceProvider, type ProviderItem } from '@/ports/providers'
-import { account, fullDeps } from '@/testing/deps.test-helpers'
+import { account, bill, fullDeps } from '@/testing/deps.test-helpers'
 import { FakeOpenFinanceProvider } from '@/testing/providers'
 import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import { makeOpenFinance } from '@/use-cases/open-finance'
@@ -125,10 +126,14 @@ describe('open finance', () => {
         externalId: 'closed',
       }),
     )
+    await deps.bills.save(
+      bill({ id: 'market', amount: Money.of(300), dueDate: '2026-10-02' }),
+    )
     const first = await of.sync(TENANT, connectionId)
     expect(first).toEqual({
       accounts: 2,
       transactions: 1,
+      settledBills: 1,
       syncedAt: NOW.toISOString(),
     })
     const second = await of.sync(TENANT, connectionId)

@@ -302,7 +302,9 @@ when a bill is captured, so `plan` is never null.
     becomes `BOLETO` or `TAX_BARCODE` with its `pixCode`), its plan is rebuilt
     Pix first, and the answer is 200 with the updated `BillView`. A bill that
     is no longer `OPEN` or has payment attempts is returned unchanged.
-- `GET /bills/{id}`: `BillDetailView` (`BillView` plus `plan` and `attempts`).
+- `GET /bills/{id}`: `BillDetailView` (`BillView` plus `plan`, `attempts` and
+  `confirmationReason`: the first of `NEW_PAYEE`, `ABOVE_THRESHOLD`,
+  `AMOUNT_DEVIATION` that holds a `NEEDS_CONFIRMATION` bill, otherwise null).
 - `POST /bills/{id}/pay`: body `{ confirmed?: bool }`. Runs the ladder. Returns
   `BillDetailView` plus `instructions: { kind, copyCode, pixCode, amountCents, dueDate } | null`;
   at the assisted step the app shows `pixCode` first and `copyCode` (the
@@ -401,7 +403,10 @@ accounts. `data`: `{ connectionId: string, imported: int }`, 201.
 ### POST /open-finance/connections/{id}/sync
 
 Refreshes balances and the last 30 days of transactions (since the last sync
-when there is one). `data`: `{ accounts: int, transactions: int, syncedAt: timestamp }`.
+when there is one), then marks paid the open bills of that entity that an
+outgoing transaction of the same amount paid, booked from 10 days before to 7
+days after the due date. `data`:
+`{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.
 
 ### DELETE /open-finance/connections/{id}
 

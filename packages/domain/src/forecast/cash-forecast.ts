@@ -4,32 +4,30 @@ export type ForecastEvent = { readonly day: number; readonly amount: Money }
 
 export type ForecastInput = {
   start: Money
-  dailySpend: Money
+  dailyFlow: Money
   events: readonly ForecastEvent[]
   days: number
 }
 
-// One balance a day: today first, then each day spends the daily average and
-// applies the events that fall on it.
+// One balance a day: today first, then each day moves by the daily average
+// flow (negative when spending outweighs income) and applies its events.
 export function projectBalances(input: ForecastInput): Money[] {
   const balances = [input.start]
   for (let day = 1; day <= input.days; day += 1) {
     const moved = input.events
       .filter(event => event.day === day)
-      .reduce((sum, event) => sum.add(event.amount), input.dailySpend.negate())
+      .reduce((sum, event) => sum.add(event.amount), input.dailyFlow)
     balances.push((balances.at(-1) as Money).add(moved))
   }
   return balances
 }
 
-export function averageDailySpend(
-  expenses: readonly Money[],
+// Signed, so income counts and a transfer between own accounts cancels out.
+export function averageDailyFlow(
+  amounts: readonly Money[],
   days: number,
 ): Money {
-  const total = expenses.reduce(
-    (sum, expense) => sum + Math.abs(expense.cents),
-    0,
-  )
+  const total = amounts.reduce((sum, amount) => sum + amount.cents, 0)
   return Money.of(Math.round(total / days))
 }
 

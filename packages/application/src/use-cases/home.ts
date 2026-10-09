@@ -1,7 +1,7 @@
 import {
   type Account,
   addDays,
-  averageDailySpend,
+  averageDailyFlow,
   type Bill,
   CASH_ACCOUNT_TYPES,
   coverDays,
@@ -158,13 +158,13 @@ export function makePersonalSummary(
       from: addDays(day, -FORECAST_DAYS),
       to: day,
     })
-    const expenses = recent
-      .filter(tx => tx.amount.isNegative() && tx.transferGroupId === null)
+    const flow = recent
+      .filter(tx => tx.transferGroupId === null)
       .map(tx => tx.amount)
     const start = balance.add(reserveAccount?.balance ?? Money.zero())
     const forecast = projectBalances({
       start,
-      dailySpend: averageDailySpend(expenses, FORECAST_DAYS),
+      dailyFlow: averageDailyFlow(flow, FORECAST_DAYS),
       events: bills
         .filter(bill => bill.day >= 0)
         .map(bill => ({ day: bill.day, amount: bill.amount.negate() })),

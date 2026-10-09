@@ -14,8 +14,13 @@ import {
   type Page,
   type PageRequest,
   type PaymentRepository,
+  type PaymentSettingsProvider,
 } from '@/ports/repositories'
 import { type Clock, type IdGenerator } from '@/ports/system'
+import {
+  type ConfirmationDeps,
+  makeConfirmationCheck,
+} from '@/use-cases/payment-guards'
 
 async function entityKindOf(
   entities: FinancialEntityRepository,
@@ -43,11 +48,24 @@ export function makeDescribeBill(deps: {
   }
 }
 
-export function makeGetBill(deps: {
-  bills: BillRepository
-  payments: PaymentRepository
-  entities: FinancialEntityRepository
-}) {
+export function makeGetBill(
+  deps: ConfirmationDeps & {
+    payments: PaymentRepository
+    entities: FinancialEntityRepository
+    settings: PaymentSettingsProvider
+  },
+) {
+  const confirmationReasons = makeConfirmationCheck(deps)
+
+  async function reasonOf(tenantId: string, bill: Bill) {
+    if (bill.status !== 'NEEDS_CONFIRMATION') {
+      return null
+    }
+    const settings = await deps.settings.get(tenantId, bill.entityId)
+    const [first] = await confirmationReasons(tenantId, bill, settings)
+    return first ?? null
+  }
+
   return async function getBill(
     tenantId: string,
     billId: string,
@@ -56,12 +74,13 @@ export function makeGetBill(deps: {
     if (!bill) {
       throw new NotFoundError('Bill')
     }
-    const [entityKind, plan, attempts] = await Promise.all([
+    const [entityKind, plan, attempts, reason] = await Promise.all([
       entityKindOf(deps.entities, tenantId, bill.entityId),
       deps.payments.findPlan(tenantId, billId),
       deps.payments.listAttempts(tenantId, billId),
+      reasonOf(tenantId, bill),
     ])
-    return toBillDetailView(bill, entityKind, plan, attempts)
+    return toBillDetailView(bill, entityKind, plan, attempts, reason)
   }
 }
 

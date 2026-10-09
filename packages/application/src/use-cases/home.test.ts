@@ -102,6 +102,9 @@ describe('personal summary', () => {
       }),
     )
     await deps.transactions.save(
+      transaction({ id: 'pay', accountId: 'chk', amount: Money.of(45000) }),
+    )
+    await deps.transactions.save(
       transaction({
         id: 'y',
         accountId: 'res',
@@ -141,6 +144,7 @@ describe('personal summary', () => {
     })
     expect(summary.forecast.from).toBe('2026-10-08')
     expect(summary.forecast.balances[0]?.cents).toBe(300000)
+    expect(summary.forecast.balances[1]?.cents).toBe(301000)
     expect(summary.budgets.map(b => [b.category, b.spent.cents])).toEqual([
       ['food', 15000],
       ['fun', 0],

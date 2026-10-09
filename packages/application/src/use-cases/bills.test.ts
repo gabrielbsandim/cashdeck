@@ -51,6 +51,24 @@ describe('bill queries and manual payment', () => {
     await expect(getBill(TENANT, 'nope')).rejects.toThrow(NotFoundError)
   })
 
+  it('says why a bill waits for confirmation', async () => {
+    const deps = scenario()
+    const waiting = { status: 'NEEDS_CONFIRMATION' as const }
+    const fresh = {
+      ...seed('new', '2026-10-20'),
+      ...waiting,
+      code: 'stranger@example.com',
+    }
+    const known = { ...seed('known', '2026-10-20'), ...waiting }
+    await deps.bills.save(fresh)
+    await deps.bills.save(known)
+    await trust(deps.payees, known)
+    const getBill = makeGetBill(deps)
+
+    expect((await getBill(TENANT, 'new')).confirmationReason).toBe('NEW_PAYEE')
+    expect((await getBill(TENANT, 'known')).confirmationReason).toBeNull()
+  })
+
   it('lists bills by due date with a cursor', async () => {
     const deps = scenario()
     await deps.bills.save(seed('b2', '2026-10-22'))

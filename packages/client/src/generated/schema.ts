@@ -2643,6 +2643,8 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            /** @enum {string|null} */
+                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
                                 steps: {
                                     /** @enum {string} */
@@ -2735,6 +2737,8 @@ export interface operations {
                             paidAt: string | null;
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | null;
+                            /** @enum {string|null} */
+                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
                                 steps: {
                                     /** @enum {string} */
@@ -3209,6 +3213,7 @@ export interface operations {
                         data: {
                             accounts: number;
                             transactions: number;
+                            settledBills: number;
                             syncedAt: string;
                         };
                     };

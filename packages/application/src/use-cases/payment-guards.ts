@@ -5,6 +5,7 @@ import {
   type RailId,
   recipientKeys,
 } from '@cashdeck/domain'
+import { type ConfirmationReason } from '@/dtos/bill'
 import { ProviderNotConfiguredError } from '@/errors/errors'
 import { type RailResult } from '@/ports/payment-rail'
 import { type RailStatusReader } from '@/ports/rail-status'
@@ -14,11 +15,6 @@ import {
   type PayeeDirectory,
   type PaymentSettings,
 } from '@/ports/repositories'
-
-export type ConfirmationReason =
-  | 'NEW_PAYEE'
-  | 'ABOVE_THRESHOLD'
-  | 'AMOUNT_DEVIATION'
 
 const HISTORY_LIMIT = 50
 

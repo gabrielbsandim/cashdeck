@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
-  averageDailySpend,
+  averageDailyFlow,
   coverDays,
   projectBalances,
 } from '@/forecast/cash-forecast'
 import { Money } from '@/money/money'
 
 describe('projectBalances', () => {
-  it('spends the daily average and applies events on their day', () => {
+  it('moves by the daily flow and applies events on their day', () => {
     const balances = projectBalances({
       start: Money.of(1000),
-      dailySpend: Money.of(100),
+      dailyFlow: Money.of(-100),
       events: [
         { day: 2, amount: Money.of(-300) },
         { day: 2, amount: Money.of(50) },
@@ -23,12 +23,15 @@ describe('projectBalances', () => {
   })
 })
 
-describe('averageDailySpend', () => {
-  it('averages absolute expenses over the window', () => {
-    expect(averageDailySpend([Money.of(-300), Money.of(-301)], 30).cents).toBe(
+describe('averageDailyFlow', () => {
+  it('averages the signed flow over the window, income included', () => {
+    expect(averageDailyFlow([Money.of(-300), Money.of(-301)], 30).cents).toBe(
+      -20,
+    )
+    expect(averageDailyFlow([Money.of(-900), Money.of(1500)], 30).cents).toBe(
       20,
     )
-    expect(averageDailySpend([], 30).cents).toBe(0)
+    expect(averageDailyFlow([], 30).cents).toBe(0)
   })
 })
 

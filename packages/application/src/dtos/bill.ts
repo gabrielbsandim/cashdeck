@@ -95,7 +95,16 @@ export const paymentAttemptViewSchema = z.object({
   at: z.string(),
 })
 
+export const CONFIRMATION_REASONS = [
+  'NEW_PAYEE',
+  'ABOVE_THRESHOLD',
+  'AMOUNT_DEVIATION',
+  'CAP_EXCEEDED',
+] as const
+export type ConfirmationReason = (typeof CONFIRMATION_REASONS)[number]
+
 export const billDetailViewSchema = billViewSchema.extend({
+  confirmationReason: z.enum(CONFIRMATION_REASONS).nullable(),
   plan: z
     .object({ steps: z.array(paymentStepViewSchema), currentStep: z.int() })
     .nullable(),
@@ -128,9 +137,11 @@ export function toBillDetailView(
   entityKind: EntityKind,
   plan: PaymentPlan | null,
   attempts: PaymentAttempt[],
+  confirmationReason: ConfirmationReason | null = null,
 ): BillDetailView {
   return {
     ...toBillView(bill, entityKind),
+    confirmationReason,
     plan: plan && { steps: [...plan.steps], currentStep: plan.currentStep },
     attempts: attemptHistory(attempts).map(attempt => ({
       id: attempt.id,

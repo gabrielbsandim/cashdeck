@@ -48,5 +48,6 @@ export type ConnectionView = z.infer<typeof connectionViewSchema>
 export const syncResultSchema = z.object({
   accounts: z.int(),
   transactions: z.int(),
+  settledBills: z.int(),
   syncedAt: z.string(),
 })

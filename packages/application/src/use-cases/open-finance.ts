@@ -16,6 +16,7 @@ import { NotFoundError } from '@/errors/errors'
 import { type ProviderAccount, type ProviderItem } from '@/ports/providers'
 import { type Connection } from '@/ports/records'
 import { type Deps } from '@/use-cases/deps'
+import { makeSettleFromStatement } from '@/use-cases/settle-from-statement'
 import {
   required,
   requireEntity,
@@ -36,6 +37,8 @@ type OpenFinanceDeps = Pick<
   | 'openFinance'
   | 'clock'
   | 'ids'
+  | 'bills'
+  | 'audit'
 >
 
 // The provider already reports a card balance as negative, since it is owed.
@@ -67,6 +70,8 @@ const connectionOf = (itemId: string) => ({
 })
 
 export function makeOpenFinance(deps: OpenFinanceDeps) {
+  const settleFromStatement = makeSettleFromStatement(deps)
+
   async function lookup(
     tenantId: string,
     itemId: string,
@@ -246,6 +251,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     return {
       accounts: accounts.length,
       transactions,
+      settledBills: await settleFromStatement(tenantId, connection.entityId),
       syncedAt: now.toISOString(),
     }
   }

@@ -4083,6 +4083,16 @@
                             "USER"
                           ]
                         },
+                        "confirmationReason": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "NEW_PAYEE",
+                            "ABOVE_THRESHOLD",
+                            "AMOUNT_DEVIATION",
+                            "CAP_EXCEEDED"
+                          ]
+                        },
                         "plan": {
                           "nullable": true,
                           "type": "object",
@@ -4250,6 +4260,7 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
+                        "confirmationReason",
                         "plan",
                         "attempts"
                       ],
@@ -4429,6 +4440,16 @@
                           "enum": [
                             "RAIL",
                             "USER"
+                          ]
+                        },
+                        "confirmationReason": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "NEW_PAYEE",
+                            "ABOVE_THRESHOLD",
+                            "AMOUNT_DEVIATION",
+                            "CAP_EXCEEDED"
                           ]
                         },
                         "plan": {
@@ -4631,6 +4652,7 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
+                        "confirmationReason",
                         "plan",
                         "attempts",
                         "instructions"
@@ -5763,6 +5785,11 @@
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "settledBills": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
                         "syncedAt": {
                           "type": "string"
                         }
@@ -5770,6 +5797,7 @@
                       "required": [
                         "accounts",
                         "transactions",
+                        "settledBills",
                         "syncedAt"
                       ],
                       "additionalProperties": false
