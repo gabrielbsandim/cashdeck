@@ -85,6 +85,7 @@ describe('ladder movement', () => {
     expect(billStatusFor('SUBMITTED')).toBe('PROCESSING')
     expect(billStatusFor('PENDING_APPROVAL')).toBe('AWAITING_BANK_APPROVAL')
     expect(billStatusFor('FAILED')).toBe('OPEN')
+    expect(billStatusFor('IN_FLIGHT')).toBe('PROCESSING')
   })
 })
 

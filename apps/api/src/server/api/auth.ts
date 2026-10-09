@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
+import { type Actor } from '@cashdeck/application'
 import { type NextResponse } from 'next/server'
 import { type ApiErrorBody, fail } from '@/server/api/respond'
 import { readEnv } from '@/server/env'
@@ -30,6 +31,16 @@ export function authorize(request: Request): NextResponse<ApiErrorBody> | null {
     return fail('UNAUTHORIZED', 'Missing or invalid API token.', 401)
   }
   return null
+}
+
+// One token stands for the app user, so its hash prefix names the actor in the
+// audit log without storing the token; rotating it shows up as a new actor.
+export function requestActor(request: Request): Actor {
+  const token = apiToken() ?? ''
+  const id = createHash('sha256').update(token).digest('hex').slice(0, 12)
+  const requestId =
+    request.headers.get('x-request-id') ?? request.headers.get('x-vercel-id')
+  return { kind: 'USER', id: `token:${id}`, requestId }
 }
 
 const STATE_TTL_MS = 10 * 60 * 1000

@@ -1,6 +1,7 @@
 import {
   type Account,
   type Bill,
+  committedCentsOn,
   type EntityKind,
   type FinancialEntity,
   isSettled,
@@ -9,7 +10,7 @@ import {
   type PaymentAttempt,
   type PaymentPlan,
   type RailId,
-  toLocalDate,
+  type ReserveFunding,
 } from '@cashdeck/domain'
 import {
   type AccountRepository,
@@ -17,7 +18,9 @@ import {
   type AuditLog,
   type BillFilter,
   type BillRepository,
+  DEFAULT_SAFETY_SETTINGS,
   type FinancialEntityRepository,
+  type FundingRepository,
   type IdempotencyStore,
   type Page,
   type PageRequest,
@@ -97,16 +100,31 @@ export class InMemoryBillRepository implements BillRepository {
     const end = start + items.length
     return { items, nextCursor: end < matching.length ? String(end) : null }
   }
+
+  async listRecentPaid(
+    tenantId: string,
+    entityId: string,
+    limit: number,
+  ): Promise<Bill[]> {
+    const paidAt = (bill: Bill) => bill.paidAt?.getTime() ?? 0
+    return [...this.rows.values()]
+      .filter(bill => bill.tenantId === tenantId && bill.entityId === entityId)
+      .filter(bill => bill.status === 'PAID')
+      .sort((a, b) => paidAt(b) - paidAt(a))
+      .slice(0, limit)
+  }
 }
 
-const COMMITTED = new Set(['PAID', 'SUBMITTED', 'PENDING_APPROVAL'])
-
+// Attempts carry no entity, so the entity of each is read from the bills the
+// repository was given; without bills every attempt counts.
 export class InMemoryPaymentRepository implements PaymentRepository {
   private readonly plans = new Map<string, PaymentPlan>()
   private readonly attempts: Array<{
     tenantId: string
     attempt: PaymentAttempt
   }> = []
+
+  constructor(private readonly bills?: BillRepository) {}
 
   async savePlan(tenantId: string, plan: PaymentPlan): Promise<void> {
     this.plans.set(key(tenantId, plan.billId), plan)
@@ -123,6 +141,20 @@ export class InMemoryPaymentRepository implements PaymentRepository {
     this.attempts.push({ tenantId, attempt })
   }
 
+  async claimAttempt(
+    tenantId: string,
+    attempt: PaymentAttempt,
+  ): Promise<boolean> {
+    const taken = this.attempts.some(
+      row => row.tenantId === tenantId && row.attempt.id === attempt.id,
+    )
+    if (taken) {
+      return false
+    }
+    this.attempts.push({ tenantId, attempt })
+    return true
+  }
+
   async listAttempts(
     tenantId: string,
     billId: string,
@@ -134,14 +166,54 @@ export class InMemoryPaymentRepository implements PaymentRepository {
 
   async committedCents(
     tenantId: string,
-    rail: RailId,
+    entityId: string,
     day: LocalDate,
+    rail?: RailId,
   ): Promise<number> {
-    return this.attempts
-      .filter(row => row.tenantId === tenantId && row.attempt.rail === rail)
-      .filter(row => COMMITTED.has(row.attempt.outcome))
-      .filter(row => toLocalDate(row.attempt.at) === day)
-      .reduce((total, row) => total + row.attempt.amount.cents, 0)
+    const rows: PaymentAttempt[] = []
+    for (const row of this.attempts) {
+      const owner = await this.bills?.findById(tenantId, row.attempt.billId)
+      const sameEntity = !this.bills || owner?.entityId === entityId
+      const sameRail = rail === undefined || row.attempt.rail === rail
+      if (row.tenantId === tenantId && sameEntity && sameRail) {
+        rows.push(row.attempt)
+      }
+    }
+    return committedCentsOn(rows, day)
+  }
+}
+
+export class InMemoryFundingRepository implements FundingRepository {
+  readonly rows: ReserveFunding[] = []
+
+  async listByDay(
+    tenantId: string,
+    entityId: string,
+    day: LocalDate,
+  ): Promise<ReserveFunding[]> {
+    return this.rows
+      .filter(row => row.tenantId === tenantId && row.entityId === entityId)
+      .filter(row => row.day === day)
+      .sort((a, b) => a.round - b.round)
+  }
+
+  async create(funding: ReserveFunding): Promise<void> {
+    const taken = this.rows.some(
+      row =>
+        row.tenantId === funding.tenantId &&
+        row.entityId === funding.entityId &&
+        row.day === funding.day &&
+        row.round === funding.round,
+    )
+    if (taken) {
+      throw new Error(`Funding round ${funding.idempotencyKey} exists.`)
+    }
+    this.rows.push(funding)
+  }
+
+  async update(funding: ReserveFunding): Promise<void> {
+    const index = this.rows.findIndex(row => row.id === funding.id)
+    this.rows.splice(index, 1, funding)
   }
 }
 
@@ -262,6 +334,7 @@ export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   enabledRails: [],
   dailyCapCents: {},
   confirmAboveCents: null,
+  ...DEFAULT_SAFETY_SETTINGS,
 }
 
 // Every entity starts from the same defaults until its own settings are saved.

@@ -92,6 +92,15 @@ enum AttemptOutcome {
   PENDING_APPROVAL
   ASSISTED
   FAILED
+  IN_FLIGHT
+}
+
+enum FundingStatus {
+  IN_FLIGHT
+  SUBMITTED
+  PAID
+  NOT_NEEDED
+  FAILED
 }
 
 enum InvoiceStatus {
@@ -360,7 +369,30 @@ model PaymentAttempt {
 
   @@index([tenantId, billId])
   @@index([tenantId, rail, at])
+  @@index([tenantId, idempotencyKey])
   @@map("payment_attempts")
+}
+
+model ReserveFunding {
+  id              String        @id
+  tenantId        String        @map("tenant_id")
+  entityId        String        @map("entity_id")
+  day             DateTime      @db.Date
+  round           Int
+  billIds         String[]      @map("bill_ids")
+  billsTotalCents BigInt        @map("bills_total_cents")
+  availableCents  BigInt?       @map("available_cents")
+  amountCents     BigInt        @map("amount_cents")
+  currency        String        @default("BRL") @db.Char(3)
+  status          FundingStatus
+  reason          String?
+  externalId      String?       @map("external_id")
+  idempotencyKey  String        @map("idempotency_key")
+  at              DateTime
+
+  @@unique([tenantId, entityId, day, round])
+  @@unique([tenantId, idempotencyKey])
+  @@map("reserve_fundings")
 }
 
 model Payee {
@@ -374,12 +406,16 @@ model Payee {
 }
 
 model PaymentSettings {
-  tenantId          String   @map("tenant_id")
-  entityId          String   @map("entity_id")
-  killSwitch        Boolean  @default(false) @map("kill_switch")
-  enabledRails      RailId[] @map("enabled_rails")
-  dailyCapCents     Json     @default("{}") @map("daily_cap_cents")
-  confirmAboveCents BigInt?  @map("confirm_above_cents")
+  tenantId            String   @map("tenant_id")
+  entityId            String   @map("entity_id")
+  killSwitch          Boolean  @default(false) @map("kill_switch")
+  enabledRails        RailId[] @map("enabled_rails")
+  dailyCapCents       Json     @default("{}") @map("daily_cap_cents")
+  confirmAboveCents   BigInt?  @map("confirm_above_cents")
+  entityDailyCapCents BigInt?  @default(1000000) @map("entity_daily_cap_cents")
+  paymentCapCents     BigInt?  @default(500000) @map("payment_cap_cents")
+  maxDeviationPercent Int?     @default(30) @map("max_deviation_percent")
+  approvalCutoff      String   @default("16:00") @map("approval_cutoff")
 
   @@id([tenantId, entityId])
   @@map("payment_settings")
@@ -520,6 +556,8 @@ model AuditEvent {
   result    String
   details   Json     @default("{}")
   at        DateTime
+  actorId   String?  @map("actor_id")
+  requestId String?  @map("request_id")
 
   @@index([tenantId, subjectId])
   @@map("audit_events")

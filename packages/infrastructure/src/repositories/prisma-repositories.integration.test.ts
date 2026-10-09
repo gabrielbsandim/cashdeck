@@ -8,6 +8,7 @@ import {
   createPaymentPlan,
   Money,
 } from '@cashdeck/domain'
+import { DEFAULT_SAFETY_SETTINGS } from '@cashdeck/application'
 import { createPrismaClient } from '@/database/client'
 import { createPrismaRepositories } from '@/repositories/prisma-repositories'
 
@@ -20,6 +21,7 @@ describe.skipIf(!url)('Prisma repositories against a database', () => {
     enabledRails: [],
     dailyCapCents: {},
     confirmAboveCents: null,
+    ...DEFAULT_SAFETY_SETTINGS,
   })
   const tenantId = `it-${randomUUID()}`
   const other = `it-${randomUUID()}`
@@ -116,7 +118,7 @@ describe.skipIf(!url)('Prisma repositories against a database', () => {
     ).toHaveLength(2)
     expect(await repos.payments.listAttempts(tenantId, bill.id)).toHaveLength(1)
     expect(
-      await repos.payments.committedCents(tenantId, 'ASAAS', today),
+      await repos.payments.committedCents(tenantId, entity.id, today, 'ASAAS'),
     ).toBeGreaterThanOrEqual(0)
   })
 

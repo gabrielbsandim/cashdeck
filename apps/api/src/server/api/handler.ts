@@ -1,4 +1,5 @@
-import { authorize } from '@/server/api/auth'
+import { type Actor } from '@cashdeck/application'
+import { authorize, requestActor } from '@/server/api/auth'
 import { handleError } from '@/server/api/respond'
 import { resolveTenant } from '@/server/api/tenant'
 import { type Container, getContainer } from '@/server/container'
@@ -8,6 +9,7 @@ export type RouteContext<P> = {
   tenantId: string
   params: P
   container: Container
+  actor: Actor
 }
 
 type Params = Record<string, string>
@@ -32,6 +34,7 @@ export function route<P extends Params = Params>(
         tenantId: resolveTenant(request),
         params: context ? await context.params : ({} as P),
         container: getContainer(),
+        actor: requestActor(request),
       })
     } catch (error) {
       return handleError(error, scope)

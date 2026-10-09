@@ -82,6 +82,10 @@ export const automationViewSchema = z.object({
       entity: entityKindSchema,
       confirmAboveCents: z.int().nullable(),
       dailyCapCents: z.record(z.string(), z.int()),
+      entityDailyCapCents: z.int().nullable(),
+      paymentCapCents: z.int().nullable(),
+      maxDeviationPercent: z.int().nullable(),
+      approvalCutoff: z.string(),
     }),
   ),
 })
@@ -92,4 +96,11 @@ export const updateAutomationSchema = z.object({
   entity: entityKindSchema,
   confirmAboveCents: z.int().positive().nullable().optional(),
   dailyCapCents: z.partialRecord(z.enum(RAIL_IDS), z.int().min(0)).optional(),
+  entityDailyCapCents: z.int().min(0).nullable().optional(),
+  paymentCapCents: z.int().min(0).nullable().optional(),
+  maxDeviationPercent: z.int().min(1).max(1000).nullable().optional(),
+  approvalCutoff: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM.')
+    .optional(),
 })

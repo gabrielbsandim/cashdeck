@@ -7,6 +7,7 @@ import {
   PAYMENT_METHODS,
   RAIL_IDS,
   STEP_MODES,
+  attemptHistory,
   type Bill,
   type EntityKind,
   type PaymentAttempt,
@@ -87,6 +88,7 @@ export const paymentAttemptViewSchema = z.object({
     'PENDING_APPROVAL',
     'ASSISTED',
     'FAILED',
+    'IN_FLIGHT',
   ]),
   reason: z.string().nullable(),
   externalId: z.string().nullable(),
@@ -130,7 +132,7 @@ export function toBillDetailView(
   return {
     ...toBillView(bill, entityKind),
     plan: plan && { steps: [...plan.steps], currentStep: plan.currentStep },
-    attempts: attempts.map(attempt => ({
+    attempts: attemptHistory(attempts).map(attempt => ({
       id: attempt.id,
       stepIndex: attempt.stepIndex,
       rail: attempt.rail,

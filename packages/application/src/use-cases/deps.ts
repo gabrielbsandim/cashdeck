@@ -8,6 +8,7 @@ import {
   type SecretVault,
 } from '@/ports/providers'
 import { type RailStatusReader } from '@/ports/rail-status'
+import { type ReserveFunder } from '@/ports/reserve-funder'
 import {
   type AttachmentRepository,
   type BudgetRepository,
@@ -23,6 +24,7 @@ import {
   type AuditLog,
   type BillRepository,
   type FinancialEntityRepository,
+  type FundingRepository,
   type IdempotencyStore,
   type PayeeDirectory,
   type PaymentRepository,
@@ -53,6 +55,8 @@ export type Deps = {
   documents: DocumentStore
   bills: BillRepository
   payments: PaymentRepository
+  fundings: FundingRepository
+  funder: ReserveFunder
   payees: PayeeDirectory
   settings: PaymentSettingsProvider
   audit: AuditLog

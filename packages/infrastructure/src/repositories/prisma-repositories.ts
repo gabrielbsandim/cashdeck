@@ -1,4 +1,4 @@
-import { type Prisma, type PrismaClient } from '@prisma/client'
+import { Prisma, type PrismaClient } from '@prisma/client'
 import {
   type AccountRepository,
   type AuditEvent,
@@ -6,6 +6,7 @@ import {
   type BillFilter,
   type BillRepository,
   type FinancialEntityRepository,
+  type FundingRepository,
   type IdempotencyStore,
   type Page,
   type PageRequest,
@@ -18,6 +19,7 @@ import {
 import {
   type Account,
   type Bill,
+  committedCentsOn,
   type EntityKind,
   type FinancialEntity,
   type LocalDate,
@@ -26,6 +28,7 @@ import {
   type PaymentPlan,
   type PaymentStep,
   type RailId,
+  type ReserveFunding,
 } from '@cashdeck/domain'
 import {
   accountFromRow,
@@ -36,6 +39,9 @@ import {
   billToRow,
   entityFromRow,
   entityToRow,
+  fundingFromRow,
+  fundingToRow,
+  toDbDate,
 } from '@/repositories/mappers'
 
 const json = (value: unknown) => value as Prisma.InputJsonValue
@@ -191,9 +197,24 @@ export class PrismaBillRepository implements BillRepository {
     const hasMore = rows.length > page.limit
     return { items, nextCursor: hasMore ? String(skip + items.length) : null }
   }
+
+  async listRecentPaid(
+    tenantId: string,
+    entityId: string,
+    limit: number,
+  ): Promise<Bill[]> {
+    const rows = await this.db.bill.findMany({
+      where: { tenantId, entityId, status: 'PAID' },
+      orderBy: [{ paidAt: 'desc' }, { id: 'asc' }],
+      take: limit,
+    })
+    return rows.map(billFromRow)
+  }
 }
 
-const COMMITTED_OUTCOMES = ['PAID', 'SUBMITTED', 'PENDING_APPROVAL'] as const
+const isUniqueViolation = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError &&
+  error.code === 'P2002'
 const DAY_MS = 24 * 60 * 60 * 1000
 
 // Brazil has had no daylight saving since 2019, so a Sao Paulo day is a fixed
@@ -263,21 +284,70 @@ export class PrismaPaymentRepository implements PaymentRepository {
     return rows.map(attemptFromRow)
   }
 
+  async claimAttempt(
+    tenantId: string,
+    attempt: PaymentAttempt,
+  ): Promise<boolean> {
+    try {
+      await this.addAttempt(tenantId, attempt)
+      return true
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  // Keys first tried that day, then every row of those keys, so the domain
+  // counts each payment once by its latest state.
   async committedCents(
     tenantId: string,
-    rail: RailId,
+    entityId: string,
     day: LocalDate,
+    rail?: RailId,
   ): Promise<number> {
-    const total = await this.db.paymentAttempt.aggregate({
+    const keys = await this.db.paymentAttempt.findMany({
+      where: { tenantId, rail, bill: { entityId }, at: saoPauloDayRange(day) },
+      select: { idempotencyKey: true },
+      distinct: ['idempotencyKey'],
+    })
+    if (keys.length === 0) {
+      return 0
+    }
+    const rows = await this.db.paymentAttempt.findMany({
       where: {
         tenantId,
-        rail,
-        outcome: { in: [...COMMITTED_OUTCOMES] },
-        at: saoPauloDayRange(day),
+        idempotencyKey: { in: keys.map(row => row.idempotencyKey) },
       },
-      _sum: { amountCents: true },
+      orderBy: [{ at: 'asc' }, { id: 'asc' }],
     })
-    return Number(total._sum.amountCents ?? 0n)
+    return committedCentsOn(rows.map(attemptFromRow), day)
+  }
+}
+
+export class PrismaFundingRepository implements FundingRepository {
+  constructor(private readonly db: PrismaClient) {}
+
+  async listByDay(
+    tenantId: string,
+    entityId: string,
+    day: LocalDate,
+  ): Promise<ReserveFunding[]> {
+    const rows = await this.db.reserveFunding.findMany({
+      where: { tenantId, entityId, day: toDbDate(day) },
+      orderBy: { round: 'asc' },
+    })
+    return rows.map(fundingFromRow)
+  }
+
+  async create(funding: ReserveFunding): Promise<void> {
+    await this.db.reserveFunding.create({ data: fundingToRow(funding) })
+  }
+
+  async update(funding: ReserveFunding): Promise<void> {
+    const { id, tenantId, ...data } = fundingToRow(funding)
+    await this.db.reserveFunding.update({ where: { id, tenantId }, data })
   }
 }
 
@@ -309,6 +379,11 @@ export class PrismaPayeeDirectory implements PayeeDirectory {
   }
 }
 
+const toNumber = (value: bigint | null) =>
+  value === null ? null : Number(value)
+const toBigInt = (value: number | null) =>
+  value === null ? null : BigInt(value)
+
 export class PrismaPaymentSettings implements PaymentSettingsProvider {
   constructor(
     private readonly db: PrismaClient,
@@ -326,8 +401,11 @@ export class PrismaPaymentSettings implements PaymentSettingsProvider {
       killSwitch: row.killSwitch,
       enabledRails: row.enabledRails,
       dailyCapCents: row.dailyCapCents as PaymentSettings['dailyCapCents'],
-      confirmAboveCents:
-        row.confirmAboveCents === null ? null : Number(row.confirmAboveCents),
+      confirmAboveCents: toNumber(row.confirmAboveCents),
+      entityDailyCapCents: toNumber(row.entityDailyCapCents),
+      paymentCapCents: toNumber(row.paymentCapCents),
+      maxDeviationPercent: row.maxDeviationPercent,
+      approvalCutoff: row.approvalCutoff,
     }
   }
 
@@ -340,10 +418,11 @@ export class PrismaPaymentSettings implements PaymentSettingsProvider {
       killSwitch: settings.killSwitch,
       enabledRails: [...settings.enabledRails],
       dailyCapCents: json(settings.dailyCapCents),
-      confirmAboveCents:
-        settings.confirmAboveCents === null
-          ? null
-          : BigInt(settings.confirmAboveCents),
+      confirmAboveCents: toBigInt(settings.confirmAboveCents),
+      entityDailyCapCents: toBigInt(settings.entityDailyCapCents),
+      paymentCapCents: toBigInt(settings.paymentCapCents),
+      maxDeviationPercent: settings.maxDeviationPercent,
+      approvalCutoff: settings.approvalCutoff,
     }
     await this.db.paymentSettings.upsert({
       where: { tenantId_entityId: { tenantId, entityId } },
@@ -420,6 +499,7 @@ export function createPrismaRepositories(
     accounts: new PrismaAccountRepository(db),
     bills: new PrismaBillRepository(db),
     payments: new PrismaPaymentRepository(db),
+    fundings: new PrismaFundingRepository(db),
     payees: new PrismaPayeeDirectory(db),
     settings: new PrismaPaymentSettings(db, settings),
     audit: new PrismaAuditLog(db),

@@ -187,8 +187,14 @@ export function makeRails(deps: RailDeps) {
     if (item.kind !== 'RESERVE_FUNDING') {
       return ready ? 'ACTIVE' : 'NEEDS_AUTHORIZATION'
     }
+    const payout = 'MERCADO_PAGO_PAYOUTS'
+    const payer = await meta(tenantId, entity.id, payout)
     const accounts = await deps.accounts.listByEntity(tenantId, entity.id)
-    const funded = ready && accounts.some(account => account.isReserve)
+    const funded =
+      ready &&
+      payer !== null &&
+      settings.enabledRails.includes(payout) &&
+      accounts.some(account => account.isReserve)
     return funded ? 'ACTIVE' : 'NEEDS_AUTHORIZATION'
   }
 

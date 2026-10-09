@@ -12,12 +12,14 @@ import {
   type BillStatus,
   type EntityKind,
   type FinancialEntity,
+  type FundingStatus,
   type LocalDate,
   type PaidBy,
   type PaymentMethod,
   type PaymentAttempt,
   type AttemptOutcome,
   type RailId,
+  type ReserveFunding,
   type StepMode,
   type TaxRegime,
   type Transaction,
@@ -90,6 +92,24 @@ export type AttemptRow = {
   method: PaymentMethod
   amountCents: bigint
   outcome: AttemptOutcome
+  reason: string | null
+  externalId: string | null
+  idempotencyKey: string
+  at: Date
+}
+
+export type FundingRow = {
+  id: string
+  tenantId: string
+  entityId: string
+  day: Date
+  round: number
+  billIds: string[]
+  billsTotalCents: bigint
+  availableCents: bigint | null
+  amountCents: bigint
+  currency: string
+  status: FundingStatus
   reason: string | null
   externalId: string | null
   idempotencyKey: string
@@ -259,5 +279,46 @@ export function attemptToRow(
     externalId: attempt.externalId,
     idempotencyKey: attempt.idempotencyKey,
     at: attempt.at,
+  }
+}
+
+export function fundingFromRow(row: FundingRow): ReserveFunding {
+  const money = (cents: bigint) => Money.of(Number(cents))
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    entityId: row.entityId,
+    day: fromDbDate(row.day),
+    round: row.round,
+    billIds: row.billIds,
+    billsTotal: money(row.billsTotalCents),
+    available: row.availableCents === null ? null : money(row.availableCents),
+    amount: money(row.amountCents),
+    status: row.status,
+    reason: row.reason,
+    externalId: row.externalId,
+    idempotencyKey: row.idempotencyKey,
+    at: row.at,
+  }
+}
+
+export function fundingToRow(funding: ReserveFunding): FundingRow {
+  return {
+    id: funding.id,
+    tenantId: funding.tenantId,
+    entityId: funding.entityId,
+    day: toDbDate(funding.day),
+    round: funding.round,
+    billIds: [...funding.billIds],
+    billsTotalCents: BigInt(funding.billsTotal.cents),
+    availableCents:
+      funding.available === null ? null : BigInt(funding.available.cents),
+    amountCents: BigInt(funding.amount.cents),
+    currency: funding.amount.currency,
+    status: funding.status,
+    reason: funding.reason,
+    externalId: funding.externalId,
+    idempotencyKey: funding.idempotencyKey,
+    at: funding.at,
   }
 }

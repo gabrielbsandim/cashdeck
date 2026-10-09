@@ -11,6 +11,22 @@ export class FakeRailStatusReader implements RailStatusReader {
 
   constructor(readonly id: RailId) {}
 
+  readonly lookedUp: string[] = []
+  private readonly references = new Map<string, RailStatus>()
+
+  willFind(idempotencyKey: string, status: RailStatus): this {
+    this.references.set(idempotencyKey, status)
+    return this
+  }
+
+  async findByReference(
+    reference: { idempotencyKey: string },
+    _scope: RailStatusScope,
+  ): Promise<RailStatus | null> {
+    this.lookedUp.push(reference.idempotencyKey)
+    return this.references.get(reference.idempotencyKey) ?? null
+  }
+
   willReport(externalId: string, status: RailStatus): this {
     this.statuses.set(externalId, status)
     return this

@@ -30,8 +30,51 @@ import {
   type StatementDraft,
   type StatementImporter,
 } from '@/ports/providers'
+import { type RailStatusScope } from '@/ports/rail-status'
+import {
+  type FundingRequest,
+  type FundingResult,
+  type ReserveFunder,
+} from '@/ports/reserve-funder'
 
 type Scripted = RailResult | Error
+
+type ScriptedFunding = FundingResult | Error
+
+export class FakeReserveFunder implements ReserveFunder {
+  readonly requests: FundingRequest[] = []
+  private readonly script: ScriptedFunding[] = []
+
+  constructor(
+    public available: number | Error = 0,
+    private readonly fallback: FundingResult = {
+      outcome: 'PAID',
+      externalId: 'funding',
+      reason: null,
+    },
+  ) {}
+
+  willReturn(...results: ScriptedFunding[]): this {
+    this.script.push(...results)
+    return this
+  }
+
+  async availableCents(_scope: RailStatusScope): Promise<number> {
+    if (this.available instanceof Error) {
+      throw this.available
+    }
+    return this.available
+  }
+
+  async fund(request: FundingRequest): Promise<FundingResult> {
+    this.requests.push(request)
+    const next = this.script.shift() ?? this.fallback
+    if (next instanceof Error) {
+      throw next
+    }
+    return next
+  }
+}
 
 export class FakePaymentRail implements PaymentRail {
   readonly requests: PaymentRequest[] = []

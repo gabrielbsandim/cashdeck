@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { resetContainer } from '@/server/container'
+import { type InMemoryAuditLog } from '@cashdeck/application'
+import { getContainer, resetContainer } from '@/server/container'
 import { GET as health } from '@/app/api/v1/health/route'
 import { GET as openapi } from '@/app/api/v1/openapi/route'
 import { GET as listBills, POST as captureBill } from '@/app/api/v1/bills/route'
@@ -96,10 +97,17 @@ describe('api routes', () => {
     )
     expect(pending.body.data.status).toBe('NEEDS_CONFIRMATION')
 
-    const run = await json(
-      await payBill(post(`/bills/${id}/pay`, { confirmed: true }), params(id)),
-    )
+    const confirm = post(`/bills/${id}/pay`, { confirmed: true })
+    confirm.headers.set('x-request-id', 'req-42')
+    const run = await json(await payBill(confirm, params(id)))
     expect(run.body.data.status).toBe('ASSISTED')
+    const audit = getContainer().deps.audit as InMemoryAuditLog
+    expect(audit.events.at(-1)).toMatchObject({
+      action: 'payment.attempt',
+      actor: 'USER',
+      actorId: expect.stringMatching(/^token:[0-9a-f]{12}$/),
+      requestId: 'req-42',
+    })
     expect(
       run.body.data.attempts.map((a: { reason: string | null }) => a.reason),
     ).toEqual(['NOT_CONFIGURED', null])

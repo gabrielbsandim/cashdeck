@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { createBill, Money } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
 import { FakePaymentRail } from '@/testing/providers'
-import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
+import { NOW, scenario, TENANT, trust } from '@/testing/scenario.test-helpers'
 import {
   makeDescribeBill,
   makeGetBill,
   makeListBills,
   makeMarkBillPaid,
 } from '@/use-cases/bills'
-import { makeRunPaymentLadder, payeeKey } from '@/use-cases/run-payment-ladder'
+import { makeRunPaymentLadder } from '@/use-cases/run-payment-ladder'
 
 function seed(id: string, dueDate: string) {
   return createBill({
@@ -31,7 +31,7 @@ describe('bill queries and manual payment', () => {
     const deps = scenario([new FakePaymentRail('MERCADO_PAGO_PAYOUTS')])
     const target = seed('b1', '2026-10-20')
     await deps.bills.save(target)
-    await deps.payees.remember(TENANT, 'pf', payeeKey(target))
+    await trust(deps.payees, target)
     const getBill = makeGetBill(deps)
     expect((await getBill(TENANT, 'b1')).plan).toBeNull()
 

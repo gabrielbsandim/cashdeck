@@ -1,28 +1,52 @@
 import {
+  approvalExpired,
   type Bill,
   type BillStatus,
+  billStatusFor,
+  inFlightAttempt,
   jumpToAssisted,
+  latestAttempts,
   markBillPaid,
   type PaymentAttempt,
   transitionBill,
 } from '@cashdeck/domain'
-import { type RailStatus } from '@/ports/rail-status'
 import { type Deps } from '@/use-cases/deps'
+import {
+  makeResolveInFlight,
+  type ResolvedPayment,
+} from '@/use-cases/payment-guards'
 import { allPages } from '@/use-cases/shared'
 
 type ReconcileDeps = Pick<
   Deps,
-  'bills' | 'payments' | 'railStatus' | 'audit' | 'clock' | 'ids'
+  | 'bills'
+  | 'payments'
+  | 'railStatus'
+  | 'idempotency'
+  | 'settings'
+  | 'audit'
+  | 'clock'
+  | 'ids'
 >
 
 export type ReconcileResult = {
   checked: number
   paid: number
   failed: number
+  expired: number
   failures: Array<{ billId: string; reason: string }>
 }
 
+type Outcome = 'PAID' | 'FAILED' | 'EXPIRED' | null
+
 const WAITING: readonly BillStatus[] = ['PROCESSING', 'AWAITING_BANK_APPROVAL']
+
+// A lost answer gets this long to show up at the rail before the bill goes to
+// assisted, so a slow rail is not mistaken for one that never received it.
+export const IN_FLIGHT_GRACE_MS = 15 * 60 * 1000
+
+export const APPROVAL_EXPIRED = 'APPROVAL_EXPIRED'
+export const IN_FLIGHT_UNRESOLVED = 'IN_FLIGHT_UNRESOLVED'
 
 const isOpenAttempt = (attempt: PaymentAttempt) =>
   (attempt.outcome === 'SUBMITTED' || attempt.outcome === 'PENDING_APPROVAL') &&
@@ -31,6 +55,8 @@ const isOpenAttempt = (attempt: PaymentAttempt) =>
 // Asks the rail that took each waiting payment for its final state. A payment
 // the rail reports as failed goes to assisted, never to another rail.
 export function makeReconcilePayments(deps: ReconcileDeps) {
+  const resolveInFlight = makeResolveInFlight(deps)
+
   async function waitingBills(tenantId: string): Promise<Bill[]> {
     const bills: Bill[] = []
     for (const status of WAITING) {
@@ -46,14 +72,17 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
   async function record(
     tenantId: string,
     from: PaymentAttempt,
-    outcome: PaymentAttempt['outcome'],
-    reason: string | null,
+    result: ResolvedPayment,
+    action: string,
   ): Promise<void> {
     const at = deps.clock.now()
+    const externalId = result.externalId ?? from.externalId
+    const reason = result.reason ?? null
     await deps.payments.addAttempt(tenantId, {
       ...from,
       id: deps.ids.next(),
-      outcome,
+      outcome: result.outcome,
+      externalId,
       reason,
       at,
     })
@@ -61,53 +90,150 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
       id: deps.ids.next(),
       tenantId,
       actor: 'SYSTEM',
-      action: 'payment.reconciled',
+      action,
       subjectId: from.billId,
       rail: from.rail,
-      result: outcome,
-      details: { externalId: from.externalId, reason },
+      result: result.outcome,
+      details: { externalId, reason, idempotencyKey: from.idempotencyKey },
       at,
     })
   }
 
-  async function settle(
+  async function toAssisted(
     tenantId: string,
     bill: Bill,
-    attempt: PaymentAttempt,
-    status: RailStatus,
-  ): Promise<'PAID' | 'FAILED' | null> {
-    if (status.outcome === 'PAID') {
-      await record(tenantId, attempt, 'PAID', null)
-      const paidAt = status.settledAt
-        ? new Date(status.settledAt)
-        : deps.clock.now()
-      await deps.bills.save(markBillPaid(bill, 'RAIL', paidAt))
-      return 'PAID'
+    from: PaymentAttempt | undefined,
+    reason: string,
+    action: string,
+  ): Promise<void> {
+    if (from) {
+      await record(tenantId, from, { outcome: 'FAILED', reason }, action)
     }
-    if (status.outcome !== 'FAILED') {
-      return null
-    }
-    await record(tenantId, attempt, 'FAILED', status.reason ?? 'RAIL_FAILED')
     const plan = await deps.payments.findPlan(tenantId, bill.id)
     if (plan) {
       await deps.payments.savePlan(tenantId, jumpToAssisted(plan))
     }
     await deps.bills.save(transitionBill(bill, 'ASSISTED'))
-    return 'FAILED'
   }
 
-  async function reconcileBill(tenantId: string, bill: Bill) {
-    const attempts = await deps.payments.listAttempts(tenantId, bill.id)
-    const open = attempts.filter(isOpenAttempt).at(-1)
-    const reader = open ? deps.railStatus.get(open.rail) : undefined
-    if (!open || !reader) {
+  async function apply(
+    tenantId: string,
+    bill: Bill,
+    attempt: PaymentAttempt,
+    status: ResolvedPayment,
+  ): Promise<Outcome> {
+    switch (status.outcome) {
+      case 'PAID': {
+        await record(tenantId, attempt, status, 'payment.reconciled')
+        const paidAt = status.settledAt
+          ? new Date(status.settledAt)
+          : deps.clock.now()
+        await deps.bills.save(markBillPaid(bill, 'RAIL', paidAt))
+        return 'PAID'
+      }
+      case 'FAILED':
+        await toAssisted(
+          tenantId,
+          bill,
+          attempt,
+          status.reason ?? 'RAIL_FAILED',
+          'payment.reconciled',
+        )
+        return 'FAILED'
+      default:
+        return null
+    }
+  }
+
+  // A found payment that is still open is written down with its external id,
+  // so the next pass polls it like any other submitted payment.
+  async function adopt(
+    tenantId: string,
+    bill: Bill,
+    pending: PaymentAttempt,
+    found: ResolvedPayment,
+  ): Promise<Outcome> {
+    if (found.outcome === 'PAID' || found.outcome === 'FAILED') {
+      return apply(tenantId, bill, pending, found)
+    }
+    await record(tenantId, pending, found, 'payment.reconciled')
+    await deps.bills.save(transitionBill(bill, billStatusFor(found.outcome)))
+    return null
+  }
+
+  async function settleInFlight(
+    tenantId: string,
+    bill: Bill,
+    pending: PaymentAttempt,
+  ): Promise<Outcome> {
+    const found = await resolveInFlight(tenantId, bill.entityId, pending)
+    if (found) {
+      return adopt(tenantId, bill, pending, found)
+    }
+    const age = deps.clock.now().getTime() - pending.at.getTime()
+    if (age < IN_FLIGHT_GRACE_MS) {
       return null
     }
-    const status = await reader.status(open.externalId as string, {
+    await toAssisted(
+      tenantId,
+      bill,
+      pending,
+      IN_FLIGHT_UNRESOLVED,
+      'payment.in_flight_unresolved',
+    )
+    return 'EXPIRED'
+  }
+
+  // A batch nobody approved before the cutoff is moved to assisted so the bill
+  // is still paid on time by hand.
+  async function expireApproval(
+    tenantId: string,
+    bill: Bill,
+    open: PaymentAttempt | undefined,
+  ): Promise<Outcome> {
+    const settings = await deps.settings.get(tenantId, bill.entityId)
+    const expired =
+      bill.status === 'AWAITING_BANK_APPROVAL' &&
+      approvalExpired(bill.dueDate, settings.approvalCutoff, deps.clock.now())
+    if (!expired) {
+      return null
+    }
+    await toAssisted(
+      tenantId,
+      bill,
+      open,
+      APPROVAL_EXPIRED,
+      'payment.approval_expired',
+    )
+    return 'EXPIRED'
+  }
+
+  async function readStatus(
+    tenantId: string,
+    bill: Bill,
+    open: PaymentAttempt,
+  ): Promise<ResolvedPayment | null> {
+    const reader = deps.railStatus.get(open.rail)
+    if (!reader) {
+      return null
+    }
+    return reader.status(open.externalId as string, {
       tenantId,
       entityId: bill.entityId,
     })
-    return settle(tenantId, bill, open, status)
+  }
+
+  async function reconcileBill(tenantId: string, bill: Bill): Promise<Outcome> {
+    const attempts = await deps.payments.listAttempts(tenantId, bill.id)
+    const pending = inFlightAttempt(attempts)
+    if (pending) {
+      return settleInFlight(tenantId, bill, pending)
+    }
+    const open = latestAttempts(attempts).filter(isOpenAttempt).at(-1)
+    const status = open ? await readStatus(tenantId, bill, open) : null
+    const settled =
+      open && status ? await apply(tenantId, bill, open, status) : null
+    return settled ?? expireApproval(tenantId, bill, open)
   }
 
   return async function reconcilePayments(
@@ -117,6 +243,7 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
       checked: 0,
       paid: 0,
       failed: 0,
+      expired: 0,
       failures: [],
     }
     for (const bill of await waitingBills(tenantId)) {
@@ -125,6 +252,7 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
         const outcome = await reconcileBill(tenantId, bill)
         result.paid += outcome === 'PAID' ? 1 : 0
         result.failed += outcome === 'FAILED' ? 1 : 0
+        result.expired += outcome === 'EXPIRED' ? 1 : 0
       } catch (error) {
         result.failures.push({ billId: bill.id, reason: String(error) })
       }

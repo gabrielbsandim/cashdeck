@@ -7,7 +7,12 @@ import {
   type RailStatusReader,
   type RailStatusScope,
 } from '@cashdeck/application'
-import { type Bill, type BillKind, type EntityKind } from '@cashdeck/domain'
+import {
+  type Bill,
+  type BillKind,
+  type EntityKind,
+  type PaymentMethod,
+} from '@cashdeck/domain'
 import {
   type Credentials,
   type CredentialScope,
@@ -88,6 +93,7 @@ type AsaasDecodedQr = {
 type AsaasOperation = {
   id: string
   status?: string
+  externalReference?: string | null
   refusalReason?: string | null
   failReason?: string | null
   endToEndIdentifier?: string | null
@@ -95,7 +101,17 @@ type AsaasOperation = {
   paymentDate?: string | null
 }
 
+type AsaasList = { data?: AsaasOperation[] }
+
+type AsaasBalance = { balance?: number }
+
 type Answer<T> = { ok: true; data: T } | { ok: false; reason: string }
+
+// The resources a payment of each method may have created, in lookup order.
+const RESOURCES_BY_METHOD: Record<PaymentMethod, readonly string[]> = {
+  PIX: ['pix', 'transfer'],
+  BOLETO: ['bill'],
+}
 
 type Config = { apiKey: string; baseUrl: string }
 
@@ -115,12 +131,46 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     const config = await this.config(scopeOf(bill))
     const pix = pixPayloadOf(bill, request.method)
     if (pix) {
-      return this.payPixCode(config, bill, pix)
+      return this.payPixCode(config, bill, pix, request.idempotencyKey)
     }
     if (bill.kind === 'PIX_KEY') {
       return this.transfer(config, bill, request.idempotencyKey)
     }
-    return this.payBoleto(config, bill)
+    return this.payBoleto(config, bill, request.idempotencyKey)
+  }
+
+  // Asks each resource the method could have created for the operation that
+  // carries the key; the match is checked here too, in case the filter is ignored.
+  async findByReference(
+    reference: { idempotencyKey: string; method: PaymentMethod },
+    scope: RailStatusScope,
+  ): Promise<RailStatus | null> {
+    const config = await this.config(scope)
+    const key = reference.idempotencyKey
+    for (const resource of RESOURCES_BY_METHOD[reference.method]) {
+      const answer = await this.call<AsaasList>(config, {
+        method: 'GET',
+        url: `${config.baseUrl}${STATUS_PATHS[resource]}?externalReference=${encodeURIComponent(key)}&limit=10`,
+      })
+      const data = answer.ok ? (answer.data.data ?? []) : []
+      const op = data.find(item => item.externalReference === key)
+      if (op) {
+        return this.statusOf(resource, op)
+      }
+    }
+    return null
+  }
+
+  async balanceCents(scope: RailStatusScope): Promise<number> {
+    const config = await this.config(scope)
+    const answer = await this.call<AsaasBalance>(config, {
+      method: 'GET',
+      url: `${config.baseUrl}/finance/balance`,
+    })
+    if (!answer.ok) {
+      throw new Error(answer.reason)
+    }
+    return toCents(answer.data.balance)
   }
 
   async status(
@@ -140,7 +190,14 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     if (!answer.ok) {
       return statusResult('FAILED', externalId, { reason: answer.reason })
     }
-    const op = answer.data
+    return this.statusOf(resource, answer.data, externalId)
+  }
+
+  private statusOf(
+    resource: string,
+    op: AsaasOperation,
+    externalId = `${resource}:${op.id}`,
+  ): RailStatus {
     const outcome = outcomeFrom(STATUS_TABLES[resource] ?? {}, op.status)
     return statusResult(outcome, externalId, {
       reason: op.refusalReason ?? op.failReason ?? null,
@@ -166,6 +223,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     config: Config,
     bill: Bill,
     payload: string,
+    idempotencyKey: string,
   ): Promise<RailResult> {
     const pix = decodePix(payload)
     if (staticAmountMismatch(pix, bill)) {
@@ -187,15 +245,20 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
       return failed('PIX_AMOUNT_ABOVE_BILL')
     }
     const cents = quoted > 0 ? quoted : bill.amount.cents
-    const paid = await this.call<AsaasOperation>(config, {
-      method: 'POST',
-      url: `${config.baseUrl}/pix/qrCodes/pay`,
-      json: {
-        qrCode: { payload: pix.payload },
-        value: toDecimal(cents),
-        description: paymentDescription(bill),
+    const paid = await this.call<AsaasOperation>(
+      config,
+      {
+        method: 'POST',
+        url: `${config.baseUrl}/pix/qrCodes/pay`,
+        json: {
+          qrCode: { payload: pix.payload },
+          value: toDecimal(cents),
+          description: paymentDescription(bill),
+          externalReference: idempotencyKey,
+        },
       },
-    })
+      idempotencyKey,
+    )
     return this.result(paid, 'pix', PIX_OUTCOME)
   }
 
@@ -205,30 +268,43 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     idempotencyKey: string,
   ): Promise<RailResult> {
     const key = bill.code ?? ''
-    const answer = await this.call<AsaasOperation>(config, {
-      method: 'POST',
-      url: `${config.baseUrl}/transfers`,
-      json: {
-        value: toDecimal(bill.amount.cents),
-        operationType: 'PIX',
-        pixAddressKey: normalizePixKey(key),
-        pixAddressKeyType: pixKeyType(key),
-        description: paymentDescription(bill),
-        externalReference: idempotencyKey,
+    const answer = await this.call<AsaasOperation>(
+      config,
+      {
+        method: 'POST',
+        url: `${config.baseUrl}/transfers`,
+        json: {
+          value: toDecimal(bill.amount.cents),
+          operationType: 'PIX',
+          pixAddressKey: normalizePixKey(key),
+          pixAddressKeyType: pixKeyType(key),
+          description: paymentDescription(bill),
+          externalReference: idempotencyKey,
+        },
       },
-    })
+      idempotencyKey,
+    )
     return this.result(answer, 'transfer', TRANSFER_OUTCOME)
   }
 
-  private async payBoleto(config: Config, bill: Bill): Promise<RailResult> {
-    const answer = await this.call<AsaasOperation>(config, {
-      method: 'POST',
-      url: `${config.baseUrl}/bill`,
-      json: {
-        identificationField: bill.code,
-        description: paymentDescription(bill),
+  private async payBoleto(
+    config: Config,
+    bill: Bill,
+    idempotencyKey: string,
+  ): Promise<RailResult> {
+    const answer = await this.call<AsaasOperation>(
+      config,
+      {
+        method: 'POST',
+        url: `${config.baseUrl}/bill`,
+        json: {
+          identificationField: bill.code,
+          description: paymentDescription(bill),
+          externalReference: idempotencyKey,
+        },
       },
-    })
+      idempotencyKey,
+    )
     return this.result(answer, 'bill', BILL_OUTCOME)
   }
 
@@ -266,10 +342,23 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     return { apiKey: ASAAS_API_KEY, baseUrl }
   }
 
-  private async call<T>(config: Config, call: Call): Promise<Answer<T>> {
+  // Asaas documents no idempotency header; it is sent anyway so a retry is
+  // deduplicated if the API honours it, and the body carries the same key.
+  private async call<T>(
+    config: Config,
+    call: Call,
+    idempotencyKey?: string,
+  ): Promise<Answer<T>> {
+    const headers: Record<string, string> = {
+      access_token: config.apiKey,
+      'user-agent': 'cashdeck',
+    }
+    const keyed = idempotencyKey
+      ? { ...headers, 'idempotency-key': idempotencyKey }
+      : headers
     const response = await send(this.deps.transport, {
       ...call,
-      headers: { access_token: config.apiKey, 'user-agent': 'cashdeck' },
+      headers: keyed,
     })
     if (isSuccess(response)) {
       return { ok: true, data: readJson<T>(response) }

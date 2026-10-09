@@ -13,6 +13,7 @@ import {
   FakeNotifier,
   FakeOpenFinanceProvider,
   FakePaymentRail,
+  FakeReserveFunder,
   FakeSecretVault,
   FakeStatementImporter,
 } from '@/testing/providers'
@@ -20,6 +21,7 @@ import {
   InMemoryAccountRepository,
   InMemoryBillRepository,
   InMemoryEntityRepository,
+  InMemoryFundingRepository,
   InMemoryIdempotencyStore,
   InMemorySecretStore,
   InMemoryPaymentRepository,
@@ -107,8 +109,9 @@ describe('repository fakes', () => {
     expect(await repo.findById('t', 'missing')).toBeNull()
   })
 
-  it('sums committed attempts per rail and day', async () => {
-    const repo = new InMemoryPaymentRepository()
+  it('sums committed attempts per entity, rail and day', async () => {
+    const bills = new InMemoryBillRepository()
+    const repo = new InMemoryPaymentRepository(bills)
     const attempt = {
       id: 'a',
       billId: 'b',
@@ -123,14 +126,116 @@ describe('repository fakes', () => {
       idempotencyKey: 'b:0',
       at: new Date('2026-10-08T12:00:00Z'),
     }
+    await bills.save(
+      createBill({
+        id: 'b',
+        tenantId: 't',
+        entityId: 'e',
+        kind: 'BOLETO',
+        source: 'MANUAL',
+        amount: Money.of(500),
+        dueDate: '2026-10-08',
+        code: 'x',
+        createdAt: new Date(0),
+      }),
+    )
     await repo.addAttempt('t', attempt)
-    await repo.addAttempt('t', { ...attempt, id: 'c', outcome: 'FAILED' })
-    await repo.addAttempt('t', { ...attempt, id: 'd', rail: 'INTER_EMPRESAS' })
+    await repo.addAttempt('t', {
+      ...attempt,
+      id: 'c',
+      idempotencyKey: 'b:1',
+      outcome: 'FAILED',
+    })
+    await repo.addAttempt('t', {
+      ...attempt,
+      id: 'd',
+      idempotencyKey: 'b:2',
+      rail: 'INTER_EMPRESAS',
+    })
     await repo.addAttempt('other', attempt)
-    expect(await repo.committedCents('t', 'ASAAS', '2026-10-08')).toBe(500)
-    expect(await repo.committedCents('t', 'ASAAS', '2026-10-09')).toBe(0)
+    expect(await repo.committedCents('t', 'e', '2026-10-08', 'ASAAS')).toBe(500)
+    expect(await repo.committedCents('t', 'e', '2026-10-08')).toBe(1000)
+    expect(await repo.committedCents('t', 'e2', '2026-10-08')).toBe(0)
+    expect(await repo.committedCents('t', 'e', '2026-10-09', 'ASAAS')).toBe(0)
+    const open = new InMemoryPaymentRepository()
+    await open.addAttempt('t', attempt)
+    expect(await open.committedCents('t', 'any', '2026-10-08')).toBe(500)
     expect(await repo.listAttempts('t', 'b')).toHaveLength(3)
     expect(await repo.findPlan('t', 'b')).toBeNull()
+  })
+
+  it('claims an attempt id once per tenant', async () => {
+    const repo = new InMemoryPaymentRepository()
+    const claim = {
+      id: 'k:claim',
+      billId: 'b',
+      stepIndex: 0,
+      rail: 'ASAAS' as const,
+      mode: 'AUTOMATIC' as const,
+      method: 'PIX' as const,
+      amount: Money.of(1),
+      outcome: 'IN_FLIGHT' as const,
+      reason: null,
+      externalId: null,
+      idempotencyKey: 'k',
+      at: new Date(0),
+    }
+    expect(await repo.claimAttempt('t', claim)).toBe(true)
+    expect(await repo.claimAttempt('t', claim)).toBe(false)
+    expect(await repo.claimAttempt('other', claim)).toBe(true)
+  })
+
+  it('lists paid bills newest first and keeps funding rounds unique', async () => {
+    const bills = new InMemoryBillRepository()
+    const base = createBill({
+      id: 'p1',
+      tenantId: 't',
+      entityId: 'e',
+      kind: 'BOLETO',
+      source: 'MANUAL',
+      amount: Money.of(1),
+      dueDate: '2026-10-08',
+      code: 'x',
+      createdAt: new Date(0),
+    })
+    await bills.save({ ...base, status: 'PAID', paidAt: new Date(1) })
+    await bills.save({ ...base, id: 'p2', status: 'PAID', paidAt: new Date(2) })
+    await bills.save({ ...base, id: 'p3', status: 'PAID', paidAt: null })
+    await bills.save({ ...base, id: 'open' })
+    await bills.save({ ...base, id: 'x', entityId: 'e2', status: 'PAID' })
+    const paid = await bills.listRecentPaid('t', 'e', 2)
+    expect(paid.map(bill => bill.id)).toEqual(['p2', 'p1'])
+
+    const fundings = new InMemoryFundingRepository()
+    const round = {
+      id: 'r1',
+      tenantId: 't',
+      entityId: 'e',
+      day: '2026-10-08',
+      round: 1,
+      billIds: ['p1'],
+      billsTotal: Money.of(1),
+      available: null,
+      amount: Money.of(1),
+      status: 'IN_FLIGHT' as const,
+      reason: null,
+      externalId: null,
+      idempotencyKey: 'reserve:e:2026-10-08:1',
+      at: new Date(0),
+    }
+    await fundings.create({ ...round, id: 'r2', round: 2 })
+    await fundings.create(round)
+    await expect(fundings.create({ ...round, id: 'r3' })).rejects.toThrow(
+      'exists',
+    )
+    await fundings.update({ ...round, status: 'PAID' })
+    const listed = await fundings.listByDay('t', 'e', '2026-10-08')
+    expect(listed.map(row => [row.round, row.status])).toEqual([
+      [1, 'PAID'],
+      [2, 'IN_FLIGHT'],
+    ])
+    expect(await fundings.listByDay('t', 'e', '2026-10-09')).toEqual([])
+    expect(await fundings.listByDay('t', 'e2', '2026-10-08')).toEqual([])
   })
 
   it('serves default settings', async () => {
@@ -139,6 +244,23 @@ describe('repository fakes', () => {
 })
 
 describe('provider fakes', () => {
+  it('scripts a reserve funder', async () => {
+    const funder = new FakeReserveFunder(500).willReturn(new Error('down'))
+    const scope = { tenantId: 't', entityId: 'e' }
+    expect(await funder.availableCents(scope)).toBe(500)
+    const request = {
+      tenantId: 't',
+      entityId: 'e',
+      amountCents: 1,
+      idempotencyKey: 'k',
+      description: 'd',
+    }
+    await expect(funder.fund(request)).rejects.toThrow('down')
+    expect((await funder.fund(request)).outcome).toBe('PAID')
+    funder.available = new Error('no balance')
+    await expect(funder.availableCents(scope)).rejects.toThrow('no balance')
+  })
+
   it('scripts a payment rail', async () => {
     const rail = new FakePaymentRail('ASAAS', ['BOLETO'])
     expect(rail.supports('BOLETO')).toBe(true)

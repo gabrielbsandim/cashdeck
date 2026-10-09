@@ -205,12 +205,25 @@ attempt on either method is paid or pending, no other step runs for that bill.
 
 ### 5.3 Safety rules
 
-- Per-rail and per-day caps, configurable per entity.
-- First payment to a new payee always requires an in-app confirmation.
-- Amount above a threshold, or differing from the recurrence by more than a set
-  percentage, requires confirmation.
-- Funding transfers (reserve to Asaas) are scheduled for the morning of the due
-  date and sized to the exact sum of that day's bills.
+- Per-rail and per-day caps, plus a daily cap per entity and a cap per
+  payment, configurable per entity. The last two bound automatic steps only.
+- First payment to a new payee always requires an in-app confirmation. The
+  payee is the real recipient: the Pix key of the BR Code (the merchant for a
+  dynamic code), the bank and payee of a boleto; a bolepix needs both known.
+- Amount above a threshold, or differing by more than a set percentage (30% by
+  default) from the median of the last paid bills to the same recipient,
+  requires confirmation. The `Recurrence` model is not used for this yet.
+- Funding transfers (reserve to Asaas) run in the payment-ladder cron (08:00 in
+  Sao Paulo) right before the ladder, on the day the ladder works the bills
+  (one business day before the due date), sized to the shortfall of those
+  bills after the Asaas balance. A bill confirmed later gets its own round.
+  The ladder pays from Asaas only after its round is submitted or paid;
+  otherwise the bill falls to assisted with `RESERVE_FUNDING_FAILED`.
+- Every rail call is written as an in-flight attempt first. A call whose answer
+  is lost is never sent again: the rail is asked by idempotency key, and an
+  unresolved one falls to assisted.
+- A bank approval batch still pending at the cutoff (16:00 in Sao Paulo on the
+  due date by default) falls to assisted.
 - A global kill switch pauses all automatic steps; bills fall to assisted.
 - Webhooks and polling reconcile the final status; a bill is `PAID` only when a rail
   confirms or the user marks it with proof.

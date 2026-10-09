@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { DEFAULT_SAFETY_SETTINGS } from '@cashdeck/application'
 import {
   createFinancialEntity,
   RAIL_IDS,
@@ -46,6 +47,7 @@ const repos = createPrismaRepositories(db, {
   enabledRails: [],
   dailyCapCents: {},
   confirmAboveCents: null,
+  ...DEFAULT_SAFETY_SETTINGS,
 })
 
 async function seed() {

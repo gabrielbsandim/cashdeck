@@ -5,6 +5,10 @@ import { requireEntity } from '@/use-cases/shared'
 
 type AutomationStatus = { pausedAt: string | null }
 
+// Undefined keeps the stored value; null is a deliberate "no limit".
+const keep = <T>(given: T | undefined, current: T): T =>
+  given === undefined ? current : given
+
 const COLLECTION = 'automation'
 const STATUS_ID = 'status'
 
@@ -27,6 +31,10 @@ export function makeAutomation(
         entity: entity.kind,
         confirmAboveCents: settings.confirmAboveCents,
         dailyCapCents: settings.dailyCapCents,
+        entityDailyCapCents: settings.entityDailyCapCents,
+        paymentCapCents: settings.paymentCapCents,
+        maxDeviationPercent: settings.maxDeviationPercent,
+        approvalCutoff: settings.approvalCutoff,
       })
     }
     return { pausedSince: status?.pausedAt ?? null, entities: views }
@@ -60,11 +68,21 @@ export function makeAutomation(
     const settings = await deps.settings.get(tenantId, entity.id)
     await deps.settings.save(tenantId, entity.id, {
       ...settings,
-      confirmAboveCents:
-        input.confirmAboveCents === undefined
-          ? settings.confirmAboveCents
-          : input.confirmAboveCents,
+      confirmAboveCents: keep(
+        input.confirmAboveCents,
+        settings.confirmAboveCents,
+      ),
       dailyCapCents: input.dailyCapCents ?? settings.dailyCapCents,
+      entityDailyCapCents: keep(
+        input.entityDailyCapCents,
+        settings.entityDailyCapCents,
+      ),
+      paymentCapCents: keep(input.paymentCapCents, settings.paymentCapCents),
+      maxDeviationPercent: keep(
+        input.maxDeviationPercent,
+        settings.maxDeviationPercent,
+      ),
+      approvalCutoff: input.approvalCutoff ?? settings.approvalCutoff,
     })
     return get(tenantId)
   }

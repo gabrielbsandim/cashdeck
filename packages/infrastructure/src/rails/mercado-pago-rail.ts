@@ -71,6 +71,14 @@ type PayoutTransaction = {
   last_update_date?: string | null
 }
 
+export type PayoutInput = {
+  scope: CredentialScope
+  pixKey: string
+  amountCents: number
+  description: string
+  idempotencyKey: string
+}
+
 export type PayloadSigner = (body: string, privateKey: string) => string
 
 // The docs describe the signature only as the base64 body signed with the
@@ -98,19 +106,31 @@ export class MercadoPagoPayoutsRail implements PaymentRail, RailStatusReader {
     if (bill.kind !== 'PIX_KEY' || !bill.code) {
       return failed('UNSUPPORTED_KIND')
     }
-    const config = await this.config(scopeOf(bill))
-    const reference = request.idempotencyKey.replace(/[^A-Za-z0-9]/g, '')
+    return this.payout({
+      scope: scopeOf(bill),
+      pixKey: bill.code,
+      amountCents: bill.amount.cents,
+      description: paymentDescription(bill),
+      idempotencyKey: request.idempotencyKey,
+    })
+  }
+
+  // A Pix payout to a key, shared by bill payments and the reserve funding
+  // transfer; the idempotency key makes a resend return the first payout.
+  async payout(input: PayoutInput): Promise<RailResult> {
+    const config = await this.config(input.scope)
+    const reference = input.idempotencyKey.replace(/[^A-Za-z0-9]/g, '')
     const body = JSON.stringify({
       external_reference: reference,
-      description: paymentDescription(bill),
+      description: input.description,
       transactions: [
         {
           type: 'pix',
           pix: {
-            type: pixKeyType(bill.code),
-            chave: normalizePixKey(bill.code),
+            type: pixKeyType(input.pixKey),
+            chave: normalizePixKey(input.pixKey),
           },
-          amount: { currency: 'BRL', value: toDecimal(bill.amount.cents) },
+          amount: { currency: 'BRL', value: toDecimal(input.amountCents) },
           external_reference: reference,
         },
       ],
@@ -121,7 +141,7 @@ export class MercadoPagoPayoutsRail implements PaymentRail, RailStatusReader {
       headers: {
         ...this.headers(config),
         'content-type': 'application/json',
-        'x-idempotency-key': request.idempotencyKey,
+        'x-idempotency-key': input.idempotencyKey,
         ...this.signature(config, body),
       },
       body,

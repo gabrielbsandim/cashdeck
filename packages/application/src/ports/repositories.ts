@@ -9,6 +9,7 @@ import {
   type PaymentAttempt,
   type PaymentPlan,
   type RailId,
+  type ReserveFunding,
 } from '@cashdeck/domain'
 
 export type Page<T> = { items: T[]; nextCursor: string | null }
@@ -41,18 +42,40 @@ export interface BillRepository {
     filter: BillFilter,
     page: PageRequest,
   ): Promise<Page<Bill>>
+  // Paid bills of the entity, the most recently paid first.
+  listRecentPaid(
+    tenantId: string,
+    entityId: string,
+    limit: number,
+  ): Promise<Bill[]>
 }
 
 export interface PaymentRepository {
   savePlan(tenantId: string, plan: PaymentPlan): Promise<void>
   findPlan(tenantId: string, billId: string): Promise<PaymentPlan | null>
   addAttempt(tenantId: string, attempt: PaymentAttempt): Promise<void>
+  // Inserts the attempt only when its id is new; false means another run
+  // already holds it, so the caller must not call the rail.
+  claimAttempt(tenantId: string, attempt: PaymentAttempt): Promise<boolean>
   listAttempts(tenantId: string, billId: string): Promise<PaymentAttempt[]>
+  // Counted as `committedCentsOn` does; without a rail, across every rail.
   committedCents(
     tenantId: string,
-    rail: RailId,
+    entityId: string,
     day: LocalDate,
+    rail?: RailId,
   ): Promise<number>
+}
+
+export interface FundingRepository {
+  listByDay(
+    tenantId: string,
+    entityId: string,
+    day: LocalDate,
+  ): Promise<ReserveFunding[]>
+  // Fails when the round already exists, so two runs never fund twice.
+  create(funding: ReserveFunding): Promise<void>
+  update(funding: ReserveFunding): Promise<void>
 }
 
 export interface FinancialEntityRepository {
@@ -102,7 +125,20 @@ export type PaymentSettings = {
   enabledRails: RailId[]
   dailyCapCents: Partial<Record<RailId, number>>
   confirmAboveCents: number | null
+  entityDailyCapCents: number | null
+  paymentCapCents: number | null
+  maxDeviationPercent: number | null
+  // HH:MM in Sao Paulo time on the due date; a batch still unapproved after it
+  // falls to assisted.
+  approvalCutoff: string
 }
+
+export const DEFAULT_SAFETY_SETTINGS = {
+  entityDailyCapCents: 1_000_000,
+  paymentCapCents: 500_000,
+  maxDeviationPercent: 30,
+  approvalCutoff: '16:00',
+} as const satisfies Partial<PaymentSettings>
 
 export interface PaymentSettingsProvider {
   get(tenantId: string, entityId: string): Promise<PaymentSettings>
@@ -123,7 +159,19 @@ export type AuditEvent = {
   result: string
   details: Record<string, unknown>
   at: Date
+  actorId?: string | null
+  requestId?: string | null
 }
+
+// Who asked for a side effect: the app user behind the API token, or the
+// scheduler when nobody did.
+export type Actor = {
+  kind: AuditEvent['actor']
+  id: string | null
+  requestId: string | null
+}
+
+export const SYSTEM_ACTOR: Actor = { kind: 'SYSTEM', id: null, requestId: null }
 
 export interface AuditLog {
   record(event: AuditEvent): Promise<void>

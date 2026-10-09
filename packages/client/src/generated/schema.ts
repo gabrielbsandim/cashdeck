@@ -2194,7 +2194,7 @@ export interface operations {
                                     currency: string;
                                 };
                                 /** @enum {string} */
-                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED";
+                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
                                 reason: string | null;
                                 externalId: string | null;
                                 at: string;
@@ -2285,7 +2285,7 @@ export interface operations {
                                     currency: string;
                                 };
                                 /** @enum {string} */
-                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED";
+                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
                                 reason: string | null;
                                 externalId: string | null;
                                 at: string;
@@ -3021,6 +3021,10 @@ export interface operations {
                                 dailyCapCents: {
                                     [key: string]: number;
                                 };
+                                entityDailyCapCents: number | null;
+                                paymentCapCents: number | null;
+                                maxDeviationPercent: number | null;
+                                approvalCutoff: string;
                             }[];
                         };
                     };
@@ -3061,6 +3065,10 @@ export interface operations {
                                 dailyCapCents: {
                                     [key: string]: number;
                                 };
+                                entityDailyCapCents: number | null;
+                                paymentCapCents: number | null;
+                                maxDeviationPercent: number | null;
+                                approvalCutoff: string;
                             }[];
                         };
                     };
@@ -3101,6 +3109,10 @@ export interface operations {
                                 dailyCapCents: {
                                     [key: string]: number;
                                 };
+                                entityDailyCapCents: number | null;
+                                paymentCapCents: number | null;
+                                maxDeviationPercent: number | null;
+                                approvalCutoff: string;
                             }[];
                         };
                     };
@@ -3132,6 +3144,10 @@ export interface operations {
                     dailyCapCents?: {
                         [key: string]: number;
                     };
+                    entityDailyCapCents?: number | null;
+                    paymentCapCents?: number | null;
+                    maxDeviationPercent?: number | null;
+                    approvalCutoff?: string;
                 };
             };
         };
@@ -3152,6 +3168,10 @@ export interface operations {
                                 dailyCapCents: {
                                     [key: string]: number;
                                 };
+                                entityDailyCapCents: number | null;
+                                paymentCapCents: number | null;
+                                maxDeviationPercent: number | null;
+                                approvalCutoff: string;
                             }[];
                         };
                     };

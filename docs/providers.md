@@ -107,16 +107,25 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 |---|---|
 | `ASAAS_API_KEY` | `access_token` header |
 | `ASAAS_ENVIRONMENT` | `sandbox` or `production` (default) |
+| `ASAAS_PIX_KEY` | Pix key of this Asaas account, the destination of the reserve funding payout (per entity: `ASAAS_PIX_KEY@<entityId>`) |
 
 - BR Code: `POST /v3/pix/qrCodes/decode` first (refuses when `canBePaid` is
   false or `totalValue` is above the bill), then `POST /v3/pix/qrCodes/pay` with
-  `qrCode.payload` and `value`. Status: `GET /v3/pix/transactions/{id}`
+  `qrCode.payload`, `value` and `externalReference` set to the idempotency
+  key. Status: `GET /v3/pix/transactions/{id}`
   (`DONE` is paid, `REFUSED` and `CANCELLED` failed).
 - Pix key: `POST /v3/transfers` with `operationType: PIX`, `pixAddressKey`,
   `pixAddressKeyType` and `externalReference` set to the idempotency key.
   Status: `GET /v3/transfers/{id}` with `endToEndIdentifier`.
-- Boleto: `POST /v3/bill` with `identificationField`. Status: `GET /v3/bill/{id}`.
-- Check: `GET /v3/finance/balance`.
+- Boleto: `POST /v3/bill` with `identificationField` and `externalReference`
+  set to the idempotency key. Status: `GET /v3/bill/{id}`.
+- Every payment call also sends the idempotency key as an `Idempotency-Key`
+  header.
+- Lost answers: `findByReference` lists `GET /v3/pix/transactions`,
+  `GET /v3/transfers` (Pix) or `GET /v3/bill` (barcode) with
+  `?externalReference=<key>` and keeps only an item whose `externalReference`
+  equals the key, so an ignored filter cannot match a different payment.
+- Check and balance: `GET /v3/finance/balance` (`balance` in reais).
 - Docs: https://docs.asaas.com/reference/pay-a-qrcode,
   https://docs.asaas.com/reference/decode-a-qrcode-for-payment,
   https://docs.asaas.com/reference/transfer-to-another-institution-account-or-pix-key,
@@ -125,7 +134,11 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 - **Unconfirmed:** the response fields of `GET /v3/bill/{id}` (`status`,
   `paymentDate`), the `GET /v3/pix/transactions/{id}` path, and
   `/v3/finance/balance` as the check. Asaas documents no idempotency header for
-  QR and bill payments; retries rely on the ladder's idempotency store.
+  QR and bill payments, nor `externalReference` on `/pix/qrCodes/pay` and
+  `/bill`, nor the `externalReference` filter on the three list endpoints. If
+  Asaas ignores them, a lost answer is never resolved by the rail: the ladder
+  still never resends it (it writes an `IN_FLIGHT` attempt before the call) and
+  the bill falls to assisted with `IN_FLIGHT_UNRESOLVED`.
 
 ### Mercado Pago Payouts (`MercadoPagoPayoutsRail`, PF)
 
@@ -142,6 +155,19 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 - **Pix BR Code is not supported.** Payouts accept a Pix key or bank account
   data only, so this rail serves `PIX_KEY` bills; a bolepix for the personal
   entity is paid by Asaas from the reserve-funded account, or falls to assisted.
+
+### Reserve funding (`PixReserveFunder`, PF)
+
+Implements the `ReserveFunder` port by composing the two rails above: it reads
+the Asaas balance (`AsaasRail.balanceCents`) and sends the shortfall from the
+Mercado Pago reserve with `MercadoPagoPayoutsRail.payout` to the Pix key in
+`ASAAS_PIX_KEY`, with the round's idempotency key
+(`reserve:<entityId>:<day>:<round>`) as `X-Idempotency-Key`. A round left in
+flight by a crash is resent with the same key, so it relies on Mercado Pago
+answering a repeated key with the first payout (**unconfirmed** for payouts).
+Without `ASAAS_PIX_KEY` the funder reports not configured, the round fails and
+the Asaas bills fall to assisted with `RESERVE_FUNDING_FAILED`, unless the
+Asaas balance already covers them.
 - Docs: https://www.mercadopago.com.br/developers/en/docs/money-out/integration-configuration.
 - **Unconfirmed:** the `X-signature` algorithm (implemented as the base64
   RSA-SHA256 signature of the body; injectable through `signer`), the Pix key

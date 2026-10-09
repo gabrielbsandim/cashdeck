@@ -57,12 +57,17 @@ describe('AsaasRail', () => {
       qrCode: { payload: DYNAMIC_PIX },
       value: 123.45,
       description: 'Energia Exemplo',
+      externalReference: 'bill-1:0',
     })
     expect(
       scripted.last('POST', `${API}/pix/qrCodes/pay`).headers,
     ).toMatchObject({
       access_token: 'key',
+      'idempotency-key': 'bill-1:0',
     })
+    expect(
+      scripted.last('POST', `${API}/pix/qrCodes/decode`).headers,
+    ).not.toHaveProperty('idempotency-key')
   })
 
   it('pays the bill amount when the code is open and reports instant success', async () => {
@@ -167,6 +172,10 @@ describe('AsaasRail', () => {
     expect(result.externalId).toBe('bill:b-1')
     expect(scripted.body('POST', `${sandbox}/bill`)).toMatchObject({
       identificationField: '00190000090280001234256789012178916050000012345',
+      externalReference: 'bill-1:0',
+    })
+    expect(scripted.last('POST', `${sandbox}/bill`).headers).toMatchObject({
+      'idempotency-key': 'bill-1:0',
     })
   })
 
@@ -279,5 +288,74 @@ describe('AsaasRail', () => {
       ok: false,
       message: 'Asaas is not configured.',
     })
+  })
+
+  it('finds a payment by the idempotency key it was sent with', async () => {
+    const key = 'b1:0:PIX'
+    const scripted = new ScriptedTransport()
+      .on('GET', `${API}/pix/transactions?externalReference=b1%3A0%3APIX`, {
+        json: { data: [{ id: 'other', externalReference: 'b9:0:PIX' }] },
+      })
+      .on('GET', `${API}/transfers?externalReference=b1%3A0%3APIX`, {
+        json: {
+          data: [
+            {
+              id: 'tr-9',
+              status: 'DONE',
+              externalReference: key,
+              effectiveDate: '2026-10-08',
+            },
+          ],
+        },
+      })
+      .on('GET', `${API}/bill?externalReference=b1%3A1%3ABOLETO`, {
+        status: 400,
+        json: {},
+      })
+    const asaas = rail(scripted)
+    expect(
+      await asaas.findByReference(
+        { idempotencyKey: key, method: 'PIX' },
+        scope,
+      ),
+    ).toEqual({
+      outcome: 'PAID',
+      externalId: 'transfer:tr-9',
+      reason: null,
+      endToEndId: null,
+      settledAt: '2026-10-08',
+    })
+    expect(
+      await asaas.findByReference(
+        { idempotencyKey: 'b1:1:BOLETO', method: 'BOLETO' },
+        scope,
+      ),
+    ).toBeNull()
+    const empty = new ScriptedTransport().on('GET', `${API}/bill`, {
+      json: {},
+    })
+    expect(
+      await rail(empty).findByReference(
+        { idempotencyKey: 'b1:1:BOLETO', method: 'BOLETO' },
+        scope,
+      ),
+    ).toBeNull()
+  })
+
+  it('reads the account balance in cents', async () => {
+    const scripted = new ScriptedTransport().on(
+      'GET',
+      `${API}/finance/balance`,
+      { json: { balance: 1234.5 } },
+    )
+    expect(await rail(scripted).balanceCents(scope)).toBe(123450)
+    const refused = new ScriptedTransport().on(
+      'GET',
+      `${API}/finance/balance`,
+      { status: 401 },
+    )
+    await expect(rail(refused).balanceCents(scope)).rejects.toThrow(
+      'Asaas rejected the API key.',
+    )
   })
 })

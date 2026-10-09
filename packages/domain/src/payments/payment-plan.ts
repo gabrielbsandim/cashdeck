@@ -1,4 +1,5 @@
 import { type BillKind, type BillStatus } from '@/bills/bill'
+import { type LocalDate, toLocalDate } from '@/calendar/local-date'
 import { type EntityKind } from '@/entities/financial-entity'
 import { type Money } from '@/money/money'
 import { ValidationError } from '@/shared/domain-error'
@@ -37,12 +38,15 @@ export type PaymentPlan = {
   readonly currentStep: number
 }
 
+// IN_FLIGHT is written before a rail is called, so a crash mid-call leaves a
+// trace that blocks a second payment until the rail reports what happened.
 export type AttemptOutcome =
   | 'PAID'
   | 'SUBMITTED'
   | 'PENDING_APPROVAL'
   | 'ASSISTED'
   | 'FAILED'
+  | 'IN_FLIGHT'
 
 export type PaymentAttempt = {
   readonly id: string
@@ -110,14 +114,66 @@ const COMMITTED_OUTCOMES: readonly AttemptOutcome[] = [
   'PAID',
   'SUBMITTED',
   'PENDING_APPROVAL',
+  'IN_FLIGHT',
 ]
+
+// Attempts are append-only: a reconciled or resumed payment adds a row with the
+// same idempotency key, so the last row of each key is its current state.
+export function latestAttempts(
+  attempts: readonly PaymentAttempt[],
+): PaymentAttempt[] {
+  const latest = new Map<string, PaymentAttempt>()
+  for (const attempt of attempts) {
+    latest.set(attempt.idempotencyKey, attempt)
+  }
+  return [...latest.values()]
+}
 
 // A bill can carry a Pix code and a barcode; once either rail took the money,
 // or may still take it, no other step is tried.
 export function hasCommittedAttempt(
   attempts: readonly PaymentAttempt[],
 ): boolean {
-  return attempts.some(attempt => COMMITTED_OUTCOMES.includes(attempt.outcome))
+  return latestAttempts(attempts).some(attempt =>
+    COMMITTED_OUTCOMES.includes(attempt.outcome),
+  )
+}
+
+// The history a person reads: a claim row is noise once its call has answered.
+export function attemptHistory(
+  attempts: readonly PaymentAttempt[],
+): PaymentAttempt[] {
+  const latest = new Set(latestAttempts(attempts))
+  return attempts.filter(
+    attempt => attempt.outcome !== 'IN_FLIGHT' || latest.has(attempt),
+  )
+}
+
+export function inFlightAttempt(
+  attempts: readonly PaymentAttempt[],
+): PaymentAttempt | null {
+  return (
+    latestAttempts(attempts).find(attempt => attempt.outcome === 'IN_FLIGHT') ??
+    null
+  )
+}
+
+// What a day already holds against a cap: every payment first tried that day
+// whose current state may still move money, counted once per idempotency key.
+export function committedCentsOn(
+  attempts: readonly PaymentAttempt[],
+  day: LocalDate,
+): number {
+  const firstDay = new Map<string, LocalDate>()
+  for (const attempt of attempts) {
+    if (!firstDay.has(attempt.idempotencyKey)) {
+      firstDay.set(attempt.idempotencyKey, toLocalDate(attempt.at))
+    }
+  }
+  return latestAttempts(attempts)
+    .filter(attempt => firstDay.get(attempt.idempotencyKey) === day)
+    .filter(attempt => COMMITTED_OUTCOMES.includes(attempt.outcome))
+    .reduce((total, attempt) => total + attempt.amount.cents, 0)
 }
 
 const STATUS_BY_OUTCOME: Record<AttemptOutcome, BillStatus> = {
@@ -126,6 +182,7 @@ const STATUS_BY_OUTCOME: Record<AttemptOutcome, BillStatus> = {
   PENDING_APPROVAL: 'AWAITING_BANK_APPROVAL',
   ASSISTED: 'ASSISTED',
   FAILED: 'OPEN',
+  IN_FLIGHT: 'PROCESSING',
 }
 
 export function billStatusFor(outcome: AttemptOutcome): BillStatus {

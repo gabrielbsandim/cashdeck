@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import {
   type BillSource,
   type Clock,
+  DEFAULT_SAFETY_SETTINGS,
   type Deps,
   FakeSecretVault,
   type IdGenerator,
@@ -13,6 +14,7 @@ import {
   InMemoryConnectionRepository,
   InMemoryDocumentStore,
   InMemoryEntityRepository,
+  InMemoryFundingRepository,
   InMemoryIdempotencyStore,
   InMemoryInstitutionRepository,
   InMemoryInvoiceRepository,
@@ -48,6 +50,7 @@ import {
   makeOpenFinance,
   makePayroll,
   makePersonalSummary,
+  makePrepareFunding,
   makeRails,
   makeReceipts,
   makeReconcilePayments,
@@ -110,11 +113,13 @@ function secretVault(env: ServerEnv): SecretVault {
 }
 
 function inMemoryStores(tenantId: string, settings: PaymentSettings) {
+  const bills = new InMemoryBillRepository()
   return {
     entities: new InMemoryEntityRepository(sampleEntities(tenantId)),
     accounts: new InMemoryAccountRepository(),
-    bills: new InMemoryBillRepository(),
-    payments: new InMemoryPaymentRepository(),
+    bills,
+    payments: new InMemoryPaymentRepository(bills),
+    fundings: new InMemoryFundingRepository(),
     payees: new InMemoryPayeeDirectory(),
     settings: new StaticPaymentSettings(settings),
     audit: new InMemoryAuditLog(),
@@ -160,6 +165,7 @@ export function buildContainer(
     enabledRails: RAIL_IDS.filter(id => id !== 'ASSISTED'),
     dailyCapCents: {},
     confirmAboveCents: null,
+    ...DEFAULT_SAFETY_SETTINGS,
   })
   const providers = createProviders({
     env: source,
@@ -175,6 +181,7 @@ export function buildContainer(
     vault,
     rails: new Map<RailId, PaymentRail>(rails.map(rail => [rail.id, rail])),
     railStatus: providers.railStatus,
+    funder: providers.reserveFunder,
     openFinance: providers.openFinance,
     issuer: providers.invoiceIssuer,
     billSources: new Map<string, BillSource>(
@@ -205,6 +212,7 @@ export function buildContainer(
     runDuePayments: makeRunDuePayments({
       ...deps,
       runLadder: runPaymentLadder,
+      prepareFunding: makePrepareFunding(deps),
     }),
     reconcilePayments: makeReconcilePayments(deps),
     listEntities: makeListEntities(deps),

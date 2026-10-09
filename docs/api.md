@@ -108,7 +108,9 @@ The tax id may be formatted; it must be a valid CPF for `PF` and CNPJ for
 - `budgets[].category` is the category name in lower case (`transport`,
   `groceries`, `restaurants`, or any other the user created).
 - `alerts[].reason` for an assisted payment is the failure code of the last
-  failed attempt (`NOT_CONFIGURED`, `DAILY_CAP_EXCEEDED`, `RAIL_UNAVAILABLE`,
+  failed attempt (`NOT_CONFIGURED`, `DAILY_CAP_EXCEEDED`,
+  `ENTITY_DAILY_CAP_EXCEEDED`, `PAYMENT_CAP_EXCEEDED`, `RESERVE_FUNDING_FAILED`,
+  `APPROVAL_EXPIRED`, `IN_FLIGHT_UNRESOLVED`, `RAIL_UNAVAILABLE`,
   `CONFIRMATION_DECLINED`, or the rail's message).
 
 ### GET /home/company
@@ -269,7 +271,14 @@ when a bill is captured, so `plan` is never null.
 - `POST /bills/{id}/pay`: body `{ confirmed?: bool }`. Runs the ladder. Returns
   `BillDetailView` plus `instructions: { kind, copyCode, pixCode, amountCents, dueDate } | null`;
   at the assisted step the app shows `pixCode` first and `copyCode` (the
-  barcode) second.
+  barcode) second. A bill stops at `NEEDS_CONFIRMATION` when any of its
+  recipients is new (the Pix key of its BR Code, or for a dynamic code the
+  merchant name and city; the bank and payee of a boleto; both for a
+  bolepix), when it is above `confirmAboveCents`, or when it strays from the
+  paid history by more than `maxDeviationPercent`; `confirmed: true` pays it
+  and remembers every recipient. The audit log records the call as actor
+  `USER` with the API token's hash prefix and the `x-request-id` (or
+  `x-vercel-id`) header.
 - `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
   `attachmentId` points at a file already attached; `proof` is free text (an
   end-to-end id, say). Returns `BillView`.
@@ -290,7 +299,13 @@ when a bill is captured, so `plan` is never null.
 
 `BillDetailView` adds
 `plan: { steps: [{ mode: "AUTOMATIC"|"BANK_APPROVAL"|"ASSISTED", rail: RailId, method: "PIX"|"BOLETO" }], currentStep: int }`
-and `attempts: [{ id, stepIndex, rail, mode, method: "PIX"|"BOLETO", amount, outcome: "PAID"|"SUBMITTED"|"PENDING_APPROVAL"|"ASSISTED"|"FAILED", reason, externalId, at }]`.
+and `attempts: [{ id, stepIndex, rail, mode, method: "PIX"|"BOLETO", amount, outcome: "PAID"|"SUBMITTED"|"PENDING_APPROVAL"|"ASSISTED"|"FAILED"|"IN_FLIGHT", reason, externalId, at }]`.
+
+`IN_FLIGHT` is a rail call whose answer was lost (a crash, a timeout, a 5xx).
+The bill shows as `PROCESSING` and is never sent again: the ladder and the
+reconcile cron ask the rail for the payment by its idempotency key, and after
+15 minutes without an answer the bill moves to assisted with
+`IN_FLIGHT_UNRESOLVED`. Check the bank before paying such a bill by hand.
 
 `method` is how a step pays: `PIX` uses the BR Code (or the Pix key),
 `BOLETO` the barcode, tax guides included. A bill with a `pixCode` lists its
@@ -396,11 +411,23 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 
 ## Automation
 
-- `GET /automation`: `{ pausedSince: timestamp | null, entities: [{ entity: "PF"|"PJ", confirmAboveCents: int | null, dailyCapCents: { [railId]: int } }] }`.
+- `GET /automation`: `{ pausedSince: timestamp | null, entities: [{ entity: "PF"|"PJ", confirmAboveCents: int | null, dailyCapCents: { [railId]: int }, entityDailyCapCents: int | null, paymentCapCents: int | null, maxDeviationPercent: int | null, approvalCutoff: "HH:MM" }] }`.
+  - `dailyCapCents` caps each rail per entity per Sao Paulo day.
+  - `entityDailyCapCents` (default 1000000) caps every automatic payment of
+    the entity in a day; `paymentCapCents` (default 500000) caps one automatic
+    payment. Both skip bank approval steps, which a person approves anyway.
+    `null` means no limit. A capped step fails and the ladder moves down.
+  - `maxDeviationPercent` (default 30): a bill whose amount differs from the
+    median of the last three paid bills to the same recipient by more than
+    this asks for confirmation. `null` turns the check off.
+  - `approvalCutoff` (default `16:00`): a bank approval batch still pending at
+    this Sao Paulo time on the due date moves to assisted with
+    `APPROVAL_EXPIRED`.
 - `POST /automation/pause` and `POST /automation/resume`: the kill switch for
   every entity. Same response as `GET /automation`.
-- `PATCH /automation/settings`: body `{ entity, confirmAboveCents?: int | null, dailyCapCents?: { [railId]: int } }`.
-  Same response as `GET /automation`.
+- `PATCH /automation/settings`: body `{ entity, confirmAboveCents?: int | null, dailyCapCents?: { [railId]: int }, entityDailyCapCents?: int | null, paymentCapCents?: int | null, maxDeviationPercent?: int (1..1000) | null, approvalCutoff?: "HH:MM" }`.
+  An omitted field keeps its value; `null` clears a limit. Same response as
+  `GET /automation`.
 
 ## Capture sources
 
@@ -530,5 +557,5 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 |---|---|---|
 | `/api/cron/open-finance-sync` | daily 09:00 | syncs every connection |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
-| `/api/cron/payment-ladder` | weekdays 11:00 | runs the ladder for bills due |
-| `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts; marks the bill `PAID`, or records the failure and moves it to the assisted step |
+| `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
+| `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |

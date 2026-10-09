@@ -98,7 +98,7 @@ describe('rails', () => {
     expect(test.checks[1]).toMatchObject({ kind: 'API_KEY', passed: true })
   })
 
-  it('funds the reserve only when the rail and a reserve account exist', async () => {
+  it('funds the reserve only when both rails and a reserve account exist', async () => {
     const { deps, rails } = setup()
     await rails.saveCredentials(TENANT, 'PF.ASAAS.PIX_API', {
       apiKey: 'key-1234',
@@ -112,6 +112,11 @@ describe('rails', () => {
     await deps.accounts.save(
       account({ id: 'r', entityId: 'pf', isReserve: true }),
     )
+    expect(await statusOf()).toBe('NEEDS_AUTHORIZATION')
+    const payouts = 'PF.MERCADO_PAGO_PAYOUTS.PIX_API'
+    await rails.saveCredentials(TENANT, payouts, { apiKey: 'token-1234' })
+    expect(await statusOf()).toBe('NEEDS_AUTHORIZATION')
+    await rails.authorize(TENANT, payouts)
     expect(await statusOf()).toBe('ACTIVE')
   })
 
@@ -189,8 +194,33 @@ describe('automation', () => {
       entity: 'PJ',
       confirmAboveCents: 50000,
       dailyCapCents: { INTER_EMPRESAS: 100000 },
+      entityDailyCapCents: null,
+      paymentCapCents: null,
+      maxDeviationPercent: null,
+      approvalCutoff: '16:00',
     })
     const kept = await automation.update(TENANT, { entity: 'PJ' })
     expect(kept.entities[1]?.confirmAboveCents).toBe(50000)
+    const safer = await automation.update(TENANT, {
+      entity: 'PF',
+      entityDailyCapCents: 200000,
+      paymentCapCents: 90000,
+      maxDeviationPercent: 25,
+      approvalCutoff: '15:30',
+    })
+    expect(safer.entities[0]).toMatchObject({
+      entityDailyCapCents: 200000,
+      paymentCapCents: 90000,
+      maxDeviationPercent: 25,
+      approvalCutoff: '15:30',
+    })
+    const cleared = await automation.update(TENANT, {
+      entity: 'PF',
+      paymentCapCents: null,
+    })
+    expect(cleared.entities[0]).toMatchObject({
+      entityDailyCapCents: 200000,
+      paymentCapCents: null,
+    })
   })
 })

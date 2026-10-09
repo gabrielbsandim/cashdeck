@@ -8,6 +8,7 @@ import {
   type PaymentRail,
   type PixLocationResolver,
   type RailStatusReader,
+  type ReserveFunder,
   type SecretStore,
   type SecretVault,
 } from '@cashdeck/application'
@@ -30,6 +31,7 @@ import {
   InterEmpresasRail,
 } from '@/rails/inter-empresas-rail'
 import { MercadoPagoPayoutsRail } from '@/rails/mercado-pago-rail'
+import { PixReserveFunder } from '@/rails/reserve-funder'
 
 export type CreateProvidersInput = {
   env: Record<string, string | undefined>
@@ -50,6 +52,7 @@ export type Providers = {
   credentials: CredentialResolver
   rails: Array<PaymentRail & RailStatusReader>
   railStatus: Map<RailId, RailStatusReader>
+  reserveFunder: ReserveFunder
   openFinance: OpenFinanceProvider
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
@@ -72,9 +75,11 @@ export function createProviders(input: CreateProvidersInput): Providers {
   const clients = new BankClients(input.mtls)
   const now = input.now ?? (() => new Date())
   const documentText = new PdfTextReader()
+  const payouts = new MercadoPagoPayoutsRail({ credentials, transport })
+  const asaas = new AsaasRail({ credentials, transport })
   const rails = [
-    new MercadoPagoPayoutsRail({ credentials, transport }),
-    new AsaasRail({ credentials, transport }),
+    payouts,
+    asaas,
     new InterEmpresasRail({
       credentials,
       clients,
@@ -88,6 +93,11 @@ export function createProviders(input: CreateProvidersInput): Providers {
     railStatus: new Map<RailId, RailStatusReader>(
       rails.map(rail => [rail.id, rail]),
     ),
+    reserveFunder: new PixReserveFunder({
+      credentials,
+      balance: asaas,
+      payouts,
+    }),
     openFinance: new PluggyProvider({ credentials, transport }),
     invoiceIssuer: new NotaasIssuer({ credentials, transport, now }),
     billSources: [

@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@prisma/client'
+import { Prisma, type PrismaClient } from '@prisma/client'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ASSISTED_STEP,
@@ -14,6 +14,7 @@ import {
   attemptToRow,
   billToRow,
   entityToRow,
+  fundingToRow,
 } from '@/repositories/mappers'
 import {
   createPrismaRepositories,
@@ -34,9 +35,11 @@ const DELEGATES = [
   'auditEvent',
   'idempotencyRecord',
   'secret',
+  'reserveFunding',
 ] as const
 const METHODS = [
   'upsert',
+  'update',
   'findFirst',
   'findUnique',
   'findMany',
@@ -59,6 +62,10 @@ function mockClient() {
     enabledRails: [],
     dailyCapCents: {},
     confirmAboveCents: null,
+    entityDailyCapCents: null,
+    paymentCapCents: null,
+    maxDeviationPercent: null,
+    approvalCutoff: '16:00',
   }
   return {
     db,
@@ -214,6 +221,19 @@ describe('PrismaBillRepository', () => {
     })
   })
 
+  it('lists the latest paid bills of an entity', async () => {
+    const { db, repos } = mockClient()
+    db.bill.findMany.mockResolvedValueOnce([billToRow(bill)])
+    expect(await repos.bills.listRecentPaid(TENANT, 'company', 5)).toEqual([
+      bill,
+    ])
+    expect(db.bill.findMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, entityId: 'company', status: 'PAID' },
+      orderBy: [{ paidAt: 'desc' }, { id: 'asc' }],
+      take: 5,
+    })
+  })
+
   it('pages with an offset cursor', async () => {
     const { db, repos } = mockClient()
     const rows = [billToRow(bill), billToRow({ ...bill, id: 'b2' })]
@@ -281,32 +301,107 @@ describe('PrismaPaymentRepository', () => {
     expect(await repos.payments.listAttempts(TENANT, 'b1')).toEqual([attempt])
   })
 
-  it('sums committed cents inside the Sao Paulo day', async () => {
+  it('sums committed cents per entity inside the Sao Paulo day', async () => {
     const { db, repos } = mockClient()
-    db.paymentAttempt.aggregate.mockResolvedValueOnce({
-      _sum: { amountCents: 700n },
-    })
+    db.paymentAttempt.findMany.mockResolvedValueOnce([
+      { idempotencyKey: 'b1:0' },
+    ])
+    db.paymentAttempt.findMany.mockResolvedValueOnce([
+      attemptToRow(TENANT, { ...attempt, outcome: 'IN_FLIGHT' }),
+      attemptToRow(TENANT, { ...attempt, id: 'p2', outcome: 'SUBMITTED' }),
+    ])
     expect(
-      await repos.payments.committedCents(TENANT, 'ASAAS', '2026-10-08'),
-    ).toBe(700)
-    expect(db.paymentAttempt.aggregate.mock.calls[0]?.[0].where).toEqual({
+      await repos.payments.committedCents(
+        TENANT,
+        'company',
+        '2026-10-08',
+        'INTER_EMPRESAS',
+      ),
+    ).toBe(12345)
+    expect(db.paymentAttempt.findMany.mock.calls[0]?.[0].where).toEqual({
       tenantId: TENANT,
-      rail: 'ASAAS',
-      outcome: { in: ['PAID', 'SUBMITTED', 'PENDING_APPROVAL'] },
+      rail: 'INTER_EMPRESAS',
+      bill: { entityId: 'company' },
       at: saoPauloDayRange('2026-10-08'),
     })
-    db.paymentAttempt.aggregate.mockResolvedValueOnce({
-      _sum: { amountCents: null },
+    expect(db.paymentAttempt.findMany.mock.calls[1]?.[0].where).toEqual({
+      tenantId: TENANT,
+      idempotencyKey: { in: ['b1:0'] },
     })
+    db.paymentAttempt.findMany.mockResolvedValueOnce([])
     expect(
-      await repos.payments.committedCents(TENANT, 'ASAAS', '2026-10-08'),
+      await repos.payments.committedCents(TENANT, 'company', '2026-10-08'),
     ).toBe(0)
+    expect(db.paymentAttempt.findMany).toHaveBeenCalledTimes(3)
+  })
+
+  it('claims an attempt once and rethrows other failures', async () => {
+    const { db, repos } = mockClient()
+    expect(await repos.payments.claimAttempt(TENANT, attempt)).toBe(true)
+    db.paymentAttempt.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('duplicate', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    )
+    expect(await repos.payments.claimAttempt(TENANT, attempt)).toBe(false)
+    db.paymentAttempt.create.mockRejectedValueOnce(new Error('offline'))
+    await expect(repos.payments.claimAttempt(TENANT, attempt)).rejects.toThrow(
+      'offline',
+    )
   })
 
   it('maps a local day to its UTC window', () => {
     expect(saoPauloDayRange('2026-10-08')).toEqual({
       gte: new Date('2026-10-08T03:00:00.000Z'),
       lt: new Date('2026-10-09T03:00:00.000Z'),
+    })
+  })
+})
+
+describe('PrismaFundingRepository', () => {
+  const round = {
+    id: 'r1',
+    tenantId: TENANT,
+    entityId: 'personal',
+    day: '2026-10-08',
+    round: 1,
+    billIds: ['b1'],
+    billsTotal: Money.of(12345),
+    available: Money.of(345),
+    amount: Money.of(12000),
+    status: 'IN_FLIGHT' as const,
+    reason: null,
+    externalId: null,
+    idempotencyKey: 'reserve:personal:2026-10-08:1',
+    at: NOW,
+  }
+
+  it('creates, updates and lists the rounds of a day', async () => {
+    const { db, repos } = mockClient()
+    await repos.fundings.create(round)
+    expect(db.reserveFunding.create).toHaveBeenCalledWith({
+      data: fundingToRow(round),
+    })
+    await repos.fundings.update({ ...round, status: 'PAID', available: null })
+    const update = db.reserveFunding.update.mock.calls[0]?.[0]
+    expect(update.where).toEqual({ id: 'r1', tenantId: TENANT })
+    expect(update.data).toMatchObject({ status: 'PAID', availableCents: null })
+    db.reserveFunding.findMany.mockResolvedValueOnce([
+      fundingToRow(round),
+      fundingToRow({ ...round, id: 'r2', round: 2, available: null }),
+    ])
+    const listed = await repos.fundings.listByDay(
+      TENANT,
+      'personal',
+      '2026-10-08',
+    )
+    expect(listed[0]).toEqual(round)
+    expect(listed[1]?.available).toBeNull()
+    expect(db.reserveFunding.findMany.mock.calls[0]?.[0].where).toEqual({
+      tenantId: TENANT,
+      entityId: 'personal',
+      day: new Date('2026-10-08T00:00:00.000Z'),
     })
   })
 })
@@ -333,11 +428,16 @@ describe('PrismaPaymentSettings', () => {
       enabledRails: ['ASAAS'],
       dailyCapCents: { ASAAS: 100 },
       confirmAboveCents: 5000n,
+      entityDailyCapCents: 900000n,
+      paymentCapCents: null,
+      maxDeviationPercent: 30,
+      approvalCutoff: '16:00',
     }
     db.paymentSettings.findUnique.mockResolvedValueOnce(row)
     expect(await repos.settings.get(TENANT, 'company')).toEqual({
       ...row,
       confirmAboveCents: 5000,
+      entityDailyCapCents: 900000,
     })
     db.paymentSettings.findUnique.mockResolvedValueOnce({
       ...row,
@@ -422,23 +522,36 @@ describe('lookups added for the API', () => {
 
   it('saves payment settings and deletes secrets', async () => {
     const { db, repos } = mockClient()
+    const safety = {
+      entityDailyCapCents: 900000,
+      paymentCapCents: 500000,
+      maxDeviationPercent: 30,
+      approvalCutoff: '16:00',
+    }
     await repos.settings.save(TENANT, 'company', {
       killSwitch: true,
       enabledRails: ['ASAAS'],
       dailyCapCents: { ASAAS: 100 },
       confirmAboveCents: 5000,
+      ...safety,
     })
     expect(db.paymentSettings.upsert.mock.calls[0]?.[0].update).toEqual({
       killSwitch: true,
       enabledRails: ['ASAAS'],
       dailyCapCents: { ASAAS: 100 },
       confirmAboveCents: 5000n,
+      entityDailyCapCents: 900000n,
+      paymentCapCents: 500000n,
+      maxDeviationPercent: 30,
+      approvalCutoff: '16:00',
     })
     await repos.settings.save(TENANT, 'company', {
       killSwitch: false,
       enabledRails: [],
       dailyCapCents: {},
       confirmAboveCents: null,
+      ...safety,
+      paymentCapCents: null,
     })
     expect(
       db.paymentSettings.upsert.mock.calls[1]?.[0].create.confirmAboveCents,

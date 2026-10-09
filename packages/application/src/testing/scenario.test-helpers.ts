@@ -1,10 +1,18 @@
-import { createFinancialEntity, type RailId } from '@cashdeck/domain'
+import {
+  type Bill,
+  createFinancialEntity,
+  type RailId,
+  recipientKeys,
+} from '@cashdeck/domain'
 import { type PaymentRail } from '@/ports/payment-rail'
-import { type PaymentSettings } from '@/ports/repositories'
+import { type RailStatusReader } from '@/ports/rail-status'
+import { type PayeeDirectory, type PaymentSettings } from '@/ports/repositories'
+import { FakeReserveFunder } from '@/testing/providers'
 import {
   InMemoryAuditLog,
   InMemoryBillRepository,
   InMemoryEntityRepository,
+  InMemoryFundingRepository,
   InMemoryIdempotencyStore,
   InMemoryPayeeDirectory,
   InMemoryPaymentRepository,
@@ -41,9 +49,13 @@ export function scenario(
   rails: PaymentRail[] = [],
   settings: Partial<PaymentSettings> = {},
 ) {
+  const bills = new InMemoryBillRepository()
   return {
-    bills: new InMemoryBillRepository(),
-    payments: new InMemoryPaymentRepository(),
+    bills,
+    payments: new InMemoryPaymentRepository(bills),
+    fundings: new InMemoryFundingRepository(),
+    funder: new FakeReserveFunder(),
+    railStatus: new Map<RailId, RailStatusReader>(),
     entities: new InMemoryEntityRepository([personal, company]),
     payees: new InMemoryPayeeDirectory(),
     idempotency: new InMemoryIdempotencyStore(),
@@ -53,10 +65,21 @@ export function scenario(
       enabledRails: rails.map(rail => rail.id),
       dailyCapCents: {},
       confirmAboveCents: null,
+      entityDailyCapCents: null,
+      paymentCapCents: null,
+      maxDeviationPercent: null,
+      approvalCutoff: '16:00',
       ...settings,
     }),
     rails: new Map<RailId, PaymentRail>(rails.map(rail => [rail.id, rail])),
     clock: new FixedClock(NOW),
     ids: new SequentialIdGenerator(),
+  }
+}
+
+// Marks every recipient of the bill as already confirmed.
+export async function trust(payees: PayeeDirectory, bill: Bill): Promise<void> {
+  for (const key of recipientKeys(bill)) {
+    await payees.remember(bill.tenantId, bill.entityId, key)
   }
 }
