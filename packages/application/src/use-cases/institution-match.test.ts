@@ -44,6 +44,16 @@ describe('institution match', () => {
     expect(matchConnector('BANCO DO NORTE', CONNECTORS)?.id).toBe(5)
   })
 
+  it('falls back to a connector whose name starts with the account name', () => {
+    const brands = [
+      connector(7, 'Corretora Azul'),
+      connector(8, 'Corretora Azul Banking'),
+    ]
+    expect(matchConnector('CORRETORA', brands)?.id).toBe(7)
+    expect(matchConnector('Corretora Azul Banking', brands)?.id).toBe(8)
+    expect(matchConnector('Corretor', brands)).toBeNull()
+  })
+
   it('never matches the aggregator, an empty key or an unknown name', () => {
     expect(matchConnector('MeuPluggy', CONNECTORS)).toBeNull()
     expect(matchConnector('PRODUTO SEM BANCO', CONNECTORS)).toBeNull()

@@ -31,21 +31,34 @@ const NOISE = new Set([
 
 const MIN_KEY_LENGTH = 2
 
-export function institutionKey(name: string): string {
-  return name
+const wordsOf = (name: string): string[] =>
+  name
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(word => word !== '' && !NOISE.has(word))
-    .join('')
+
+export function institutionKey(name: string): string {
+  return wordsOf(name).join('')
+}
+
+// An account named after the brand alone, "XP" for "XP Banking", is the
+// weakest match: it only counts when no connector name fits better.
+function startsTheName(accountName: string, connectorName: string): boolean {
+  const account = wordsOf(accountName)
+  const connector = wordsOf(connectorName)
+  return (
+    account.length > 0 && account.every((word, at) => connector[at] === word)
+  )
 }
 
 export function isAggregator(name: string): boolean {
   return AGGREGATORS.has(institutionKey(name))
 }
 
-function score(accountKey: string, connector: ProviderConnector): number {
+function score(accountName: string, connector: ProviderConnector): number {
+  const accountKey = institutionKey(accountName)
   const key = institutionKey(connector.name)
   if (key.length < MIN_KEY_LENGTH || isAggregator(connector.name)) {
     return 0
@@ -53,7 +66,10 @@ function score(accountKey: string, connector: ProviderConnector): number {
   if (key === accountKey) {
     return 2 * key.length
   }
-  return accountKey.startsWith(key) ? key.length : 0
+  if (accountKey.startsWith(key)) {
+    return key.length
+  }
+  return startsTheName(accountName, connector.name) ? accountKey.length / 2 : 0
 }
 
 // The connector whose name the account name carries, preferring an exact
@@ -62,11 +78,10 @@ export function matchConnector(
   accountName: string,
   connectors: readonly ProviderConnector[],
 ): ProviderConnector | null {
-  const accountKey = institutionKey(accountName)
   let best: ProviderConnector | null = null
   let bestScore = 0
   for (const connector of connectors) {
-    const current = score(accountKey, connector)
+    const current = score(accountName, connector)
     if (current <= bestScore) {
       continue
     }
