@@ -19,4 +19,33 @@ void main() {
 
     expect(await LoadInvestments(repository)(EntityScope.company), failure);
   });
+
+  test('the performance forwards the scope and the period', () async {
+    final repository = _MockInvestmentsRepository();
+    const failure = Err<InvestmentPerformance>(NetworkFailure());
+    when(
+      () =>
+          repository.performance(EntityScope.personal, PerformancePeriod.year),
+    ).thenAnswer((_) async => failure);
+
+    expect(
+      await LoadInvestmentPerformance(repository)(
+        EntityScope.personal,
+        PerformancePeriod.year,
+      ),
+      failure,
+    );
+  });
+
+  test('a position forwards its id and the period', () async {
+    final repository = _MockInvestmentsRepository();
+    const failure = Err<InvestmentDetail>(NotFoundFailure());
+    when(() => repository.position('cdb', PerformancePeriod.week))
+        .thenAnswer((_) async => failure);
+
+    expect(
+      await LoadInvestmentDetail(repository)('cdb', PerformancePeriod.week),
+      failure,
+    );
+  });
 }

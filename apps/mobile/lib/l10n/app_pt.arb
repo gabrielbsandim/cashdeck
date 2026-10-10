@@ -1876,6 +1876,57 @@
   "investmentDetailValuedOn": "Valor de",
   "investmentDetailLastMonth": "Último mês",
   "investmentDetailTwelveMonths": "12 meses",
+  "investmentsInPeriod": "no período",
+  "investmentsPeriodYield": "Rendimento {amount}",
+  "@investmentsPeriodYield": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentsCdi": "CDI {percent}",
+  "@investmentsCdi": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentsPerformance": "Desempenho",
+  "investmentsChartSemantics": "Saldo investido de {start} para {end} no período",
+  "@investmentsChartSemantics": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentsStatYieldPercent": "Rendimento %",
+  "investmentsStatVsCdi": "vs CDI",
+  "investmentsStatContributions": "Aportes",
+  "investmentsStatWithdrawals": "Resgates",
+  "investmentsEstimatedHint": "Histórico anterior a hoje estimado a partir de preços de mercado",
+  "investmentDetailProfitTotal": "Rendimento total",
+  "investmentMovements": "Movimentações",
+  "investmentNoMovements": "Nenhuma movimentação registrada",
+  "investmentMovementBuy": "Aplicação",
+  "investmentMovementSell": "Resgate",
+  "investmentMovementIncome": "Rendimento",
+  "investmentMovementTax": "Imposto",
+  "investmentMovementTransfer": "Transferência",
+  "investmentMovementOther": "Outro",
+  "investmentMovementQuantity": "Qtd. {quantity}",
+  "@investmentMovementQuantity": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      }
+    }
+  },
   "investmentSubtypeTreasury": "Tesouro Direto",
   "investmentSubtypeDebentures": "Debêntures",
   "investmentSubtypeStock": "Ação",

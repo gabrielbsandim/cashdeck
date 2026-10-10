@@ -54,3 +54,26 @@ String? investmentRateLabel(AppLocalizations l10n, InvestmentRate? rate) {
   if (fixed > 0) return l10n.investmentRateFixed(_number(l10n, fixed));
   return null;
 }
+
+/// `1,23%` without a sign, for a pill whose arrow already shows it.
+String unsignedPercent(AppLocalizations l10n, double value) =>
+    '${_number(l10n, value.abs())}%';
+
+String performancePeriodLabel(
+  AppLocalizations l10n,
+  PerformancePeriod period,
+) => switch (period) {
+  PerformancePeriod.week => l10n.periodWeek,
+  PerformancePeriod.month => l10n.periodMonth,
+  PerformancePeriod.year => l10n.periodYear,
+};
+
+String movementKindLabel(AppLocalizations l10n, InvestmentMovementKind kind) =>
+    switch (kind) {
+      InvestmentMovementKind.buy => l10n.investmentMovementBuy,
+      InvestmentMovementKind.sell => l10n.investmentMovementSell,
+      InvestmentMovementKind.income => l10n.investmentMovementIncome,
+      InvestmentMovementKind.tax => l10n.investmentMovementTax,
+      InvestmentMovementKind.transfer => l10n.investmentMovementTransfer,
+      InvestmentMovementKind.other => l10n.investmentMovementOther,
+    };

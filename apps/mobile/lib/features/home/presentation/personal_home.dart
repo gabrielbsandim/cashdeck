@@ -18,6 +18,7 @@ import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_insights.dart';
+import 'package:cashdeck/features/home/presentation/home_investments_card.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
@@ -27,8 +28,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Início for the person: balance, reserve, what is due, the 30 day
-/// forecast, budgets and alerts.
+/// Início for the person: balance, reserve, investments, what is due, the 30
+/// day forecast, budgets and alerts.
 class PersonalHome extends ConsumerWidget {
   const new({required this.summary, super.key});
 
@@ -60,6 +61,7 @@ class PersonalHome extends ConsumerWidget {
         ),
         if (summary.reserve case final reserve?)
           _ReserveCard(reserve: reserve, today: today),
+        const HomeInvestmentsCard(),
         const HomeSpendCard(),
         const HomeCategoryCard(),
         const HomeFlowCard(),

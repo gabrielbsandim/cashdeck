@@ -5,5 +5,6 @@ void main() {
   test('a bill route encodes its id', () {
     expect(AppRoutes.bill('a b'), '/bills/a%20b');
     expect(AppRoutes.tabs, hasLength(4));
+    expect(AppRoutes.investment('a/b'), '/investments/a%2Fb');
   });
 }

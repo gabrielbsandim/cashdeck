@@ -50,5 +50,8 @@ abstract final class AppRoutes {
   static String subscription(String key) =>
       '$subscriptions/${Uri.encodeComponent(key)}';
 
+  static String investment(String positionId) =>
+      '$investments/${Uri.encodeComponent(positionId)}';
+
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
 }

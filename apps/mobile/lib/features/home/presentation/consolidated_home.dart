@@ -12,6 +12,7 @@ import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/presentation/home_investments_card.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -20,8 +21,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Início for both entities: the split of the balance, the month counted
-/// once, the transfers between them and everything due soon.
+/// Início for both entities: the split of the balance, the investments, the
+/// month counted once, the transfers between them and everything due soon.
 class ConsolidatedHome extends ConsumerWidget {
   const new({required this.summary, super.key});
 
@@ -72,6 +73,7 @@ class ConsolidatedHome extends ConsumerWidget {
             ),
           ],
         ),
+        const HomeInvestmentsCard(),
         _MonthCard(summary: summary, month: monthName(context, today)),
         if (summary.transfers.isNotEmpty)
           Column(

@@ -49,3 +49,46 @@ Map<String, dynamic> investmentsJson({bool full = true}) => {
   ],
   'positions': [positionJson(full: full)],
 };
+
+Map<String, dynamic> performanceJson({bool full = true}) => {
+  'period': full ? 'MONTH' : 'YEAR',
+  'from': '2026-09-08',
+  'to': '2026-10-08',
+  'start': money(100_000),
+  'end': money(105_000),
+  'contributions': money(full ? 2_000 : 0),
+  'withdrawals': money(full ? 500 : 0),
+  'yield': money(3_500),
+  'yieldPercent': full ? 3.47 : null,
+  'cdiPercent': full ? 0.82 : null,
+  'estimated': full,
+  'series': [
+    {'day': '2026-09-08', 'value': money(100_000)},
+    {'day': '2026-10-08', 'value': money(105_000)},
+  ],
+  if (full)
+    'positions': [
+      {
+        'id': 'cdb',
+        'start': money(100_000),
+        'end': money(105_000),
+        'yield': money(3_500),
+        'yieldPercent': 3.47,
+      },
+    ],
+};
+
+Map<String, dynamic> movementJson({String id = 'mv-1', bool full = true}) => {
+  'id': id,
+  'kind': full ? 'BUY' : 'TAX',
+  'occurredOn': '2026-03-04',
+  'amount': money(100_000),
+  'quantity': full ? 10000 : null,
+  'unitPrice': full ? 1.0 : null,
+};
+
+Map<String, dynamic> detailJson() => {
+  'position': positionJson(),
+  'performance': performanceJson(),
+  'movements': [movementJson(), movementJson(id: 'mv-2', full: false)],
+};

@@ -173,3 +173,152 @@ final class Investments extends Equatable {
     positions,
   ];
 }
+
+/// The window a performance looks back over, ending today.
+enum PerformancePeriod { week, month, year }
+
+/// The portfolio value on one day of the window.
+final class PerformancePoint extends Equatable {
+  const new(this.day, this.value);
+
+  final CalendarDate day;
+  final Money value;
+
+  @override
+  List<Object?> get props => [day, value];
+}
+
+/// What one position earned over the window.
+final class PositionPerformance extends Equatable {
+  const new({
+    required this.id,
+    required this.start,
+    required this.end,
+    required this.yieldAmount,
+    this.yieldPercent,
+  });
+
+  final String id;
+  final Money start;
+  final Money end;
+  final Money yieldAmount;
+  final double? yieldPercent;
+
+  @override
+  List<Object?> get props => [id, start, end, yieldAmount, yieldPercent];
+}
+
+/// How the portfolio did over a window: what it was worth at each end, what
+/// went in and out, what it earned and the CDI over the same days.
+final class InvestmentPerformance extends Equatable {
+  const new({
+    required this.period,
+    required this.from,
+    required this.to,
+    required this.start,
+    required this.end,
+    required this.contributions,
+    required this.withdrawals,
+    required this.yieldAmount,
+    required this.series,
+    this.yieldPercent,
+    this.cdiPercent,
+    this.estimated = false,
+    this.positions = const [],
+  });
+
+  final PerformancePeriod period;
+  final CalendarDate from;
+  final CalendarDate to;
+  final Money start;
+  final Money end;
+  final Money contributions;
+  final Money withdrawals;
+  final Money yieldAmount;
+  final double? yieldPercent;
+  final double? cdiPercent;
+
+  /// The value at the start comes from market prices, not a stored balance.
+  final bool estimated;
+  final List<PerformancePoint> series;
+
+  /// Sorted by yield, best first.
+  final List<PositionPerformance> positions;
+
+  /// The yield as a share of the CDI, as Brazilian banks quote it: 112 for
+  /// 112% do CDI. Null without a positive CDI or a yield to compare.
+  int? get ofCdi {
+    final cdi = cdiPercent;
+    final percent = yieldPercent;
+    if (cdi == null || percent == null || cdi <= 0) return null;
+    return (percent * 100 / cdi).round();
+  }
+
+  PositionPerformance? positionOf(String id) =>
+      positions.where((position) => position.id == id).firstOrNull;
+
+  @override
+  List<Object?> get props => [
+    period,
+    from,
+    to,
+    start,
+    end,
+    contributions,
+    withdrawals,
+    yieldAmount,
+    yieldPercent,
+    cdiPercent,
+    estimated,
+    series,
+    positions,
+  ];
+}
+
+enum InvestmentMovementKind { buy, sell, income, tax, transfer, other }
+
+/// A buy, sale, payout or tax on one position. The amount is always positive.
+final class InvestmentMovement extends Equatable {
+  const new({
+    required this.id,
+    required this.kind,
+    required this.occurredOn,
+    required this.amount,
+    this.quantity,
+    this.unitPrice,
+  });
+
+  final String id;
+  final InvestmentMovementKind kind;
+  final CalendarDate occurredOn;
+  final Money amount;
+  final double? quantity;
+  final double? unitPrice;
+
+  @override
+  List<Object?> get props => [
+    id,
+    kind,
+    occurredOn,
+    amount,
+    quantity,
+    unitPrice,
+  ];
+}
+
+/// One position with its performance over a window and every movement,
+/// newest first.
+final class InvestmentDetail extends Equatable {
+  const new({
+    required this.position,
+    required this.performance,
+    required this.movements,
+  });
+
+  final InvestmentPosition position;
+  final InvestmentPerformance performance;
+  final List<InvestmentMovement> movements;
+
+  @override
+  List<Object?> get props => [position, performance, movements];
+}

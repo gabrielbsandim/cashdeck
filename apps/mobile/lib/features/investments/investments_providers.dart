@@ -16,3 +16,11 @@ final investmentsRepositoryProvider = Provider<InvestmentsRepository>((ref) {
 final loadInvestmentsProvider = Provider<LoadInvestments>(
   (ref) => LoadInvestments(ref.watch(investmentsRepositoryProvider)),
 );
+
+final loadInvestmentPerformanceProvider = Provider<LoadInvestmentPerformance>(
+  (ref) => LoadInvestmentPerformance(ref.watch(investmentsRepositoryProvider)),
+);
+
+final loadInvestmentDetailProvider = Provider<LoadInvestmentDetail>(
+  (ref) => LoadInvestmentDetail(ref.watch(investmentsRepositoryProvider)),
+);

@@ -22,4 +22,31 @@ final class ApiInvestmentsRepository implements InvestmentsRepository {
         );
         return investmentsFromJson(asJsonMap(unwrapData(response.data)));
       });
+
+  @override
+  Future<Result<InvestmentPerformance>> performance(
+    EntityScope scope,
+    PerformancePeriod period,
+  ) => guardRequest(() async {
+    final response = await _dio.get<Object?>(
+      '/api/v1/investments/performance',
+      queryParameters: {
+        'period': performancePeriodToJson(period),
+        ...scopeQuery(scope),
+      },
+    );
+    return performanceFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
+  Future<Result<InvestmentDetail>> position(
+    String id,
+    PerformancePeriod period,
+  ) => guardRequest(() async {
+    final response = await _dio.get<Object?>(
+      '/api/v1/investments/${Uri.encodeComponent(id)}',
+      queryParameters: {'period': performancePeriodToJson(period)},
+    );
+    return investmentDetailFromJson(asJsonMap(unwrapData(response.data)));
+  });
 }

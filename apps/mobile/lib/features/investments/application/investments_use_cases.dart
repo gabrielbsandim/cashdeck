@@ -11,3 +11,23 @@ final class LoadInvestments {
   Future<Result<Investments>> call(EntityScope scope) =>
       _repository.investments(scope);
 }
+
+final class LoadInvestmentPerformance {
+  const new(this._repository);
+
+  final InvestmentsRepository _repository;
+
+  Future<Result<InvestmentPerformance>> call(
+    EntityScope scope,
+    PerformancePeriod period,
+  ) => _repository.performance(scope, period);
+}
+
+final class LoadInvestmentDetail {
+  const new(this._repository);
+
+  final InvestmentsRepository _repository;
+
+  Future<Result<InvestmentDetail>> call(String id, PerformancePeriod period) =>
+      _repository.position(id, period);
+}

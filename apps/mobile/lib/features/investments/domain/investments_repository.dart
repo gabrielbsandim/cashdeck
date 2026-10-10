@@ -4,4 +4,14 @@ import 'package:cashdeck/features/investments/domain/investments.dart';
 
 abstract interface class InvestmentsRepository {
   Future<Result<Investments>> investments(EntityScope scope);
+
+  Future<Result<InvestmentPerformance>> performance(
+    EntityScope scope,
+    PerformancePeriod period,
+  );
+
+  Future<Result<InvestmentDetail>> position(
+    String id,
+    PerformancePeriod period,
+  );
 }

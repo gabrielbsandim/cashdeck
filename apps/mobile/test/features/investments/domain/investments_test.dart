@@ -80,4 +80,88 @@ void main() {
     expect(kind(100), kind(100));
     expect(kind(100), isNot(kind(200)));
   });
+
+  test('a performance compares to the CDI and finds a position', () {
+    InvestmentPerformance performance({double? percent, double? cdi}) =>
+        InvestmentPerformance(
+          period: PerformancePeriod.month,
+          from: const CalendarDate(2026, 9, 8),
+          to: const CalendarDate(2026, 10, 8),
+          start: const Money(10_000),
+          end: const Money(10_200),
+          contributions: const Money(0),
+          withdrawals: const Money(0),
+          yieldAmount: const Money(200),
+          yieldPercent: percent,
+          cdiPercent: cdi,
+          series: const [
+            PerformancePoint(CalendarDate(2026, 10, 8), Money(10_200)),
+          ],
+          positions: const [
+            PositionPerformance(
+              id: 'cdb',
+              start: Money(10_000),
+              end: Money(10_200),
+              yieldAmount: Money(200),
+              yieldPercent: 2,
+            ),
+          ],
+        );
+
+    expect(performance(percent: 1.12, cdi: 1).ofCdi, 112);
+    expect(performance(percent: 1.12).ofCdi, isNull);
+    expect(performance(cdi: 1).ofCdi, isNull);
+    expect(performance(percent: 1, cdi: 0).ofCdi, isNull);
+    expect(performance(), performance());
+    expect(performance(percent: 1), isNot(performance(percent: 2)));
+    expect(performance().positionOf('cdb')?.yieldPercent, 2);
+    expect(performance().positionOf('none'), isNull);
+  });
+
+  test('points and position yields compare by value', () {
+    PerformancePoint point(int cents) =>
+        PerformancePoint(const CalendarDate(2026, 10, 8), Money(cents));
+    PositionPerformance own(int cents) => PositionPerformance(
+      id: 'cdb',
+      start: const Money(0),
+      end: Money(cents),
+      yieldAmount: Money(cents),
+    );
+
+    expect(point(1), point(1));
+    expect(point(1), isNot(point(2)));
+    expect(own(1), own(1));
+    expect(own(1), isNot(own(2)));
+  });
+
+  test('movements and a detail compare by value', () {
+    InvestmentMovement movement(int cents) => InvestmentMovement(
+      id: 'mv',
+      kind: InvestmentMovementKind.buy,
+      occurredOn: const CalendarDate(2026, 3, 4),
+      amount: Money(cents),
+      quantity: 10,
+      unitPrice: 1,
+    );
+    InvestmentDetail detail(int cents) => InvestmentDetail(
+      position: _position(),
+      performance: const InvestmentPerformance(
+        period: PerformancePeriod.week,
+        from: CalendarDate(2026, 10, 1),
+        to: CalendarDate(2026, 10, 8),
+        start: Money(0),
+        end: Money(0),
+        contributions: Money(0),
+        withdrawals: Money(0),
+        yieldAmount: Money(0),
+        series: [],
+      ),
+      movements: [movement(cents)],
+    );
+
+    expect(movement(100), movement(100));
+    expect(movement(100), isNot(movement(200)));
+    expect(detail(100), detail(100));
+    expect(detail(100), isNot(detail(200)));
+  });
 }

@@ -13,6 +13,24 @@ const Map<String, InvestmentKind> investmentKinds = {
   'OTHER': InvestmentKind.other,
 };
 
+const Map<String, PerformancePeriod> performancePeriods = {
+  'WEEK': PerformancePeriod.week,
+  'MONTH': PerformancePeriod.month,
+  'YEAR': PerformancePeriod.year,
+};
+
+const Map<String, InvestmentMovementKind> movementKinds = {
+  'BUY': InvestmentMovementKind.buy,
+  'SELL': InvestmentMovementKind.sell,
+  'INCOME': InvestmentMovementKind.income,
+  'TAX': InvestmentMovementKind.tax,
+  'TRANSFER': InvestmentMovementKind.transfer,
+  'OTHER': InvestmentMovementKind.other,
+};
+
+String performancePeriodToJson(PerformancePeriod period) =>
+    performancePeriods.entries.firstWhere((entry) => entry.value == period).key;
+
 double? _readOptionalNumber(JsonMap json, String key) {
   final value = json[key];
   if (value == null || value is num) return (value as num?)?.toDouble();
@@ -36,7 +54,7 @@ InvestmentRate? _rate(JsonMap? json) {
   );
 }
 
-InvestmentPosition _position(JsonMap json) {
+InvestmentPosition positionFromJson(JsonMap json) {
   final invested = readOptionalMap(json, 'invested');
   final profit = readOptionalMap(json, 'profit');
   return InvestmentPosition(
@@ -86,5 +104,49 @@ Investments investmentsFromJson(JsonMap json) => Investments(
         count: readInt(item, 'count'),
       ),
   ],
-  positions: readMapList(json, 'positions').map(_position).toList(),
+  positions: readMapList(json, 'positions').map(positionFromJson).toList(),
+);
+
+InvestmentPerformance performanceFromJson(JsonMap json) =>
+    InvestmentPerformance(
+      period: readEnum(json, 'period', performancePeriods),
+      from: readDate(json, 'from'),
+      to: readDate(json, 'to'),
+      start: readMoney(json, 'start'),
+      end: readMoney(json, 'end'),
+      contributions: readMoney(json, 'contributions'),
+      withdrawals: readMoney(json, 'withdrawals'),
+      yieldAmount: readMoney(json, 'yield'),
+      yieldPercent: _readOptionalNumber(json, 'yieldPercent'),
+      cdiPercent: _readOptionalNumber(json, 'cdiPercent'),
+      estimated: readBool(json, 'estimated'),
+      series: [
+        for (final point in readMapList(json, 'series'))
+          PerformancePoint(readDate(point, 'day'), readMoney(point, 'value')),
+      ],
+      positions: [
+        for (final item in readMapList(json, 'positions'))
+          PositionPerformance(
+            id: readString(item, 'id'),
+            start: readMoney(item, 'start'),
+            end: readMoney(item, 'end'),
+            yieldAmount: readMoney(item, 'yield'),
+            yieldPercent: _readOptionalNumber(item, 'yieldPercent'),
+          ),
+      ],
+    );
+
+InvestmentMovement _movement(JsonMap json) => InvestmentMovement(
+  id: readString(json, 'id'),
+  kind: readEnum(json, 'kind', movementKinds),
+  occurredOn: readDate(json, 'occurredOn'),
+  amount: readMoney(json, 'amount'),
+  quantity: _readOptionalNumber(json, 'quantity'),
+  unitPrice: _readOptionalNumber(json, 'unitPrice'),
+);
+
+InvestmentDetail investmentDetailFromJson(JsonMap json) => InvestmentDetail(
+  position: positionFromJson(readMap(json, 'position')),
+  performance: performanceFromJson(readMap(json, 'performance')),
+  movements: readMapList(json, 'movements').map(_movement).toList(),
 );
