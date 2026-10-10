@@ -43,7 +43,7 @@ function setup(extra: Record<string, string> = {}) {
   }
 }
 
-function scriptBatch(scripted: ScriptedTransport, status = 'PROCESSED') {
+function scriptBatch(scripted: ScriptedTransport, status = 'READ_DATA') {
   scripted
     .on('POST', `${API}/decode`, { status: 201, json: { group_id: 'g1' } })
     .on('GET', `${API}/g1/items`, {
@@ -85,6 +85,10 @@ describe('C6EmpresasRail', () => {
       uploader_name: 'Finance',
     })
     expect(scripted.last('POST', TOKEN).body).not.toContain('scope=')
+    expect(scripted.last('POST', `${API}/submit`).headers).toMatchObject({
+      'partner-software-name': 'Cashdeck',
+      'partner-software-version': '0.1.0',
+    })
   })
 
   it('sends a pix key or a boleto line as content', async () => {
@@ -160,6 +164,8 @@ describe('C6EmpresasRail', () => {
             items: [{ id: 'i1', status: 'ERROR', error_message: 'Saldo' }],
           },
         },
+        { json: { items: [{ id: 'i1', status: 'PROCESSING' }] } },
+        { json: { items: [{ id: 'i1', status: 'PROCESSED' }] } },
         { json: { items: [] } },
         { status: 400, json: {} },
       )
@@ -174,6 +180,8 @@ describe('C6EmpresasRail', () => {
       outcome: 'FAILED',
       reason: 'Saldo',
     })
+    expect((await rail.status('g1/i1', scope)).outcome).toBe('SUBMITTED')
+    expect((await rail.status('g1/i1', scope)).outcome).toBe('PAID')
     expect((await rail.status('g1/i1', scope)).outcome).toBe('PENDING_APPROVAL')
     expect((await rail.status('g1/i1', scope)).outcome).toBe('FAILED')
     await expect(rail.status('', scope)).rejects.toThrow('does not know')

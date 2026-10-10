@@ -221,13 +221,19 @@ Asaas balance already covers them.
   of `pix_qr_code`, `pix_copy_paste`, `pix_code`, `qr_code` or `emv` that
   holds a valid BR Code.
 - Docs: https://developers.c6bank.com.br/yamls/schedule-payments.yaml.
-- **Unconfirmed:** the token endpoint, the grant type and whether mTLS is
-  required (the spec names only a bearer JWT), and the meaning of each item
-  status (`SCHEDULED` is read as approved, `READ_DATA`, `PROCESSED` and
-  `PROCESSING` as waiting for approval). No status reports a settled payment,
-  so the final PAID comes from the bank statement. Whether the DDA query
-  returns the Pix code of a bolepix at all, and under which field name, is
-  also unconfirmed: the spec could not be read (it sits behind a bot check).
+- Auth: `POST /v1/auth/` over mTLS with a form body (`client_id`,
+  `client_secret`, `grant_type=client_credentials`), per the authentication
+  spec. The token lasts 300 seconds. Every schedule-payments call carries the
+  optional `partner-software-name` and `partner-software-version` headers.
+- Item status: `READ_DATA` is waiting for approval, `SCHEDULED` and
+  `PROCESSING` are approved and in flight, `PROCESSED` is paid, and `ERROR`,
+  `DECODE_ERROR` and `SCHEDULING_CANCELLED` are failures.
+- Sandbox: `C6_ENVIRONMENT=sandbox` points at
+  `https://baas-api-sandbox.c6bank.info`, open on weekdays only. The roteiro
+  runner `pnpm -C packages/infrastructure c6:roteiro` exercises auth,
+  schedule payments and statement against it and writes each status and body.
+- **Unconfirmed:** whether the DDA query returns the Pix code of a bolepix at
+  all, and under which field name; the spec lists none.
 
 ### Gmail (`GmailBillSource`)
 

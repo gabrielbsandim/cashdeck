@@ -21,6 +21,11 @@ export const C6_HOSTS = {
   sandbox: 'https://baas-api-sandbox.c6bank.info',
 } as const
 
+export const C6_PARTNER_HEADERS = {
+  'partner-software-name': 'Cashdeck',
+  'partner-software-version': '0.1.0',
+} as const
+
 export type C6Answer<T> = { ok: true; data: T } | { ok: false; reason: string }
 
 export type C6Client = {
@@ -48,7 +53,6 @@ export async function c6Client(
   )
   const host =
     environment === 'sandbox' ? C6_HOSTS.sandbox : C6_HOSTS.production
-  // The schedule-payments spec names no token endpoint; this default is unconfirmed.
   const tokenUrl = await optionalCredential(
     credentials,
     'C6_TOKEN_URL',
@@ -68,6 +72,7 @@ export async function c6Client(
     clientSecret: values.C6_CLIENT_SECRET,
     scope: null,
     certificate: { cert: values.C6_CERT, key: values.C6_KEY },
+    headers: { ...C6_PARTNER_HEADERS },
   })
   return { bank, baseUrl: `${host}/v1/schedule_payments`, uploaderName }
 }
