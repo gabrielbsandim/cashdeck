@@ -160,6 +160,12 @@ describe('updating a transaction', () => {
         categoryId: id('groceries'),
       }),
     ])
+    await deps.transactions.save(pix('t5', '10573521000191', -2100))
+    await update(TENANT, 't5', {
+      categoryId: id('restaurants'),
+      applyToSimilar: true,
+    })
+    expect(await deps.categories.listRules(TENANT)).toHaveLength(1)
   })
 
   it('clears a category, skips a rule without merchant words and checks ids', async () => {

@@ -113,6 +113,27 @@ export function createCategoryRule(
   }
 }
 
+// Acquirers and wallets settle Pix for many unrelated merchants, so their
+// CNPJ root says nothing of who was paid.
+const PAYMENT_PROCESSORS = new Set([
+  '01027058',
+  '01425787',
+  '08561701',
+  '10440482',
+  '10573521',
+  '16501555',
+  '18189547',
+  '22896431',
+  '44815065',
+])
+
+export function learnableCounterparty(value: string | null): string | null {
+  const document = toCounterparty(value)
+  const processor =
+    document?.length === 14 && PAYMENT_PROCESSORS.has(document.slice(0, 8))
+  return processor ? null : document
+}
+
 export type RuleSubject = Pick<Transaction, 'description' | 'counterparty'>
 
 export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {

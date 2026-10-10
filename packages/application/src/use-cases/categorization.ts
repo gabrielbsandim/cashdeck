@@ -9,8 +9,8 @@ import {
   type EntityKind,
   findRule,
   normalizeDescription,
+  learnableCounterparty,
   ruleMatches,
-  toCounterparty,
   type Transaction,
   ValidationError,
   withNote,
@@ -87,7 +87,8 @@ async function learnRule(
   const normalized = normalizeDescription(pattern)
   // A generic description such as a bare Pix says nothing of the merchant;
   // the document of the other side still tells who it was.
-  const document = normalized === '' ? toCounterparty(counterparty) : null
+  const document =
+    normalized === '' ? learnableCounterparty(counterparty) : null
   if (normalized === '' && document === null) {
     return null
   }
