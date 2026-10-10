@@ -152,7 +152,14 @@ async function freshnessOf(
   itemId: string,
   now: Date,
 ): Promise<Pick<Connection, 'status' | 'lastSyncAt'>> {
-  const item = await deps.openFinance.getItem(itemId).catch(() => null)
+  const item = await deps.openFinance
+    .getItem(itemId)
+    .catch((error: unknown) => {
+      console.warn(
+        `[open-finance] item ${itemId} lookup failed, stamping the sync time: ${String(error)}`,
+      )
+      return null
+    })
   if (!item?.lastUpdatedAt) {
     return { status: item?.status ?? 'UPDATED', lastSyncAt: now }
   }

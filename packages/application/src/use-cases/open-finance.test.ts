@@ -1,5 +1,5 @@
 import { Money } from '@cashdeck/domain'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '@/errors/errors'
 import { type OpenFinanceProvider, type ProviderItem } from '@/ports/providers'
 import { account, bill, fullDeps } from '@/testing/deps.test-helpers'
@@ -189,11 +189,16 @@ describe('open finance', () => {
     stale.getItem = async () => {
       throw new Error('provider down')
     }
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     await of.sync(TENANT, connectionId)
     expect((await of.list(TENANT))[0]).toMatchObject({
       status: 'UPDATED',
       lastSyncAt: NOW.toISOString(),
     })
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringMatching(/^\[open-finance\] item .+ provider down$/),
+    )
+    warn.mockRestore()
   })
 
   it('collects sync failures and removes a connection', async () => {
