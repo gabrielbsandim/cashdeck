@@ -109,6 +109,27 @@ describe('mtlsTransport', () => {
     expect(response.status).toBe(200)
   })
 
+  it('frames a DELETE body so the server reads it', async () => {
+    const server = createServer((req, res) => {
+      let body = ''
+      req.on('data', chunk => (body += chunk))
+      req.on('end', () => res.end(body))
+    })
+    await new Promise<void>(resolve => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const transport = mtlsTransport(
+      { cert: 'cert', key: 'key' },
+      { request: httpRequest as never, agent: new Agent() },
+    )
+    const response = await transport({
+      method: 'DELETE',
+      url: `http://127.0.0.1:${port}/items`,
+      body: '[{"id":"á"}]',
+    })
+    server.close()
+    expect(response.text).toBe('[{"id":"á"}]')
+  })
+
   it('rejects when the connection fails', async () => {
     const transport = mtlsTransport(
       { cert: 'cert', key: 'key' },

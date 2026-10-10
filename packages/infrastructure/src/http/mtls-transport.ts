@@ -1,6 +1,6 @@
 import { Agent, request as httpsRequest } from 'node:https'
 import { type ClientRequest, type IncomingMessage } from 'node:http'
-import { type Transport } from '@/http/transport'
+import { type HttpRequest, type Transport } from '@/http/transport'
 
 export type ClientCertificate = {
   cert: string
@@ -32,6 +32,18 @@ function flatten(headers: IncomingMessage['headers']): Record<string, string> {
   return flat
 }
 
+// Node frames a DELETE body with neither content-length nor chunking, so the
+// server reads no body; an explicit length makes every method carry it.
+function withLength(input: HttpRequest): Record<string, string> | undefined {
+  if (input.body === undefined) {
+    return input.headers
+  }
+  return {
+    ...input.headers,
+    'content-length': String(Buffer.byteLength(input.body)),
+  }
+}
+
 // Banks that pay through an API (Inter, C6) authenticate the client by its TLS
 // certificate, which fetch cannot present; node:https can.
 export function mtlsTransport(
@@ -44,7 +56,7 @@ export function mtlsTransport(
     new Promise((resolve, reject) => {
       const outgoing = request(
         input.url,
-        { method: input.method, headers: input.headers, agent },
+        { method: input.method, headers: withLength(input), agent },
         response => {
           const chunks: Buffer[] = []
           response.on('data', (chunk: Buffer) => chunks.push(chunk))

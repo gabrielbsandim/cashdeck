@@ -99,6 +99,19 @@ class Roteiro {
     return outcome
   }
 
+  skip(id: string, title: string, expected: number, reason: string): void {
+    this.outcomes.push({
+      id,
+      title,
+      expected,
+      request: { method: '-', url: '-', body: null },
+      status: null,
+      body: null,
+      error: reason,
+    })
+    console.log(`${id} skipped: ${reason}`)
+  }
+
   authorize(body: unknown): void {
     const token = (body as { access_token?: string } | null)?.access_token
     this.token = token ?? ''
@@ -129,6 +142,47 @@ async function groupItems(roteiro: Roteiro, groupId: string): Promise<Item[]> {
     await new Promise(resolve => setTimeout(resolve, 2000))
   }
   return []
+}
+
+const GROUP_STEPS = [
+  ['AP_03', 'Obter todos os itens de um grupo de pagamentos', 200],
+  ['AP_04', 'Remover uma lista de pagamentos de um grupo', 204],
+  ['AP_05', 'Remover um pagamento específico do grupo', 204],
+  ['AP_06', 'Enviar grupo de pagamentos para aprovação', 204],
+] as const
+
+async function paymentGroup(
+  roteiro: Roteiro,
+  groupId: string | undefined,
+): Promise<void> {
+  if (!groupId) {
+    for (const [id, title, expected] of GROUP_STEPS) {
+      roteiro.skip(id, title, expected, 'AP_01 returned no group_id')
+    }
+    return
+  }
+  const ids = (await groupItems(roteiro, groupId)).map(item => item.id ?? '')
+  const [first = 'missing', second = 'missing', third = 'missing'] = ids
+
+  await roteiro.run(
+    'AP_04',
+    'Remover uma lista de pagamentos de um grupo',
+    204,
+    {
+      method: 'DELETE',
+      url: `${PAYMENTS}/${groupId}/items`,
+      json: [{ id: first }, { id: second }],
+    },
+  )
+  await roteiro.run('AP_05', 'Remover um pagamento específico do grupo', 204, {
+    method: 'DELETE',
+    url: `${PAYMENTS}/${groupId}/items/${third}`,
+  })
+  await roteiro.run('AP_06', 'Enviar grupo de pagamentos para aprovação', 204, {
+    method: 'POST',
+    url: `${PAYMENTS}/submit`,
+    json: { group_id: groupId, uploader_name: 'Cashdeck' },
+  })
 }
 
 function markdown(outcomes: Outcome[]): string {
@@ -214,31 +268,8 @@ async function main(): Promise<void> {
       },
     },
   )
-  const groupId =
-    (decoded.body as { group_id?: string } | null)?.group_id ?? 'missing'
-
-  const ids = (await groupItems(roteiro, groupId)).map(item => item.id ?? '')
-  const [first = 'missing', second = 'missing', third = 'missing'] = ids
-
-  await roteiro.run(
-    'AP_04',
-    'Remover uma lista de pagamentos de um grupo',
-    204,
-    {
-      method: 'DELETE',
-      url: `${PAYMENTS}/${groupId}/items`,
-      json: [{ id: first }, { id: second }],
-    },
-  )
-  await roteiro.run('AP_05', 'Remover um pagamento específico do grupo', 204, {
-    method: 'DELETE',
-    url: `${PAYMENTS}/${groupId}/items/${third}`,
-  })
-  await roteiro.run('AP_06', 'Enviar grupo de pagamentos para aprovação', 204, {
-    method: 'POST',
-    url: `${PAYMENTS}/submit`,
-    json: { group_id: groupId, uploader_name: 'Cashdeck' },
-  })
+  const groupId = (decoded.body as { group_id?: string } | null)?.group_id
+  await paymentGroup(roteiro, groupId)
 
   await roteiro.run('E_01', 'Consulta de saldo', 200, {
     method: 'GET',
