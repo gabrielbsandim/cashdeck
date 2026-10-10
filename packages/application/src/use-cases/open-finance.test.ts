@@ -146,6 +146,27 @@ describe('open finance', () => {
     expect((await of.list(TENANT))[0]?.lastSyncAt).toBe(NOW.toISOString())
   })
 
+  it('rereads a week before the last sync without duplicating', async () => {
+    const late = provider()
+    const ranges: Array<{ from: string; to: string }> = []
+    const list = late.listTransactions.bind(late)
+    late.listTransactions = async (connection, accountId, range) => {
+      ranges.push(range)
+      return list(connection, accountId, range)
+    }
+    const { deps, of } = setup(late)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1'],
+    })
+    expect((await of.sync(TENANT, connectionId)).transactions).toBe(1)
+    const reread = await of.sync(TENANT, connectionId)
+    expect(ranges.at(-1)).toEqual({ from: '2026-10-01', to: '2026-10-08' })
+    expect(reread.transactions).toBe(0)
+    expect(await deps.transactions.all(TENANT, {})).toHaveLength(1)
+  })
+
   it('stamps the connection with when the provider last collected data', async () => {
     const stale = provider()
     const { of } = setup(stale)

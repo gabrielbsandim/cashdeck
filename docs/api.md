@@ -523,8 +523,10 @@ accounts. `data`: `{ connectionId: string, imported: int }`, 201.
 
 ### POST /open-finance/connections/{id}/sync
 
-Refreshes balances and the last 30 days of transactions (since the last sync
-when there is one), then marks paid the open bills of that entity that an
+Refreshes balances and transactions: a year on the first sync (or `?days=`
+when given), then from a week before the last one, since the provider collects
+again a few days back; a transaction already stored under its provider id is
+not added twice. It then marks paid the open bills of that entity that an
 outgoing transaction of the same amount paid, booked from 10 days before to 7
 days after the due date (15 for an auto-debit bill). `data`:
 `{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.

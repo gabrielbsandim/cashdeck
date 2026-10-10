@@ -117,6 +117,9 @@ const brandingOf = (connector: ProviderConnector | null | undefined) => ({
 
 // The year Open Finance shares, read on the first sync or when asked.
 export const MAX_SYNC_DAYS = 365
+// The provider collects again a few days back and card charges post late, so a
+// sync rereads a week before the last one; repeats are dropped by provider id.
+export const SYNC_OVERLAP_DAYS = 7
 
 // An adapter reports an unknown item as NotFoundError or as an HTTP 404.
 const isMissing = (error: unknown) =>
@@ -405,7 +408,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       return addDays(day, -Math.min(days, MAX_SYNC_DAYS))
     }
     if (connection.lastSyncAt) {
-      return addDays(today(connection.lastSyncAt), -1)
+      return addDays(today(connection.lastSyncAt), -SYNC_OVERLAP_DAYS)
     }
     return addDays(day, -MAX_SYNC_DAYS)
   }
