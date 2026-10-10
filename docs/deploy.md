@@ -13,7 +13,7 @@ The API runs on Vercel and the database on Neon Postgres.
 
   | Path | Schedule |
   |---|---|
-  | `/api/cron/open-finance-sync` | `0 9 * * *` |
+  | `/api/cron/open-finance-sync` | `0 15 * * *` |
   | `/api/cron/capture` | `30 9 * * *` |
   | `/api/cron/payment-ladder` | `0 11 * * 1-5` |
   | `/api/cron/reconcile-payments` | `0 21 * * 1-5` |

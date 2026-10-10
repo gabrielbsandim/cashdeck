@@ -891,7 +891,7 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 
 | Path | When (UTC) | What |
 |---|---|---|
-| `/api/cron/open-finance-sync` | daily 09:00 | syncs every connection |
+| `/api/cron/open-finance-sync` | daily 15:00 | syncs every connection, after Pluggy's daily collection (around 14:00) |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
 | `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
