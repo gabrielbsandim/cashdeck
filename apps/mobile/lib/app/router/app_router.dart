@@ -20,6 +20,7 @@ import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
+import 'package:cashdeck/features/insights/presentation/card_timeline_screen.dart';
 import 'package:cashdeck/features/insights/presentation/cards_screen.dart';
 import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
 import 'package:cashdeck/features/insights/presentation/installments_screen.dart';
@@ -190,7 +191,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      _page(AppRoutes.cards, const CardsScreen()),
+      GoRoute(
+        path: AppRoutes.cards,
+        builder: (_, _) => const CardsScreen(),
+        routes: [
+          GoRoute(
+            path: ':accountId',
+            builder: (_, state) => CardTimelineScreen(
+              accountId: state.pathParameters['accountId']!,
+            ),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (_, state, shell) =>
             TabsShell(navigationShell: shell, location: state.uri.path),

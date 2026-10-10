@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
 
@@ -62,6 +63,15 @@ final class LoadCardBills {
 
   Future<Result<List<CardBills>>> call(EntityScope scope) =>
       _repository.cardBills(scope);
+}
+
+final class LoadCardTimeline {
+  const new(this._repository);
+
+  final InsightsRepository _repository;
+
+  Future<Result<CardTimeline>> call(String accountId) =>
+      _repository.cardTimeline(accountId);
 }
 
 enum SubscriptionDecision { confirm, dismiss }

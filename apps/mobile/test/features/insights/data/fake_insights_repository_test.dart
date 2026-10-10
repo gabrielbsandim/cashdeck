@@ -4,6 +4,7 @@ import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/data/fake_insights_repository.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -74,6 +75,33 @@ void main() {
     expect(bills.last.state, CardBillState.past);
     expect(bills[1].range.from, bills[2].closesOn?.addDays(1));
     expect(valueOf(await repository.cardBills(EntityScope.company)), isEmpty);
+  });
+
+  test('a card timeline starts on the open bill and forecasts ahead', () async {
+    final timeline = valueOf(await repository.cardTimeline('acc-pf-card'));
+    final bills = timeline.bills;
+    final open = bills[timeline.start];
+    expect(open.state, TimelineBillState.open);
+    expect(bills.first.payment, BillPayment.paid);
+    expect(bills[timeline.start - 1].payment, BillPayment.due);
+    final forecasts = bills.where((bill) => bill.isForecast).toList();
+    expect(forecasts, hasLength(3));
+    expect(forecasts.first.range.from, open.range.to.addDays(1));
+    expect(forecasts.first.installments.map((item) => item.label), [
+      '5/10',
+      '3/6',
+    ]);
+    expect(
+      forecasts.first.total.cents,
+      forecasts.first.installments.fold(
+        0,
+        (sum, item) => sum + item.amount.cents,
+      ),
+    );
+    expect(
+      await repository.cardTimeline('missing'),
+      const Err<CardTimeline>(NotFoundFailure()),
+    );
   });
 
   test('a suggestion can be confirmed, dismissed and removed', () async {

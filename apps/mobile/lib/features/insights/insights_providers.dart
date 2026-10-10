@@ -33,6 +33,10 @@ final loadCardBillsProvider = Provider<LoadCardBills>(
   (ref) => LoadCardBills(ref.watch(insightsRepositoryProvider)),
 );
 
+final loadCardTimelineProvider = Provider<LoadCardTimeline>(
+  (ref) => LoadCardTimeline(ref.watch(insightsRepositoryProvider)),
+);
+
 final decideSubscriptionProvider = Provider<DecideSubscription>(
   (ref) => DecideSubscription(ref.watch(insightsRepositoryProvider)),
 );

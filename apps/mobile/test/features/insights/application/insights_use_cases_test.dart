@@ -4,6 +4,7 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/application/insights_use_cases.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -28,6 +29,12 @@ void main() {
     expect(
       await LoadCardBills(repository)(EntityScope.personal),
       isA<Ok<List<CardBills>>>(),
+    );
+    when(() => repository.cardTimeline('card'))
+        .thenAnswer((_) async => const Err(NetworkFailure()));
+    expect(
+      await LoadCardTimeline(repository)('card'),
+      const Err<CardTimeline>(NetworkFailure()),
     );
 
     expect(

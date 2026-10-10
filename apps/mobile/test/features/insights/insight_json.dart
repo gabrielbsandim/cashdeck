@@ -218,3 +218,52 @@ JsonMap cardBillsJson() => {
     },
   ],
 };
+
+JsonMap cardTimelineJson() => {
+  'accountId': 'card',
+  'name': 'Cartão Exemplo',
+  'suffix': null,
+  'entityKind': 'PF',
+  'current': 1,
+  'bills': [
+    {
+      'closesOn': '2026-09-09',
+      'dueOn': '2026-09-15',
+      'total': brl(30_000),
+      'minimum': brl(3_000),
+      'state': 'PAST',
+      'payment': 'UNCONFIRMED',
+      'range': {'from': '2026-08-10', 'to': '2026-09-09'},
+      'installments': <JsonMap>[],
+    },
+    {
+      'closesOn': null,
+      'dueOn': '2026-10-15',
+      'total': brl(12_000),
+      'minimum': null,
+      'state': 'OPEN',
+      'payment': null,
+      'range': {'from': '2026-09-10', 'to': '2026-10-09'},
+      'installments': <JsonMap>[],
+    },
+    {
+      'closesOn': '2026-11-09',
+      'dueOn': '2026-11-15',
+      'total': brl(5_000),
+      'minimum': null,
+      'state': 'FORECAST',
+      'payment': null,
+      'range': {'from': '2026-10-10', 'to': '2026-11-09'},
+      'installments': [
+        {
+          'key': 'plan',
+          'name': 'Loja Exemplo',
+          'categoryId': null,
+          'number': 4,
+          'count': 6,
+          'amount': brl(5_000),
+        },
+      ],
+    },
+  ],
+};

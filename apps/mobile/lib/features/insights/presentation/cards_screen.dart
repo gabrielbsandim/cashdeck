@@ -41,6 +41,7 @@ class CardsScreen extends ConsumerWidget {
   static const billsTabKey = Key('cards-tab-bills');
   static const limitsTabKey = Key('cards-tab-limits');
   static const seeInBillsKey = Key('cards-see-in-bills');
+  static const seeAllBillsKey = Key('cards-see-all-bills');
   static const importKey = Key('cards-import');
   static const chargesRetryKey = Key('cards-charges-retry');
   static Key cardKey(String id) => Key('cards-card-$id');
@@ -188,7 +189,9 @@ class _BillsState extends ConsumerState<_Bills> {
           const SizedBox(height: AppSpacing.lg),
           CdSectionHeader(title: l10n.cardsCharges, small: true),
           const SizedBox(height: AppSpacing.xs),
-          _Charges(charges: (accountId: card.accountId, range: bill.range)),
+          CardBillCharges(
+            charges: (accountId: card.accountId, range: bill.range),
+          ),
         ],
         const SizedBox(height: AppSpacing.md),
         const _ImportLink(),
@@ -307,11 +310,23 @@ class _BillCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.sm),
-          TextButton.icon(
-            key: CardsScreen.seeInBillsKey,
-            onPressed: () => context.go(AppRoutes.bills),
-            icon: const Icon(Symbols.event_upcoming_rounded),
-            label: Text(l10n.cardsSeeInBills),
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              TextButton.icon(
+                key: CardsScreen.seeAllBillsKey,
+                onPressed: () =>
+                    context.push(AppRoutes.cardBills(card.accountId)).ignore(),
+                icon: const Icon(Symbols.view_carousel_rounded),
+                label: Text(l10n.cardsSeeAllBills),
+              ),
+              TextButton.icon(
+                key: CardsScreen.seeInBillsKey,
+                onPressed: () => context.go(AppRoutes.bills),
+                icon: const Icon(Symbols.event_upcoming_rounded),
+                label: Text(l10n.cardsSeeInBills),
+              ),
+            ],
           ),
         ],
       ),
@@ -319,8 +334,9 @@ class _BillCard extends ConsumerWidget {
   }
 }
 
-class _Charges extends ConsumerWidget {
-  const new({required this.charges});
+/// The charges booked on the days of one bill, each opening its transaction.
+class CardBillCharges extends ConsumerWidget {
+  const new({required this.charges, super.key});
 
   final BillCharges charges;
 

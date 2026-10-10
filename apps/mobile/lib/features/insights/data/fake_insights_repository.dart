@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
 
@@ -347,6 +348,10 @@ final class FakeInsightsRepository implements InsightsRepository {
   Future<Result<List<CardBills>>> cardBills(EntityScope scope) async {
     await _wait();
     if (!scope.includes(EntityKind.personal)) return const Ok([]);
+    return Ok(_cards());
+  }
+
+  List<CardBills> _cards() {
     final today = _today;
     final next = YearMonth.of(today).add(1);
     CalendarDate closing(int back) {
@@ -359,7 +364,7 @@ final class FakeInsightsRepository implements InsightsRepository {
       return due.isBefore(today) ? CardBillState.past : CardBillState.closed;
     }
 
-    return Ok([
+    return [
       CardBills(
         accountId: 'acc-pf-card',
         name: 'Cartão Horizonte',
@@ -377,7 +382,94 @@ final class FakeInsightsRepository implements InsightsRepository {
             ),
         ],
       ),
-    ]);
+    ];
+  }
+
+  static const Map<CardBillState, TimelineBillState> _timelineStates = {
+    CardBillState.past: TimelineBillState.past,
+    CardBillState.closed: TimelineBillState.closed,
+    CardBillState.open: TimelineBillState.open,
+  };
+
+  static const _planned = [
+    ('notebook', 'Notebook Orion', 4, 10, 32_990),
+    ('bike', 'Bicicleta Trilha', 2, 6, 46_750),
+  ];
+
+  @override
+  Future<Result<CardTimeline>> cardTimeline(String accountId) async {
+    await _wait();
+    final card = _cards()
+        .where((item) => item.accountId == accountId)
+        .firstOrNull;
+    if (card == null) return const Err(NotFoundFailure());
+    final known = [
+      for (final bill in card.bills.reversed)
+        TimelineBill(
+          closesOn: bill.closesOn,
+          dueOn: bill.dueOn,
+          total: bill.total,
+          minimum: bill.minimum,
+          state: _timelineStates[bill.state]!,
+          payment: switch (bill.state) {
+            CardBillState.open => null,
+            CardBillState.closed => BillPayment.due,
+            CardBillState.past => BillPayment.paid,
+          },
+          range: bill.range,
+        ),
+    ];
+    final open = known.last;
+    final forecasts = [
+      for (var ahead = 1; ahead <= 3; ahead++)
+        _forecast(open, ahead, [
+          for (final (key, name, number, count, cents) in _planned)
+            if (number + ahead <= count)
+              PlannedInstallment(
+                key: key,
+                name: name,
+                categoryId: 'shopping',
+                number: number + ahead,
+                count: count,
+                amount: Money(cents),
+              ),
+        ]),
+    ];
+    return Ok(
+      CardTimeline(
+        accountId: card.accountId,
+        name: card.name,
+        suffix: card.suffix,
+        owner: card.owner,
+        bills: [...known, ...forecasts],
+        current: known.length - 1,
+      ),
+    );
+  }
+
+  TimelineBill _forecast(
+    TimelineBill open,
+    int ahead,
+    List<PlannedInstallment> installments,
+  ) {
+    CalendarDate later(CalendarDate day, int months) {
+      final month = YearMonth.of(day).add(months);
+      return CalendarDate(month.year, month.month, day.day);
+    }
+
+    return TimelineBill(
+      closesOn: later(open.range.to, ahead),
+      dueOn: later(open.dueOn, ahead),
+      total: Money(
+        installments.fold(0, (sum, item) => sum + item.amount.cents),
+      ),
+      state: TimelineBillState.forecast,
+      range: DateSpan(
+        later(open.range.to, ahead - 1).addDays(1),
+        later(open.range.to, ahead),
+      ),
+      installments: installments,
+    );
   }
 
   @override

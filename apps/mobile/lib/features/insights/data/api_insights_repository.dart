@@ -4,6 +4,7 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/data/insight_dtos.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
 import 'package:dio/dio.dart';
@@ -66,6 +67,13 @@ final class ApiInsightsRepository implements InsightsRepository {
   @override
   Future<Result<List<CardBills>>> cardBills(EntityScope scope) => guardRequest(
     () async => cardBillsFromJson(await _get('card-bills', scopeQuery(scope))),
+  );
+
+  @override
+  Future<Result<CardTimeline>> cardTimeline(String accountId) => guardRequest(
+    () async => cardTimelineFromJson(
+      await _get('accounts/${Uri.encodeComponent(accountId)}/bills', const {}),
+    ),
   );
 
   @override

@@ -2310,6 +2310,35 @@
   "cardsImportTitle": "Cartão sem Open Finance?",
   "cardsImportMessage": "Importe a fatura em PDF ou CSV",
   "cardsNotSent": "O banco não enviou",
+  "cardsStateForecast": "prevista",
+  "cardsSeeAllBills": "Ver todas as faturas",
+  "cardTimelineForecastNote": "Previsão com as parcelas que ainda vão entrar e o que já foi lançado. Pode mudar até o fechamento.",
+  "cardTimelinePaid": "Paga",
+  "cardTimelineDue": "A pagar",
+  "cardTimelineUnconfirmed": "Pagamento não encontrado",
+  "cardTimelineInstallments": "Parcelas previstas",
+  "cardTimelineMinimum": "Mínimo {amount}",
+  "@cardTimelineMinimum": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cardTimelinePrevious": "Fatura anterior",
+  "cardTimelineNext": "Próxima fatura",
+  "cardTimelinePage": "Fatura {index} de {count}",
+  "@cardTimelinePage": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cardTimelineRename": "Renomear cartão",
   "payrollAnnexTitle": "Anexo informado pela contadora",
   "payrollAnnexHint": "O ISS das notas e a estimativa do DAS usam este anexo. Em Folha, o app calcula pelo Fator R quando houver 12 meses.",
   "payrollAnnexFromPayroll": "Folha",

@@ -27,7 +27,6 @@ import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
-import 'package:cashdeck/features/transactions/transactions_providers.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,26 +153,6 @@ class _Balances extends ConsumerWidget {
 
   final List<TransactionAccount> accounts;
 
-  Future<void> _rename(
-    BuildContext context,
-    WidgetRef ref,
-    TransactionAccount account,
-  ) async {
-    final l10n = AppLocalizations.of(context);
-    final rename = ref.read(renameAccountProvider);
-    final name = await askAccountName(context, account);
-    if (name == null || !context.mounted) return;
-    final result = await rename(account.id, name);
-    if (!context.mounted) return;
-    ref
-      ..invalidate(transactionAccountsProvider)
-      ..invalidate(homeControllerProvider);
-    await showOutcomeToast(context, switch (result) {
-      Ok() => null,
-      Err(:final failure) => failure,
-    }, success: l10n.accountRenamed);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -208,7 +187,9 @@ class _Balances extends ConsumerWidget {
       final sync = account.sync;
       return CdListRow(
         key: BalancesScreen.rowKey(account.id),
-        onTap: () => _rename(context, ref, account).ignore(),
+        onTap: account.type == AccountType.creditCard
+            ? () => context.push(AppRoutes.cardBills(account.id)).ignore()
+            : () => renameAccount(context, ref, account).ignore(),
         leading: consolidated
             ? EntityKindBadge(kind: account.owner, size: 40)
             : CdInstitutionLogo(

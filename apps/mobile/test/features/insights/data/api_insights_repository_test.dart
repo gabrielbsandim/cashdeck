@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/data/api_insights_repository.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -147,6 +148,42 @@ void main() {
     expect(card.bills.last.minimum, const Money(3_000));
     expect(card.bills.last.state, CardBillState.closed);
     expect(card.bills.last.range.from, const CalendarDate(2026, 9, 8));
+  });
+
+  test('reads the past, open and forecast bills of one card', () async {
+    final dio = stubDio((_) => StubResponse(200, {'data': cardTimelineJson()}));
+
+    final timeline = valueOf(
+      await ApiInsightsRepository(dio).cardTimeline('card 1'),
+    );
+
+    expect(
+      adapterOf(dio).requests.single.path,
+      '/api/v1/accounts/card%201/bills',
+    );
+    expect(timeline.suffix, isNull);
+    expect(timeline.owner, EntityKind.personal);
+    expect(timeline.current, 1);
+    expect(timeline.bills.map((bill) => bill.state), [
+      TimelineBillState.past,
+      TimelineBillState.open,
+      TimelineBillState.forecast,
+    ]);
+    expect(timeline.bills.first.payment, BillPayment.unconfirmed);
+    expect(timeline.bills.first.minimum, const Money(3_000));
+    expect(timeline.bills[1].payment, isNull);
+    expect(timeline.bills[1].closesOn, isNull);
+    expect(
+      timeline.bills.last.installments.single,
+      const PlannedInstallment(
+        key: 'plan',
+        name: 'Loja Exemplo',
+        number: 4,
+        count: 6,
+        amount: Money(5_000),
+      ),
+    );
+    expect(timeline.bills.last.range.from, const CalendarDate(2026, 10, 10));
   });
 
   test('decides and removes subscriptions', () async {

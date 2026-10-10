@@ -176,9 +176,17 @@ Account filters read `id`, `name`, `entityKind` and `institution` from
 `GET /api/v1/accounts`.
 
 The balances screen also reads `openBill`: a card shows it as owed instead of
-its `balance`, which counts every installment still ahead. Tapping an account
-renames it with `PATCH /api/v1/accounts/{id}` and `{ name }`, answered with the
-account; a bank sync keeps the name. `logo.imageUrl` may point at a PNG or an
+its `balance`, which counts every installment still ahead. Tapping a cash
+account renames it with `PATCH /api/v1/accounts/{id}` and `{ name }`, answered
+with the account; a bank sync keeps the name. Tapping a card opens its bills
+instead, where the app bar renames it.
+
+The card bills screen reads `GET /api/v1/accounts/{id}/bills`: the bills
+oldest first and `current`, the open one it starts on. Each bill has a `state`
+(`PAST | CLOSED | OPEN | FORECAST`), a `payment` on closed ones
+(`PAID | DUE | UNCONFIRMED`), its `range` of booking days, which lists its
+charges through `GET /api/v1/transactions`, and on a forecast the
+`installments` still to be posted. `logo.imageUrl` may point at a PNG or an
 SVG, and the logo widget picks the decoder by the extension.
 
 ## Chat

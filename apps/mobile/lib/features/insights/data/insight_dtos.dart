@@ -2,6 +2,7 @@ import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/data/entity_dtos.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 
 const Map<String, InsightPeriod> _periods = {
@@ -306,3 +307,49 @@ List<CardBills> cardBillsFromJson(JsonMap json) => [
       bills: readMapList(card, 'bills').map(_cardBill).toList(),
     ),
 ];
+
+const Map<String, TimelineBillState> _timelineStates = {
+  'PAST': TimelineBillState.past,
+  'CLOSED': TimelineBillState.closed,
+  'OPEN': TimelineBillState.open,
+  'FORECAST': TimelineBillState.forecast,
+};
+
+const Map<String, BillPayment> _payments = {
+  'PAID': BillPayment.paid,
+  'DUE': BillPayment.due,
+  'UNCONFIRMED': BillPayment.unconfirmed,
+};
+
+PlannedInstallment _planned(JsonMap json) => PlannedInstallment(
+  key: readString(json, 'key'),
+  name: readString(json, 'name'),
+  categoryId: readOptionalString(json, 'categoryId'),
+  number: readInt(json, 'number'),
+  count: readInt(json, 'count'),
+  amount: readMoney(json, 'amount'),
+);
+
+TimelineBill _timelineBill(JsonMap json) {
+  final minimum = readOptionalMap(json, 'minimum');
+  final payment = readOptionalString(json, 'payment');
+  return TimelineBill(
+    closesOn: readOptionalDate(json, 'closesOn'),
+    dueOn: readDate(json, 'dueOn'),
+    total: readMoney(json, 'total'),
+    minimum: minimum == null ? null : moneyFromJson(minimum),
+    state: readEnum(json, 'state', _timelineStates),
+    payment: payment == null ? null : lookupValue(_payments, payment),
+    range: _span(readMap(json, 'range')),
+    installments: readMapList(json, 'installments').map(_planned).toList(),
+  );
+}
+
+CardTimeline cardTimelineFromJson(JsonMap json) => CardTimeline(
+  accountId: readString(json, 'accountId'),
+  name: readString(json, 'name'),
+  suffix: readOptionalString(json, 'suffix'),
+  owner: readEntityKind(json, 'entityKind'),
+  bills: readMapList(json, 'bills').map(_timelineBill).toList(),
+  current: readOptionalInt(json, 'current'),
+);

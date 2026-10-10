@@ -54,7 +54,7 @@ final class _Renames implements AccountsRepository {
   Future<Result<TransactionAccount>> rename(String id, String name) async {
     calls.add((id, name));
     if (fails) return const Err(NetworkFailure());
-    return Ok(_billedCard.renamed(name));
+    return Ok(_checking.renamed(name));
   }
 }
 
@@ -209,6 +209,23 @@ void main() {
     expect(amount.value, const Money(-2_000));
   });
 
+  testWidgets('tapping a card opens its bills', (tester) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_billedCard])),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await settle(tester);
+
+    expect(app.location, AppRoutes.cardBills('billed'));
+  });
+
   testWidgets('tapping an account renames it', (tester) async {
     final renames = _Renames();
     await pumpRoute(
@@ -216,13 +233,13 @@ void main() {
       AppRoutes.balances,
       overrides: [
         transactionsRepositoryProvider.overrideWithValue(
-          _Accounts(const Ok([_billedCard])),
+          _Accounts(const Ok([_checking])),
         ),
         accountsRepositoryProvider.overrideWithValue(renames),
       ],
     );
 
-    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
     await settle(tester);
     expect(find.text(l10n.accountRenameTitle), findsOneWidget);
     expect(find.text(l10n.accountRenameHelper), findsOneWidget);
@@ -238,7 +255,7 @@ void main() {
     await tester.tap(save);
     await settle(tester);
 
-    expect(renames.calls, [('billed', 'Viagem')]);
+    expect(renames.calls, [('checking', 'Viagem')]);
     expect(find.text(l10n.accountRenamed), findsOneWidget);
   });
 
@@ -251,27 +268,27 @@ void main() {
       AppRoutes.balances,
       overrides: [
         transactionsRepositoryProvider.overrideWithValue(
-          _Accounts(const Ok([_billedCard])),
+          _Accounts(const Ok([_checking])),
         ),
         accountsRepositoryProvider.overrideWithValue(renames),
       ],
     );
 
-    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
     await settle(tester);
     await tester.tapAt(const Offset(10, 10));
     await settle(tester);
     expect(find.text(l10n.accountRenameTitle), findsNothing);
     expect(renames.calls, isEmpty);
 
-    await tester.tap(find.byKey(BalancesScreen.rowKey('billed')));
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
     await settle(tester);
     await tester.enterText(_nameField(), 'Viagem');
     await tester.pump();
     await tester.tap(find.byKey(AccountRenameSheet.saveKey));
     await settle(tester);
 
-    expect(renames.calls, [('billed', 'Viagem')]);
+    expect(renames.calls, [('checking', 'Viagem')]);
     expect(find.text(l10n.errorNetwork), findsOneWidget);
   });
 

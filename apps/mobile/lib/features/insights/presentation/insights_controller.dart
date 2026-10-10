@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/insights/application/insights_use_cases.dart';
+import 'package:cashdeck/features/insights/domain/card_timeline.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/insights_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
@@ -87,6 +88,13 @@ final FutureProvider<List<CardBills>> cardBillsProvider =
       final scope = ref.watch(entityScopeProvider);
       return (await ref.watch(loadCardBillsProvider)(scope)).orThrow;
     }, retry: noRetry);
+
+final FutureProviderFamily<CardTimeline, String> cardTimelineProvider =
+    FutureProvider.autoDispose.family<CardTimeline, String>(
+      (ref, accountId) async =>
+          (await ref.watch(loadCardTimelineProvider)(accountId)).orThrow,
+      retry: noRetry,
+    );
 
 /// A card and the booking days of one of its bills.
 typedef BillCharges = ({String accountId, DateSpan range});
