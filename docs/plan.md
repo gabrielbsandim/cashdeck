@@ -198,6 +198,8 @@ Mercado Pago enables Payouts only through a commercial agreement. Without it,
 the Asaas balance is the reserve: a bill it cannot cover falls to assisted with
 `RESERVE_FUNDING_FAILED`. Authorizing the payouts rail later restores both the
 Pix route and the funding transfer, with no code change.
+The daily alerts read that balance and raise `LOW_BALANCE` the day before when
+it does not cover the bills due next, so it can be topped up in time.
 
 ### 5.2 PJ routing (default)
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { Money } from '@cashdeck/domain'
 import { account, bill, fullDeps } from '@/testing/deps.test-helpers'
+import { FakeReserveFunder } from '@/testing/providers'
+import { formatMoney } from '@/use-cases/alert-events'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { makeSetAutoDebit } from '@/use-cases/auto-debit'
 import { makeGetBill } from '@/use-cases/bills'
@@ -78,6 +80,33 @@ describe('daily alerts', () => {
         balance: Money.of(50000),
       }),
     )
+    await deps.bills.save(bill({ id: 'open', dueDate: TOMORROW }))
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+      dueSoon: 1,
+      lowBalance: 0,
+    })
+  })
+
+  it('checks the Asaas balance when there is no reserve account', async () => {
+    const deps = { ...fullDeps(), funder: new FakeReserveFunder(5000) }
+    await deps.bills.save(
+      bill({ id: 'open', dueDate: TOMORROW, amount: Money.of(8000) }),
+    )
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+      dueSoon: 1,
+      lowBalance: 1,
+    })
+    expect(deps.alerts.emitted.at(-1)?.data).toMatchObject({
+      shortfall: formatMoney(Money.of(3000)),
+      balance: formatMoney(Money.of(5000)),
+    })
+  })
+
+  it('stays quiet when the Asaas balance cannot be read', async () => {
+    const deps = {
+      ...fullDeps(),
+      funder: new FakeReserveFunder(new Error('Asaas is not configured.')),
+    }
     await deps.bills.save(bill({ id: 'open', dueDate: TOMORROW }))
     expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
       dueSoon: 1,

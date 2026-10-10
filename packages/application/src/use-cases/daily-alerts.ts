@@ -13,7 +13,13 @@ import { allPages } from '@/use-cases/shared'
 
 type DailyAlertDeps = Pick<
   Deps,
-  'bills' | 'accounts' | 'clock' | 'alerts' | 'documents'
+  | 'bills'
+  | 'accounts'
+  | 'clock'
+  | 'alerts'
+  | 'documents'
+  | 'funder'
+  | 'entities'
 >
 
 export type DailyAlertsResult = { dueSoon: number; lowBalance: number }
@@ -41,22 +47,44 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
     return bills
   }
 
+  // Without a reserve account the bills are paid from the Asaas balance, which
+  // has to be topped up by hand while payouts stays unauthorized.
+  async function reserveBalance(
+    tenantId: string,
+    entityId: string,
+  ): Promise<Money | null> {
+    const accounts = await deps.accounts.listByEntity(tenantId, entityId)
+    const reserve = accounts.find(account => account.isReserve)
+    if (reserve) {
+      return reserve.balance
+    }
+    const entity = await deps.entities.findById(tenantId, entityId)
+    if (entity?.kind !== 'PF') {
+      return null
+    }
+    try {
+      const cents = await deps.funder.availableCents({ tenantId, entityId })
+      return Money.of(cents)
+    } catch {
+      return null
+    }
+  }
+
   async function lowBalance(
     tenantId: string,
     entityId: string,
     bills: Bill[],
     day: LocalDate,
   ): Promise<boolean> {
-    const accounts = await deps.accounts.listByEntity(tenantId, entityId)
-    const reserve = accounts.find(account => account.isReserve)
-    if (!reserve) {
+    const balance = await reserveBalance(tenantId, entityId)
+    if (!balance) {
       return false
     }
     const needed = bills.reduce(
       (sum, bill) => sum.add(bill.amount),
       Money.zero(),
     )
-    const shortfall = needed.subtract(reserve.balance)
+    const shortfall = needed.subtract(balance)
     if (!shortfall.isPositive()) {
       return false
     }
@@ -66,7 +94,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
       entityId,
       data: {
         shortfall: formatMoney(shortfall),
-        balance: formatMoney(reserve.balance),
+        balance: formatMoney(balance),
         needed: formatMoney(needed),
         dueDate: formatDay(day),
       },
