@@ -1,4 +1,5 @@
 import {
+  type BillOwner,
   type BillSource,
   type CapturedBill,
   type LlmAttachment,
@@ -29,6 +30,7 @@ export const GMAIL_QUERY =
   '{boleto fatura "linha digitavel" "linha digitável" "codigo de barras" "código de barras" DARF DAS "pix copia e cola" vencimento}'
 
 const READABLE = /^(application\/pdf|image\/(png|jpe?g|webp))$/
+const PDF_NAME = /\.pdf$/i
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 
 type MessagePart = {
@@ -68,13 +70,15 @@ export class GmailBillSource implements BillSource {
     tenantId: string,
     entityId: string,
     since: Date,
+    owner?: BillOwner,
   ): Promise<CapturedBill[]> {
     const session = await this.session(tenantId, entityId)
     const today = toLocalDate((this.deps.now ?? (() => new Date()))())
     const ids = await this.messageIds(session, since)
+    const passwords = owner ? documentPasswords(owner.taxId) : []
     const bills: CapturedBill[] = []
     for (const id of ids) {
-      bills.push(...(await this.readMessage(session, id, today)))
+      bills.push(...(await this.readMessage(session, id, today, passwords)))
     }
     return bills
   }
@@ -146,6 +150,7 @@ export class GmailBillSource implements BillSource {
     session: Session,
     id: string,
     today: LocalDate,
+    passwords: readonly string[],
   ): Promise<CapturedBill[]> {
     const message = await this.get<Message>(
       session,
@@ -155,7 +160,10 @@ export class GmailBillSource implements BillSource {
     const payee = sender(message)
     const found: ExtractedBill[] = []
     for (const part of parts.filter(isReadableAttachment)) {
-      const extracted = await this.readAttachment(session, id, part, today)
+      const extracted = await this.readAttachment(session, id, part, {
+        today,
+        passwords,
+      })
       if (extracted) {
         found.push(extracted)
       }
@@ -173,7 +181,7 @@ export class GmailBillSource implements BillSource {
     session: Session,
     messageId: string,
     part: MessagePart,
-    today: LocalDate,
+    read: { today: LocalDate; passwords: readonly string[] },
   ): Promise<ExtractedBill | null> {
     if (!this.deps.extractor) {
       return null
@@ -184,10 +192,14 @@ export class GmailBillSource implements BillSource {
     )
     const bytes = Buffer.from(attachment.data ?? '', 'base64url')
     const llmAttachment: LlmAttachment = {
-      mimeType: part.mimeType ?? 'application/pdf',
+      mimeType: mimeOf(part),
       dataBase64: bytes.toString('base64'),
     }
-    return this.deps.extractor.fromAttachment(llmAttachment, today)
+    return this.deps.extractor.fromAttachment(
+      llmAttachment,
+      read.today,
+      read.passwords,
+    )
   }
 }
 
@@ -198,10 +210,28 @@ function flattenParts(part: MessagePart | undefined): MessagePart[] {
   return [part, ...(part.parts ?? []).flatMap(flattenParts)]
 }
 
+// The digits billers ask for to open the PDF: the first four, five or six of
+// the owner's tax id, or all of it.
+export function documentPasswords(taxId: string): string[] {
+  return [...new Set([4, 5, 6, taxId.length].map(size => taxId.slice(0, size)))]
+}
+
+// Some billers send the PDF untyped; its name still says what it is.
+function mimeOf(part: MessagePart): string {
+  const mimeType = part.mimeType ?? 'application/pdf'
+  if (
+    mimeType === 'application/octet-stream' &&
+    PDF_NAME.test(part.filename ?? '')
+  ) {
+    return 'application/pdf'
+  }
+  return mimeType
+}
+
 function isReadableAttachment(part: MessagePart): boolean {
   return (
     Boolean(part.body?.attachmentId) &&
-    READABLE.test(part.mimeType ?? '') &&
+    READABLE.test(mimeOf(part)) &&
     (part.body?.size ?? 0) <= MAX_ATTACHMENT_BYTES
   )
 }

@@ -330,7 +330,7 @@ describe('provider fakes', () => {
     expect(importer.canRead(file)).toBe(true)
     expect(importer.canRead({ ...file, name: 'bill.pdf' })).toBe(false)
     expect(await importer.read()).toBe(draft)
-    expect(await new FakeBillSource().fetch()).toEqual([])
+    expect(await new FakeBillSource().fetch('t', 'e', new Date(0))).toEqual([])
   })
 
   it('issues invoices idempotently and cancels them', async () => {

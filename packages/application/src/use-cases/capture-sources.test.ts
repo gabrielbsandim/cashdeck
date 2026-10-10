@@ -89,11 +89,13 @@ describe('capture sources', () => {
 
   it('starts the next read window when the previous run started', async () => {
     const windows: Date[] = []
+    const owners: Array<string | undefined> = []
     const later = new Date(NOW.getTime() + 300_000)
     const slow: BillSource = {
       source: 'GMAIL',
-      fetch: async (_tenant, _entity, since) => {
+      fetch: async (_tenant, _entity, since, owner) => {
         windows.push(since)
+        owners.push(owner?.taxId)
         deps.clock.set(later)
         return []
       },
@@ -105,6 +107,9 @@ describe('capture sources', () => {
     expect(read.mailboxes[0]?.lastReadAt).toBe(NOW.toISOString())
     await capture.readMailbox(TENANT, mailbox.id)
     expect(windows[1]).toEqual(NOW)
+    const person = await deps.entities.findById(TENANT, 'pf')
+    expect(person?.taxId.value).toMatch(/^\d{11}$/)
+    expect(owners).toEqual([person?.taxId.value, person?.taxId.value])
   })
 
   it('replaces the previous mailbox of an entity', async () => {

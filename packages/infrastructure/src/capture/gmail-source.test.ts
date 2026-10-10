@@ -7,7 +7,7 @@ import {
 } from '@cashdeck/application'
 import { findPaymentCodes as findCodesInText } from '@cashdeck/domain'
 import { BillExtractor, toExtracted } from '@/capture/bill-extractor'
-import { GmailBillSource } from '@/capture/gmail-source'
+import { documentPasswords, GmailBillSource } from '@/capture/gmail-source'
 import {
   BOLETO_LINE,
   credentials,
@@ -410,5 +410,59 @@ describe('GmailBillSource', () => {
         kind: 'TAX_BARCODE',
       }),
     ])
+  })
+
+  it('opens an untyped PDF with the digits of the owner tax id', async () => {
+    const scripted = new ScriptedTransport()
+      .on('POST', TOKEN, { json: { access_token: 'gtoken' } })
+      .on('GET', `${API}/messages?`, { json: { messages: [{ id: 'm1' }] } })
+      .on('GET', `${API}/messages/m1/attachments/att-1`, {
+        json: { data: b64('%PDF locked') },
+      })
+      .on('GET', `${API}/messages/m1?format=full`, {
+        json: {
+          id: 'm1',
+          payload: {
+            mimeType: 'multipart/mixed',
+            parts: [
+              {
+                mimeType: 'application/octet-stream',
+                filename: 'Conta.PDF',
+                body: { attachmentId: 'att-1', size: 1000 },
+              },
+              {
+                mimeType: 'application/octet-stream',
+                filename: 'notes.bin',
+                body: { attachmentId: 'att-2', size: 1000 },
+              },
+            ],
+          },
+        },
+      })
+    const text = new FakeDocumentTextReader(`Linha ${SPACED_LINE}`)
+    const source = new GmailBillSource({
+      credentials: gmailEnv(),
+      transport: scripted.transport,
+      extractor: new BillExtractor(
+        new FakeLlmProvider().enqueueObject({}),
+        text,
+      ),
+      now,
+    })
+    const bills = await source.fetch(TENANT, ENTITY, since, {
+      taxId: '52998224725',
+    })
+    expect(bills).toEqual([
+      expect.objectContaining({ externalId: 'm1:0', paymentCode: BOLETO_LINE }),
+    ])
+    expect(text.reads).toHaveLength(1)
+    expect(text.reads[0]).toMatchObject({
+      mimeType: 'application/pdf',
+      passwords: ['5299', '52998', '529982', '52998224725'],
+    })
+  })
+
+  it('derives each password once', () => {
+    expect(documentPasswords('1234')).toEqual(['1234'])
   })
 })

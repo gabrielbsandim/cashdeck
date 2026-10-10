@@ -147,12 +147,16 @@ export interface PixLocationResolver {
   resolve(location: string): Promise<PixCharge | null>
 }
 
+// Billers often protect the PDF with digits of the owner's tax id.
+export type BillOwner = { taxId: string }
+
 export interface BillSource {
   readonly source: BillSourceKind
   fetch(
     tenantId: string,
     entityId: string,
     since: Date,
+    owner?: BillOwner,
   ): Promise<CapturedBill[]>
 }
 

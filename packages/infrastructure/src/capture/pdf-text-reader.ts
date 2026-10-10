@@ -13,17 +13,31 @@ export class PdfTextReader implements DocumentTextReader {
     if (file.mimeType !== PDF) {
       return null
     }
-    try {
-      const pdf = await getDocumentProxy(new Uint8Array(file.bytes), {
-        verbosity: 0,
-      })
-      const { items } = await extractTextItems(pdf)
-      return items
-        .flat()
-        .map(item => item.str)
-        .join('\n')
-    } catch {
-      return null
+    for (const password of [undefined, ...(file.passwords ?? [])]) {
+      const text = await textOf(file.bytes, password)
+      if (text !== null) {
+        return text
+      }
     }
+    return null
+  }
+}
+
+async function textOf(
+  bytes: Uint8Array,
+  password: string | undefined,
+): Promise<string | null> {
+  try {
+    const pdf = await getDocumentProxy(new Uint8Array(bytes), {
+      verbosity: 0,
+      password,
+    })
+    const { items } = await extractTextItems(pdf)
+    return items
+      .flat()
+      .map(item => item.str)
+      .join('\n')
+  } catch {
+    return null
   }
 }

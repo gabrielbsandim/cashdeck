@@ -6,7 +6,7 @@ import { amountRequiredAlert, emitAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
 import { credentialName, putCredential } from '@/use-cases/credentials'
-import { required, requireEntity } from '@/use-cases/shared'
+import { required, requireEntity, requireEntityById } from '@/use-cases/shared'
 
 export type Mailbox = {
   id: string
@@ -160,7 +160,10 @@ export function makeCaptureSources(deps: CaptureDeps) {
     if (!source) {
       throw new NotConfiguredSource(sourceName)
     }
-    const fetched = await source.fetch(tenantId, entityId, since)
+    const entity = await requireEntityById(deps.entities, tenantId, entityId)
+    const fetched = await source.fetch(tenantId, entityId, since, {
+      taxId: entity.taxId.value,
+    })
     let created = 0
     for (const found of fetched) {
       created += (await captureOne(tenantId, entityId, sourceName, found))

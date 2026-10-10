@@ -119,8 +119,9 @@ export class BillExtractor {
   async fromAttachment(
     attachment: LlmAttachment,
     today: LocalDate,
+    passwords: readonly string[] = [],
   ): Promise<ExtractedBill | null> {
-    const local = await this.localCodes(attachment, today)
+    const local = await this.localCodes(attachment, today, passwords)
     const answer = await this.ask(attachment)
     const candidate = {
       barcode:
@@ -141,10 +142,12 @@ export class BillExtractor {
   private async localCodes(
     attachment: LlmAttachment,
     today: LocalDate,
+    passwords: readonly string[],
   ): Promise<Candidate> {
     const text = await this.text?.read({
       mimeType: attachment.mimeType,
       bytes: Buffer.from(attachment.dataBase64, 'base64'),
+      passwords,
     })
     return findPaymentCodes(text ?? '', today)
   }

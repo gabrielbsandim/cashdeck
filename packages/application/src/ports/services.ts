@@ -32,7 +32,12 @@ export interface PdfWriter {
   render(title: string, rows: readonly PdfRow[]): Uint8Array
 }
 
-export type DocumentFile = { mimeType: string; bytes: Uint8Array }
+// Passwords to try on a protected PDF, such as prefixes of the owner's tax id.
+export type DocumentFile = {
+  mimeType: string
+  bytes: Uint8Array
+  passwords?: readonly string[]
+}
 
 export interface DocumentTextReader {
   // Null when the file has no text layer the reader understands (a photo).

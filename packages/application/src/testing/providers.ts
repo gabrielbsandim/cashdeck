@@ -11,6 +11,7 @@ import {
   type RailResult,
 } from '@/ports/payment-rail'
 import {
+  type BillOwner,
   type BillSource,
   type CapturedBill,
   type ImportFile,
@@ -207,10 +208,17 @@ export class FakeStatementImporter implements StatementImporter {
 
 export class FakeBillSource implements BillSource {
   readonly source = 'GMAIL' as const
+  readonly owners: Array<BillOwner | undefined> = []
 
   constructor(private readonly bills: CapturedBill[] = []) {}
 
-  async fetch(): Promise<CapturedBill[]> {
+  async fetch(
+    _tenantId: string,
+    _entityId: string,
+    _since: Date,
+    owner?: BillOwner,
+  ): Promise<CapturedBill[]> {
+    this.owners.push(owner)
     return this.bills
   }
 }
