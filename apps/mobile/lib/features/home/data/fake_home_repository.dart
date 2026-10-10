@@ -128,6 +128,20 @@ final class FakeHomeRepository implements HomeRepository {
   }
 
   @override
+  Future<Result<FundingPlan>> funding() async {
+    await _wait();
+    return const Ok(
+      FundingPlan(
+        balance: Money(42_000),
+        monthlyAverage: Money(218_500),
+        months: 3,
+        upcoming: Money(96_300),
+        topUp: Money(54_300),
+      ),
+    );
+  }
+
+  @override
   Future<Result<CompanySummary>> company() async {
     await _wait();
     return Ok(_company());

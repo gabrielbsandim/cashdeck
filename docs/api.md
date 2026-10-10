@@ -115,6 +115,31 @@ The tax id may be formatted; it must be a valid CPF for `PF` and CNPJ for
   `APPROVAL_EXPIRED`, `IN_FLIGHT_UNRESOLVED`, `RAIL_UNAVAILABLE`,
   `CONFIRMATION_DECLINED`, or the rail's message).
 
+### GET /home/personal/funding
+
+```json
+{
+  "data": {
+    "balance": Money | null,
+    "monthlyAverage": Money,
+    "months": [{ "month": "2026-10", "total": Money }],
+    "upcoming": Money,
+    "topUp": Money
+  }
+}
+```
+
+What the Asaas balance pays for the person, to size a recurring top-up.
+
+- `months` runs from the month of the first personal bill, at most six back,
+  to the current one. Each `total` sums the bills due that month however they
+  were paid; cancelled bills and payees on bank auto-debit are left out.
+- `monthlyAverage` is the mean of `months`.
+- `upcoming` sums the open bills and those awaiting confirmation due in the
+  next 30 days, and `topUp` is what of it `balance` does not cover.
+- `balance` is null when the Asaas balance cannot be read; `topUp` then equals
+  `upcoming`.
+
 ### GET /home/company
 
 ```json

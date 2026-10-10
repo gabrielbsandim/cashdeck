@@ -695,7 +695,7 @@
   "alertTextApprovalTitle": "Approval pending in the bank",
   "alertTextApprovalBody": "{due} awaits your approval in internet banking.",
   "alertTextLowBalanceTitle": "Low reserve balance",
-  "alertTextLowBalanceBody": "{shortfall} short in the reserve for the bills due {dueDate}.",
+  "alertTextLowBalanceBody": "{shortfall} short in the reserve for the bills due by {dueDate}.",
   "alertTextInvoiceIssuedTitle": "Invoice issued",
   "alertTextInvoiceIssuedBody": "{invoice} to {client} · {amount}.",
   "alertTextInvoiceFailedTitle": "Invoice not issued",
@@ -978,5 +978,42 @@
   "payrollAnnexTitle": "Annex from your accountant",
   "payrollAnnexHint": "The invoice ISS and the DAS estimate use this annex. On Payroll, the app computes Fator R once 12 months exist.",
   "payrollAnnexFromPayroll": "Payroll",
-  "payrollAnnexSaved": "Annex updated"
+  "payrollAnnexSaved": "Annex updated",
+  "fundingTitle": "Top up Asaas",
+  "fundingAverage": "{months, plural, =1{Monthly average of the bills paid there, from 1 month of history} other{Monthly average of the bills paid there, over {months} months}}",
+  "@fundingAverage": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "fundingUpcoming": "Next 30 days: {upcoming}",
+  "@fundingUpcoming": {
+    "placeholders": {
+      "upcoming": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingUpcomingBalance": "Next 30 days: {upcoming} · Balance: {balance}",
+  "@fundingUpcomingBalance": {
+    "placeholders": {
+      "upcoming": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingTopUp": "Send {amount} to cover the next 30 days",
+  "@fundingTopUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingCovered": "The balance covers the next 30 days"
 }

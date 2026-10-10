@@ -330,3 +330,29 @@ final class ConsolidatedSummary extends HomeSummary {
     transfers,
   ];
 }
+
+/// What the Asaas balance pays a month for the person, and what it lacks for
+/// the bills of the next 30 days.
+final class FundingPlan extends Equatable {
+  const new({
+    required this.balance,
+    required this.monthlyAverage,
+    required this.months,
+    required this.upcoming,
+    required this.topUp,
+  });
+
+  /// Null when the balance could not be read.
+  final Money? balance;
+  final Money monthlyAverage;
+
+  /// How many months the average spans.
+  final int months;
+  final Money upcoming;
+  final Money topUp;
+
+  bool get isEmpty => monthlyAverage.cents == 0 && upcoming.cents == 0;
+
+  @override
+  List<Object?> get props => [balance, monthlyAverage, months, upcoming, topUp];
+}

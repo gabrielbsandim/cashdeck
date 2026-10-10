@@ -128,6 +128,8 @@ void main() {
       400,
       scrollable: find.byType(Scrollable).last,
     );
+    // The scroll also builds cards of the home kept behind, which still load.
+    await settle(tester);
     expect(find.byKey(TransactionsScreen.rowKey('tx-30')), findsOneWidget);
     expect(find.byKey(TransactionsScreen.loadMoreKey), findsNothing);
   });

@@ -99,3 +99,13 @@ export const consolidatedSummarySchema = z.object({
 })
 
 export type ConsolidatedSummary = z.infer<typeof consolidatedSummarySchema>
+
+export const fundingPlanSchema = z.object({
+  balance: moneyViewSchema.nullable(),
+  monthlyAverage: moneyViewSchema,
+  months: z.array(z.object({ month: z.string(), total: moneyViewSchema })),
+  upcoming: moneyViewSchema,
+  topUp: moneyViewSchema,
+})
+
+export type FundingPlan = z.infer<typeof fundingPlanSchema>

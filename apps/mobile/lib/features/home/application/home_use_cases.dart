@@ -19,6 +19,15 @@ final class LoadHome {
   }
 }
 
+/// What the Asaas balance pays a month and what it lacks now.
+final class LoadFundingPlan {
+  const new(this._repository);
+
+  final HomeRepository _repository;
+
+  Future<Result<FundingPlan>> call() => _repository.funding();
+}
+
 final class ApproveInvoiceDraft {
   const new(this._repository);
 

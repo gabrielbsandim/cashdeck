@@ -17,6 +17,10 @@ final loadHomeProvider = Provider<LoadHome>(
   (ref) => LoadHome(ref.watch(homeRepositoryProvider)),
 );
 
+final loadFundingPlanProvider = Provider<LoadFundingPlan>(
+  (ref) => LoadFundingPlan(ref.watch(homeRepositoryProvider)),
+);
+
 final approveInvoiceDraftProvider = Provider<ApproveInvoiceDraft>(
   (ref) => ApproveInvoiceDraft(ref.watch(homeRepositoryProvider)),
 );

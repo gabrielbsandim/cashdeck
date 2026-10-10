@@ -31,6 +31,10 @@ final class ApiHomeRepository implements HomeRepository {
       guardRequest(() async => personalFromJson(await _get('personal')));
 
   @override
+  Future<Result<FundingPlan>> funding() =>
+      guardRequest(() async => fundingFromJson(await _get('personal/funding')));
+
+  @override
   Future<Result<CompanySummary>> company() =>
       guardRequest(() async => companyFromJson(await _get('company')));
 

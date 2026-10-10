@@ -4,6 +4,8 @@ import 'package:cashdeck/features/home/domain/home_summary.dart';
 abstract interface class HomeRepository {
   Future<Result<PersonalSummary>> personal();
 
+  Future<Result<FundingPlan>> funding();
+
   Future<Result<CompanySummary>> company();
 
   Future<Result<ConsolidatedSummary>> consolidated();

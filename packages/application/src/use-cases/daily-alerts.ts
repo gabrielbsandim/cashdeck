@@ -1,4 +1,5 @@
 import {
+  addBusinessDays,
   addDays,
   type Bill,
   type BillStatus,
@@ -36,13 +37,19 @@ const UNPAID: readonly BillStatus[] = [
 const FUNDED: readonly BillStatus[] = ['OPEN', 'NEEDS_CONFIRMATION']
 
 export function makeRunDailyAlerts(deps: DailyAlertDeps) {
-  async function dueOn(tenantId: string, day: LocalDate): Promise<Bill[]> {
+  async function dueBetween(
+    tenantId: string,
+    from: LocalDate,
+    to: LocalDate,
+  ): Promise<Bill[]> {
     const bills: Bill[] = []
     for (const status of UNPAID) {
       const page = await allPages(request =>
         deps.bills.list(tenantId, { status }, request),
       )
-      bills.push(...page.filter(bill => bill.dueDate === day))
+      bills.push(
+        ...page.filter(bill => bill.dueDate >= from && bill.dueDate <= to),
+      )
     }
     return bills
   }
@@ -76,6 +83,10 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
     bills: Bill[],
     day: LocalDate,
   ): Promise<boolean> {
+    const lastDue = bills.reduce(
+      (last, bill) => (bill.dueDate > last ? bill.dueDate : last),
+      day,
+    )
     const balance = await reserveBalance(tenantId, entityId)
     if (!balance) {
       return false
@@ -96,7 +107,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
         shortfall: formatMoney(shortfall),
         balance: formatMoney(balance),
         needed: formatMoney(needed),
-        dueDate: formatDay(day),
+        dueDate: formatDay(lastDue),
       },
       dedupeKey: `LOW_BALANCE:${entityId}:${day}`,
     })
@@ -106,14 +117,18 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
   return async function runDailyAlerts(
     tenantId: string,
   ): Promise<DailyAlertsResult> {
-    const tomorrow = addDays(toLocalDate(deps.clock.now()), 1)
+    const day = toLocalDate(deps.clock.now())
+    const tomorrow = addDays(day, 1)
+    // Tomorrow's ladder pays up to one business day after it: checking now
+    // leaves a day to top up, two or more before the due date.
+    const horizon = addBusinessDays(tomorrow, 1)
     const isAutoDebit = await loadAutoDebit(deps, tenantId)
     // The bank debits these by itself: nothing to pay and nothing to fund.
-    const bills = (await dueOn(tenantId, tomorrow)).filter(
+    const bills = (await dueBetween(tenantId, tomorrow, horizon)).filter(
       bill => !isAutoDebit(bill),
     )
     const result: DailyAlertsResult = { dueSoon: 0, lowBalance: 0 }
-    for (const bill of bills) {
+    for (const bill of bills.filter(item => item.dueDate === tomorrow)) {
       const alert = billAlert(
         'BILL_DUE_SOON',
         bill,
@@ -126,7 +141,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
     const entities = new Set(funded.map(bill => bill.entityId))
     for (const entityId of entities) {
       const own = funded.filter(bill => bill.entityId === entityId)
-      result.lowBalance += (await lowBalance(tenantId, entityId, own, tomorrow))
+      result.lowBalance += (await lowBalance(tenantId, entityId, own, day))
         ? 1
         : 0
     }

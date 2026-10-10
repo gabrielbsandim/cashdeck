@@ -5,6 +5,7 @@ import { signState } from '@/server/api/auth'
 import { GET as authCheck } from '@/app/api/v1/auth/check/route'
 import { GET as entities } from '@/app/api/v1/entities/route'
 import { GET as homePersonal } from '@/app/api/v1/home/personal/route'
+import { GET as fundingPlan } from '@/app/api/v1/home/personal/funding/route'
 import { GET as homeCompany } from '@/app/api/v1/home/company/route'
 import { GET as homeConsolidated } from '@/app/api/v1/home/consolidated/route'
 import { POST as approveDraft } from '@/app/api/v1/home/company/drafts/[invoiceId]/approve/route'
@@ -209,6 +210,9 @@ describe('money views', () => {
     })
     expect(impossible.status).toBe(422)
     expect((await call(h(homePersonal), 'GET')).status).toBe(200)
+    const funding = await call(h(fundingPlan), 'GET')
+    expect(funding.status).toBe(200)
+    expect(funding.body.data).toHaveProperty('monthlyAverage')
     expect((await call(h(homeCompany), 'GET')).status).toBe(200)
     expect((await call(h(homeConsolidated), 'GET')).status).toBe(200)
   })

@@ -307,6 +307,16 @@ void main() {
             {'type': 'SOMETHING_NEW'},
           ],
         },
+        'GET /api/v1/home/personal/funding': {
+          'balance': null,
+          'monthlyAverage': _money(300),
+          'months': [
+            {'month': '2026-09', 'total': _money(200)},
+            {'month': '2026-10', 'total': _money(400)},
+          ],
+          'upcoming': _money(150),
+          'topUp': _money(150),
+        },
         'GET /api/v1/home/company': _company,
         'GET /api/v1/home/consolidated': {
           'personal': _money(10),
@@ -328,6 +338,16 @@ void main() {
       final repository = ApiHomeRepository(dio);
 
       final personal = _ok(await repository.personal());
+      expect(
+        _ok(await repository.funding()),
+        const FundingPlan(
+          balance: null,
+          monthlyAverage: Money(300),
+          months: 2,
+          upcoming: Money(150),
+          topUp: Money(150),
+        ),
+      );
       expect(personal.reserve, isNull);
       expect(personal.forecast.balances, hasLength(2));
       expect(personal.budgets.last.category, BudgetCategory.other);

@@ -122,3 +122,14 @@ TaxEstimate? taxEstimateFromJson(JsonMap? json) {
     due: readDate(json, 'due'),
   );
 }
+
+FundingPlan fundingFromJson(JsonMap json) {
+  final balance = readOptionalMap(json, 'balance');
+  return FundingPlan(
+    balance: balance == null ? null : moneyFromJson(balance),
+    monthlyAverage: readMoney(json, 'monthlyAverage'),
+    months: readMapList(json, 'months').length,
+    upcoming: readMoney(json, 'upcoming'),
+    topUp: readMoney(json, 'topUp'),
+  );
+}

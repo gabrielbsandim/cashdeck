@@ -27,6 +27,7 @@ import {
   declareAnnexSchema,
   entityKindSchema,
   entityViewSchema,
+  fundingPlanSchema,
   exportPeriodQuerySchema,
   exportPlanViewSchema,
   exportRecordViewSchema,
@@ -188,6 +189,13 @@ const OPERATIONS: Operation[] = [
     id: 'getPersonalSummary',
     summary: 'Personal home',
     response: personalSummarySchema,
+  },
+  {
+    method: 'get',
+    path: '/home/personal/funding',
+    id: 'getFundingPlan',
+    summary: 'What the Asaas balance pays a month and what to top up now',
+    response: fundingPlanSchema,
   },
   {
     method: 'get',

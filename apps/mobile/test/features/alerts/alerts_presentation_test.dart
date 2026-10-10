@@ -168,7 +168,7 @@ void main() {
         {'shortfall': r'R$ 5,00', 'dueDate': '06/10'},
         (
           title: 'Low reserve balance',
-          body: r'R$ 5,00 short in the reserve for the bills due 06/10.',
+          body: r'R$ 5,00 short in the reserve for the bills due by 06/10.',
         ),
       ),
       AlertKind.invoiceIssued: (

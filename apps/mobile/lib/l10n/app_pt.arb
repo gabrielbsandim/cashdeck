@@ -1688,7 +1688,7 @@
     }
   },
   "alertTextLowBalanceTitle": "Saldo baixo na reserva",
-  "alertTextLowBalanceBody": "Faltam {shortfall} na reserva para as contas de {dueDate}.",
+  "alertTextLowBalanceBody": "Faltam {shortfall} na reserva para as contas até {dueDate}.",
   "@alertTextLowBalanceBody": {
     "placeholders": {
       "shortfall": {
@@ -2503,5 +2503,42 @@
   "payrollAnnexTitle": "Anexo informado pela contadora",
   "payrollAnnexHint": "O ISS das notas e a estimativa do DAS usam este anexo. Em Folha, o app calcula pelo Fator R quando houver 12 meses.",
   "payrollAnnexFromPayroll": "Folha",
-  "payrollAnnexSaved": "Anexo atualizado"
+  "payrollAnnexSaved": "Anexo atualizado",
+  "fundingTitle": "Abastecer o Asaas",
+  "fundingAverage": "{months, plural, =1{Média por mês das contas pagas por lá, com 1 mês de histórico} other{Média por mês das contas pagas por lá, em {months} meses}}",
+  "@fundingAverage": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "fundingUpcoming": "Próximos 30 dias: {upcoming}",
+  "@fundingUpcoming": {
+    "placeholders": {
+      "upcoming": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingUpcomingBalance": "Próximos 30 dias: {upcoming} · Saldo: {balance}",
+  "@fundingUpcomingBalance": {
+    "placeholders": {
+      "upcoming": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingTopUp": "Transfira {amount} para cobrir os próximos 30 dias",
+  "@fundingTopUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingCovered": "O saldo cobre os próximos 30 dias"
 }

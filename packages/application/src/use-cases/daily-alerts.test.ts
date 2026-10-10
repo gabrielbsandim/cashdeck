@@ -102,6 +102,27 @@ describe('daily alerts', () => {
     })
   })
 
+  it('warns ahead for the bills the next ladder run pays', async () => {
+    const deps = { ...fullDeps(), funder: new FakeReserveFunder(5000) }
+    // On Thursday the 8th, Friday's ladder pays through Tuesday, past the
+    // weekend and the Monday holiday.
+    await deps.bills.save(
+      bill({ id: 'tuesday', dueDate: '2026-10-13', amount: Money.of(4000) }),
+    )
+    await deps.bills.save(
+      bill({ id: 'monday', dueDate: '2026-10-12', amount: Money.of(3000) }),
+    )
+    await deps.bills.save(bill({ id: 'wednesday', dueDate: '2026-10-14' }))
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+      dueSoon: 0,
+      lowBalance: 1,
+    })
+    expect(deps.alerts.emitted.at(-1)?.data).toMatchObject({
+      shortfall: formatMoney(Money.of(2000)),
+      dueDate: '13/10',
+    })
+  })
+
   it('stays quiet when the Asaas balance cannot be read', async () => {
     const deps = {
       ...fullDeps(),

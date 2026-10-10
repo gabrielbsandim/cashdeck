@@ -78,7 +78,7 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
   }),
   LOW_BALANCE: d => ({
     title: 'Saldo baixo na reserva',
-    body: `Faltam ${d.shortfall} na reserva para as contas de ${d.dueDate}.`,
+    body: `Faltam ${d.shortfall} na reserva para as contas até ${d.dueDate}.`,
   }),
   INVOICE_ISSUED: d => ({
     title: 'Nota fiscal emitida',
@@ -129,7 +129,7 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
   }),
   LOW_BALANCE: d => ({
     title: 'Low reserve balance',
-    body: `${d.shortfall} short in the reserve for the bills due ${d.dueDate}.`,
+    body: `${d.shortfall} short in the reserve for the bills due by ${d.dueDate}.`,
   }),
   INVOICE_ISSUED: d => ({
     title: 'Invoice issued',
