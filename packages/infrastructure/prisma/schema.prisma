@@ -635,12 +635,19 @@ model AuditEvent {
   @@map("audit_events")
 }
 
-// Provider event ids already received, so a replayed webhook is ignored.
+// Provider events already received, so a replay is ignored, with what each
+// named and what handling it came to.
 model WebhookEvent {
-  tenantId   String   @map("tenant_id")
-  provider   String
-  eventId    String   @map("event_id")
-  receivedAt DateTime @map("received_at")
+  tenantId    String    @map("tenant_id")
+  provider    String
+  eventId     String    @map("event_id")
+  receivedAt  DateTime  @map("received_at")
+  type        String?
+  // The item, payment reference or invoice the event names.
+  subjectId   String?   @map("subject_id")
+  outcome     String?
+  reason      String?
+  processedAt DateTime? @map("processed_at")
 
   @@id([tenantId, provider, eventId])
   @@index([receivedAt])

@@ -1,5 +1,10 @@
 import { NotFoundError } from '@/errors/errors'
-import { type WebhookDelivery, type WebhookEvent } from '@/ports/webhooks'
+import {
+  type WebhookDelivery,
+  type WebhookEvent,
+  type WebhookProvider,
+  type WebhookSettlement,
+} from '@/ports/webhooks'
 import { type Deps } from '@/use-cases/deps'
 import { makeInvoiceLifecycle } from '@/use-cases/invoice-lifecycle'
 import {
@@ -9,6 +14,19 @@ import {
 import { makeReconcilePayments } from '@/use-cases/reconcile-payments'
 
 export type WebhookReceipt = { events: WebhookEvent[]; duplicates: number }
+
+function subjectOf(event: WebhookEvent): string | null {
+  switch (event.kind) {
+    case 'PAYMENT':
+      return event.reference
+    case 'OPEN_FINANCE_ITEM':
+      return event.itemId
+    case 'INVOICE':
+      return event.externalId
+    case 'IGNORED':
+      return event.subject ?? null
+  }
+}
 
 // Authenticates the delivery and drops events already seen, so the route can
 // answer at once and leave the work for later.
@@ -29,7 +47,11 @@ export function makeReceiveWebhook(
       const first = await deps.webhookEvents.remember(
         tenantId,
         delivery.provider,
-        event.eventId,
+        {
+          eventId: event.eventId,
+          type: event.type,
+          subjectId: subjectOf(event),
+        },
         deps.clock.now(),
       )
       fresh.push(...(first ? [event] : []))
@@ -41,7 +63,7 @@ export function makeReceiveWebhook(
 export type WebhookOutcome = {
   eventId: string
   kind: WebhookEvent['kind']
-  outcome: 'DONE' | 'IGNORED' | 'UNKNOWN' | 'FAILED'
+  outcome: WebhookSettlement['outcome']
   reason: string | null
 }
 
@@ -66,6 +88,7 @@ type ProcessDeps = Pick<
   | 'documents'
   | 'clock'
   | 'ids'
+  | 'webhookEvents'
 >
 
 type Handler = (
@@ -122,8 +145,11 @@ export function makeProcessWebhookEvents(deps: ProcessDeps) {
     IGNORED: async () => ({ outcome: 'IGNORED', reason: null }),
   }
 
+  // Outcomes are stored once every event ran, so a failing audit write never
+  // stops a later event from syncing.
   return async function processWebhookEvents(
     tenantId: string,
+    provider: WebhookProvider,
     events: readonly WebhookEvent[],
   ): Promise<WebhookOutcome[]> {
     const outcomes: WebhookOutcome[] = []
@@ -137,6 +163,13 @@ export function makeProcessWebhookEvents(deps: ProcessDeps) {
       } catch (error) {
         outcomes.push({ ...base, outcome: 'FAILED', reason: String(error) })
       }
+    }
+    for (const { eventId, outcome, reason } of outcomes) {
+      await deps.webhookEvents.settle(tenantId, provider, eventId, {
+        outcome,
+        reason,
+        processedAt: deps.clock.now(),
+      })
     }
     return outcomes
   }

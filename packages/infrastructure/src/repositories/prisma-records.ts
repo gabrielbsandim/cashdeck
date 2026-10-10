@@ -25,6 +25,8 @@ import {
   type RecurrenceRepository,
   type TemplateBilling,
   type WebhookEventStore,
+  type WebhookReceived,
+  type WebhookSettlement,
   type WebhookProvider,
   type Page,
   type PageRequest,
@@ -611,14 +613,26 @@ export class PrismaWebhookEventStore implements WebhookEventStore {
   async remember(
     tenantId: string,
     provider: WebhookProvider,
-    eventId: string,
+    event: WebhookReceived,
     receivedAt: Date,
   ): Promise<boolean> {
     const result = await this.db.webhookEvent.createMany({
-      data: [{ tenantId, provider, eventId, receivedAt }],
+      data: [{ tenantId, provider, ...event, receivedAt }],
       skipDuplicates: true,
     })
     return result.count === 1
+  }
+
+  async settle(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    settlement: WebhookSettlement,
+  ): Promise<void> {
+    await this.db.webhookEvent.updateMany({
+      where: { tenantId, provider, eventId },
+      data: settlement,
+    })
   }
 }
 

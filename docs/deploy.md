@@ -118,7 +118,9 @@ the crons do the same work on their schedule. For each provider you use:
 3. Send a test event from the provider panel. The answer is 200 with
    `received: 1`; a 401 means the secret differs. The migration
    `20261014120000_webhooks_invoice_lifecycle` must be applied first, since
-   event ids are stored in `webhook_events`.
+   event ids are stored in `webhook_events`, and
+   `20261021120000_webhook_event_outcome` before deploying the code that
+   records each event's outcome there.
 
 The provider-specific details and what is still unconfirmed are in
 [providers.md](providers.md#webhooks).

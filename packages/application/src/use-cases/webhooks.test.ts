@@ -50,12 +50,53 @@ describe('receiveWebhook', () => {
       duplicates: 1,
     })
     expect((await receive(TENANT, delivery())).duplicates).toBe(3)
+    expect(deps.webhookEvents.find(TENANT, 'asaas', 'e1')).toEqual({
+      eventId: 'e1',
+      type: 'TRANSFER_DONE',
+      subjectId: null,
+      receivedAt: NOW,
+      outcome: null,
+      reason: null,
+      processedAt: null,
+    })
     await expect(receive(TENANT, delivery('forged'))).rejects.toThrow(
       UnauthorizedError,
     )
     await expect(
       receive(TENANT, { ...delivery(), provider: 'pluggy' }),
     ).rejects.toThrow(NotFoundError)
+  })
+
+  it('stores the type and what each event names', async () => {
+    const events: WebhookEvent[] = [
+      {
+        eventId: 'p',
+        type: 'T',
+        kind: 'PAYMENT',
+        rail: 'ASAAS',
+        reference: 'r',
+      },
+      {
+        eventId: 'o',
+        type: 'item/updated',
+        kind: 'OPEN_FINANCE_ITEM',
+        itemId: 'i',
+      },
+      { eventId: 'n', type: 'T', kind: 'INVOICE', externalId: 'x' },
+      { eventId: 'g', type: 'item/error', kind: 'IGNORED', subject: 'i' },
+    ]
+    const deps = fullDeps({
+      webhooks: [new FakeWebhookReader('asaas', events)],
+    })
+    await makeReceiveWebhook(deps)(TENANT, delivery())
+    expect(
+      events.map(e => deps.webhookEvents.find(TENANT, 'asaas', e.eventId)),
+    ).toEqual([
+      expect.objectContaining({ type: 'T', subjectId: 'r' }),
+      expect.objectContaining({ type: 'item/updated', subjectId: 'i' }),
+      expect.objectContaining({ type: 'T', subjectId: 'x' }),
+      expect.objectContaining({ type: 'item/error', subjectId: 'i' }),
+    ])
   })
 })
 
@@ -97,7 +138,7 @@ describe('processWebhookEvents', () => {
       invoice({ id: 'inv', status: 'PROCESSING', externalId: 'nf-1' }),
     )
     const process = makeProcessWebhookEvents(deps)
-    const outcomes = await process(TENANT, [
+    const outcomes = await process(TENANT, 'pluggy', [
       {
         eventId: 'p1',
         type: 'TRANSFER_DONE',
@@ -154,6 +195,51 @@ describe('processWebhookEvents', () => {
     expect((await deps.invoices.findById(TENANT, 'inv'))?.status).toBe('ISSUED')
   })
 
+  it('records the outcome of each event it handled', async () => {
+    const down = new FakeOpenFinanceProvider()
+    down.listAccounts = async () => {
+      throw new Error('down')
+    }
+    const deps = fullDeps({ openFinance: down })
+    await deps.connections.save({
+      id: 'conn',
+      tenantId: TENANT,
+      entityId: 'pf',
+      institutionId: 'inst',
+      provider: 'pluggy',
+      itemId: 'item-1',
+      status: 'UPDATED',
+      lastSyncAt: null,
+    })
+    const events: WebhookEvent[] = [
+      {
+        eventId: 'o1',
+        type: 'item/updated',
+        kind: 'OPEN_FINANCE_ITEM',
+        itemId: 'item-1',
+      },
+      { eventId: 'x1', type: 'item/error', kind: 'IGNORED', subject: 'item-1' },
+    ]
+    for (const event of events) {
+      await deps.webhookEvents.remember(
+        TENANT,
+        'pluggy',
+        { eventId: event.eventId, type: event.type, subjectId: 'item-1' },
+        NOW,
+      )
+    }
+    await makeProcessWebhookEvents(deps)(TENANT, 'pluggy', events)
+    expect(deps.webhookEvents.find(TENANT, 'pluggy', 'o1')).toMatchObject({
+      outcome: 'FAILED',
+      reason: 'Error: down',
+      processedAt: NOW,
+    })
+    expect(deps.webhookEvents.find(TENANT, 'pluggy', 'x1')).toMatchObject({
+      outcome: 'IGNORED',
+      reason: null,
+    })
+  })
+
   it('reports a failing event and moves on', async () => {
     const broken = new FakeRailStatusReader('ASAAS')
     broken.status = async () => {
@@ -166,7 +252,7 @@ describe('processWebhookEvents', () => {
       throw new Error('down')
     }
     await deps.invoices.save(invoice({ id: 'inv', externalId: 'nf-1' }))
-    const outcomes = await makeProcessWebhookEvents(deps)(TENANT, [
+    const outcomes = await makeProcessWebhookEvents(deps)(TENANT, 'asaas', [
       {
         eventId: 'p1',
         type: 'T',
@@ -176,6 +262,7 @@ describe('processWebhookEvents', () => {
       },
       { eventId: 'n1', type: 'T', kind: 'INVOICE', externalId: 'nf-1' },
     ])
+    expect(deps.webhookEvents.find(TENANT, 'asaas', 'p1')).toBeNull()
     expect(outcomes).toEqual([
       {
         eventId: 'p1',

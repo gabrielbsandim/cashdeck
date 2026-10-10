@@ -273,7 +273,7 @@ describe('Pluggy webhooks', () => {
         auth,
       ),
     )
-    expect(login[0]).toMatchObject({ kind: 'IGNORED' })
+    expect(login[0]).toMatchObject({ kind: 'IGNORED', subject: 'item-1' })
     const bare = await pluggy.read(TENANT, delivery('pluggy', {}, auth))
     expect(bare[0]).toMatchObject({ kind: 'IGNORED', type: 'UNKNOWN' })
     await refused(pluggy.read(TENANT, delivery('pluggy', {})))

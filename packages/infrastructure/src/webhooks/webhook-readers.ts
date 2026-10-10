@@ -190,8 +190,11 @@ export class PluggyWebhookReader implements WebhookReader {
     const eventId = text(body.eventId) ?? bodyId(delivery.rawBody)
     const type = text(body.event) ?? 'UNKNOWN'
     const itemId = text(body.itemId)
-    if (!itemId || !PLUGGY_SYNC_EVENTS.has(type)) {
+    if (!itemId) {
       return [{ eventId, type, kind: 'IGNORED' }]
+    }
+    if (!PLUGGY_SYNC_EVENTS.has(type)) {
+      return [{ eventId, type, kind: 'IGNORED', subject: itemId }]
     }
     return [{ eventId, type, kind: 'OPEN_FINANCE_ITEM', itemId }]
   }

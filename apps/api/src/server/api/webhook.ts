@@ -53,6 +53,7 @@ export function webhookRoute(provider: WebhookProvider) {
       await defer(async () => {
         const outcomes = await container.processWebhookEvents(
           tenantId,
+          provider,
           receipt.events,
         )
         for (const failed of outcomes.filter(o => o.outcome === 'FAILED')) {

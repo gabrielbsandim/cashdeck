@@ -625,17 +625,40 @@ describe('webhook events', () => {
     db.webhookEvent.createMany
       .mockResolvedValueOnce({ count: 1 })
       .mockResolvedValueOnce({ count: 0 })
-    expect(await repos.webhookEvents.remember(TENANT, 'asaas', 'e1', NOW)).toBe(
-      true,
-    )
-    expect(await repos.webhookEvents.remember(TENANT, 'asaas', 'e1', NOW)).toBe(
-      false,
-    )
+    const event = { eventId: 'e1', type: 'item/updated', subjectId: 'item-1' }
+    expect(
+      await repos.webhookEvents.remember(TENANT, 'pluggy', event, NOW),
+    ).toBe(true)
+    expect(
+      await repos.webhookEvents.remember(TENANT, 'pluggy', event, NOW),
+    ).toBe(false)
     expect(db.webhookEvent.createMany.mock.calls[0]?.[0]).toEqual({
       data: [
-        { tenantId: TENANT, provider: 'asaas', eventId: 'e1', receivedAt: NOW },
+        {
+          tenantId: TENANT,
+          provider: 'pluggy',
+          eventId: 'e1',
+          type: 'item/updated',
+          subjectId: 'item-1',
+          receivedAt: NOW,
+        },
       ],
       skipDuplicates: true,
+    })
+  })
+
+  it('settles an event with its outcome', async () => {
+    const { db, repos } = mockClient()
+    db.webhookEvent.updateMany.mockResolvedValue({ count: 1 })
+    const settlement = {
+      outcome: 'FAILED' as const,
+      reason: 'Error: down',
+      processedAt: NOW,
+    }
+    await repos.webhookEvents.settle(TENANT, 'pluggy', 'e1', settlement)
+    expect(db.webhookEvent.updateMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, provider: 'pluggy', eventId: 'e1' },
+      data: settlement,
     })
   })
 })

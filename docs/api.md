@@ -915,3 +915,8 @@ duplicate and does nothing. The body is only a trigger: payment events
 reconcile the named payment by asking the rail, Pluggy item events sync that
 item, Notaas events refresh that invoice from the issuer. The crons above stay
 the backstop for an event that is lost or fails.
+
+Each row of `webhook_events` keeps the event `type`, the `subject_id` it names
+(the Pluggy item id, the payment reference or the invoice id) and, once
+handled, the `outcome` (`DONE`, `IGNORED`, `UNKNOWN` when nothing matches the
+subject, or `FAILED`), the failure `reason` and `processed_at`.

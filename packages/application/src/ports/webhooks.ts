@@ -23,7 +23,7 @@ export type WebhookSignal =
   | { kind: 'PAYMENT'; rail: RailId; reference: string }
   | { kind: 'OPEN_FINANCE_ITEM'; itemId: string }
   | { kind: 'INVOICE'; externalId: string }
-  | { kind: 'IGNORED' }
+  | { kind: 'IGNORED'; subject?: string }
 
 export type WebhookEvent = { eventId: string; type: string } & WebhookSignal
 
@@ -33,12 +33,32 @@ export interface WebhookReader {
   read(tenantId: string, delivery: WebhookDelivery): Promise<WebhookEvent[]>
 }
 
+// What an event names: the item, payment reference or invoice it is about.
+export type WebhookReceived = {
+  eventId: string
+  type: string
+  subjectId: string | null
+}
+
+export type WebhookSettlement = {
+  outcome: 'DONE' | 'IGNORED' | 'UNKNOWN' | 'FAILED'
+  reason: string | null
+  processedAt: Date
+}
+
 export interface WebhookEventStore {
   // True the first time an event id is seen for the provider, false on a replay.
   remember(
     tenantId: string,
     provider: WebhookProvider,
-    eventId: string,
+    event: WebhookReceived,
     receivedAt: Date,
   ): Promise<boolean>
+  // Records what handling the event came to, for auditing.
+  settle(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    settlement: WebhookSettlement,
+  ): Promise<void>
 }
