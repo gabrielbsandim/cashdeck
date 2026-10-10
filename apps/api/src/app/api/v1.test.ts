@@ -529,6 +529,46 @@ describe('card statements and accountant export', () => {
         })
       ).status,
     ).toBe(422)
+
+    const card = await call(h(createAccount), 'POST', {
+      body: {
+        entity: 'PF',
+        institution: 'Card Bank',
+        name: 'Card',
+        type: 'CREDIT_CARD',
+        balanceCents: 0,
+      },
+    })
+    const container = getContainer()
+    vi.spyOn(container.deps.llm, 'chat').mockResolvedValue({
+      text: '',
+      toolCalls: [],
+      usage: { inputTokens: 0, outputTokens: 0, costMillicents: 0 },
+      stopReason: 'end',
+      object: {
+        items: [
+          {
+            ref: 'n1',
+            kind: 'PURCHASE',
+            amount: 10,
+            merchant: 'Bakery',
+            installments: 1,
+          },
+        ],
+      },
+    })
+    const categorize = vi
+      .spyOn(container, 'categorizeTransactions')
+      .mockResolvedValue({ byRule: 0, byAi: 0, left: 0 })
+    const captured = await call(h(captureNotifications), 'POST', {
+      body: { accountId: card.body.data.id, notifications },
+    })
+    expect(captured.body.data).toEqual({ received: 1, added: 1 })
+    expect(categorize).toHaveBeenCalledTimes(1)
+    await call(h(captureNotifications), 'POST', {
+      body: { accountId: card.body.data.id, notifications },
+    })
+    expect(categorize).toHaveBeenCalledTimes(1)
   })
 
   it('plans, generates and downloads an export', async () => {
