@@ -4,9 +4,11 @@ import { fullDeps } from '@/testing/deps.test-helpers'
 import { InMemoryEntityRepository } from '@/testing/repositories'
 import {
   BOLETO_LINE,
+  company,
   NOW,
   PIX_NO_AMOUNT,
   personal,
+  TAX_BARCODE,
   TENANT,
 } from '@/testing/scenario.test-helpers'
 import {
@@ -85,6 +87,42 @@ describe('capture sources', () => {
     await expect(capture.readMailbox(TENANT, mailbox.id)).rejects.toThrow(
       'Mailbox',
     )
+  })
+
+  it('files a company guide from the personal mailbox under the company', async () => {
+    const deps = fullDeps({
+      billSources: [
+        source('GMAIL', [
+          found({
+            paymentCode: TAX_BARCODE,
+            dueDate: '2026-10-20',
+            taxIds: [company.taxId.value],
+          }),
+          found({
+            externalId: 'm2',
+            paymentCode: BOLETO_LINE,
+            taxIds: [company.taxId.value, personal.taxId.value],
+          }),
+          found({
+            externalId: 'm3',
+            pixCode: PIX_NO_AMOUNT,
+            amountCents: 900,
+            dueDate: '2026-10-30',
+            taxIds: ['11144477735'],
+          }),
+        ]),
+      ],
+    })
+    const capture = makeCaptureSources(deps)
+    const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
+    await capture.readMailbox(TENANT, mailbox.id)
+    const page = { cursor: null, limit: 10 }
+    const of = async (entityId: string) =>
+      (await deps.bills.list(TENANT, { entityId }, page)).items.map(
+        bill => bill.kind,
+      )
+    expect(await of(company.id)).toEqual(['TAX_BARCODE'])
+    expect((await of(personal.id)).sort()).toEqual(['BOLETO', 'PIX_QR'])
   })
 
   it('starts the next read window when the previous run started', async () => {

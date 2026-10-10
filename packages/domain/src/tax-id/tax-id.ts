@@ -80,3 +80,19 @@ export class TaxId {
     return this.value
   }
 }
+
+// A CNPJ or CPF printed in a document, formatted or not, but never a slice of
+// a longer digit run such as a barcode.
+const PRINTED_TAX_ID =
+  /(?<!\d)(?:\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}|\d{3}\.?\d{3}\.?\d{3}-?\d{2})(?!\d)/g
+
+export function findTaxIds(text: string): string[] {
+  const found = new Set<string>()
+  for (const [printed] of text.matchAll(PRINTED_TAX_ID)) {
+    const value = printed.replace(/\D/g, '')
+    if (isValidCpf(value) || isValidCnpj(value)) {
+      found.add(value)
+    }
+  }
+  return [...found]
+}

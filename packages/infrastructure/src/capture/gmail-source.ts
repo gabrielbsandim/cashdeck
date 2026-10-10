@@ -4,7 +4,12 @@ import {
   type CapturedBill,
   type LlmAttachment,
 } from '@cashdeck/application'
-import { findPaymentCodes, type LocalDate, toLocalDate } from '@cashdeck/domain'
+import {
+  findPaymentCodes,
+  findTaxIds,
+  type LocalDate,
+  toLocalDate,
+} from '@cashdeck/domain'
 import {
   type Credentials,
   requireCredentials,
@@ -171,6 +176,7 @@ export class GmailBillSource implements BillSource {
     const text = parts.filter(isText).map(decodeBody).join('\n')
     const fromText = toExtracted(findPaymentCodes(text, today), today, {
       payee,
+      taxIds: findTaxIds(text),
     })
     return withBody(found, fromText, today).map((bill, index) =>
       toCaptured(`${id}:${index}`, bill, payee),
@@ -283,6 +289,7 @@ function joined(
     payee: bill.payee ?? other.payee,
     amountCents: bill.amountCents ?? other.amountCents,
     dueDate: bill.dueDate ?? other.dueDate,
+    taxIds: [...new Set([...bill.taxIds, ...other.taxIds])],
   }
   return toExtracted(codes, today, hints) ?? bill
 }
@@ -319,5 +326,6 @@ function toCaptured(
     amountCents: bill.amountCents,
     dueDate: bill.dueDate,
     kind: bill.kind,
+    taxIds: bill.taxIds,
   }
 }

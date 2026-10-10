@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TaxId } from '@/tax-id/tax-id'
+import { findTaxIds, TaxId } from '@/tax-id/tax-id'
 import { ValidationError } from '@/shared/domain-error'
 
 describe('TaxId', () => {
@@ -47,5 +47,18 @@ describe('TaxId', () => {
     expect(
       TaxId.parse('52998224725').equals(TaxId.parse('529.982.247-25')),
     ).toBe(true)
+  })
+})
+
+describe('findTaxIds', () => {
+  it('finds the printed CNPJ and CPF and skips digit runs', () => {
+    const text = [
+      'Contribuinte: 11.222.333/0001-81',
+      'CPF 52998224725 e de novo 529.982.247-25',
+      'Errado: 11.222.333/0001-80',
+      'Codigo 85890000005500000641111222333000181202610200',
+    ].join('\n')
+    expect(findTaxIds(text)).toEqual(['11222333000181', '52998224725'])
+    expect(findTaxIds('sem documento')).toEqual([])
   })
 })

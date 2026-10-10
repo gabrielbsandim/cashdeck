@@ -67,6 +67,7 @@ describe('toExtracted', () => {
       amountCents: 12345,
       dueDate: '2026-10-20',
       kind: 'BOLETO',
+      taxIds: [],
     })
     expect(
       toExtracted({ barcode: TAX_BARCODE, pixCode: null }, TODAY, {
@@ -104,6 +105,7 @@ describe('BillExtractor', () => {
       amountCents: 12345,
       dueDate: '2026-10-20',
       kind: 'BOLETO',
+      taxIds: [],
     })
     expect(await extractor.fromAttachment(attachment, TODAY)).toBeNull()
     expect(await extractor.fromAttachment(attachment, TODAY)).toMatchObject({
@@ -151,7 +153,9 @@ describe('BillExtractor', () => {
         throw new LlmProviderError('rejected', code)
       },
     })
-    const text = new FakeDocumentTextReader(`Linha ${SPACED_LINE}`)
+    const text = new FakeDocumentTextReader(
+      `Contribuinte 11.222.333/0001-81\nLinha ${SPACED_LINE}`,
+    )
     const attachment = { mimeType: 'application/pdf', dataBase64: 'JVBERi0=' }
     const rejected = new BillExtractor(failing('request_rejected'), text)
     expect(await rejected.fromAttachment(attachment, TODAY)).toMatchObject({
@@ -250,6 +254,7 @@ describe('GmailBillSource', () => {
         amountCents: 12345,
         dueDate: '2026-10-20',
         kind: 'BOLETO',
+        taxIds: [],
       },
       {
         externalId: 'm2:0',
@@ -259,6 +264,7 @@ describe('GmailBillSource', () => {
         amountCents: 100,
         dueDate: null,
         kind: 'PIX_QR',
+        taxIds: [],
       },
     ])
     const list = scripted.requests.find(r =>
@@ -426,6 +432,12 @@ describe('GmailBillSource', () => {
             mimeType: 'multipart/mixed',
             parts: [
               {
+                mimeType: 'text/plain',
+                body: {
+                  data: b64(`Linha: ${SPACED_LINE}\nCPF: 529.982.247-25`),
+                },
+              },
+              {
                 mimeType: 'application/octet-stream',
                 filename: 'Conta.PDF',
                 body: { attachmentId: 'att-1', size: 1000 },
@@ -439,7 +451,9 @@ describe('GmailBillSource', () => {
           },
         },
       })
-    const text = new FakeDocumentTextReader(`Linha ${SPACED_LINE}`)
+    const text = new FakeDocumentTextReader(
+      `Contribuinte 11.222.333/0001-81\nLinha ${SPACED_LINE}`,
+    )
     const source = new GmailBillSource({
       credentials: gmailEnv(),
       transport: scripted.transport,
@@ -453,7 +467,11 @@ describe('GmailBillSource', () => {
       taxId: '52998224725',
     })
     expect(bills).toEqual([
-      expect.objectContaining({ externalId: 'm1:0', paymentCode: BOLETO_LINE }),
+      expect.objectContaining({
+        externalId: 'm1:0',
+        paymentCode: BOLETO_LINE,
+        taxIds: ['11222333000181', '52998224725'],
+      }),
     ])
     expect(text.reads).toHaveLength(1)
     expect(text.reads[0]).toMatchObject({

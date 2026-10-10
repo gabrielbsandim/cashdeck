@@ -166,11 +166,28 @@ export function makeCaptureSources(deps: CaptureDeps) {
     })
     let created = 0
     for (const found of fetched) {
-      created += (await captureOne(tenantId, entityId, sourceName, found))
-        ? 1
-        : 0
+      const payer = await payerOf(tenantId, entity, found)
+      created += (await captureOne(tenantId, payer, sourceName, found)) ? 1 : 0
     }
     return { fetched: fetched.length, created }
+  }
+
+  // A company guide sent to the person's mailbox prints the company's tax id
+  // and not the person's, so it is filed under the company.
+  async function payerOf(
+    tenantId: string,
+    owner: FinancialEntity,
+    found: CapturedBill,
+  ): Promise<string> {
+    const printed = found.taxIds ?? []
+    if (printed.length === 0 || printed.includes(owner.taxId.value)) {
+      return owner.id
+    }
+    const entities = await deps.entities.list(tenantId)
+    return (
+      entities.find(entity => printed.includes(entity.taxId.value))?.id ??
+      owner.id
+    )
   }
 
   // A bill the reader could not decode is skipped; the rest still land.

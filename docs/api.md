@@ -748,6 +748,11 @@ Rails that share a `RAIL_ID` on an entity share credentials.
   here; the server stores the mailbox and redirects to
   `cashdeck://capture?connected=1` (or `?error=<code>`).
 - `POST /capture/mailboxes/{id}/read`: reads it now. Returns `CaptureSources`.
+  A bill that prints another entity's CPF or CNPJ and not the mailbox
+  owner's is filed under that entity, so a company DAS or DARF sent to the
+  personal mailbox lands in the company. A password protected PDF is opened
+  with the owner's tax id digits (the first 4, 5 or 6, or all of them), and
+  an untyped attachment named `.pdf` is read as a PDF.
 - `DELETE /capture/mailboxes/{id}`: disconnects. Returns `CaptureSources`.
 - `PUT /capture/dda/{entity}`: body `{ enabled: bool }`. Returns `CaptureSources`.
 - `POST /capture/files`: body `Upload` plus `entity`, `amountCents?` and

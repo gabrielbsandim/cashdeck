@@ -10,6 +10,7 @@ import {
   billKindFor,
   decodePaymentCode,
   findPaymentCodes,
+  findTaxIds,
   type FoundCodes,
   type LocalDate,
   validBarcode,
@@ -23,6 +24,8 @@ export type ExtractedBill = {
   amountCents: number | null
   dueDate: LocalDate | null
   kind: BillKind | null
+  // CPFs and CNPJs printed on it, which tell whose guide it is.
+  taxIds: string[]
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -55,6 +58,7 @@ export function toExtracted(
     payee?: string | null
     amountCents?: number | null
     dueDate?: string | null
+    taxIds?: readonly string[]
   } = {},
 ): ExtractedBill | null {
   if (!candidate.barcode && !candidate.pixCode) {
@@ -69,6 +73,7 @@ export function toExtracted(
     amountCents: facts.amountCents ?? hints.amountCents ?? null,
     dueDate: facts.dueDate ?? hinted,
     kind: kindOf(candidate, today),
+    taxIds: [...(hints.taxIds ?? [])],
   }
 }
 
@@ -121,7 +126,8 @@ export class BillExtractor {
     today: LocalDate,
     passwords: readonly string[] = [],
   ): Promise<ExtractedBill | null> {
-    const local = await this.localCodes(attachment, today, passwords)
+    const text = await this.localText(attachment, passwords)
+    const local = findPaymentCodes(text, today)
     const answer = await this.ask(attachment)
     const candidate = {
       barcode:
@@ -136,20 +142,20 @@ export class BillExtractor {
       amountCents:
         Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null,
       dueDate: answer.dueDate,
+      taxIds: findTaxIds(text),
     })
   }
 
-  private async localCodes(
+  private async localText(
     attachment: LlmAttachment,
-    today: LocalDate,
     passwords: readonly string[],
-  ): Promise<Candidate> {
+  ): Promise<string> {
     const text = await this.text?.read({
       mimeType: attachment.mimeType,
       bytes: Buffer.from(attachment.dataBase64, 'base64'),
       passwords,
     })
-    return findPaymentCodes(text ?? '', today)
+    return text ?? ''
   }
 
   // A document the model refuses (an encrypted PDF, say) loses only its own

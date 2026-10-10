@@ -131,6 +131,8 @@ export type CapturedBill = {
   amountCents: number | null
   dueDate: string | null
   kind: BillKind | null
+  // CPFs and CNPJs printed on the bill, to file a company guide under it.
+  taxIds?: string[]
 }
 
 // The charge behind a dynamic BR Code, read from its location (field 26.25).
