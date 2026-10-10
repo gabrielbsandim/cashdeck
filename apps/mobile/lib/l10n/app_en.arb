@@ -1039,5 +1039,22 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cardPostSection": "Post to a card",
+  "cardPostHint": "Each line confirms the preview its notification left; the rest lands as new purchases.",
+  "cardPostNoCards": "No credit card account for this entity.",
+  "cardPostButton": "Post lines to the card",
+  "cardPostedToast": "{confirmed} confirmed, {added} new",
+  "@cardPostedToast": {
+    "placeholders": {
+      "confirmed": {
+        "type": "int"
+      },
+      "added": {
+        "type": "int"
+      }
+    }
+  },
+  "cardUnmatchedTitle": "Previews not on the statement",
+  "cardUnmatchedHint": "Check whether they were cancelled or fall in the next bill."
 }

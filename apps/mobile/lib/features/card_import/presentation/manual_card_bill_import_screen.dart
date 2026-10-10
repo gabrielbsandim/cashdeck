@@ -13,6 +13,8 @@ import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_checkbox_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
+import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/layout/cd_stepper.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
@@ -20,8 +22,10 @@ import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/card_import/card_import_providers.dart';
 import 'package:cashdeck/features/card_import/domain/card_statement.dart';
+import 'package:cashdeck/features/card_notifications/card_notifications_providers.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,12 +39,23 @@ final FutureProvider<CardStatement> cardStatementProvider =
       retry: noRetry,
     );
 
+/// The credit cards a statement's lines can be posted to.
+final FutureProvider<List<TransactionAccount>> statementCardsProvider =
+    FutureProvider.autoDispose<List<TransactionAccount>>(
+      (ref) async =>
+          (await ref.read(listNotificationCardsProvider).call()).orThrow,
+      retry: noRetry,
+    );
+
 /// Reviews a card statement read from its PDF and turns it into a bill.
 class ManualCardBillImportScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
   static const createKey = Key('card-create-bill');
   static const uploadKey = Key('card-upload-statement');
+  static const postKey = Key('card-post-lines');
+
+  static Key postCardKey(String id) => Key('card-post-card-$id');
 
   static Key lineKey(String id) => Key('card-line-$id');
 
@@ -165,6 +180,31 @@ class _ReviewState extends ConsumerState<_Review> {
     for (final line in widget.statement.lines) line.id,
   };
   var _creating = false;
+  late String? _accountId = widget.statement.accountId;
+  var _posting = false;
+  StatementPosting? _posted;
+
+  Future<void> _post(String accountId) async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _posting = true);
+    final result = await ref
+        .read(cardImportRepositoryProvider)
+        .post(widget.statement, accountId, _selected);
+    if (!mounted) return;
+    final (posted, failure) = switch (result) {
+      Ok(:final value) => (value, null),
+      Err(:final failure) => (_posted, failure),
+    };
+    setState(() {
+      _posting = false;
+      _posted = posted;
+    });
+    await showOutcomeToast(
+      context,
+      failure,
+      success: l10n.cardPostedToast(posted?.confirmed ?? 0, posted?.added ?? 0),
+    );
+  }
 
   Future<void> _create() async {
     final l10n = AppLocalizations.of(context);
@@ -316,6 +356,8 @@ class _ReviewState extends ConsumerState<_Review> {
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
+        ..._postSection(l10n, statement, secondary),
+        const SizedBox(height: AppSpacing.xl),
         Text(l10n.cardBecomesBill(statement.due.dayMonth), style: secondary),
         const SizedBox(height: AppSpacing.md),
         CdButton.filled(
@@ -333,5 +375,56 @@ class _ReviewState extends ConsumerState<_Review> {
         ),
       ],
     );
+  }
+
+  List<Widget> _postSection(
+    AppLocalizations l10n,
+    CardStatement statement,
+    TextStyle secondary,
+  ) {
+    final cards = [
+      for (final card
+          in ref.watch(statementCardsProvider).value ??
+              const <TransactionAccount>[])
+        if (card.owner == statement.owner) card,
+    ];
+    final accountId = _accountId;
+    final unmatched = _posted?.unmatched ?? const <UnmatchedPreview>[];
+    return [
+      CdSectionHeader(title: l10n.cardPostSection, small: true),
+      const SizedBox(height: AppSpacing.xs),
+      Text(l10n.cardPostHint, style: secondary),
+      if (cards.isEmpty) Text(l10n.cardPostNoCards, style: secondary),
+      for (final card in cards)
+        CdCheckboxRow(
+          key: ManualCardBillImportScreen.postCardKey(card.id),
+          title: card.name,
+          subtitle: Text(card.institution, style: secondary),
+          value: card.id == accountId,
+          onChanged: (_) => setState(() => _accountId = card.id),
+        ),
+      const SizedBox(height: AppSpacing.sm),
+      CdButton.outlined(
+        key: ManualCardBillImportScreen.postKey,
+        expand: true,
+        loading: _posting,
+        label: l10n.cardPostButton,
+        onPressed: accountId == null || _selected.isEmpty
+            ? null
+            : () => _post(accountId),
+      ),
+      if (unmatched.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.lg),
+        CdSectionHeader(title: l10n.cardUnmatchedTitle, small: true),
+        const SizedBox(height: AppSpacing.xs),
+        Text(l10n.cardUnmatchedHint, style: secondary),
+        for (final preview in unmatched)
+          CdListRow(
+            title: preview.description,
+            subtitle: preview.bookedOn.dayMonth,
+            trailing: CdAmount(preview.amount, size: CdAmountSize.row),
+          ),
+      ],
+    ];
   }
 }

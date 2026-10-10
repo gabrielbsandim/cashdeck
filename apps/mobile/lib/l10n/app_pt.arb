@@ -2564,5 +2564,22 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cardPostSection": "Lançar no cartão",
+  "cardPostHint": "Cada linha confirma a prévia que a notificação deixou; o resto entra como compra nova.",
+  "cardPostNoCards": "Nenhuma conta de cartão de crédito desta entidade.",
+  "cardPostButton": "Lançar linhas no cartão",
+  "cardPostedToast": "{confirmed} confirmadas, {added} novas",
+  "@cardPostedToast": {
+    "placeholders": {
+      "confirmed": {
+        "type": "int"
+      },
+      "added": {
+        "type": "int"
+      }
+    }
+  },
+  "cardUnmatchedTitle": "Prévias fora da fatura",
+  "cardUnmatchedHint": "Confira se foram canceladas ou se entram na próxima fatura."
 }

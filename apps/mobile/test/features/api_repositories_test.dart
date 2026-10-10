@@ -176,6 +176,7 @@ final JsonMap _statement = {
     },
   ],
   'billId': null,
+  'accountId': 'c1',
 };
 
 final JsonMap _record = {
@@ -1072,6 +1073,18 @@ void main() {
           'iof': _money(190),
           'total': _money(5611),
         },
+        'POST /api/v1/card-statements/s1/post': {
+          'confirmed': 1,
+          'added': 0,
+          'unmatched': [
+            {
+              'id': 't1',
+              'description': 'Loja Exemplo',
+              'bookedOn': '2026-10-01',
+              'amount': _money(-1000),
+            },
+          ],
+        },
       });
       final repository = ApiCardImportRepository(dio);
 
@@ -1081,6 +1094,13 @@ void main() {
       expect(_sent(dio, 1), {
         'lineIds': ['l1'],
       });
+      final posted = _ok(await repository.post(statement, 'c1', {'l1'}));
+      expect(posted.unmatched.single.amount, const Money(-1000));
+      expect(_sent(dio, 2), {
+        'accountId': 'c1',
+        'lineIds': ['l1'],
+      });
+      expect(statement.accountId, 'c1');
 
       final read = ApiCardImportRepository(
         _api({'POST /api/v1/card-statements': _statement}),

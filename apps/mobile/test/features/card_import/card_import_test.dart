@@ -9,6 +9,7 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/card_import/card_import_providers.dart';
 import 'package:cashdeck/features/card_import/data/fake_card_import_repository.dart';
@@ -47,6 +48,13 @@ final class _Flaky implements CardImportRepository {
     CardStatement statement,
     Set<String> lineIds,
   ) async => const Err(NetworkFailure());
+
+  @override
+  Future<Result<StatementPosting>> post(
+    CardStatement statement,
+    String accountId,
+    Set<String> lineIds,
+  ) async => const Err(NetworkFailure());
 }
 
 void main() {
@@ -72,7 +80,7 @@ void main() {
     expect(all.total, const Money(263_311));
     expect(some.total, const Money(252_856));
     expect(all.props, hasLength(3));
-    expect(card.props, hasLength(8));
+    expect(card.props, hasLength(10));
     expect(card.lines.last.props, hasLength(5));
   });
 
@@ -102,6 +110,21 @@ void main() {
       const Ok('bill-card-viagem'),
     );
   });
+
+  test(
+    'the fake posts the lines and hands back an unmatched preview',
+    () async {
+      final card = await statement();
+      final posted = await repository.post(card, 'acc-pf-card', {
+        for (final line in card.lines) line.id,
+      });
+      final value = (posted as Ok<StatementPosting>).value;
+
+      expect([value.confirmed, value.added], [1, 2]);
+      expect(value.unmatched.single.props, hasLength(4));
+      expect(value.props, hasLength(3));
+    },
+  );
 
   test('the provider reads the fake', () {
     final container = ProviderContainer();
@@ -149,6 +172,28 @@ void main() {
     expect(app.location, AppRoutes.settings);
   });
 
+  testWidgets('posts the lines to a card and lists what did not match', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.cardImport);
+    await settle(tester);
+
+    final post = find.byKey(ManualCardBillImportScreen.postKey);
+    await tester.scrollUntilVisible(post, 200);
+    expect(tester.widget<CdButton>(post).onPressed, isNull);
+    await tester.tap(
+      find.byKey(ManualCardBillImportScreen.postCardKey('acc-pf-card')),
+    );
+    await settle(tester);
+    await tester.tap(post);
+    await settle(tester);
+
+    expect(find.text(l10n.cardPostedToast(1, 2)), findsOneWidget);
+    expect(find.text(l10n.cardUnmatchedTitle), findsOneWidget);
+    expect(find.text('Bistrô Central'), findsOneWidget);
+    await waitForToast(tester);
+  });
+
   testWidgets('a failed load or creation says why', (tester) async {
     final flaky = _Flaky();
     await pumpRoute(
@@ -166,6 +211,18 @@ void main() {
     await settle(tester);
     expect(find.text(l10n.errorNetwork), findsOneWidget);
     expect(find.byType(ManualCardBillImportScreen), findsOneWidget);
+    await waitForToast(tester);
+
+    final post = find.byKey(ManualCardBillImportScreen.postKey);
+    await tester.scrollUntilVisible(post, 200);
+    await tester.tap(
+      find.byKey(ManualCardBillImportScreen.postCardKey('acc-pf-card')),
+    );
+    await settle(tester);
+    await tester.tap(post);
+    await settle(tester);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
+    expect(find.text(l10n.cardUnmatchedTitle), findsNothing);
   });
 
   testWidgets('no statement waiting reads as empty, not as an error', (

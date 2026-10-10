@@ -11,6 +11,8 @@ import 'package:dio/dio.dart';
 
 CardStatement cardStatementFromJson(JsonMap json) => CardStatement(
   id: readString(json, 'id'),
+  owner: readEntityKind(json, 'entityKind'),
+  accountId: readOptionalString(json, 'accountId'),
   card: readString(json, 'card'),
   issuer: readString(json, 'issuer'),
   closing: readDate(json, 'closing'),
@@ -25,6 +27,20 @@ CardStatement cardStatementFromJson(JsonMap json) => CardStatement(
         date: readDate(line, 'date'),
         amount: readMoney(line, 'amount'),
         needsReview: readBool(line, 'needsReview'),
+      ),
+  ],
+);
+
+StatementPosting statementPostingFromJson(JsonMap json) => StatementPosting(
+  confirmed: readInt(json, 'confirmed'),
+  added: readInt(json, 'added'),
+  unmatched: [
+    for (final preview in readMapList(json, 'unmatched'))
+      UnmatchedPreview(
+        id: readString(preview, 'id'),
+        description: readString(preview, 'description'),
+        bookedOn: readDate(preview, 'bookedOn'),
+        amount: readMoney(preview, 'amount'),
       ),
   ],
 );
@@ -74,5 +90,18 @@ final class ApiCardImportRepository implements CardImportRepository {
       data: {'lineIds': lineIds.toList()},
     );
     return readString(asJsonMap(unwrapData(response.data)), 'billId');
+  });
+
+  @override
+  Future<Result<StatementPosting>> post(
+    CardStatement statement,
+    String accountId,
+    Set<String> lineIds,
+  ) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      '$path/${Uri.encodeComponent(statement.id)}/post',
+      data: {'accountId': accountId, 'lineIds': lineIds.toList()},
+    );
+    return statementPostingFromJson(asJsonMap(unwrapData(response.data)));
   });
 }

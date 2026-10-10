@@ -41,9 +41,15 @@ final class CardStatement extends Equatable {
     required this.iofBps,
     required this.lines,
     this.id = '',
+    this.owner = EntityKind.personal,
+    this.accountId,
   });
 
   final String id;
+  final EntityKind owner;
+
+  /// The card account the lines were posted to, once they were.
+  final String? accountId;
   final String card;
   final String issuer;
   final CalendarDate closing;
@@ -57,6 +63,8 @@ final class CardStatement extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    owner,
+    accountId,
     card,
     issuer,
     closing,
@@ -97,6 +105,41 @@ final class StatementTotals extends Equatable {
   List<Object?> get props => [foreign, subtotal, iof];
 }
 
+/// A preview up to the closing date that no line of the statement matched:
+/// a charge that fell through, or one the next bill brings.
+final class UnmatchedPreview extends Equatable {
+  const new({
+    required this.id,
+    required this.description,
+    required this.bookedOn,
+    required this.amount,
+  });
+
+  final String id;
+  final String description;
+  final CalendarDate bookedOn;
+  final Money amount;
+
+  @override
+  List<Object?> get props => [id, description, bookedOn, amount];
+}
+
+/// What posting the lines to a card did: previews confirmed, charges added.
+final class StatementPosting extends Equatable {
+  const new({
+    required this.confirmed,
+    required this.added,
+    this.unmatched = const [],
+  });
+
+  final int confirmed;
+  final int added;
+  final List<UnmatchedPreview> unmatched;
+
+  @override
+  List<Object?> get props => [confirmed, added, unmatched];
+}
+
 abstract interface class CardImportRepository {
   Future<Result<CardStatement>> statement();
 
@@ -107,6 +150,14 @@ abstract interface class CardImportRepository {
   /// the server computes the total. Returns the bill id.
   Future<Result<String>> createBill(
     CardStatement statement,
+    Set<String> lineIds,
+  );
+
+  /// Posts the [lineIds] to the card [accountId], confirming the previews its
+  /// notifications left; posting again adds nothing.
+  Future<Result<StatementPosting>> post(
+    CardStatement statement,
+    String accountId,
     Set<String> lineIds,
   );
 }

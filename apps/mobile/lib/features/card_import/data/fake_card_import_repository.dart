@@ -65,4 +65,28 @@ final class FakeCardImportRepository implements CardImportRepository {
     if (total.cents <= 0) return const Err(ValidationFailure('total'));
     return const Ok('bill-card-viagem');
   }
+
+  @override
+  Future<Result<StatementPosting>> post(
+    CardStatement statement,
+    String accountId,
+    Set<String> lineIds,
+  ) async {
+    await Future<void>.delayed(latency);
+    final today = CalendarDate.brazilToday(_clock.now());
+    return Ok(
+      StatementPosting(
+        confirmed: 1,
+        added: lineIds.length - 1,
+        unmatched: [
+          UnmatchedPreview(
+            id: 'preview-bistro',
+            description: 'Bistrô Central',
+            bookedOn: today.addDays(-4),
+            amount: const Money(-4_500),
+          ),
+        ],
+      ),
+    );
+  }
 }
