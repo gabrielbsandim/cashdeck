@@ -149,6 +149,18 @@ export const categoryViewSchema = z.object({
 
 export type CategoryView = z.infer<typeof categoryViewSchema>
 
+export const createCategoryRuleSchema = z.object({
+  pattern: z.string().trim().min(1).max(100),
+  categoryId: z.string().min(1),
+  entity: entityKindSchema.nullable().default(null),
+})
+
+export const categoryRuleResultSchema = z.object({
+  pattern: z.string(),
+  categoryId: z.string(),
+  updated: z.int(),
+})
+
 const transferPartySchema = z.object({
   owner: entityKindSchema,
   holder: z.string(),

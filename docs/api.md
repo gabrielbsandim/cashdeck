@@ -426,6 +426,15 @@ by name. A tenant with no categories gets the built-in list on the first call;
 `shopping`, `subscriptions`, `travel`, `taxes`, `fees`, `salary`, `income`,
 `investments`, `transfers`, `services`, `other`), so the app can translate it.
 
+### POST /categories/rules
+
+Body `{ pattern: string, categoryId: string, entity?: "PF" | "PJ" | null }`.
+Learns a rule from the merchant words of `pattern` (bank noise dropped, the same
+way `PATCH /transactions/{id}` does) for one entity, or for both when `entity`
+is null or left out, and relabels every matching transaction the user did not
+set, transfers aside. A pattern of only noise is a 422. `data`:
+`{ pattern, categoryId, updated: int }`, 201.
+
 ### Automatic categorization
 
 After every Open Finance sync (manual or cron) the server categorizes the

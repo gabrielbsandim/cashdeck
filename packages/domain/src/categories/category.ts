@@ -62,6 +62,8 @@ const NOISE = new Set([
   'pag',
   'transf',
   'transferencia',
+  'transfer',
+  'key',
   'ted',
   'doc',
   'boleto',

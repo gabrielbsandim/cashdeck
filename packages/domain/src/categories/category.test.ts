@@ -29,6 +29,7 @@ describe('normalizeDescription', () => {
       normalizeDescription('PIX ENVIADO 12/10 Padaria São João LTDA *123'),
     ).toBe('padaria sao joao')
     expect(normalizeDescription('  ')).toBe('')
+    expect(normalizeDescription('pix key transfer')).toBe('')
   })
 })
 

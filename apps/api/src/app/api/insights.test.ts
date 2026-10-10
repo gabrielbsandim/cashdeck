@@ -17,6 +17,7 @@ import { POST as createAccount } from '@/app/api/v1/accounts/route'
 import { GET as listTransactions } from '@/app/api/v1/transactions/route'
 import { PATCH as updateTransaction } from '@/app/api/v1/transactions/[id]/route'
 import { GET as listCategories } from '@/app/api/v1/categories/route'
+import { POST as createRule } from '@/app/api/v1/categories/rules/route'
 import {
   GET as listThreads,
   POST as createThread,
@@ -152,6 +153,31 @@ describe('transactions and categories', () => {
       body: {},
     })
     expect(missing.status).toBe(404)
+  })
+
+  it('learns a rule from merchant words and relabels the matches', async () => {
+    await seedTransactions()
+    const categories = await call(listCategories, 'GET')
+    const groceries = categories.body.data.find(
+      (category: { key: string }) => category.key === 'groceries',
+    )
+    const created = await call(createRule, 'POST', {
+      body: { pattern: 'Mercado Sol', categoryId: groceries.id, entity: 'PF' },
+    })
+    expect(created.status).toBe(201)
+    expect(created.body.data).toEqual({
+      pattern: 'mercado sol',
+      categoryId: groceries.id,
+      updated: 2,
+    })
+    const noise = await call(createRule, 'POST', {
+      body: { pattern: 'PIX', categoryId: groceries.id },
+    })
+    expect(noise.status).toBe(422)
+    const unknown = await call(createRule, 'POST', {
+      body: { pattern: 'Posto Azul', categoryId: 'nope' },
+    })
+    expect(unknown.status).toBe(404)
   })
 
   it('categorizes with the learned rules after a sync', async () => {

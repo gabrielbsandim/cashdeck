@@ -7974,6 +7974,114 @@
         }
       }
     },
+    "/categories/rules": {
+      "post": {
+        "operationId": "createCategoryRule",
+        "summary": "Learn a rule from merchant words and relabel the matches",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "entity": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "PF",
+                      "PJ"
+                    ]
+                  }
+                },
+                "required": [
+                  "pattern",
+                  "categoryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Learn a rule from merchant words and relabel the matches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pattern": {
+                          "type": "string"
+                        },
+                        "categoryId": {
+                          "type": "string"
+                        },
+                        "updated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "pattern",
+                        "categoryId",
+                        "updated"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/transfers": {
       "get": {
         "operationId": "listTransfers",
