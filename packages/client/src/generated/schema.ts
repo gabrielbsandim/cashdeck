@@ -312,6 +312,23 @@ export interface paths {
         patch: operations["updateAccount"];
         trace?: never;
     };
+    "/accounts/{id}/bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Past, open and forecast bills of a card, oldest first */
+        get: operations["getCardTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions": {
         parameters: {
             query?: never;
@@ -3027,6 +3044,77 @@ export interface operations {
                                 status: string;
                                 lastSyncAt: string | null;
                             } | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCardTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Past, open and forecast bills of a card, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            accountId: string;
+                            name: string;
+                            suffix: string | null;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            bills: {
+                                closesOn: string | null;
+                                dueOn: string;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                minimum: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string} */
+                                state: "OPEN" | "CLOSED" | "PAST" | "FORECAST";
+                                range: {
+                                    from: string;
+                                    to: string;
+                                };
+                                /** @enum {string|null} */
+                                payment: "PAID" | "DUE" | "UNCONFIRMED" | null;
+                                installments: {
+                                    key: string;
+                                    name: string;
+                                    categoryId: string | null;
+                                    number: number;
+                                    count: number;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                            }[];
+                            current: number | null;
                         };
                     };
                 };

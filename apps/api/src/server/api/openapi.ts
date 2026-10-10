@@ -55,6 +55,7 @@ import {
   insightsScopeQuerySchema,
   installmentsViewSchema,
   cardBillsViewSchema,
+  cardTimelineViewSchema,
   subscriptionDecisionSchema,
   subscriptionsViewSchema,
   personalSummarySchema,
@@ -299,6 +300,13 @@ const OPERATIONS: Operation[] = [
     summary: 'Update an account',
     body: updateAccountSchema,
     response: accountViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/accounts/{id}/bills',
+    id: 'getCardTimeline',
+    summary: 'Past, open and forecast bills of a card, oldest first',
+    response: cardTimelineViewSchema,
   },
   {
     method: 'get',

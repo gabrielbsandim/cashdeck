@@ -77,7 +77,12 @@ function openBill(
   }
 }
 
-function billsOf(card: Account, stored: readonly CardBill[], day: LocalDate) {
+// The bills a card reported plus its open one, newest first.
+export function cardBillsOf(
+  card: Account,
+  stored: readonly CardBill[],
+  day: LocalDate,
+) {
   const gap = gapOf(card.credit, stored)
   const dated: Dated[] = stored.map(bill => ({
     closesOn: bill.closesOn ?? addDays(bill.dueOn, -gap),
@@ -130,7 +135,7 @@ export function makeListCardBills(deps: CardBillDeps) {
         name: card.name,
         suffix: card.numberSuffix,
         entityKind: kinds.get(card.entityId) as EntityKind,
-        bills: billsOf(
+        bills: cardBillsOf(
           card,
           stored.filter(bill => bill.accountId === card.id),
           day,

@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type FakeLlmProvider } from '@cashdeck/application'
-import { createCategoryRule, createTransaction, Money } from '@cashdeck/domain'
+import {
+  createCategoryRule,
+  createTransaction,
+  Money,
+  toLocalDate,
+} from '@cashdeck/domain'
 import {
   buildContainer,
   chatConfig,
@@ -27,6 +32,7 @@ import { GET as insightsOverview } from '@/app/api/v1/insights/overview/route'
 import { GET as monthlyInsights } from '@/app/api/v1/insights/months/route'
 import { GET as listInstallments } from '@/app/api/v1/installments/route'
 import { GET as listCardBills } from '@/app/api/v1/card-bills/route'
+import { GET as getCardTimeline } from '@/app/api/v1/accounts/[id]/bills/route'
 import {
   GET as listSubscriptions,
   POST as confirmSubscription,
@@ -96,10 +102,7 @@ async function seedTransactions() {
         tenantId: 'local',
         accountId,
         amount: Money.of(-2500),
-        // A UTC date can be ahead of the local day the use cases read as today.
-        bookedOn: new Date(Date.now() - 2 * 86_400_000)
-          .toISOString()
-          .slice(0, 10),
+        bookedOn: toLocalDate(new Date()),
         description: description as string,
       }),
     )
@@ -209,6 +212,27 @@ describe('insights', () => {
     expect(months.body.data.companyToPersonal).toBeNull()
     const bad = await call(monthlyInsights, 'GET', { query: '?months=7' })
     expect(bad.status).toBe(422)
+  })
+
+  it('lays out the bills of a card and refuses other accounts', async () => {
+    const accountId = await seedTransactions()
+    const card = await call(createAccount, 'POST', {
+      body: {
+        entity: 'PF',
+        institution: 'Bank',
+        name: 'Card',
+        type: 'CREDIT_CARD',
+      },
+    })
+    const timeline = await call(getCardTimeline, 'GET', {
+      params: { id: card.body.data.id },
+    })
+    expect(timeline.status).toBe(200)
+    expect(timeline.body.data).toMatchObject({ bills: [], current: null })
+    const checking = await call(getCardTimeline, 'GET', {
+      params: { id: accountId },
+    })
+    expect(checking.status).toBe(422)
   })
 
   it('lists installments and decides on subscriptions', async () => {

@@ -5576,6 +5576,266 @@
         }
       }
     },
+    "/accounts/{id}/bills": {
+      "get": {
+        "operationId": "getCardTimeline",
+        "summary": "Past, open and forecast bills of a card, oldest first",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Past, open and forecast bills of a card, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accountId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "suffix": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "entityKind": {
+                          "type": "string",
+                          "enum": [
+                            "PF",
+                            "PJ"
+                          ]
+                        },
+                        "bills": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "closesOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "dueOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minimum": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "OPEN",
+                                  "CLOSED",
+                                  "PAST",
+                                  "FORECAST"
+                                ]
+                              },
+                              "range": {
+                                "type": "object",
+                                "properties": {
+                                  "from": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                  },
+                                  "to": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                  }
+                                },
+                                "required": [
+                                  "from",
+                                  "to"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "PAID",
+                                  "DUE",
+                                  "UNCONFIRMED"
+                                ]
+                              },
+                              "installments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "categoryId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "number": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "count": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cents": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "currency": {
+                                          "type": "string",
+                                          "minLength": 3,
+                                          "maxLength": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "cents",
+                                        "currency"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "key",
+                                    "name",
+                                    "categoryId",
+                                    "number",
+                                    "count",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "closesOn",
+                              "dueOn",
+                              "total",
+                              "minimum",
+                              "state",
+                              "range",
+                              "payment",
+                              "installments"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "current": {
+                          "nullable": true,
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "accountId",
+                        "name",
+                        "suffix",
+                        "entityKind",
+                        "bills",
+                        "current"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/transactions": {
       "get": {
         "operationId": "listTransactions",

@@ -1,3 +1,4 @@
+import { BILL_PAYMENTS } from '@cashdeck/domain'
 import { z } from 'zod'
 import {
   entityKindSchema,
@@ -273,3 +274,36 @@ export const cardBillsViewSchema = z.object({
 })
 
 export type CardBillsView = z.infer<typeof cardBillsViewSchema>
+
+export const CARD_TIMELINE_STATES = [...CARD_BILL_STATES, 'FORECAST'] as const
+export type CardTimelineState = (typeof CARD_TIMELINE_STATES)[number]
+
+export const cardTimelineViewSchema = z.object({
+  accountId: z.string(),
+  name: z.string(),
+  suffix: z.string().nullable(),
+  entityKind: entityKindSchema,
+  // Oldest first, so moving forward through the list moves ahead in time.
+  bills: z.array(
+    cardBillViewSchema.extend({
+      state: z.enum(CARD_TIMELINE_STATES),
+      // Whether a closed bill was paid; null on the open and forecast ones.
+      payment: z.enum(BILL_PAYMENTS).nullable(),
+      // The installments a forecast bill will carry that are not posted yet.
+      installments: z.array(
+        z.object({
+          key: z.string(),
+          name: z.string(),
+          categoryId: z.string().nullable(),
+          number: z.int(),
+          count: z.int(),
+          amount: moneyViewSchema,
+        }),
+      ),
+    }),
+  ),
+  // The bill to show first: the open one, else the latest.
+  current: z.int().nullable(),
+})
+
+export type CardTimelineView = z.infer<typeof cardTimelineViewSchema>

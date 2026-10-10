@@ -213,6 +213,44 @@ Body: `{ name?: string, isReserve?: bool, cdiPercent?: int | null, balanceCents?
 `name` renames any account, connected ones included; an Open Finance sync
 never overwrites it.
 
+### GET /accounts/{id}/bills
+
+The bills of one credit card, oldest first, for a view that moves through them
+month by month. 422 for any other account type, 404 for an unknown id.
+
+```
+{
+  "accountId": string, "name": string, "suffix": string | null,
+  "entityKind": "PF"|"PJ",
+  "current": int | null,
+  "bills": [{
+    "closesOn": date | null, "dueOn": date, "total": Money, "minimum": Money | null,
+    "state": "PAST"|"CLOSED"|"OPEN"|"FORECAST",
+    "payment": "PAID"|"DUE"|"UNCONFIRMED" | null,
+    "range": { "from": date, "to": date },
+    "installments": [{ "key": string, "name": string, "categoryId": string | null,
+                       "number": int, "count": int, "amount": Money }]
+  }]
+}
+```
+
+`current` is the index of the open bill; it is null only when the card has no
+bills at all. The bills before it are the ones the issuer reported, up to a
+year back; the open one carries the issuer's own total.
+
+A `FORECAST` bill is a cycle the issuer has not billed yet, dated on the same
+closing and due days as the open one. Its `total` is what is already posted to
+it plus `installments`, the plans still running whose next charges fall on it:
+each plan charges once per bill, from the cycle after the one holding its
+latest charge. Forecasts end at the last cycle that holds anything, up to 12
+ahead. Subscriptions and new purchases are not projected.
+
+`range` is the booking days a bill holds; `GET /transactions?accountId=&from=&to=`
+with it lists the bill's charges. `payment` is set on closed bills: `PAID` when
+the credits posted to the card from 5 days before closing to 10 days after the
+due date cover the total, `DUE` while the due date is ahead, `UNCONFIRMED`
+after it, which can mean a payment the bank did not report.
+
 ## Transactions
 
 ### GET /transactions?entity=&accountId=&categoryId=&uncategorized=&search=&from=&to=&cursor=&limit=
