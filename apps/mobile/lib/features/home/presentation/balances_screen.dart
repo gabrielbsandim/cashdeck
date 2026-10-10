@@ -23,6 +23,7 @@ import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
 import 'package:cashdeck/features/home/presentation/account_rename_sheet.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_insights.dart';
+import 'package:cashdeck/features/investments/presentation/investments_controller.dart';
 import 'package:cashdeck/features/open_finance/open_finance_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
@@ -41,6 +42,7 @@ class BalancesScreen extends ConsumerStatefulWidget {
   static const totalKey = Key('balances-total');
   static const syncKey = Key('balances-sync');
   static const connectKey = Key('balances-connect');
+  static const investmentsKey = Key('balances-investments');
 
   static Key rowKey(String id) => Key('balances-account-$id');
 
@@ -227,8 +229,9 @@ class _Balances extends ConsumerWidget {
       String title,
       List<TransactionAccount> group, {
       bool share = false,
+      List<Widget> extra = const [],
     }) => [
-      if (group.isNotEmpty) ...[
+      if (group.isNotEmpty || extra.isNotEmpty) ...[
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.screenGutter,
@@ -239,6 +242,7 @@ class _Balances extends ConsumerWidget {
           child: CdSectionHeader(title: title, small: true),
         ),
         for (final account in group) row(account, share: share),
+        ...extra,
       ],
     ];
 
@@ -282,7 +286,11 @@ class _Balances extends ConsumerWidget {
         ),
         ...section(l10n.balancesAvailable, available, share: true),
         ...section(l10n.balancesReserve, reserve),
-        ...section(l10n.balancesOther, others),
+        ...section(
+          l10n.balancesOther,
+          others,
+          extra: [if (accounts.any(_isConnected)) const _InvestmentsRow()],
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.screenGutter,
@@ -298,6 +306,29 @@ class _Balances extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+bool _isConnected(TransactionAccount account) => account.connectionId != null;
+
+/// Opens the positions behind the connected accounts, with their total once
+/// it loads.
+class _InvestmentsRow extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final total = ref.watch(investmentsProvider).value?.total;
+    return CdListRow(
+      key: BalancesScreen.investmentsKey,
+      icon: Symbols.savings_rounded,
+      title: l10n.investmentsTitle,
+      subtitle: l10n.investmentsEntrySubtitle,
+      trailing: total == null ? null : CdAmount(total, size: CdAmountSize.row),
+      chevron: true,
+      onTap: () => context.push(AppRoutes.investments).ignore(),
     );
   }
 }

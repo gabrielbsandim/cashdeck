@@ -1775,6 +1775,116 @@
   "balancesAvailable": "Disponível",
   "balancesReserve": "Reserva",
   "balancesOther": "Cartões e investimentos",
+  "investmentsTitle": "Investimentos",
+  "investmentsEntrySubtitle": "Posições, rendimento e vencimentos",
+  "investmentsEmpty": "Nenhum investimento ainda",
+  "investmentsEmptyMessage": "Os investimentos aparecem aqui quando o consentimento Open Finance da instituição inclui investimentos. Autorize no Meu Pluggy e sincronize as contas.",
+  "investmentsTotal": "Saldo investido",
+  "investmentsProfit": "Rendimento",
+  "investmentsInvested": "Aplicado",
+  "investmentsSyncedAt": "Atualizado em {date} às {time}",
+  "@investmentsSyncedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentsByInstitution": "Por instituição",
+  "investmentsByKind": "Por tipo",
+  "investmentsPositions": "Posições",
+  "investmentsPositionCount": "{count, plural, =1{1 posição} other{{count} posições}}",
+  "@investmentsPositionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "investmentsSplitSemantics": "Divisão do saldo investido: {title}",
+  "@investmentsSplitSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentsPending": "Em liquidação",
+  "investmentsDueOn": "Vence em {date}",
+  "@investmentsDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentKindFixedIncome": "Renda fixa",
+  "investmentKindFund": "Fundos",
+  "investmentKindEquity": "Renda variável",
+  "investmentKindEtf": "ETFs",
+  "investmentKindPension": "Previdência",
+  "investmentKindStructured": "COE",
+  "investmentKindOther": "Outros",
+  "investmentRatePercentOf": "{percent}% do {index}",
+  "@investmentRatePercentOf": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "index": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentRateIndexPlus": "{index} + {rate}% a.a.",
+  "@investmentRateIndexPlus": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentRateFixed": "{rate}% a.a.",
+  "@investmentRateFixed": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentTwelveMonths": "{percent} em 12 meses",
+  "@investmentTwelveMonths": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "investmentDetailInstitution": "Instituição",
+  "investmentDetailIssuer": "Emissor",
+  "investmentDetailKind": "Tipo",
+  "investmentDetailRate": "Taxa",
+  "investmentDetailBalance": "Saldo líquido",
+  "investmentDetailQuantity": "Quantidade",
+  "investmentDetailDueOn": "Vencimento",
+  "investmentDetailValuedOn": "Valor de",
+  "investmentDetailLastMonth": "Último mês",
+  "investmentDetailTwelveMonths": "12 meses",
+  "investmentSubtypeTreasury": "Tesouro Direto",
+  "investmentSubtypeDebentures": "Debêntures",
+  "investmentSubtypeStock": "Ação",
+  "investmentSubtypeRealEstateFund": "FII",
+  "investmentSubtypeMultimarketFund": "Multimercado",
+  "investmentSubtypeFixedIncomeFund": "Fundo de renda fixa",
+  "investmentSubtypeStockFund": "Fundo de ações",
+  "investmentSubtypeInvestmentFund": "Fundo de investimento",
+  "investmentSubtypeRetirement": "Previdência",
   "tabInsights": "Análises",
   "askBarHint": "Pergunte ao Cashdeck",
   "settingsTitle": "Ajustes",

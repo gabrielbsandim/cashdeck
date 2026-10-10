@@ -16,6 +16,7 @@ abstract final class AppRoutes {
   static const installments = '/installments';
   static const subscriptions = '/subscriptions';
   static const cards = '/cards';
+  static const investments = '/investments';
 
   static const entityProfiles = '$settings/profiles';
   static const captureSources = '$settings/capture';

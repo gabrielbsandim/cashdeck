@@ -189,6 +189,11 @@ charges through `GET /api/v1/transactions`, and on a forecast the
 `installments` still to be posted. `logo.imageUrl` may point at a PNG or an
 SVG, and the logo widget picks the decoder by the extension.
 
+The investments screen, opened from the balances screen, reads
+`GET /api/v1/investments` with the scope's `entity`: the totals, the split by
+institution and by kind, and each position with its yield, rate and due date.
+It never sums positions itself; totals come from the server in BRL.
+
 ## Chat
 
 - `GET /api/v1/chat/threads` and `GET .../threads/{id}/messages` are paged;
