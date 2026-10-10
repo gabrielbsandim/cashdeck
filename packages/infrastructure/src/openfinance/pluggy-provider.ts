@@ -45,7 +45,7 @@ const ITEM_STATUSES: readonly ProviderItemStatus[] = [
   'WAITING_USER_INPUT',
 ]
 
-const ACCOUNT_TYPES: Record<string, ProviderAccount['type']> = {
+export const ACCOUNT_TYPES: Record<string, ProviderAccount['type']> = {
   CHECKING_ACCOUNT: 'CHECKING',
   SAVINGS_ACCOUNT: 'SAVINGS',
   CREDIT_CARD: 'CREDIT_CARD',
@@ -407,7 +407,7 @@ function toAccount(account: PluggyAccount): ProviderAccount {
 }
 
 // A single charge also arrives as "1 of 1"; only a real split is kept.
-function toInstallment(
+export function toInstallment(
   metadata: PluggyTransaction['creditCardMetadata'],
 ): ProviderInstallment | null {
   const number = metadata?.installmentNumber ?? 0

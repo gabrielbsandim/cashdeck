@@ -222,6 +222,18 @@ describe('transactions', () => {
       categoryId: null,
       OR: undefined,
     })
+    await repos.transactions.all(TENANT, { provisional: true })
+    expect(db.transaction.findMany.mock.calls[2]?.[0].where).toMatchObject({
+      provisional: true,
+    })
+  })
+
+  it('deletes a transaction of the tenant', async () => {
+    const { db, repos } = mockClient()
+    await repos.transactions.delete(TENANT, 'tx1')
+    expect(db.transaction.deleteMany).toHaveBeenCalledWith({
+      where: { tenantId: TENANT, id: 'tx1' },
+    })
   })
 
   it('fills the details a stored transaction lacks', async () => {

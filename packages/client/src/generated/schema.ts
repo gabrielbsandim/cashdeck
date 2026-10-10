@@ -3642,6 +3642,7 @@ export interface operations {
                                 count: number;
                                 purchaseOn: string | null;
                             } | null;
+                            provisional: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -3712,6 +3713,7 @@ export interface operations {
                                     count: number;
                                     purchaseOn: string | null;
                                 } | null;
+                                provisional: boolean;
                             };
                             similarUpdated: number;
                         };

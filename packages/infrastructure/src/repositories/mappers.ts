@@ -79,6 +79,7 @@ export type TransactionRow = {
   installmentNumber: number | null
   installmentCount: number | null
   purchaseOn: Date | null
+  provisional: boolean
 }
 
 export type BillRow = {
@@ -253,6 +254,7 @@ export function transactionFromRow(row: TransactionRow): Transaction {
     merchant: row.merchant,
     counterparty: row.counterparty,
     installment: installmentFromRow(row),
+    provisional: row.provisional,
   })
 }
 
@@ -277,6 +279,7 @@ export function transactionToRow(transaction: Transaction): TransactionRow {
     installmentNumber: transaction.installment?.number ?? null,
     installmentCount: transaction.installment?.count ?? null,
     purchaseOn: optionalDbDate(transaction.installment?.purchaseOn ?? null),
+    provisional: transaction.provisional,
   }
 }
 

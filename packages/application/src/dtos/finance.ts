@@ -107,6 +107,8 @@ export const transactionViewSchema = z.object({
       purchaseOn: isoDate.nullable(),
     })
     .nullable(),
+  // Shown from the preview feed until the main provider confirms it.
+  provisional: z.boolean(),
 })
 
 export type TransactionView = z.infer<typeof transactionViewSchema>

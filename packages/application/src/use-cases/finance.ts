@@ -322,6 +322,7 @@ export function toTransactionView(
     categoryConfidence: transaction.categoryConfidence,
     merchant: transaction.merchant,
     installment: transaction.installment,
+    provisional: transaction.provisional,
   }
 }
 

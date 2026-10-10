@@ -76,6 +76,7 @@ import { GET as exportPlan } from '@/app/api/v1/accountant-export/plan/route'
 import { GET as exportHistory } from '@/app/api/v1/accountant-export/history/route'
 import { GET as exportDownload } from '@/app/api/v1/accountant-export/[id]/download/route'
 import { GET as syncCron } from '@/app/api/cron/open-finance-sync/route'
+import { GET as previewCron } from '@/app/api/cron/preview-sync/route'
 import { GET as captureCron } from '@/app/api/cron/capture/route'
 import { GET as reconcileCron } from '@/app/api/cron/reconcile-payments/route'
 
@@ -531,6 +532,7 @@ describe('crons', () => {
         {} as never,
       )
     expect((await cron(syncCron)).status).toBe(200)
+    expect((await cron(previewCron)).status).toBe(200)
     expect((await cron(captureCron)).status).toBe(200)
     expect((await cron(reconcileCron)).status).toBe(200)
   })

@@ -35,6 +35,8 @@ export type Transaction = {
   // CPF or CNPJ digits of the other side of a payment, when the bank says.
   readonly counterparty: string | null
   readonly installment: Installment | null
+  // Read from a faster secondary feed and not yet confirmed by the main one.
+  readonly provisional: boolean
 }
 
 export type CreateTransactionInput = Omit<
@@ -49,6 +51,7 @@ export type CreateTransactionInput = Omit<
   | 'merchant'
   | 'counterparty'
   | 'installment'
+  | 'provisional'
 > & {
   categoryId?: string | null
   transferGroupId?: string | null
@@ -60,6 +63,7 @@ export type CreateTransactionInput = Omit<
   merchant?: string | null
   counterparty?: string | null
   installment?: Installment | null
+  provisional?: boolean
 }
 
 // A masked or partial document would match strangers, so only a whole CPF or
@@ -98,6 +102,7 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
     merchant: input.merchant?.trim() || null,
     counterparty: toCounterparty(input.counterparty ?? null),
     installment: input.installment ? checkInstallment(input.installment) : null,
+    provisional: input.provisional ?? false,
   }
 }
 

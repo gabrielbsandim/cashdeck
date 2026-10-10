@@ -400,9 +400,12 @@ both included, so the same day twice keeps that day. `data`: array of
   "kind": "INCOME"|"EXPENSE"|"TRANSFER", "transferId": string | null,
   "invoiceId": string | null, "note": string | null,
   "categorizedBy": "RULE"|"AI"|"USER" | null,
-  "categoryConfidence": number | null
+  "categoryConfidence": number | null, "provisional": boolean
 }
 ```
+
+`provisional` marks a movement read from the preview feed (see
+[Preview feed](#preview-feed)) that the main provider has not confirmed yet.
 
 `categoryConfidence` goes from 0 to 1: 1 for a rule or the user, the model's
 own score for `AI` (guesses below 0.5 are not stored).
@@ -677,6 +680,22 @@ item's investment positions, their movements and the day's balance (see
 `GET /investments` and its History); a provider that fails to list them leaves
 the last ones in place. `data`:
 `{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.
+
+### Preview feed
+
+Pluggy collects free items once a day, so a second feed (Pierre) of the same
+accounts fills the gap. Its movements of the last 7 days that no stored one
+pairs with are stored as `provisional`; each preview account is placed on the
+connected account with the same bank, type and name (two with the same name are
+told apart by the movements they already hold, then by balance). Two movements
+pair when they have the same amount within 2 days, else the same merchant words
+and direction within 2 days, closest day first.
+
+When a sync brings a movement that pairs with a preview, the preview takes the
+provider id and every fact from Pluggy and keeps the category, note, transfer
+and invoice the user gave it. A preview still unpaired once Pluggy has
+collected 3 days past it is deleted, unless the user categorized, noted,
+paired or invoiced it. Without `PIERRE_API_KEY` the feed is off.
 
 ### DELETE /open-finance/connections/{id}
 
@@ -1047,6 +1066,7 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | Path | When (UTC) | What |
 |---|---|---|
 | `/api/cron/open-finance-sync` | daily 15:00 | syncs every connection, after Pluggy's daily collection (around 14:00) |
+| `/api/cron/preview-sync` | every 3 hours, 11:00 to 23:00 | reads the preview feed into `provisional` movements, then asks it to collect again for the next run; answers `{ accounts, previews }` |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
 | `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |

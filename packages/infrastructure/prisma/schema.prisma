@@ -263,6 +263,8 @@ model Transaction {
   installmentNumber  Int?           @map("installment_number")
   installmentCount   Int?           @map("installment_count")
   purchaseOn         DateTime?      @map("purchase_on") @db.Date
+  // Read from the preview feed and not yet confirmed by the main provider.
+  provisional        Boolean        @default(false)
 
   account Account @relation(fields: [accountId], references: [id])
 

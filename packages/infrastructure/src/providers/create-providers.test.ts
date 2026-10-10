@@ -44,6 +44,9 @@ describe('createProviders', () => {
     await expect(providers.openFinance.getItem('x')).rejects.toThrow(
       ProviderNotConfiguredError,
     )
+    await expect(providers.preview.listAccounts()).rejects.toThrow(
+      ProviderNotConfiguredError,
+    )
     await expect(
       providers.notifier.notify({
         tenantId: TENANT,

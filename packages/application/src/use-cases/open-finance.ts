@@ -26,6 +26,7 @@ import { type Connection, type Institution } from '@/ports/records'
 import { type Deps } from '@/use-cases/deps'
 import { isAggregator, matchConnector } from '@/use-cases/institution-match'
 import { makeInvestmentHistory } from '@/use-cases/investment-history'
+import { settlePreviews } from '@/use-cases/preview-feed'
 import { makeSettleFromStatement } from '@/use-cases/settle-from-statement'
 import {
   required,
@@ -167,26 +168,32 @@ const connectionOf = (itemId: string) => ({
   itemId,
 })
 
-// The provider serves what it collected on its last run, so the connection
-// is stamped with that time and status rather than the moment we read it.
-async function freshnessOf(
+async function lookupItem(
   deps: Pick<Deps, 'openFinance'>,
   itemId: string,
+): Promise<ProviderItem | null> {
+  return deps.openFinance.getItem(itemId).catch((error: unknown) => {
+    console.warn(
+      `[open-finance] item ${itemId} lookup failed, stamping the sync time: ${String(error)}`,
+    )
+    return null
+  })
+}
+
+// The provider serves what it collected on its last run, so the connection
+// is stamped with that time and status rather than the moment we read it.
+function freshnessOf(
+  item: ProviderItem | null,
   now: Date,
-): Promise<Pick<Connection, 'status' | 'lastSyncAt'>> {
-  const item = await deps.openFinance
-    .getItem(itemId)
-    .catch((error: unknown) => {
-      console.warn(
-        `[open-finance] item ${itemId} lookup failed, stamping the sync time: ${String(error)}`,
-      )
-      return null
-    })
+): Pick<Connection, 'status' | 'lastSyncAt'> {
   if (!item?.lastUpdatedAt) {
     return { status: item?.status ?? 'UPDATED', lastSyncAt: now }
   }
   return { status: item.status, lastSyncAt: new Date(item.lastUpdatedAt) }
 }
+
+const collectedOn = (item: ProviderItem | null) =>
+  item?.lastUpdatedAt ? today(new Date(item.lastUpdatedAt)) : null
 
 export function makeOpenFinance(deps: OpenFinanceDeps) {
   const settleFromStatement = makeSettleFromStatement(deps)
@@ -451,6 +458,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     connection: Connection
     resolve: (accountName: string) => Institution | null
     range: { from: string; to: string }
+    collectedOn: string | null
   }
 
   async function syncAccount(
@@ -476,9 +484,9 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     }
     await deps.accounts.save(synced)
     await syncBills(context.connection, synced)
-    return deps.transactions.saveNew(
-      fetched.map(tx => toTransaction(tenantId, synced, tx)),
-    )
+    const created = fetched.map(tx => toTransaction(tenantId, synced, tx))
+    await settlePreviews(deps, synced, created, context.collectedOn)
+    return deps.transactions.saveNew(created)
   }
 
   function syncStart(connection: Connection, day: string, days?: number) {
@@ -512,12 +520,14 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       tenantId,
       connection.institutionId,
     )
+    const item = await lookupItem(deps, connection.itemId)
     const context: AccountSync = {
       connection,
       resolve: institution
         ? await institutionResolver(tenantId, institution, remote)
         : () => null,
       range: { from: syncStart(connection, day, options.days), to: day },
+      collectedOn: collectedOn(item),
     }
     let transactions = 0
     for (const account of accounts) {
@@ -535,7 +545,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     )
     await deps.connections.save({
       ...connection,
-      ...(await freshnessOf(deps, connection.itemId, now)),
+      ...freshnessOf(item, now),
     })
     return {
       accounts: accounts.length,

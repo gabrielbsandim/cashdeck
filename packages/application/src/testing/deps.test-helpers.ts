@@ -11,7 +11,11 @@ import {
 } from '@cashdeck/domain'
 import { type Invoice } from '@/ports/records'
 import { type PaymentRail } from '@/ports/payment-rail'
-import { type BillSource, type OpenFinanceProvider } from '@/ports/providers'
+import {
+  type BillSource,
+  type OpenFinanceProvider,
+  type PreviewProvider,
+} from '@/ports/providers'
 import { type RailStatusReader } from '@/ports/rail-status'
 import { type PaymentSettings } from '@/ports/repositories'
 import {
@@ -24,6 +28,7 @@ import {
   FakeLlmProvider,
   FakeNotifier,
   FakeOpenFinanceProvider,
+  FakePreviewProvider,
   FakePixLocationResolver,
   FakeSecretVault,
 } from '@/testing/providers'
@@ -68,6 +73,7 @@ type Options = {
   billSources?: BillSource[]
   marketData?: FakeMarketData
   openFinance?: OpenFinanceProvider
+  preview?: PreviewProvider
   pixLocations?: FakePixLocationResolver
   documentText?: FakeDocumentTextReader
   budgets?: InMemoryBudgetRepository
@@ -101,6 +107,7 @@ export function fullDeps(options: Options = {}) {
     openFinance:
       options.openFinance ??
       (new FakeOpenFinanceProvider() as OpenFinanceProvider),
+    preview: options.preview ?? new FakePreviewProvider(),
     issuer: new FakeInvoiceIssuer(),
     billSources: new Map<string, BillSource>(
       (options.billSources ?? []).map(source => [source.source, source]),

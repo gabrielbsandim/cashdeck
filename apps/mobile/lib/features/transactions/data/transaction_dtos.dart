@@ -42,6 +42,7 @@ Transaction transactionFromJson(JsonMap json) => Transaction(
   categoryConfidence: _confidence(json),
   merchant: readOptionalString(json, 'merchant'),
   installment: _installment(readOptionalMap(json, 'installment')),
+  provisional: readBool(json, 'provisional'),
 );
 
 TransactionInstallment? _installment(JsonMap? json) {

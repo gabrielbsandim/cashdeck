@@ -439,6 +439,7 @@ class _TransactionList extends ConsumerWidget {
               subtitle: [
                 transactionCategoryLabel(l10n, transaction, loaded),
                 ?transaction.installment?.label,
+                if (transaction.provisional) l10n.transactionProvisional,
               ].join(' · '),
               amount: transaction.amount,
               kind: amountKindOf(transaction),

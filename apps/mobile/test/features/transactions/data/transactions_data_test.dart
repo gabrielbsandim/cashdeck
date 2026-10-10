@@ -41,6 +41,11 @@ void main() {
       final plain = transactionFromJson(transactionJson());
       expect(plain.displayName, 'Padaria Exemplo');
       expect(plain.installment, isNull);
+      expect(plain.provisional, isFalse);
+      expect(
+        transactionFromJson(transactionJson(provisional: true)).provisional,
+        isTrue,
+      );
     });
 
     test('read a card with its logo, limit and sync status', () {

@@ -116,6 +116,7 @@ Map<String, dynamic> transactionJson({
   String? categoryId = 'cat-groceries',
   String? categorizedBy = 'AI',
   Object? confidence = 0.8,
+  bool provisional = false,
 }) => {
   'id': id,
   'accountId': 'acc-1',
@@ -130,6 +131,7 @@ Map<String, dynamic> transactionJson({
   'note': null,
   'categorizedBy': categorizedBy,
   'categoryConfidence': confidence,
+  'provisional': provisional,
 };
 
 ChatAction testAction({

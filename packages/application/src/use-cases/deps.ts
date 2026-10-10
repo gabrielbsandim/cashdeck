@@ -17,6 +17,7 @@ import {
   type Notifier,
   type OpenFinanceProvider,
   type PixLocationResolver,
+  type PreviewProvider,
   type SecretVault,
 } from '@/ports/providers'
 import { type RailStatusReader } from '@/ports/rail-status'
@@ -93,6 +94,7 @@ export type Deps = {
   rails: RailRegistry
   railStatus: ReadonlyMap<RailId, RailStatusReader>
   openFinance: OpenFinanceProvider
+  preview: PreviewProvider
   issuer: InvoiceIssuer
   billSources: ReadonlyMap<string, BillSource>
   pixLocations: PixLocationResolver

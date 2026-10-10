@@ -35,6 +35,7 @@ export type TransactionFilter = {
   uncategorized?: boolean
   // Case-insensitive substring of the description or the note.
   search?: string
+  provisional?: boolean
 }
 
 export interface TransactionRepository {
@@ -50,6 +51,7 @@ export interface TransactionRepository {
     page: PageRequest,
   ): Promise<Page<Transaction>>
   all(tenantId: string, filter: TransactionFilter): Promise<Transaction[]>
+  delete(tenantId: string, id: string): Promise<void>
 }
 
 export type Connection = {

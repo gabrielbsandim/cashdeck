@@ -138,6 +138,7 @@ function transactionWhere(tenantId: string, filter: TransactionFilter) {
       lte: filter.to ? toDbDate(filter.to) : undefined,
     },
     categoryId: categoryWhere(filter),
+    provisional: filter.provisional,
     OR: searchWhere(filter.search),
   }
 }
@@ -279,6 +280,10 @@ export class PrismaTransactionRepository implements TransactionRepository {
       orderBy: NEWEST_FIRST,
     })
     return rows.map(transactionFromRow)
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    await this.db.transaction.deleteMany({ where: { tenantId, id } })
   }
 }
 

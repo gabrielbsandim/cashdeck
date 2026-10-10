@@ -110,6 +110,26 @@ export interface OpenFinanceProvider {
   ): Promise<ProviderMovement[]>
 }
 
+// A second feed of the same accounts that collects more often than the main
+// one; what it shows is provisional until the main provider confirms it.
+export type PreviewAccount = {
+  externalId: string
+  institutionName: string
+  name: string
+  type: ProviderAccount['type']
+  balanceCents: number
+}
+
+export interface PreviewProvider {
+  listAccounts(): Promise<PreviewAccount[]>
+  listTransactions(range: {
+    from: string
+    to: string
+  }): Promise<ProviderTransaction[]>
+  // Asks the feed to collect again; what it brings is read on the next run.
+  requestRefresh(): Promise<void>
+}
+
 export type ImportFile = { name: string; mimeType: string; bytes: Uint8Array }
 
 export type StatementDraft = {

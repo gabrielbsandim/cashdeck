@@ -2,7 +2,12 @@ import { Money } from '@cashdeck/domain'
 import { describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '@/errors/errors'
 import { type OpenFinanceProvider, type ProviderItem } from '@/ports/providers'
-import { account, bill, fullDeps } from '@/testing/deps.test-helpers'
+import {
+  account,
+  bill,
+  fullDeps,
+  transaction,
+} from '@/testing/deps.test-helpers'
 import { FakeOpenFinanceProvider } from '@/testing/providers'
 import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import { makeOpenFinance } from '@/use-cases/open-finance'
@@ -165,6 +170,44 @@ describe('open finance', () => {
     expect(ranges.at(-1)).toEqual({ from: '2026-10-01', to: '2026-10-08' })
     expect(reread.transactions).toBe(0)
     expect(await deps.transactions.all(TENANT, {})).toHaveLength(1)
+  })
+
+  it('confirms a preview the provider brings instead of storing it twice', async () => {
+    const collected = provider()
+    collected.getItem = async () => ({
+      ...item,
+      lastUpdatedAt: '2026-10-08T09:30:00.000Z',
+    })
+    const { deps, of } = setup(collected)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1'],
+    })
+    const [checking] = await deps.accounts.list(TENANT)
+    await deps.transactions.save(
+      transaction({
+        id: 'preview',
+        accountId: checking?.id ?? '',
+        externalId: 'pierre:1',
+        amount: Money.of(-300),
+        bookedOn: '2026-10-01',
+        categoryId: 'groceries',
+        categorizedBy: 'USER',
+        categoryConfidence: 1,
+        provisional: true,
+      }),
+    )
+    expect((await of.sync(TENANT, connectionId)).transactions).toBe(0)
+    expect(await deps.transactions.all(TENANT, {})).toEqual([
+      expect.objectContaining({
+        id: 'preview',
+        externalId: 'tx-1',
+        description: 'Market',
+        categoryId: 'groceries',
+        provisional: false,
+      }),
+    ])
   })
 
   it('stamps the connection with when the provider last collected data', async () => {

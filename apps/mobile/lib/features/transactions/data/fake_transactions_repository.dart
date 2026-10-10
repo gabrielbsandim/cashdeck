@@ -317,6 +317,8 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       categoryConfidence: source == CategorySource.ai ? 0.86 : null,
       merchant: _extras[description]?.$1,
       installment: _extras[description]?.$2,
+      // The bank feed collects once a day, so today's movements are previews.
+      provisional: back == 0,
     );
   }
 
@@ -411,6 +413,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       categoryConfidence: source == null ? row.categoryConfidence : null,
       merchant: row.merchant,
       installment: row.installment,
+      provisional: row.provisional,
     );
   }
 

@@ -80,6 +80,24 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 
 ## Adapters
 
+### Pierre (`PierreProvider`, PreviewProvider)
+
+| Credential | Use |
+|---|---|
+| `PIERRE_API_KEY` | sent as `Authorization: Bearer`; without it the preview feed is off |
+
+- `listAccounts`: `GET /tools/api/get-accounts`; an account without
+  `connectorName` is kept by hand in Pierre and skipped. A card balance comes
+  back positive and is negated, like Pluggy's.
+- `listTransactions`: `GET /tools/api/get-transactions` once per
+  `accountType` (`BANK`, `CREDIT`) with `startDate`, `endDate` and
+  `format=raw`, unpaged. Fields are Pluggy's in snake case (`account_id`,
+  `payment_data`, `credit_card_data`); ids are prefixed `pierre:`.
+- `requestRefresh`: `POST /tools/api/manual-update`; it answers at once and
+  collects in the background, so its result is read on the next run.
+- Docs: https://docs.pierre.finance/api-reference/rest/get-transactions,
+  https://docs.pierre.finance/api-reference/rest/manual-update.
+
 ### Pluggy (`PluggyProvider`, OpenFinanceProvider)
 
 | Credential | Use |

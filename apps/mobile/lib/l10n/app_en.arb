@@ -595,6 +595,7 @@
   "transactionsFilterCategory": "Category",
   "transactionsAllCategories": "All categories",
   "transactionsLoadMore": "Load more",
+  "transactionProvisional": "Preview",
   "transactionsFilterDays": "Filter by date",
   "transactionsDaysHelp": "One day: tap it twice",
   "transactionsDaysRange": "{from} to {to}",

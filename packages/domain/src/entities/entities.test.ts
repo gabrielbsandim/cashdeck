@@ -195,6 +195,10 @@ describe('createTransaction', () => {
         .counterparty,
     ).toBeNull()
     expect(plain.counterparty).toBeNull()
+    expect(plain.provisional).toBe(false)
+    expect(
+      createTransaction({ ...txInput, provisional: true }).provisional,
+    ).toBe(true)
     for (const bad of [
       { number: 0, count: 3 },
       { number: 4, count: 3 },

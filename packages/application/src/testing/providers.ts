@@ -23,6 +23,8 @@ import {
   type OpenFinanceProvider,
   type PixCharge,
   type PixLocationResolver,
+  type PreviewAccount,
+  type PreviewProvider,
   type ProviderAccount,
   type ProviderBill,
   type ProviderCheck,
@@ -189,6 +191,36 @@ export class FakeOpenFinanceProvider implements OpenFinanceProvider {
         tx.bookedOn >= range.from &&
         tx.bookedOn <= range.to,
     )
+  }
+}
+
+export class FakePreviewProvider implements PreviewProvider {
+  refreshes = 0
+  refreshError: Error | null = null
+
+  constructor(
+    readonly accounts: PreviewAccount[] = [],
+    readonly transactions: ProviderTransaction[] = [],
+  ) {}
+
+  async listAccounts(): Promise<PreviewAccount[]> {
+    return this.accounts
+  }
+
+  async listTransactions(range: {
+    from: string
+    to: string
+  }): Promise<ProviderTransaction[]> {
+    return this.transactions.filter(
+      tx => tx.bookedOn >= range.from && tx.bookedOn <= range.to,
+    )
+  }
+
+  async requestRefresh(): Promise<void> {
+    this.refreshes += 1
+    if (this.refreshError) {
+      throw this.refreshError
+    }
   }
 }
 

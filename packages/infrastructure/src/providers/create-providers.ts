@@ -8,6 +8,7 @@ import {
   type OpenFinanceProvider,
   type PaymentRail,
   type PixLocationResolver,
+  type PreviewProvider,
   type RailStatusReader,
   type ReserveFunder,
   type SecretStore,
@@ -26,6 +27,7 @@ import { fetchTransport, type Transport } from '@/http/transport'
 import { NotaasIssuer } from '@/invoices/notaas-issuer'
 import { PublicMarketData } from '@/market/public-market-data'
 import { type DeviceTokens, FcmNotifier } from '@/notify/fcm-notifier'
+import { PierreProvider } from '@/openfinance/pierre-provider'
 import { PluggyProvider } from '@/openfinance/pluggy-provider'
 import { AsaasRail } from '@/rails/asaas-rail'
 import { C6EmpresasRail } from '@/rails/c6-empresas-rail'
@@ -58,6 +60,7 @@ export type Providers = {
   railStatus: Map<RailId, RailStatusReader>
   reserveFunder: ReserveFunder
   openFinance: OpenFinanceProvider
+  preview: PreviewProvider
   marketData: MarketData
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
@@ -105,6 +108,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
       payouts,
     }),
     openFinance: new PluggyProvider({ credentials, transport }),
+    preview: new PierreProvider({ credentials, transport }),
     marketData: new PublicMarketData({ transport }),
     invoiceIssuer: new NotaasIssuer({ credentials, transport, now }),
     billSources: [

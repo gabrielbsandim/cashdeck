@@ -1476,6 +1476,7 @@
   "transactionsFilterCategory": "Categoria",
   "transactionsAllCategories": "Todas as categorias",
   "transactionsLoadMore": "Carregar mais",
+  "transactionProvisional": "Prévia",
   "transactionsFilterDays": "Filtrar por data",
   "transactionsDaysHelp": "Um dia: toque duas vezes",
   "transactionsDaysRange": "{from} a {to}",

@@ -20,7 +20,7 @@ void main() {
     );
     expect(testTransaction().isUncategorized, isTrue);
     expect(testTransaction(categoryId: 'cat').isUncategorized, isFalse);
-    expect(transfer.props, hasLength(15));
+    expect(transfer.props, hasLength(16));
   });
 
   test('a query maps the scope to the entity and knows when it filters', () {

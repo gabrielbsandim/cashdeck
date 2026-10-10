@@ -19,4 +19,17 @@ describe('cron schedule', () => {
     expect(daily).toEqual(['*', '*', '*'])
     expect(Number(hour) * 60 + Number(minute)).toBeGreaterThan(14 * 60 + 30)
   })
+
+  // Each preview run asks the feed to collect again, and every bank refresh
+  // counts against the Open Finance quota, so it stays a few times a day.
+  it('reads the preview feed every few hours while the user is awake', () => {
+    const [minute, hours, ...daily] = (
+      scheduleOf('/api/cron/preview-sync') ?? ''
+    ).split(' ')
+    expect(minute).toBe('0')
+    expect(daily).toEqual(['*', '*', '*'])
+    const [range, step] = (hours ?? '').split('/')
+    expect(range).toBe('11-23')
+    expect(Number(step)).toBeGreaterThanOrEqual(3)
+  })
 })

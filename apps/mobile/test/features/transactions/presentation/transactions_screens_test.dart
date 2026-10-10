@@ -104,7 +104,10 @@ void main() {
     expect(find.text('Lumen'), findsOneWidget);
     expect(find.textContaining(' · 2/3'), findsOneWidget);
     expect(find.byType(CdInstitutionLogo), findsWidgets);
-    expect(find.text(l10n.categoryRestaurants), findsWidgets);
+    expect(
+      find.text('${l10n.categoryRestaurants} · ${l10n.transactionProvisional}'),
+      findsWidgets,
+    );
     expect(find.text(l10n.transactionUncategorized), findsWidgets);
     expect(find.text('Cliente Atlas Software'), findsNothing);
   });

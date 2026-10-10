@@ -82,6 +82,7 @@ import {
   makePayroll,
   makeFundingPlan,
   makePersonalSummary,
+  makePreviewFeed,
   makePrepareFunding,
   makeProcessWebhookEvents,
   makeRails,
@@ -279,6 +280,7 @@ export function buildContainer(
     railStatus: providers.railStatus,
     funder: providers.reserveFunder,
     openFinance: providers.openFinance,
+    preview: providers.preview,
     marketData: providers.marketData,
     issuer: providers.invoiceIssuer,
     billSources: new Map<string, BillSource>(
@@ -301,6 +303,7 @@ export function buildContainer(
   }
   const runPaymentLadder = withLadderAlerts(makeRunPaymentLadder(deps), alerts)
   const categorizeTransactions = makeCategorizeTransactions(deps)
+  const previewFeed = makePreviewFeed(deps)
   return {
     deps,
     env,
@@ -350,6 +353,16 @@ export function buildContainer(
       makeOpenFinance(deps),
       categorizeTransactions,
     ),
+    previewFeed: {
+      // New previews get a category like any synced movement.
+      async sync(tenantId: string) {
+        const result = await previewFeed.sync(tenantId)
+        if (result.previews > 0) {
+          await categorizeTransactions(tenantId).catch(() => null)
+        }
+        return result
+      },
+    },
     rails: makeRails(deps),
     automation: makeAutomation(deps),
     captureSources: makeCaptureSources(deps),

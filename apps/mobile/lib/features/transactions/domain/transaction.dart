@@ -26,6 +26,7 @@ final class Transaction extends Equatable {
     this.categoryConfidence,
     this.merchant,
     this.installment,
+    this.provisional = false,
   });
 
   final String id;
@@ -47,6 +48,9 @@ final class Transaction extends Equatable {
   /// The store as the bank names it, cleaner than [description].
   final String? merchant;
   final TransactionInstallment? installment;
+
+  /// Read from the faster preview feed, waiting for the bank feed to confirm.
+  final bool provisional;
 
   String get displayName => merchant ?? description;
 
@@ -73,6 +77,7 @@ final class Transaction extends Equatable {
     categoryConfidence,
     merchant,
     installment,
+    provisional,
   ];
 }
 

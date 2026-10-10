@@ -154,7 +154,11 @@ function matches(transaction: Transaction, filter: TransactionFilter): boolean {
   const afterFrom = !filter.from || transaction.bookedOn >= filter.from
   const beforeTo = !filter.to || transaction.bookedOn <= filter.to
   const found = !filter.search || containsText(transaction, filter.search)
+  const provisional =
+    filter.provisional === undefined ||
+    transaction.provisional === filter.provisional
   return (
+    provisional &&
     inAccounts &&
     afterFrom &&
     beforeTo &&
@@ -209,6 +213,10 @@ export class InMemoryTransactionRepository
         (a, b) =>
           b.bookedOn.localeCompare(a.bookedOn) || a.id.localeCompare(b.id),
       )
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    this.rows.delete(key(tenantId, id))
   }
 }
 

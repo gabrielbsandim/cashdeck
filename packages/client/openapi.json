@@ -7587,6 +7587,9 @@
                               "purchaseOn"
                             ],
                             "additionalProperties": false
+                          },
+                          "provisional": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7604,7 +7607,8 @@
                           "categorizedBy",
                           "categoryConfidence",
                           "merchant",
-                          "installment"
+                          "installment",
+                          "provisional"
                         ],
                         "additionalProperties": false
                       }
@@ -7816,6 +7820,9 @@
                                 "purchaseOn"
                               ],
                               "additionalProperties": false
+                            },
+                            "provisional": {
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -7833,7 +7840,8 @@
                             "categorizedBy",
                             "categoryConfidence",
                             "merchant",
-                            "installment"
+                            "installment",
+                            "provisional"
                           ],
                           "additionalProperties": false
                         },
