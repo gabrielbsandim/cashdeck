@@ -329,6 +329,40 @@ describe('PluggyProvider', () => {
     ])
   })
 
+  it('drops a card payment the issuer repeats on the next bill', async () => {
+    const url = `${PLUGGY_URL}/v2/transactions?accountId=a1&dateFrom=2026-09-01&dateTo=2026-09-30`
+    const credit = (
+      id: string,
+      operationType: string | null,
+      date: string,
+    ) => ({
+      id,
+      amount: -500,
+      type: 'CREDIT',
+      operationType,
+      date,
+    })
+    const scripted = new ScriptedTransport().on('GET', url, {
+      json: {
+        results: [
+          credit('included', null, '2026-09-10T03:00:00.000Z'),
+          credit('received', 'PAGAMENTO_FATURA', '2026-09-10T03:00:00.000Z'),
+          credit('earlier', 'PAGAMENTO_FATURA', '2026-09-01T03:00:00.000Z'),
+          credit('undated', 'PAGAMENTO_FATURA', ''),
+        ],
+      },
+    })
+    const listed = await provider(scripted).listTransactions(connection, 'a1', {
+      from: '2026-09-01',
+      to: '2026-09-30',
+    })
+    expect(listed.map(t => t.externalId)).toEqual([
+      'included',
+      'earlier',
+      'undated',
+    ])
+  })
+
   it('lists card bills and the connectors with their logos', async () => {
     const scripted = new ScriptedTransport()
       .on('GET', `${PLUGGY_URL}/bills?accountId=a2&page=1`, {

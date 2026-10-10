@@ -112,6 +112,9 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 - `listTransactions`: `GET /v2/transactions` with `accountId`, `dateFrom`,
   `dateTo`, `pageSize`, following `next` (a URL whose `after` parameter is the
   cursor). The sign comes from `type` (`DEBIT` negative, `CREDIT` positive).
+  A card payment can come twice, once on the bill it settles
+  (`operationType: PAGAMENTO_FATURA`) and once on the next bill; the first copy
+  is dropped when another credit of the same amount is within 2 days.
 - Docs: https://docs.pluggy.ai/reference/auth-create,
   https://docs.pluggy.ai/reference/items-retrieve,
   https://docs.pluggy.ai/reference/accounts-list,

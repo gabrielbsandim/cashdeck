@@ -283,7 +283,9 @@ export class PluggyProvider implements OpenFinanceProvider {
       transactions.push(...(answer.results ?? []))
       after = cursorOf(answer.next)
     } while (after)
-    return transactions.map(tx => toTransaction(tx, accountExternalId))
+    return withoutRepeatedPayments(transactions).map(tx =>
+      toTransaction(tx, accountExternalId),
+    )
   }
 
   private async pages<T>(path: string): Promise<T[]> {
@@ -436,6 +438,25 @@ function openBillCents(tx: PluggyTransaction): number | null {
     return -cents
   }
   return BILL_CREDITS.includes(tx.operationType ?? '') ? cents : 0
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const BILL_PAYMENT = 'PAGAMENTO_FATURA'
+
+// The issuer lists one card payment on the bill it settles and again on the
+// next one; the copy on the settled bill goes.
+function withoutRepeatedPayments(transactions: readonly PluggyTransaction[]) {
+  const repeated = (tx: PluggyTransaction) =>
+    tx.operationType === BILL_PAYMENT &&
+    transactions.some(
+      other =>
+        other.type === 'CREDIT' &&
+        other.operationType !== BILL_PAYMENT &&
+        other.amount === tx.amount &&
+        Math.abs(Date.parse(other.date ?? '') - Date.parse(tx.date ?? '')) <=
+          2 * DAY_MS,
+    )
+  return transactions.filter(tx => !repeated(tx))
 }
 
 function counterpartyOf(tx: PluggyTransaction): string | null {
