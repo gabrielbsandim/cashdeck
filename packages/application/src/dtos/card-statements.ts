@@ -30,6 +30,8 @@ export const cardStatementViewSchema = z.object({
     }),
   ),
   billId: z.string().nullable(),
+  // The card account the lines were posted to, once they were.
+  accountId: z.string().nullable(),
 })
 
 export type CardStatementView = z.infer<typeof cardStatementViewSchema>
@@ -47,6 +49,27 @@ export const statementBillViewSchema = z.object({
   iof: moneyViewSchema,
   total: moneyViewSchema,
 })
+
+export const statementPostSchema = z.object({
+  accountId: z.string().min(1),
+  lineIds: z.array(z.string().min(1)).min(1),
+})
+
+export const statementPostViewSchema = z.object({
+  confirmed: z.int(),
+  added: z.int(),
+  // Previews from before the closing that no line of the statement matched.
+  unmatched: z.array(
+    z.object({
+      id: z.string(),
+      description: z.string(),
+      bookedOn: isoDate,
+      amount: moneyViewSchema,
+    }),
+  ),
+})
+
+export type StatementPostView = z.infer<typeof statementPostViewSchema>
 
 // What the AI returns when it reads a card statement.
 export const statementReadingSchema = z.object({

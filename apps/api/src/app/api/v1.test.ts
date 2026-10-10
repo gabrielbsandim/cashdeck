@@ -72,6 +72,7 @@ import { POST as captureNotifications } from '@/app/api/v1/card-notifications/ro
 import { GET as latestStatement } from '@/app/api/v1/card-statements/latest/route'
 import { GET as getStatement } from '@/app/api/v1/card-statements/[id]/route'
 import { POST as statementBill } from '@/app/api/v1/card-statements/[id]/bill/route'
+import { POST as postStatement } from '@/app/api/v1/card-statements/[id]/post/route'
 import { POST as generateExport } from '@/app/api/v1/accountant-export/route'
 import { GET as exportPlan } from '@/app/api/v1/accountant-export/plan/route'
 import { GET as exportHistory } from '@/app/api/v1/accountant-export/history/route'
@@ -503,6 +504,32 @@ describe('card statements and accountant export', () => {
         })
       ).status,
     ).toBe(404)
+    const body = { accountId: 'card', lineIds: ['l1'] }
+    expect(
+      (
+        await call(h(postStatement), 'POST', {
+          body,
+          params: { id: 'missing' },
+        })
+      ).status,
+    ).toBe(404)
+    const container = getContainer()
+    const categorize = vi
+      .spyOn(container, 'categorizeTransactions')
+      .mockResolvedValue({ byRule: 0, byAi: 0, left: 0 })
+    const post = vi
+      .spyOn(container.cardStatements, 'post')
+      .mockResolvedValueOnce({ confirmed: 1, added: 0, unmatched: [] })
+      .mockResolvedValueOnce({ confirmed: 0, added: 2, unmatched: [] })
+    for (const added of [0, 2]) {
+      const posted = await call(h(postStatement), 'POST', {
+        body,
+        params: { id: 'statement' },
+      })
+      expect(posted.body.data.added).toBe(added)
+    }
+    expect(post).toHaveBeenCalledWith(expect.any(String), 'statement', body)
+    expect(categorize).toHaveBeenCalledTimes(1)
   })
 
   it('captures card notifications into a card account', async () => {

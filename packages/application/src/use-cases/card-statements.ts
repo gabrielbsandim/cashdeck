@@ -1,15 +1,23 @@
-import { type EntityKind, Money, ValidationError } from '@cashdeck/domain'
+import {
+  createTransaction,
+  type EntityKind,
+  Money,
+  ValidationError,
+} from '@cashdeck/domain'
 import { type z } from 'zod'
 import {
   type CardStatementView,
   type importStatementSchema,
   type statementBillSchema,
+  type StatementPostView,
+  type statementPostSchema,
   statementReadingSchema,
 } from '@/dtos/card-statements'
 import { money } from '@/dtos/common'
 import { type LlmToolParameter } from '@/ports/llm-provider'
 import { type Deps } from '@/use-cases/deps'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
+import { confirmPreview, pairMovements } from '@/use-cases/preview-feed'
 import { cardClosedAlert, emitAlert } from '@/use-cases/alert-events'
 import {
   decodeUpload,
@@ -37,10 +45,13 @@ export type StoredStatement = {
     needsReview: boolean
   }>
   billId: string | null
+  // Absent on statements stored before lines could be posted.
+  accountId?: string | null
   createdAt: string
 }
 
 const COLLECTION = 'card-statements'
+export const STATEMENT_ID_PREFIX = 'statement:'
 const RATE_SCALE = 10_000
 
 const text = (description: string): LlmToolParameter => ({
@@ -94,6 +105,8 @@ const SYSTEM = [
 type StatementDeps = Pick<
   Deps,
   | 'entities'
+  | 'accounts'
+  | 'transactions'
   | 'documents'
   | 'llm'
   | 'bills'
@@ -164,6 +177,7 @@ export function makeCardStatements(deps: StatementDeps) {
         needsReview: line.uncertain,
       })),
       billId: null,
+      accountId: null,
       createdAt: deps.clock.now().toISOString(),
     }
     await deps.documents.put(tenantId, COLLECTION, statement.id, statement)
@@ -226,7 +240,99 @@ export function makeCardStatements(deps: StatementDeps) {
     }
   }
 
-  return { read, latest, get, createBill }
+  // Each line confirms the preview a notification left for it, or lands as a
+  // new charge; previews no line matched are handed back for review.
+  async function post(
+    tenantId: string,
+    id: string,
+    input: z.infer<typeof statementPostSchema>,
+  ): Promise<StatementPostView> {
+    const statement = await find(tenantId, id)
+    const account = required(
+      await deps.accounts.findById(tenantId, input.accountId),
+      'Account',
+    )
+    if (
+      account.type !== 'CREDIT_CARD' ||
+      account.entityId !== statement.entityId
+    ) {
+      throw new ValidationError(
+        'Statement lines go to a card account of the same entity.',
+      )
+    }
+    const selected = new Set(input.lineIds)
+    const lines = keyedLines(statement).filter(({ line }) =>
+      selected.has(line.id),
+    )
+    if (lines.length === 0) {
+      throw new ValidationError('Pick at least one line of the statement.')
+    }
+    const incoming = lines.map(({ line, key }) =>
+      createTransaction({
+        id: deps.ids.next(),
+        tenantId,
+        accountId: account.id,
+        amount: Money.of(
+          -Math.round((line.amountCents * statement.rate) / RATE_SCALE),
+        ),
+        bookedOn: line.date,
+        description: line.merchant,
+        externalId: key,
+        merchant: line.merchant,
+      }),
+    )
+    const stored = await deps.transactions.all(tenantId, {
+      accountIds: [account.id],
+    })
+    const previews = stored.filter(tx => tx.provisional)
+    const known = new Set(
+      stored.filter(tx => !tx.provisional).map(tx => tx.externalId),
+    )
+    const fresh = incoming.filter(tx => !known.has(tx.externalId))
+    const pairs = pairMovements(fresh, previews)
+    for (const [line, preview] of pairs) {
+      await deps.transactions.save({
+        ...confirmPreview(preview, line),
+        installment: preview.installment,
+      })
+    }
+    const pairedLines = new Set(pairs.map(([line]) => line))
+    const added = await deps.transactions.saveNew(
+      fresh.filter(tx => !pairedLines.has(tx)),
+    )
+    const pairedPreviews = new Set(pairs.map(([, preview]) => preview))
+    const unmatched = previews.filter(
+      tx => !pairedPreviews.has(tx) && tx.bookedOn <= statement.closing,
+    )
+    await deps.documents.put(tenantId, COLLECTION, id, {
+      ...statement,
+      accountId: account.id,
+    })
+    return {
+      confirmed: pairs.length,
+      added,
+      unmatched: unmatched.map(tx => ({
+        id: tx.id,
+        description: tx.description,
+        bookedOn: tx.bookedOn,
+        amount: money(tx.amount),
+      })),
+    }
+  }
+
+  return { read, latest, get, createBill, post }
+}
+
+// The AI may name a merchant differently on a second read of the same PDF,
+// so a line's key leaves it out and posting that PDF again stores nothing new.
+function keyedLines(statement: StoredStatement) {
+  const seen = new Map<string, number>()
+  return statement.lines.map(line => {
+    const base = `${STATEMENT_ID_PREFIX}${statement.closing}:${line.date}:${line.amountCents}`
+    const count = (seen.get(base) ?? 0) + 1
+    seen.set(base, count)
+    return { line, key: `${base}:${count}` }
+  })
 }
 
 export function statementTotals(
@@ -274,5 +380,6 @@ function toView(
       needsReview: line.needsReview,
     })),
     billId: statement.billId,
+    accountId: statement.accountId ?? null,
   }
 }

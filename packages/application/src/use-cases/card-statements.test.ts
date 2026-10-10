@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ValidationError } from '@cashdeck/domain'
+import { Money, ValidationError } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
-import { base64, fullDeps } from '@/testing/deps.test-helpers'
+import {
+  account,
+  base64,
+  fullDeps,
+  transaction,
+} from '@/testing/deps.test-helpers'
 import { BOLETO_LINE, TENANT } from '@/testing/scenario.test-helpers'
 import { makeCardStatements } from '@/use-cases/card-statements'
 
@@ -133,5 +138,133 @@ describe('card statements', () => {
     await expect(ok.statements.get(TENANT, 'nope')).rejects.toThrow(
       NotFoundError,
     )
+  })
+
+  it('posts the lines to the card, confirming the notified previews', async () => {
+    const deps = fullDeps()
+    deps.llm.enqueueObject({
+      ...READING,
+      card: 'Card One',
+      closing: '2026-10-05',
+      currency: 'BRL',
+      rate: 1,
+      iofPercent: 0,
+      lines: [
+        {
+          merchant: 'Bakery',
+          date: '2026-10-01',
+          amount: 18,
+          uncertain: false,
+        },
+        {
+          merchant: 'Shoes',
+          date: '2026-10-02',
+          amount: 59.99,
+          uncertain: false,
+        },
+        { merchant: 'Gym', date: '2026-09-28', amount: 99.9, uncertain: false },
+        { merchant: 'Gym', date: '2026-09-28', amount: 99.9, uncertain: false },
+      ],
+    })
+    await deps.accounts.save(
+      account({ id: 'card', type: 'CREDIT_CARD', entityId: 'pf' }),
+    )
+    await deps.accounts.save(account({ id: 'other', type: 'CREDIT_CARD' }))
+    await deps.accounts.save(account({ id: 'checking', entityId: 'pf' }))
+    const preview = (id: string, cents: number, bookedOn: string) =>
+      transaction({
+        id,
+        accountId: 'card',
+        amount: Money.of(cents),
+        bookedOn,
+        description: id.toUpperCase(),
+        externalId: `notification:${id}`,
+        provisional: true,
+      })
+    await deps.transactions.save({
+      ...preview('bakery', -1800, '2026-10-02'),
+      categoryId: 'food',
+      categorizedBy: 'AI',
+    })
+    await deps.transactions.save({
+      ...preview('shoes', -5999, '2026-10-02'),
+      installment: { number: 1, count: 3, purchaseOn: '2026-10-02' },
+    })
+    await deps.transactions.save(preview('lost', -1000, '2026-10-03'))
+    await deps.transactions.save(preview('later', -500, '2026-10-08'))
+    const statements = makeCardStatements(deps)
+    const draft = await statements.read(TENANT, { ...upload, entity: 'PF' })
+    const lineIds = draft.lines.map(line => line.id)
+
+    const posted = await statements.post(TENANT, draft.id, {
+      accountId: 'card',
+      lineIds,
+    })
+    expect(posted).toEqual({
+      confirmed: 2,
+      added: 2,
+      unmatched: [
+        {
+          id: 'lost',
+          description: 'LOST',
+          bookedOn: '2026-10-03',
+          amount: { cents: -1000, currency: 'BRL' },
+        },
+      ],
+    })
+    expect(await deps.transactions.findById(TENANT, 'bakery')).toMatchObject({
+      description: 'Bakery',
+      bookedOn: '2026-10-01',
+      categoryId: 'food',
+      provisional: false,
+      externalId: 'statement:2026-10-05:2026-10-01:1800:1',
+    })
+    expect(await deps.transactions.findById(TENANT, 'shoes')).toMatchObject({
+      provisional: false,
+      installment: { number: 1, count: 3 },
+    })
+    const stored = await deps.transactions.all(TENANT, {
+      accountIds: ['card'],
+      provisional: false,
+    })
+    expect(stored.map(tx => tx.externalId).sort()).toEqual([
+      'statement:2026-10-05:2026-09-28:9990:1',
+      'statement:2026-10-05:2026-09-28:9990:2',
+      'statement:2026-10-05:2026-10-01:1800:1',
+      'statement:2026-10-05:2026-10-02:5999:1',
+    ])
+    expect((await statements.get(TENANT, draft.id)).accountId).toBe('card')
+    const { accountId: _, ...older } = (await deps.documents.get<object>(
+      TENANT,
+      'card-statements',
+      draft.id,
+    )) as { accountId: string }
+    await deps.documents.put(TENANT, 'card-statements', 'older', {
+      ...older,
+      id: 'older',
+    })
+    expect((await statements.get(TENANT, 'older')).accountId).toBeNull()
+
+    const again = await statements.post(TENANT, draft.id, {
+      accountId: 'card',
+      lineIds,
+    })
+    expect([again.confirmed, again.added]).toEqual([0, 0])
+    expect(again.unmatched.map(tx => tx.id)).toEqual(['lost'])
+
+    for (const accountId of ['checking', 'other']) {
+      await expect(
+        statements.post(TENANT, draft.id, { accountId, lineIds }),
+      ).rejects.toBeInstanceOf(ValidationError)
+    }
+    await expect(
+      statements.post(TENANT, draft.id, { accountId: 'missing', lineIds }),
+    ).rejects.toBeInstanceOf(NotFoundError)
+    await expect(
+      statements.post(TENANT, draft.id, {
+        accountId: 'card',
+        lineIds: ['nope'],
+      }),
+    ).rejects.toThrow('Pick at least one line')
   })
 })

@@ -898,7 +898,8 @@ For a card without Open Finance, usually in a foreign currency.
   "closing": date, "due": date, "rate": int, "iofBps": int,
   "paymentCode": string | null,
   "lines": [{ "id": string, "merchant": string, "date": date, "amount": Money, "needsReview": bool }],
-  "billId": string | null
+  "billId": string | null,
+  "accountId": string | null
 }
 ```
 
@@ -913,6 +914,14 @@ For a card without Open Finance, usually in a foreign currency.
   Totals are computed on the server: BRL subtotal of the selected lines at
   `rate`, IOF on top. Needs a payment code (from the statement or the body).
   `data`: `{ billId, foreign: Money, subtotal: Money, iof: Money, total: Money }`, 201.
+- `POST /card-statements/{id}/post`: body `{ accountId: string, lineIds: [string] }`.
+  Posts the selected lines to a credit card account of the statement's
+  entity, converted at `rate`. A line confirms the preview a card
+  notification left for the same amount within two days (keeping its
+  category), otherwise it is stored as a new charge and categorized after the
+  answer. Posting the same PDF again adds nothing. `data`:
+  `{ confirmed: int, added: int, unmatched: [{ id, description, bookedOn: date, amount: Money }] }`,
+  where `unmatched` lists the previews up to the closing date no line matched.
 
 ## Card notifications
 

@@ -88,6 +88,8 @@ import {
   setDdaSchema,
   startMailboxSchema,
   statementBillSchema,
+  statementPostSchema,
+  statementPostViewSchema,
   statementBillViewSchema,
   syncQuerySchema,
   syncResultSchema,
@@ -848,6 +850,14 @@ const OPERATIONS: Operation[] = [
     body: statementBillSchema,
     status: '201',
     response: statementBillViewSchema,
+  },
+  {
+    method: 'post',
+    path: '/card-statements/{id}/post',
+    id: 'postStatementLines',
+    summary: 'Post the selected lines to a card account, confirming previews',
+    body: statementPostSchema,
+    response: statementPostViewSchema,
   },
   {
     method: 'post',

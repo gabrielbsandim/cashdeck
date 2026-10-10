@@ -1357,6 +1357,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/card-statements/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post the selected lines to a card account, confirming previews */
+        post: operations["postStatementLines"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/card-notifications": {
         parameters: {
             query?: never;
@@ -6850,6 +6867,7 @@ export interface operations {
                                 needsReview: boolean;
                             }[];
                             billId: string | null;
+                            accountId: string | null;
                         };
                     };
                 };
@@ -6903,6 +6921,7 @@ export interface operations {
                                 needsReview: boolean;
                             }[];
                             billId: string | null;
+                            accountId: string | null;
                         } | null;
                     };
                 };
@@ -6958,6 +6977,7 @@ export interface operations {
                                 needsReview: boolean;
                             }[];
                             billId: string | null;
+                            accountId: string | null;
                         };
                     };
                 };
@@ -7017,6 +7037,58 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    postStatementLines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    accountId: string;
+                    lineIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Post the selected lines to a card account, confirming previews */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            confirmed: number;
+                            added: number;
+                            unmatched: {
+                                id: string;
+                                description: string;
+                                bookedOn: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
                         };
                     };
                 };
