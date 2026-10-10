@@ -60,11 +60,15 @@ void main() {
     final signOut = SignOut(
       UnregisterPushDevice(alerts, const _TokenPush()),
       () async => seen.add([...alerts.devices]),
+      () async => seen.add(['stopped']),
     );
 
     await signOut();
 
-    expect(seen, [<String>[]]);
+    expect(seen, [
+      ['stopped'],
+      <String>[],
+    ]);
   });
 
   group('SignIn', () {

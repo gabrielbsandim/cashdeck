@@ -2541,5 +2541,28 @@
       }
     }
   },
-  "fundingCovered": "O saldo cobre os próximos 30 dias"
+  "fundingCovered": "O saldo cobre os próximos 30 dias",
+  "cardNotificationsMenu": "Compras pelas notificações",
+  "moreCardNotificationsHint": "Lança na hora o que o app do cartão avisa",
+  "cardNotificationsTitle": "Compras pelas notificações",
+  "cardNotificationsIntro": "Para um cartão sem Open Finance: cada compra que o app do cartão notifica neste celular entra como prévia na conta escolhida, até a fatura confirmar.",
+  "cardNotificationsUnsupported": "Disponível só no Android.",
+  "cardNotificationsAccessTitle": "Acesso às notificações",
+  "cardNotificationsAccessMissing": "O Android ainda não deixou o Cashdeck ler notificações.",
+  "cardNotificationsAccessAction": "Permitir",
+  "cardNotificationsAccessGranted": "Permitido",
+  "cardNotificationsCardSection": "Cartão",
+  "cardNotificationsNoCards": "Nenhum cartão. Crie uma conta manual do tipo cartão de crédito.",
+  "cardNotificationsAppsSection": "Apps",
+  "cardNotificationsNoApps": "Os apps aparecem aqui depois de notificarem algo neste celular.",
+  "cardNotificationsSwitch": "Lançar as compras notificadas",
+  "cardNotificationsSwitchHint": "Precisa do acesso, de um cartão e de pelo menos um app",
+  "cardNotificationsPending": "{count, plural, =1{1 notificação aguardando internet} other{{count} notificações aguardando internet}}",
+  "@cardNotificationsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

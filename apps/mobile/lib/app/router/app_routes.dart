@@ -24,6 +24,7 @@ abstract final class AppRoutes {
   static const rails = '$settings/rails';
   static const connectItemId = '$settings/open-finance/item-id';
   static const cardImport = '$settings/card-import';
+  static const cardNotifications = '$settings/card-notifications';
   static const invoiceIssuer = '$settings/invoice-issuer';
   static const payroll = '$settings/payroll';
   static const accountantExport = '$settings/accountant-export';

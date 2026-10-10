@@ -120,6 +120,15 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   shared PDF or image (`ACTION_SEND`) and the `cashdeck://capture` link the
   mailbox OAuth callback redirects to. `compileSdk` is at least 37 for
   `receive_sharing_intent`.
+- Android card notifications: `notifications/CardNotificationListener` is a
+  `NotificationListenerService` the user enables in system settings. It
+  remembers which apps notify, queues the notifications of the apps picked in
+  Ajustes and hands them to `CardNotificationUploader`, a WorkManager job that
+  posts them to `POST /api/v1/card-notifications` with the session token,
+  retrying while offline and stopping on a 401. Settings, queue and token sit
+  in app-private preferences; signing out clears them. Dart reaches it through
+  the `io.cashdeck.app/card_notifications` channel
+  (`features/card_notifications`).
 - iOS: `Info.plist` carries the Face ID and camera usage strings and the
   `cashdeck` URL scheme. Receiving a shared file needs a Share Extension
   target, which only Xcode can add: follow the iOS section of the

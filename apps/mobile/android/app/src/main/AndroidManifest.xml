@@ -54,6 +54,16 @@
                 <data android:scheme="cashdeck" android:host="capture"/>
             </intent-filter>
         </activity>
+        <!-- Forwards the charges a card app notifies, once the user grants access. -->
+        <service
+            android:name=".notifications.CardNotificationListener"
+            android:exported="false"
+            android:label="Cashdeck"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService"/>
+            </intent-filter>
+        </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -66,6 +76,11 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- Names the apps whose notifications can be forwarded. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>

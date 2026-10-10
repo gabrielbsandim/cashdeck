@@ -1016,5 +1016,28 @@
       }
     }
   },
-  "fundingCovered": "The balance covers the next 30 days"
+  "fundingCovered": "The balance covers the next 30 days",
+  "cardNotificationsMenu": "Purchases from notifications",
+  "moreCardNotificationsHint": "Logs what the card app announces, right away",
+  "cardNotificationsTitle": "Purchases from notifications",
+  "cardNotificationsIntro": "For a card without Open Finance: every purchase the card app notifies on this phone lands as a preview on the chosen account, until the statement confirms it.",
+  "cardNotificationsUnsupported": "Available on Android only.",
+  "cardNotificationsAccessTitle": "Notification access",
+  "cardNotificationsAccessMissing": "Android does not let Cashdeck read notifications yet.",
+  "cardNotificationsAccessAction": "Allow",
+  "cardNotificationsAccessGranted": "Allowed",
+  "cardNotificationsCardSection": "Card",
+  "cardNotificationsNoCards": "No card. Create a manual credit card account.",
+  "cardNotificationsAppsSection": "Apps",
+  "cardNotificationsNoApps": "Apps show up here once they notify something on this phone.",
+  "cardNotificationsSwitch": "Log notified purchases",
+  "cardNotificationsSwitchHint": "Needs access, a card and at least one app",
+  "cardNotificationsPending": "{count, plural, =1{1 notification waiting for the network} other{{count} notifications waiting for the network}}",
+  "@cardNotificationsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

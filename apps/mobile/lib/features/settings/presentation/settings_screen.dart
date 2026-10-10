@@ -94,6 +94,12 @@ class SettingsScreen extends ConsumerWidget {
             l10n.moreCardImportHint,
             AppRoutes.cardImport,
           ),
+          link(
+            Symbols.notifications_active_rounded,
+            l10n.cardNotificationsMenu,
+            l10n.moreCardNotificationsHint,
+            AppRoutes.cardNotifications,
+          ),
           section(l10n.settingsSectionPayments),
           CdListRow(
             key: pauseKey,

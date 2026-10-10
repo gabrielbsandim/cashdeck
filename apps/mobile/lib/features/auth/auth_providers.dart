@@ -7,6 +7,7 @@ import 'package:cashdeck/features/auth/application/sign_out.dart';
 import 'package:cashdeck/features/auth/data/api_server_access_repository.dart';
 import 'package:cashdeck/features/auth/data/fake_server_access_repository.dart';
 import 'package:cashdeck/features/auth/domain/server_access.dart';
+import 'package:cashdeck/features/card_notifications/card_notifications_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final serverAccessRepositoryProvider = Provider<ServerAccessRepository>((ref) {
@@ -24,5 +25,6 @@ final signOutProvider = Provider<SignOut>(
   (ref) => SignOut(
     ref.watch(unregisterPushDeviceProvider),
     ref.read(serverSessionProvider.notifier).signOut,
+    ref.watch(stopCardNotificationsProvider).call,
   ),
 );
