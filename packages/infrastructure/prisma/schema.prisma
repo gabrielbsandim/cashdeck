@@ -260,6 +260,7 @@ model Transaction {
   categoryConfidence Float?         @map("category_confidence")
   merchant           String?
   counterparty       String?
+  bankCategory       String?        @map("bank_category")
   installmentNumber  Int?           @map("installment_number")
   installmentCount   Int?           @map("installment_count")
   purchaseOn         DateTime?      @map("purchase_on") @db.Date

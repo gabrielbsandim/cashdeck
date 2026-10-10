@@ -46,6 +46,8 @@ export type ProviderTransaction = {
   merchant?: string | null
   // CPF or CNPJ of the payee of a debit or the payer of a credit.
   counterparty?: string | null
+  // The provider's category label, such as Eating out, from the card network.
+  bankCategory?: string | null
   installment?: ProviderInstallment | null
   // Signed share of the card's open bill in the account currency: zero once
   // billed or for a bill payment, null when the issuer does not say.

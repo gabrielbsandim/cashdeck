@@ -118,13 +118,18 @@ export function createCategoryRule(
 const PAYMENT_PROCESSORS = new Set([
   '01027058',
   '01425787',
+  '06375668',
   '08561701',
   '10440482',
   '10573521',
+  '13935893',
   '16501555',
   '18189547',
   '22896431',
+  '23041219',
+  '31037942',
   '44815065',
+  '68892487',
 ])
 
 export function learnableCounterparty(value: string | null): string | null {

@@ -172,6 +172,7 @@ export function makePreviewFeed(deps: PreviewDeps) {
       externalId: tx.externalId,
       merchant: tx.merchant ?? null,
       counterparty: tx.counterparty ?? null,
+      bankCategory: tx.bankCategory ?? null,
       installment: tx.installment ?? null,
       provisional: true,
     })

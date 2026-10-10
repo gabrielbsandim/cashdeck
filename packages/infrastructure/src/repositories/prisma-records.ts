@@ -147,17 +147,19 @@ const NEWEST_FIRST = [{ bookedOn: 'desc' as const }, { id: 'asc' as const }]
 
 type Details = Pick<
   TransactionRow,
-  'merchant' | 'counterparty' | 'installmentNumber'
+  'merchant' | 'counterparty' | 'bankCategory' | 'installmentNumber'
 >
 
 const hasDetails = (row: Details) =>
   row.merchant !== null ||
   row.counterparty !== null ||
+  row.bankCategory !== null ||
   row.installmentNumber !== null
 
 const takesDetails = (row: Details, stored: Details) =>
   (row.merchant !== null && stored.merchant === null) ||
   (row.counterparty !== null && stored.counterparty === null) ||
+  (row.bankCategory !== null && stored.bankCategory === null) ||
   (row.installmentNumber !== null && stored.installmentNumber === null)
 
 export class PrismaTransactionRepository implements TransactionRepository {
@@ -204,6 +206,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         externalId: true,
         merchant: true,
         counterparty: true,
+        bankCategory: true,
         installmentNumber: true,
       },
     })
@@ -234,6 +237,12 @@ export class PrismaTransactionRepository implements TransactionRepository {
       await this.db.transaction.updateMany({
         where: { ...where, counterparty: null },
         data: { counterparty: row.counterparty },
+      })
+    }
+    if (row.bankCategory) {
+      await this.db.transaction.updateMany({
+        where: { ...where, bankCategory: null },
+        data: { bankCategory: row.bankCategory },
       })
     }
     if (row.installmentNumber !== null) {

@@ -186,6 +186,14 @@ describe('createTransaction', () => {
       createTransaction({ ...txInput, merchant: '  Loja  ', installment }),
     ).toMatchObject({ merchant: 'Loja', installment })
     expect(createTransaction({ ...txInput, merchant: ' ' }).merchant).toBeNull()
+    expect(plain.bankCategory).toBeNull()
+    expect(
+      createTransaction({ ...txInput, bankCategory: ' Eating out ' })
+        .bankCategory,
+    ).toBe('Eating out')
+    expect(
+      createTransaction({ ...txInput, bankCategory: ' ' }).bankCategory,
+    ).toBeNull()
     expect(
       createTransaction({ ...txInput, counterparty: '11.222.333/0001-81' })
         .counterparty,

@@ -34,6 +34,8 @@ export type Transaction = {
   readonly merchant: string | null
   // CPF or CNPJ digits of the other side of a payment, when the bank says.
   readonly counterparty: string | null
+  // The bank's own label, read from the card network code; a hint, not a choice.
+  readonly bankCategory: string | null
   readonly installment: Installment | null
   // Read from a faster secondary feed and not yet confirmed by the main one.
   readonly provisional: boolean
@@ -50,6 +52,7 @@ export type CreateTransactionInput = Omit<
   | 'categoryConfidence'
   | 'merchant'
   | 'counterparty'
+  | 'bankCategory'
   | 'installment'
   | 'provisional'
 > & {
@@ -62,6 +65,7 @@ export type CreateTransactionInput = Omit<
   categoryConfidence?: number | null
   merchant?: string | null
   counterparty?: string | null
+  bankCategory?: string | null
   installment?: Installment | null
   provisional?: boolean
 }
@@ -101,6 +105,7 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
     categoryConfidence: input.categoryConfidence ?? null,
     merchant: input.merchant?.trim() || null,
     counterparty: toCounterparty(input.counterparty ?? null),
+    bankCategory: input.bankCategory?.trim() || null,
     installment: input.installment ? checkInstallment(input.installment) : null,
     provisional: input.provisional ?? false,
   }

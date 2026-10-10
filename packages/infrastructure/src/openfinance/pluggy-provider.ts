@@ -126,6 +126,7 @@ type PluggyTransaction = {
   type?: 'DEBIT' | 'CREDIT'
   status?: 'PENDING' | 'POSTED'
   operationType?: string | null
+  category?: string | null
   merchant?: { name?: string | null; businessName?: string | null } | null
   paymentData?: {
     payer?: PluggyParty | null
@@ -479,6 +480,7 @@ function toTransaction(
     description: tx.description ?? '',
     merchant: tx.merchant?.name || tx.merchant?.businessName || null,
     counterparty: counterpartyOf(tx),
+    bankCategory: tx.category ?? null,
     installment: toInstallment(tx.creditCardMetadata),
     openBillCents: openBillCents(tx),
   }

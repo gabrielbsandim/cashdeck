@@ -168,6 +168,29 @@ describe('updating a transaction', () => {
     expect(await deps.categories.listRules(TENANT)).toHaveLength(1)
   })
 
+  it('learns by the payee document even when the description names a bank', async () => {
+    const { deps, id } = await seeded()
+    const boleto = (txId: string, counterparty: string) =>
+      transaction({
+        id: txId,
+        accountId: 'pf-1',
+        description: 'Pagamento Boleto BANCO AZUL S.A.',
+        counterparty,
+      })
+    await deps.transactions.save(boleto('b1', '11222333000181'))
+    await deps.transactions.save(boleto('b2', '11444777000161'))
+    await makeUpdateTransaction(deps)(TENANT, 'b1', {
+      categoryId: id('transfers'),
+      applyToSimilar: true,
+    })
+    expect(await deps.categories.listRules(TENANT)).toEqual([
+      expect.objectContaining({ pattern: '', counterparty: '11222333000181' }),
+    ])
+    expect(
+      (await deps.transactions.findById(TENANT, 'b2'))?.categoryId,
+    ).toBeNull()
+  })
+
   it('clears a category, skips a rule without merchant words and checks ids', async () => {
     const { deps, id } = await seeded()
     await deps.transactions.save(
@@ -330,6 +353,28 @@ describe('automatic categorization', () => {
     const prompt = deps.llm.calls[0]?.messages[0]?.content ?? ''
     expect(prompt).toContain('t1|-50.00|Shop 1')
     expect(deps.llm.calls[0]?.responseSchema).toBeDefined()
+  })
+
+  it('shows the model the merchant and bank label, never offering Other', async () => {
+    const { deps } = await seeded()
+    await deps.transactions.save(
+      transaction({
+        id: 'pix',
+        accountId: 'pf-1',
+        description: 'pix key transfer',
+        merchant: 'Padaria Azul Ltda',
+        bankCategory: 'Eating out',
+      }),
+    )
+    await deps.transactions.save(
+      transaction({ id: 'bare', accountId: 'pf-1', description: 'Shop' }),
+    )
+    deps.llm.enqueueObject({ items: [] })
+    await makeCategorizeTransactions(deps)(TENANT)
+    const prompt = deps.llm.calls[0]?.messages[0]?.content ?? ''
+    expect(prompt).toContain('|pix key transfer|Padaria Azul Ltda|Eating out')
+    expect(prompt).toContain('|Shop||')
+    expect(prompt).not.toMatch(/\|Other$/m)
   })
 
   it('leaves the rest for later when the model fails or answers badly', async () => {

@@ -46,7 +46,7 @@ describe('record fakes', () => {
     ])
   })
 
-  it('fills the merchant and installment a stored transaction lacks', async () => {
+  it('fills the merchant, bank category and installment a stored transaction lacks', async () => {
     const repo = new InMemoryTransactionRepository()
     const installment = { number: 2, count: 4, purchaseOn: null }
     await repo.save(transaction({ id: 'a', accountId: 'x', externalId: 'e1' }))
@@ -65,12 +65,14 @@ describe('record fakes', () => {
         accountId: 'x',
         externalId: 'e1',
         merchant: 'Loja',
+        bankCategory: 'Shopping',
         installment,
       }),
       transaction({ id: 'd', accountId: 'x', externalId: 'e2' }),
     ])
     expect(await repo.findById(TENANT, 'a')).toMatchObject({
       merchant: 'Loja',
+      bankCategory: 'Shopping',
       installment,
     })
     expect(await repo.findById(TENANT, 'b')).toMatchObject({

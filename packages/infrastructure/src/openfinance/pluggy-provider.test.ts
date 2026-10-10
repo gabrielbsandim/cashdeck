@@ -198,6 +198,7 @@ describe('PluggyProvider', () => {
               type: 'DEBIT',
               date: '2026-10-02T03:00:00.000Z',
               currencyCode: 'BRL',
+              category: 'Groceries',
               merchant: { name: 'Mercado Exemplo' },
               paymentData: {
                 payer: { documentNumber: { value: '529.982.247-25' } },
@@ -239,6 +240,7 @@ describe('PluggyProvider', () => {
         description: 'Mercado',
         merchant: 'Mercado Exemplo',
         counterparty: '11.222.333/0001-81',
+        bankCategory: 'Groceries',
         installment: { number: 3, count: 10, purchaseOn: '2026-08-01' },
         openBillCents: 0,
       },
@@ -251,6 +253,7 @@ describe('PluggyProvider', () => {
         description: '',
         merchant: 'Exemplo LTDA',
         counterparty: null,
+        bankCategory: null,
         installment: null,
         openBillCents: 0,
       },

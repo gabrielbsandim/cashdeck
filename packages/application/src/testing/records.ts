@@ -189,6 +189,7 @@ export class InMemoryTransactionRepository
         ...stored,
         merchant: stored.merchant ?? candidate.merchant,
         counterparty: stored.counterparty ?? candidate.counterparty,
+        bankCategory: stored.bankCategory ?? candidate.bankCategory,
         installment: stored.installment ?? candidate.installment,
       })
     }

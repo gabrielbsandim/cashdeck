@@ -45,6 +45,7 @@ describe('learnableCounterparty', () => {
     expect(learnableCounterparty('111.444.777-35')).toBe(PAYEE)
     expect(learnableCounterparty('11.222.333/0001-81')).toBe('11222333000181')
     expect(learnableCounterparty('10.573.521/0001-91')).toBeNull()
+    expect(learnableCounterparty('13.935.893/0001-09')).toBeNull()
     expect(learnableCounterparty(null)).toBeNull()
   })
 })
