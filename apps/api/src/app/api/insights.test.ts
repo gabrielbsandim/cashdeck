@@ -96,7 +96,10 @@ async function seedTransactions() {
         tenantId: 'local',
         accountId,
         amount: Money.of(-2500),
-        bookedOn: new Date().toISOString().slice(0, 10),
+        // A UTC date can be ahead of the local day the use cases read as today.
+        bookedOn: new Date(Date.now() - 2 * 86_400_000)
+          .toISOString()
+          .slice(0, 10),
         description: description as string,
       }),
     )
