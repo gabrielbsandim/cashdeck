@@ -4,6 +4,7 @@ import {
   type EntityKind,
   markBillPaid,
   markBillUnpaid,
+  recipientKeys,
 } from '@cashdeck/domain'
 import {
   type BillDetailView,
@@ -20,6 +21,7 @@ import {
   type FinancialEntityRepository,
   type Page,
   type PageRequest,
+  type PayeeDirectory,
   type PaymentRepository,
   type PaymentSettingsProvider,
 } from '@/ports/repositories'
@@ -130,6 +132,7 @@ export function makeListBills(deps: {
 
 export function makeMarkBillPaid(deps: {
   bills: BillRepository
+  payees: PayeeDirectory
   alertStore: AlertRepository
   audit: AuditLog
   clock: Clock
@@ -150,6 +153,9 @@ export function makeMarkBillPaid(deps: {
     const at = deps.clock.now()
     const paid = markBillPaid(bill, 'USER', at)
     await deps.bills.save(paid)
+    for (const key of recipientKeys(bill)) {
+      await deps.payees.remember(tenantId, bill.entityId, key)
+    }
     await deps.alertStore.markBillRead(
       tenantId,
       bill.id,

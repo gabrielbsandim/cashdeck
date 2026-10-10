@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createBill, InvalidTransitionError, Money } from '@cashdeck/domain'
+import {
+  createBill,
+  InvalidTransitionError,
+  Money,
+  recipientKeys,
+} from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
 import { FakePaymentRail } from '@/testing/providers'
 import { alert } from '@/testing/deps.test-helpers'
@@ -127,6 +132,17 @@ describe('bill queries and manual payment', () => {
     expect(deps.audit.events).toHaveLength(1)
     expect(deps.audit.events[0]?.details).toEqual({ proof: 'receipt.pdf' })
     await expect(markPaid(TENANT, 'nope')).rejects.toThrow(NotFoundError)
+  })
+
+  it('trusts the payee of a bill marked paid by hand', async () => {
+    const deps = scenario()
+    const bill = seed('b1', '2026-10-20')
+    await deps.bills.save(bill)
+    const [key] = recipientKeys(bill)
+    expect(key).toBeDefined()
+    expect(await deps.payees.isKnown(TENANT, 'pf', key ?? '')).toBe(false)
+    await makeMarkBillPaid(deps)(TENANT, 'b1')
+    expect(await deps.payees.isKnown(TENANT, 'pf', key ?? '')).toBe(true)
   })
 
   it('takes back a payment marked by hand', async () => {
