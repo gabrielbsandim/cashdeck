@@ -204,6 +204,10 @@ describe('money views', () => {
     expect((await call(h(listTransfers), 'GET')).body.data).toHaveLength(1)
     const rows = await call(h(listTransactions), 'GET', { query: '?entity=PF' })
     expect(rows.status).toBe(200)
+    const impossible = await call(h(listTransactions), 'GET', {
+      query: '?from=2026-13-01&to=2026-02-30',
+    })
+    expect(impossible.status).toBe(422)
     expect((await call(h(homePersonal), 'GET')).status).toBe(200)
     expect((await call(h(homeCompany), 'GET')).status).toBe(200)
     expect((await call(h(homeConsolidated), 'GET')).status).toBe(200)

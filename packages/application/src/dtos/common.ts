@@ -1,9 +1,20 @@
 import { z } from 'zod'
 import { ENTITY_KINDS, type Money } from '@cashdeck/domain'
 
+// The format alone lets 2026-13-01 or 2026-02-30 through, and those reach the
+// database as an Invalid Date; a real day reads back unchanged.
+function isCalendarDay(value: string): boolean {
+  const instant = Date.parse(`${value}T00:00:00Z`)
+  if (Number.isNaN(instant)) {
+    return false
+  }
+  return new Date(instant).toISOString().slice(0, 10) === value
+}
+
 export const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+  .refine(isCalendarDay, 'Expected a calendar day')
 
 export const isoMonth = z.string().regex(/^\d{4}-\d{2}$/, 'Expected YYYY-MM')
 
