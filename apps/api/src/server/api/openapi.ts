@@ -11,6 +11,8 @@ import {
   captureBillSchema,
   captureFileSchema,
   captureSourcesViewSchema,
+  capturedNotificationsViewSchema,
+  captureNotificationsSchema,
   cardStatementViewSchema,
   deviceViewSchema,
   categoryRuleResultSchema,
@@ -846,6 +848,14 @@ const OPERATIONS: Operation[] = [
     body: statementBillSchema,
     status: '201',
     response: statementBillViewSchema,
+  },
+  {
+    method: 'post',
+    path: '/card-notifications',
+    id: 'captureCardNotifications',
+    summary: 'Store the charges a card app notified as previews',
+    body: captureNotificationsSchema,
+    response: capturedNotificationsViewSchema,
   },
   {
     method: 'get',

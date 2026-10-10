@@ -68,6 +68,7 @@ import { PUT as savePayroll } from '@/app/api/v1/payroll/[month]/route'
 import { GET as revenue } from '@/app/api/v1/revenue/route'
 import { PUT as saveRevenue } from '@/app/api/v1/revenue/[month]/route'
 import { POST as readStatement } from '@/app/api/v1/card-statements/route'
+import { POST as captureNotifications } from '@/app/api/v1/card-notifications/route'
 import { GET as latestStatement } from '@/app/api/v1/card-statements/latest/route'
 import { GET as getStatement } from '@/app/api/v1/card-statements/[id]/route'
 import { POST as statementBill } from '@/app/api/v1/card-statements/[id]/bill/route'
@@ -502,6 +503,32 @@ describe('card statements and accountant export', () => {
         })
       ).status,
     ).toBe(404)
+  })
+
+  it('captures card notifications into a card account', async () => {
+    const notifications = [
+      {
+        id: 'notice-0001',
+        app: 'Card App',
+        title: 'Compra aprovada',
+        text: 'R$ 10,00 em Bakery',
+        postedAt: '2026-10-10T12:00:00Z',
+      },
+    ]
+    expect(
+      (
+        await call(h(captureNotifications), 'POST', {
+          body: { accountId: 'missing', notifications },
+        })
+      ).status,
+    ).toBe(404)
+    expect(
+      (
+        await call(h(captureNotifications), 'POST', {
+          body: { accountId: 'missing', notifications: [] },
+        })
+      ).status,
+    ).toBe(422)
   })
 
   it('plans, generates and downloads an export', async () => {

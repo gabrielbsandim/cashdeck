@@ -914,6 +914,21 @@ For a card without Open Finance, usually in a foreign currency.
   `rate`, IOF on top. Needs a payment code (from the statement or the body).
   `data`: `{ billId, foreign: Money, subtotal: Money, iof: Money, total: Money }`, 201.
 
+## Card notifications
+
+For a card without Open Finance whose app notifies each charge on the phone.
+The Android app forwards the notifications of the apps the user picked.
+
+- `POST /card-notifications`: body `{ accountId, notifications: [{ id, app,
+  title, text, postedAt }] }`, 1 to 50 per call. `accountId` is a credit card
+  account; `id` (8 to 128 of `A-Z a-z 0-9 _ -`) is the phone's id for that
+  notification and `postedAt` an ISO timestamp. The configured AI reads the
+  ones not stored yet; an approved charge becomes a provisional debit dated
+  the day it was posted, a refund a provisional credit, anything else is
+  ignored. A charge in N installments stores its first installment. The
+  external id is `notification:<id>`, so a resend adds nothing. `data`:
+  `{ received: int, added: int }`.
+
 ## Accountant export
 
 - `GET /accountant-export/plan?period=LAST_MONTH|LAST_QUARTER|CUSTOM&from=&to=`
