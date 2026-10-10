@@ -32,7 +32,10 @@ import {
   type StatementDraft,
   type StatementImporter,
 } from '@/ports/providers'
-import { type ProviderInvestment } from '@/ports/investments'
+import {
+  type ProviderInvestment,
+  type ProviderMovement,
+} from '@/ports/investments'
 import { type RailStatusScope } from '@/ports/rail-status'
 import {
   type FundingRequest,
@@ -125,6 +128,7 @@ export class FakeOpenFinanceProvider implements OpenFinanceProvider {
   bills = new Map<string, ProviderBill[]>()
   connectors: ProviderConnector[] = []
   investments: ProviderInvestment[] | Error = []
+  movements = new Map<string, ProviderMovement[] | Error>()
 
   constructor(
     private readonly accounts: ProviderAccount[] = [],
@@ -148,6 +152,17 @@ export class FakeOpenFinanceProvider implements OpenFinanceProvider {
       throw this.investments
     }
     return this.investments
+  }
+
+  async listInvestmentMovements(
+    _connection: unknown,
+    investmentExternalId: string,
+  ): Promise<ProviderMovement[]> {
+    const movements = this.movements.get(investmentExternalId) ?? []
+    if (movements instanceof Error) {
+      throw movements
+    }
+    return movements
   }
 
   async getItem(itemId: string): Promise<ProviderItem> {

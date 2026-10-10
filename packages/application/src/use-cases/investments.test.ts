@@ -24,6 +24,8 @@ const cdb: ProviderInvestment = {
   investedCents: 100_000,
   profitCents: null,
   currency: 'BRL',
+  code: null,
+  unitPrice: null,
   quantity: 1,
   rate: { percent: 102, index: 'CDI', fixedAnnual: 0 },
   lastMonthRate: null,

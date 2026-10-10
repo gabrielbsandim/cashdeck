@@ -1,6 +1,7 @@
 import {
   type InvestmentKind,
   type InvestmentStatus,
+  type MovementKind,
   type OpenFinanceConnection,
   type OpenFinanceProvider,
   type ProviderAccount,
@@ -11,6 +12,7 @@ import {
   type ProviderItem,
   type ProviderInvestment,
   type ProviderItemStatus,
+  type ProviderMovement,
   type ProviderTransaction,
 } from '@cashdeck/application'
 import { toLocalDate } from '@cashdeck/domain'
@@ -57,6 +59,18 @@ const INVESTMENT_KINDS: Record<string, InvestmentKind> = {
   SECURITY: 'PENSION',
   COE: 'STRUCTURED',
 }
+
+const MOVEMENT_KINDS: Record<string, MovementKind> = {
+  BUY: 'BUY',
+  SELL: 'SELL',
+  TAX: 'TAX',
+  TRANSFER: 'TRANSFER',
+  INTEREST: 'INCOME',
+  DIVIDEND: 'INCOME',
+}
+
+// Pluggy caps a page of investment transactions at 500.
+const MOVEMENTS_PAGE_SIZE = 500
 
 const INVESTMENT_STATUSES: Record<string, InvestmentStatus> = {
   ACTIVE: 'ACTIVE',
@@ -139,6 +153,7 @@ type PluggyInvestment = {
   amountProfit?: number | null
   currencyCode?: string | null
   quantity?: number | null
+  value?: number | null
   rate?: number | null
   rateType?: string | null
   fixedAnnualRate?: number | null
@@ -146,6 +161,17 @@ type PluggyInvestment = {
   lastTwelveMonthsRate?: number | null
   dueDate?: string | null
   date?: string | null
+}
+
+type PluggyInvestmentTransaction = {
+  id: string
+  type?: string | null
+  date?: string | null
+  tradeDate?: string | null
+  amount?: number | null
+  netAmount?: number | null
+  value?: number | null
+  quantity?: number | null
 }
 
 type Page<T> = { results?: T[]; page?: number; totalPages?: number }
@@ -214,6 +240,16 @@ export class PluggyProvider implements OpenFinanceProvider {
       `/investments?itemId=${encodeURIComponent(connection.itemId)}`,
     )
     return investments.map(toInvestment)
+  }
+
+  async listInvestmentMovements(
+    _connection: OpenFinanceConnection,
+    investmentExternalId: string,
+  ): Promise<ProviderMovement[]> {
+    const transactions = await this.pages<PluggyInvestmentTransaction>(
+      `/investments/${encodeURIComponent(investmentExternalId)}/transactions?pageSize=${MOVEMENTS_PAGE_SIZE}`,
+    )
+    return transactions.flatMap(toMovement)
   }
 
   async listTransactions(
@@ -465,6 +501,8 @@ function toInvestment(investment: PluggyInvestment): ProviderInvestment {
     investedCents: optionalCents(investment.amountOriginal),
     profitCents: optionalCents(investment.amountProfit),
     currency: investment.currencyCode ?? 'BRL',
+    code: investment.code || null,
+    unitPrice: optionalNumber(investment.value),
     quantity: optionalNumber(investment.quantity),
     rate: toRate(investment),
     lastMonthRate: optionalNumber(investment.lastMonthRate),
@@ -472,4 +510,22 @@ function toInvestment(investment: PluggyInvestment): ProviderInvestment {
     dueOn: calendarDay(investment.dueDate),
     valuedOn: calendarDay(investment.date),
   }
+}
+
+// The trade date is when units changed hands; settlement may come later.
+function toMovement(tx: PluggyInvestmentTransaction): ProviderMovement[] {
+  const occurredOn = calendarDay(tx.tradeDate) ?? calendarDay(tx.date)
+  if (!occurredOn) {
+    return []
+  }
+  return [
+    {
+      externalId: tx.id,
+      kind: MOVEMENT_KINDS[tx.type ?? ''] ?? 'OTHER',
+      occurredOn,
+      amountCents: Math.abs(toCents(tx.amount ?? tx.netAmount)),
+      quantity: optionalNumber(tx.quantity),
+      unitPrice: optionalNumber(tx.value),
+    },
+  ]
 }

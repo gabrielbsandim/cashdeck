@@ -4388,6 +4388,890 @@
         }
       }
     },
+    "/investments/performance": {
+      "get": {
+        "operationId": "getInvestmentPerformance",
+        "summary": "Yield of the positions held over a week, month or year",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "MONTH",
+              "type": "string",
+              "enum": [
+                "WEEK",
+                "MONTH",
+                "YEAR"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Yield of the positions held over a week, month or year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {
+                          "type": "string",
+                          "enum": [
+                            "WEEK",
+                            "MONTH",
+                            "YEAR"
+                          ]
+                        },
+                        "from": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "start": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "end": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "contributions": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "withdrawals": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "yield": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "yieldPercent": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "cdiPercent": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "estimated": {
+                          "type": "boolean"
+                        },
+                        "series": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "day": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "value": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "day",
+                              "value"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "positions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "start": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "end": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "yield": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "yieldPercent": {
+                                "nullable": true,
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "start",
+                              "end",
+                              "yield",
+                              "yieldPercent"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "period",
+                        "from",
+                        "to",
+                        "start",
+                        "end",
+                        "contributions",
+                        "withdrawals",
+                        "yield",
+                        "yieldPercent",
+                        "cdiPercent",
+                        "estimated",
+                        "series",
+                        "positions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/investments/{id}": {
+      "get": {
+        "operationId": "getInvestment",
+        "summary": "One position with its yield over a period and its movements",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "MONTH",
+              "type": "string",
+              "enum": [
+                "WEEK",
+                "MONTH",
+                "YEAR"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One position with its yield over a period and its movements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "position": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "entityKind": {
+                              "type": "string",
+                              "enum": [
+                                "PF",
+                                "PJ"
+                              ]
+                            },
+                            "institutionId": {
+                              "type": "string"
+                            },
+                            "institution": {
+                              "type": "string"
+                            },
+                            "logo": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "color": {
+                                  "nullable": true,
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "imageUrl",
+                                "color"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "FIXED_INCOME",
+                                "FUND",
+                                "EQUITY",
+                                "ETF",
+                                "PENSION",
+                                "STRUCTURED",
+                                "OTHER"
+                              ]
+                            },
+                            "subtype": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "issuer": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "ACTIVE",
+                                "PENDING"
+                              ]
+                            },
+                            "balance": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "invested": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "profit": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "profitPercent": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "quantity": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "rate": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "percent": {
+                                  "nullable": true,
+                                  "type": "number"
+                                },
+                                "index": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "fixedAnnual": {
+                                  "nullable": true,
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "percent",
+                                "index",
+                                "fixedAnnual"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "lastMonthRate": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "lastTwelveMonthsRate": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "dueOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "valuedOn": {
+                              "nullable": true,
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "entityKind",
+                            "institutionId",
+                            "institution",
+                            "logo",
+                            "name",
+                            "kind",
+                            "subtype",
+                            "issuer",
+                            "status",
+                            "balance",
+                            "invested",
+                            "profit",
+                            "profitPercent",
+                            "quantity",
+                            "rate",
+                            "lastMonthRate",
+                            "lastTwelveMonthsRate",
+                            "dueOn",
+                            "valuedOn"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "performance": {
+                          "type": "object",
+                          "properties": {
+                            "period": {
+                              "type": "string",
+                              "enum": [
+                                "WEEK",
+                                "MONTH",
+                                "YEAR"
+                              ]
+                            },
+                            "from": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "to": {
+                              "type": "string",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "start": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "end": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "contributions": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "withdrawals": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "yield": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "yieldPercent": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "cdiPercent": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "estimated": {
+                              "type": "boolean"
+                            },
+                            "series": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "day": {
+                                    "type": "string",
+                                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                  },
+                                  "value": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cents": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "cents",
+                                      "currency"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "day",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "period",
+                            "from",
+                            "to",
+                            "start",
+                            "end",
+                            "contributions",
+                            "withdrawals",
+                            "yield",
+                            "yieldPercent",
+                            "cdiPercent",
+                            "estimated",
+                            "series"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "movements": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "BUY",
+                                  "SELL",
+                                  "INCOME",
+                                  "TAX",
+                                  "TRANSFER",
+                                  "OTHER"
+                                ]
+                              },
+                              "occurredOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "quantity": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "unitPrice": {
+                                "nullable": true,
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "occurredOn",
+                              "amount",
+                              "quantity",
+                              "unitPrice"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "position",
+                        "performance",
+                        "movements"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/subscriptions": {
       "get": {
         "operationId": "listSubscriptions",

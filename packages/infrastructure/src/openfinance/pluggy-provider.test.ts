@@ -398,6 +398,7 @@ describe('PluggyProvider', () => {
               amountProfit: null,
               currencyCode: 'BRL',
               quantity: 1,
+              value: 1050.25,
               rate: 102,
               rateType: 'CDI',
               fixedAnnualRate: 0,
@@ -434,6 +435,8 @@ describe('PluggyProvider', () => {
       investedCents: 100_000,
       profitCents: null,
       currency: 'BRL',
+      code: null,
+      unitPrice: 1050.25,
       quantity: 1,
       rate: { percent: 102, index: 'CDI', fixedAnnual: 0 },
       lastMonthRate: null,
@@ -443,6 +446,8 @@ describe('PluggyProvider', () => {
     })
     expect(fund).toMatchObject({
       name: 'ABCD11',
+      code: 'ABCD11',
+      unitPrice: null,
       kind: 'EQUITY',
       status: 'CLOSED',
       profitCents: -1_250,
@@ -464,6 +469,84 @@ describe('PluggyProvider', () => {
       quantity: null,
       dueOn: null,
     })
+  })
+
+  it('lists the movements of a position across pages', async () => {
+    const url = `${PLUGGY_URL}/investments/i%201/transactions?pageSize=500`
+    const scripted = new ScriptedTransport()
+      .on('GET', `${url}&page=1`, {
+        json: {
+          page: 1,
+          totalPages: 2,
+          results: [
+            {
+              id: 't1',
+              type: 'BUY',
+              movementType: 'CREDIT',
+              date: '2026-03-05T00:00:00.000Z',
+              tradeDate: '2026-03-04T00:00:00.000Z',
+              amount: 10000,
+              netAmount: 10000,
+              value: 1,
+              quantity: 10000,
+            },
+            {
+              id: 't2',
+              type: 'SELL',
+              movementType: 'DEBIT',
+              date: '2026-08-01T00:00:00.000Z',
+              amount: -2500.5,
+            },
+          ],
+        },
+      })
+      .on('GET', `${url}&page=2`, {
+        json: {
+          page: 2,
+          totalPages: 2,
+          results: [
+            { id: 't3', type: 'INTEREST', date: '2026-09-01', netAmount: 12.3 },
+            { id: 't4', type: 'SOMETHING_NEW', tradeDate: '2026-09-02' },
+            { id: 't5', type: 'TAX', amount: 3 },
+          ],
+        },
+      })
+    expect(
+      await provider(scripted).listInvestmentMovements(connection, 'i 1'),
+    ).toEqual([
+      {
+        externalId: 't1',
+        kind: 'BUY',
+        occurredOn: '2026-03-04',
+        amountCents: 1_000_000,
+        quantity: 10000,
+        unitPrice: 1,
+      },
+      {
+        externalId: 't2',
+        kind: 'SELL',
+        occurredOn: '2026-08-01',
+        amountCents: 250_050,
+        quantity: null,
+        unitPrice: null,
+      },
+      {
+        externalId: 't3',
+        kind: 'INCOME',
+        occurredOn: '2026-09-01',
+        amountCents: 1_230,
+        quantity: null,
+        unitPrice: null,
+      },
+      {
+        externalId: 't4',
+        kind: 'OTHER',
+        occurredOn: '2026-09-02',
+        amountCents: 0,
+        quantity: null,
+        unitPrice: null,
+      },
+    ])
   })
 
   it('authenticates again when the api key expires', async () => {

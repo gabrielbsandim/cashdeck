@@ -5,7 +5,10 @@ import {
   type Money,
 } from '@cashdeck/domain'
 import { type DeviceLocale } from '@/ports/alerts'
-import { type ProviderInvestment } from '@/ports/investments'
+import {
+  type ProviderInvestment,
+  type ProviderMovement,
+} from '@/ports/investments'
 
 export type OpenFinanceConnection = { provider: string; itemId: string }
 
@@ -99,6 +102,10 @@ export interface OpenFinanceProvider {
   listInvestments(
     connection: OpenFinanceConnection,
   ): Promise<ProviderInvestment[]>
+  listInvestmentMovements(
+    connection: OpenFinanceConnection,
+    investmentExternalId: string,
+  ): Promise<ProviderMovement[]>
 }
 
 export type ImportFile = { name: string; mimeType: string; bytes: Uint8Array }

@@ -3,6 +3,7 @@ import {
   type DocumentTextReader,
   type InvoiceIssuer,
   type LlmProvider,
+  type MarketData,
   type Notifier,
   type OpenFinanceProvider,
   type PaymentRail,
@@ -23,6 +24,7 @@ import { CredentialResolver } from '@/credentials/credential-resolver'
 import { type MtlsFactory, BankClients } from '@/rails/bank-client'
 import { fetchTransport, type Transport } from '@/http/transport'
 import { NotaasIssuer } from '@/invoices/notaas-issuer'
+import { PublicMarketData } from '@/market/public-market-data'
 import { type DeviceTokens, FcmNotifier } from '@/notify/fcm-notifier'
 import { PluggyProvider } from '@/openfinance/pluggy-provider'
 import { AsaasRail } from '@/rails/asaas-rail'
@@ -56,6 +58,7 @@ export type Providers = {
   railStatus: Map<RailId, RailStatusReader>
   reserveFunder: ReserveFunder
   openFinance: OpenFinanceProvider
+  marketData: MarketData
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
   pixLocations: PixLocationResolver
@@ -102,6 +105,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
       payouts,
     }),
     openFinance: new PluggyProvider({ credentials, transport }),
+    marketData: new PublicMarketData({ transport }),
     invoiceIssuer: new NotaasIssuer({ credentials, transport, now }),
     billSources: [
       new GmailBillSource({

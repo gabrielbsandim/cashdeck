@@ -1,11 +1,16 @@
 import { type PrismaClient } from '@prisma/client'
 import {
+  type DailyValue,
+  type IndexRateRepository,
   type InvestmentKind,
+  type InvestmentMovement,
   type InvestmentPosition,
   type InvestmentRepository,
+  type InvestmentSnapshot,
   type InvestmentStatus,
+  type MovementKind,
 } from '@cashdeck/application'
-import { Money } from '@cashdeck/domain'
+import { type LocalDate, Money } from '@cashdeck/domain'
 import { fromDbDate, toDbDate } from '@/repositories/mappers'
 
 type InvestmentRow = {
@@ -108,6 +113,52 @@ export function investmentToRow(
   }
 }
 
+type MovementRow = {
+  id: string
+  tenantId: string
+  investmentId: string
+  externalId: string
+  kind: MovementKind
+  occurredOn: Date
+  amountCents: bigint
+  quantity: number | null
+  unitPrice: number | null
+}
+
+type SnapshotRow = {
+  tenantId: string
+  investmentId: string
+  day: Date
+  balanceCents: bigint
+  estimated: boolean
+}
+
+export const movementFromRow = (row: MovementRow): InvestmentMovement => ({
+  ...row,
+  occurredOn: fromDbDate(row.occurredOn),
+  amountCents: Number(row.amountCents),
+})
+
+const movementFields = (movement: InvestmentMovement) => ({
+  kind: movement.kind,
+  occurredOn: toDbDate(movement.occurredOn),
+  amountCents: BigInt(movement.amountCents),
+  quantity: movement.quantity,
+  unitPrice: movement.unitPrice,
+})
+
+export const snapshotFromRow = (row: SnapshotRow): InvestmentSnapshot => ({
+  ...row,
+  day: fromDbDate(row.day),
+  balanceCents: Number(row.balanceCents),
+})
+
+export const snapshotToRow = (snapshot: InvestmentSnapshot): SnapshotRow => ({
+  ...snapshot,
+  day: toDbDate(snapshot.day),
+  balanceCents: BigInt(snapshot.balanceCents),
+})
+
 export class PrismaInvestmentRepository implements InvestmentRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -147,5 +198,137 @@ export class PrismaInvestmentRepository implements InvestmentRepository {
     connectionId: string,
   ): Promise<void> {
     await this.db.investment.deleteMany({ where: { tenantId, connectionId } })
+  }
+
+  async saveMovements(movements: readonly InvestmentMovement[]): Promise<void> {
+    for (const movement of movements) {
+      await this.db.investmentMovement.upsert({
+        where: {
+          investmentId_externalId: {
+            investmentId: movement.investmentId,
+            externalId: movement.externalId,
+          },
+        },
+        create: {
+          id: movement.id,
+          tenantId: movement.tenantId,
+          investmentId: movement.investmentId,
+          externalId: movement.externalId,
+          ...movementFields(movement),
+        },
+        update: movementFields(movement),
+      })
+    }
+  }
+
+  async listMovements(
+    tenantId: string,
+    investmentId?: string,
+  ): Promise<InvestmentMovement[]> {
+    const rows = await this.db.investmentMovement.findMany({
+      where: { tenantId, investmentId },
+      orderBy: { occurredOn: 'asc' },
+    })
+    return rows.map(movementFromRow)
+  }
+
+  // Estimated days go in one insert that skips the days already stored.
+  async saveSnapshots(snapshots: readonly InvestmentSnapshot[]): Promise<void> {
+    for (const snapshot of snapshots.filter(row => !row.estimated)) {
+      const row = snapshotToRow(snapshot)
+      await this.db.investmentSnapshot.upsert({
+        where: {
+          investmentId_day: { investmentId: row.investmentId, day: row.day },
+        },
+        create: row,
+        update: { balanceCents: row.balanceCents, estimated: false },
+      })
+    }
+    const estimated = snapshots.filter(row => row.estimated)
+    if (estimated.length === 0) {
+      return
+    }
+    await this.db.investmentSnapshot.createMany({
+      data: estimated.map(snapshotToRow),
+      skipDuplicates: true,
+    })
+  }
+
+  async listSnapshots(
+    tenantId: string,
+    range: { from: LocalDate; to: LocalDate },
+    investmentId?: string,
+  ): Promise<InvestmentSnapshot[]> {
+    const from = toDbDate(range.from)
+    const before = await this.db.investmentSnapshot.findMany({
+      where: { tenantId, investmentId, day: { lt: from } },
+      orderBy: [{ investmentId: 'asc' }, { day: 'desc' }],
+      distinct: ['investmentId'],
+    })
+    const within = await this.db.investmentSnapshot.findMany({
+      where: {
+        tenantId,
+        investmentId,
+        day: { gte: from, lte: toDbDate(range.to) },
+      },
+      orderBy: { day: 'asc' },
+    })
+    return [...before, ...within].map(snapshotFromRow)
+  }
+
+  async firstSnapshotDays(tenantId: string): Promise<Map<string, LocalDate>> {
+    const groups = await this.db.investmentSnapshot.groupBy({
+      by: ['investmentId'],
+      where: { tenantId },
+      _min: { day: true },
+    })
+    return new Map(
+      groups.flatMap(group =>
+        group._min.day
+          ? [[group.investmentId, fromDbDate(group._min.day)]]
+          : [],
+      ),
+    )
+  }
+}
+
+export class PrismaIndexRateRepository implements IndexRateRepository {
+  constructor(private readonly db: PrismaClient) {}
+
+  // A published rate does not change, so a day already stored is kept.
+  async save(index: string, rates: readonly DailyValue[]): Promise<void> {
+    if (rates.length === 0) {
+      return
+    }
+    await this.db.indexRate.createMany({
+      data: rates.map(rate => ({
+        index,
+        day: toDbDate(rate.day),
+        rate: rate.value,
+      })),
+      skipDuplicates: true,
+    })
+  }
+
+  async list(
+    index: string,
+    range: { from: LocalDate; to: LocalDate },
+  ): Promise<DailyValue[]> {
+    const rows = await this.db.indexRate.findMany({
+      where: {
+        index,
+        day: { gte: toDbDate(range.from), lte: toDbDate(range.to) },
+      },
+      orderBy: { day: 'asc' },
+    })
+    return rows.map(row => ({ day: fromDbDate(row.day), value: row.rate }))
+  }
+
+  async lastDay(index: string): Promise<LocalDate | null> {
+    const last = await this.db.indexRate.findFirst({
+      where: { index },
+      orderBy: { day: 'desc' },
+    })
+    return last ? fromDbDate(last.day) : null
   }
 }

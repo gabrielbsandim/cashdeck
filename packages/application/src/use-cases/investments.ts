@@ -4,7 +4,11 @@ import {
   type InvestmentPositionView,
   type InvestmentsView,
 } from '@/dtos/investments'
-import { type InvestmentPosition } from '@/ports/investments'
+import {
+  type InvestmentMovement,
+  type InvestmentPosition,
+  type MovementKind,
+} from '@/ports/investments'
 import { type Institution } from '@/ports/records'
 import { type Deps } from '@/use-cases/deps'
 import { logoView } from '@/use-cases/finance'
@@ -13,12 +17,36 @@ import { requireEntity } from '@/use-cases/shared'
 type InvestmentDeps = Pick<Deps, 'entities' | 'institutions' | 'investments'>
 
 // Totals add up the positions held in reais; others are listed only.
-const TOTAL_CURRENCY = 'BRL'
+export const TOTAL_CURRENCY = 'BRL'
+
+// Money put into a position counts up, money taken out counts down.
+const FLOW_SIGNS: Partial<Record<MovementKind, number>> = { BUY: 1, SELL: -1 }
+
+export const signedFlow = (movement: InvestmentMovement) =>
+  (FLOW_SIGNS[movement.kind] ?? 0) * movement.amountCents
+
+export function groupByPosition<T extends { investmentId: string }>(
+  rows: readonly T[],
+) {
+  return new Map(groupBy(rows, row => row.investmentId))
+}
+
+// Without an amount from the provider, what the movements put in, net.
+function investedOf(
+  position: InvestmentPosition,
+  movements: readonly InvestmentMovement[],
+) {
+  if (position.invested) {
+    return position.invested
+  }
+  const net = movements.reduce((sum, row) => sum + signedFlow(row), 0)
+  return net > 0 ? Money.of(net, position.balance.currency) : null
+}
 
 // The reported profit first, else what the balance gained over the amount
 // put in.
 function yieldOf(position: InvestmentPosition) {
-  const invested = position.invested
+  const { invested } = position
   if (!invested) {
     return { profit: position.profit, percent: null }
   }
@@ -51,57 +79,85 @@ function groupBy<T, K>(rows: readonly T[], keyOf: (row: T) => K) {
 const byTotal = (a: { total: { cents: number } }, b: typeof a) =>
   b.total.cents - a.total.cents
 
-export function makeListInvestments(deps: InvestmentDeps) {
-  async function institutionsOf(
-    tenantId: string,
-    positions: readonly InvestmentPosition[],
-  ) {
-    const found = new Map<string, Institution | null>()
-    for (const id of new Set(positions.map(row => row.institutionId))) {
-      found.set(id, await deps.institutions.findById(tenantId, id))
-    }
-    return found
+export function positionView(
+  stored: InvestmentPosition,
+  entityKind: EntityKind,
+  institution: Institution | null,
+  movements: readonly InvestmentMovement[],
+): InvestmentPositionView {
+  const position = { ...stored, invested: investedOf(stored, movements) }
+  const { profit, percent } = yieldOf(position)
+  return {
+    id: position.id,
+    entityKind,
+    institutionId: position.institutionId,
+    institution: institution?.name ?? '',
+    logo: logoView(institution),
+    name: position.name,
+    kind: position.kind,
+    subtype: position.subtype,
+    issuer: position.issuer,
+    status: position.status === 'PENDING' ? 'PENDING' : 'ACTIVE',
+    balance: money(position.balance),
+    invested: position.invested && money(position.invested),
+    profit: profit && money(profit),
+    profitPercent: percent,
+    quantity: position.quantity,
+    rate: position.rate,
+    lastMonthRate: position.lastMonthRate,
+    lastTwelveMonthsRate: position.lastTwelveMonthsRate,
+    dueOn: position.dueOn,
+    valuedOn: position.valuedOn,
   }
+}
 
+export async function institutionsOf(
+  deps: Pick<Deps, 'institutions'>,
+  tenantId: string,
+  positions: readonly InvestmentPosition[],
+) {
+  const found = new Map<string, Institution | null>()
+  for (const id of new Set(positions.map(row => row.institutionId))) {
+    found.set(id, await deps.institutions.findById(tenantId, id))
+  }
+  return found
+}
+
+// The positions held by the entities in scope, with the kind of each owner.
+export async function heldPositions(
+  deps: Pick<Deps, 'entities' | 'investments'>,
+  tenantId: string,
+  kind?: EntityKind,
+) {
+  const entities = kind
+    ? [await requireEntity(deps.entities, tenantId, kind)]
+    : await deps.entities.list(tenantId)
+  const kinds = new Map(entities.map(entity => [entity.id, entity.kind]))
+  const held = (await deps.investments.list(tenantId)).filter(
+    position => kinds.has(position.entityId) && position.status !== 'CLOSED',
+  )
+  return { held, kinds }
+}
+
+export function makeListInvestments(deps: InvestmentDeps) {
   return async function listInvestments(
     tenantId: string,
     kind?: EntityKind,
   ): Promise<InvestmentsView> {
-    const entities = kind
-      ? [await requireEntity(deps.entities, tenantId, kind)]
-      : await deps.entities.list(tenantId)
-    const kinds = new Map(entities.map(entity => [entity.id, entity.kind]))
-    const held = (await deps.investments.list(tenantId)).filter(
-      position => kinds.has(position.entityId) && position.status !== 'CLOSED',
+    const { held, kinds } = await heldPositions(deps, tenantId, kind)
+    const institutions = await institutionsOf(deps, tenantId, held)
+    const movements = groupByPosition(
+      await deps.investments.listMovements(tenantId),
     )
-    const institutions = await institutionsOf(tenantId, held)
     const positions = held
-      .map((position): InvestmentPositionView => {
-        const institution = institutions.get(position.institutionId) ?? null
-        const { profit, percent } = yieldOf(position)
-        return {
-          id: position.id,
-          entityKind: kinds.get(position.entityId) as EntityKind,
-          institutionId: position.institutionId,
-          institution: institution?.name ?? '',
-          logo: logoView(institution),
-          name: position.name,
-          kind: position.kind,
-          subtype: position.subtype,
-          issuer: position.issuer,
-          status: position.status === 'PENDING' ? 'PENDING' : 'ACTIVE',
-          balance: money(position.balance),
-          invested: position.invested && money(position.invested),
-          profit: profit && money(profit),
-          profitPercent: percent,
-          quantity: position.quantity,
-          rate: position.rate,
-          lastMonthRate: position.lastMonthRate,
-          lastTwelveMonthsRate: position.lastTwelveMonthsRate,
-          dueOn: position.dueOn,
-          valuedOn: position.valuedOn,
-        }
-      })
+      .map(position =>
+        positionView(
+          position,
+          kinds.get(position.entityId) as EntityKind,
+          institutions.get(position.institutionId) ?? null,
+          movements.get(position.id) ?? [],
+        ),
+      )
       .sort(
         (a, b) =>
           b.balance.cents - a.balance.cents || a.name.localeCompare(b.name),

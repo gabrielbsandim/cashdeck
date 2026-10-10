@@ -242,6 +242,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investments/performance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Yield of the positions held over a week, month or year */
+        get: operations["getInvestmentPerformance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/investments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One position with its yield over a period and its movements */
+        get: operations["getInvestment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/subscriptions": {
         parameters: {
             query?: never;
@@ -2691,6 +2725,216 @@ export interface operations {
                                 lastTwelveMonthsRate: number | null;
                                 dueOn: string | null;
                                 valuedOn: string | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getInvestmentPerformance: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                period?: "WEEK" | "MONTH" | "YEAR";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Yield of the positions held over a week, month or year */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** @enum {string} */
+                            period: "WEEK" | "MONTH" | "YEAR";
+                            from: string;
+                            to: string;
+                            start: {
+                                cents: number;
+                                currency: string;
+                            };
+                            end: {
+                                cents: number;
+                                currency: string;
+                            };
+                            contributions: {
+                                cents: number;
+                                currency: string;
+                            };
+                            withdrawals: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yield: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yieldPercent: number | null;
+                            cdiPercent: number | null;
+                            estimated: boolean;
+                            series: {
+                                day: string;
+                                value: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            positions: {
+                                id: string;
+                                start: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                end: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                yield: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                yieldPercent: number | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getInvestment: {
+        parameters: {
+            query?: {
+                period?: "WEEK" | "MONTH" | "YEAR";
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One position with its yield over a period and its movements */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            position: {
+                                id: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                institutionId: string;
+                                institution: string;
+                                logo: {
+                                    imageUrl: string;
+                                    color: string | null;
+                                } | null;
+                                name: string;
+                                /** @enum {string} */
+                                kind: "FIXED_INCOME" | "FUND" | "EQUITY" | "ETF" | "PENSION" | "STRUCTURED" | "OTHER";
+                                subtype: string | null;
+                                issuer: string | null;
+                                /** @enum {string} */
+                                status: "ACTIVE" | "PENDING";
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                profit: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                profitPercent: number | null;
+                                quantity: number | null;
+                                rate: {
+                                    percent: number | null;
+                                    index: string | null;
+                                    fixedAnnual: number | null;
+                                } | null;
+                                lastMonthRate: number | null;
+                                lastTwelveMonthsRate: number | null;
+                                dueOn: string | null;
+                                valuedOn: string | null;
+                            };
+                            performance: {
+                                /** @enum {string} */
+                                period: "WEEK" | "MONTH" | "YEAR";
+                                from: string;
+                                to: string;
+                                start: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                end: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                contributions: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                withdrawals: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                yield: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                yieldPercent: number | null;
+                                cdiPercent: number | null;
+                                estimated: boolean;
+                                series: {
+                                    day: string;
+                                    value: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                            };
+                            movements: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "BUY" | "SELL" | "INCOME" | "TAX" | "TRANSFER" | "OTHER";
+                                occurredOn: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                quantity: number | null;
+                                unitPrice: number | null;
                             }[];
                         };
                     };

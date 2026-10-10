@@ -215,6 +215,7 @@ describe('open finance', () => {
       listBills: async () => [],
       listConnectors: async () => [],
       listInvestments: async () => [],
+      listInvestmentMovements: async () => [],
     }
     const { deps, of } = setup(flaky)
     const { connectionId } = await of.connect(TENANT, {
@@ -489,6 +490,7 @@ describe('open finance', () => {
       listInvestments: async () => {
         throw new Error('investments unavailable')
       },
+      listInvestmentMovements: async () => [],
     }
     const { deps, of } = setup(broken)
     const { connectionId } = await of.connect(TENANT, {

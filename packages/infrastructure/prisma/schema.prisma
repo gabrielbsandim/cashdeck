@@ -134,6 +134,15 @@ enum InvestmentStatus {
   CLOSED
 }
 
+enum InvestmentMovementKind {
+  BUY
+  SELL
+  INCOME
+  TAX
+  TRANSFER
+  OTHER
+}
+
 enum CategorizedBy {
   RULE
   AI
@@ -337,34 +346,75 @@ model CreditCardBill {
 // A position an Open Finance item reports, refreshed on every sync. The
 // balance is net of taxes and fees.
 model Investment {
-  id                   String           @id
-  tenantId             String           @map("tenant_id")
-  entityId             String           @map("entity_id")
-  connectionId         String           @map("connection_id")
-  institutionId        String           @map("institution_id")
-  externalId           String           @map("external_id")
+  id                   String               @id
+  tenantId             String               @map("tenant_id")
+  entityId             String               @map("entity_id")
+  connectionId         String               @map("connection_id")
+  institutionId        String               @map("institution_id")
+  externalId           String               @map("external_id")
   name                 String
   kind                 InvestmentKind
   subtype              String?
   issuer               String?
   status               InvestmentStatus
-  balanceCents         BigInt           @map("balance_cents")
-  investedCents        BigInt?          @map("invested_cents")
-  profitCents          BigInt?          @map("profit_cents")
-  currency             String           @default("BRL") @db.Char(3)
+  balanceCents         BigInt               @map("balance_cents")
+  investedCents        BigInt?              @map("invested_cents")
+  profitCents          BigInt?              @map("profit_cents")
+  currency             String               @default("BRL") @db.Char(3)
   quantity             Float?
-  ratePercent          Float?           @map("rate_percent")
-  rateIndex            String?          @map("rate_index")
-  fixedAnnualRate      Float?           @map("fixed_annual_rate")
-  lastMonthRate        Float?           @map("last_month_rate")
-  lastTwelveMonthsRate Float?           @map("last_twelve_months_rate")
-  dueOn                DateTime?        @map("due_on") @db.Date
-  valuedOn             DateTime?        @map("valued_on") @db.Date
-  syncedAt             DateTime         @map("synced_at")
+  ratePercent          Float?               @map("rate_percent")
+  rateIndex            String?              @map("rate_index")
+  fixedAnnualRate      Float?               @map("fixed_annual_rate")
+  lastMonthRate        Float?               @map("last_month_rate")
+  lastTwelveMonthsRate Float?               @map("last_twelve_months_rate")
+  dueOn                DateTime?            @map("due_on") @db.Date
+  valuedOn             DateTime?            @map("valued_on") @db.Date
+  syncedAt             DateTime             @map("synced_at")
+  movements            InvestmentMovement[]
+  snapshots            InvestmentSnapshot[]
 
   @@unique([tenantId, connectionId, externalId])
   @@index([tenantId, entityId])
   @@map("investments")
+}
+
+model InvestmentMovement {
+  id           String                 @id
+  tenantId     String                 @map("tenant_id")
+  investmentId String                 @map("investment_id")
+  externalId   String                 @map("external_id")
+  kind         InvestmentMovementKind
+  occurredOn   DateTime               @map("occurred_on") @db.Date
+  amountCents  BigInt                 @map("amount_cents")
+  quantity     Float?
+  unitPrice    Float?                 @map("unit_price")
+  investment   Investment             @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@unique([investmentId, externalId])
+  @@index([tenantId, investmentId])
+  @@map("investment_movements")
+}
+
+model InvestmentSnapshot {
+  tenantId     String     @map("tenant_id")
+  investmentId String     @map("investment_id")
+  day          DateTime   @db.Date
+  balanceCents BigInt     @map("balance_cents")
+  estimated    Boolean    @default(false)
+  investment   Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@id([investmentId, day])
+  @@index([tenantId, day])
+  @@map("investment_snapshots")
+}
+
+model IndexRate {
+  index String
+  day   DateTime @db.Date
+  rate  Float
+
+  @@id([index, day])
+  @@map("index_rates")
 }
 
 model Holding {

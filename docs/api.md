@@ -291,7 +291,73 @@ of taxes and fees. `profit` is what the provider reports, else `balance` minus
 
 Totals and both groupings add up the positions in BRL only, largest first.
 Positions of an aggregator item are filed under the bank its accounts resolved
-to, as on `GET /accounts`.
+to, as on `GET /accounts`. A position the provider reports no `invested` for
+takes what its movements put in, net (buys minus sells), when that is above
+zero.
+
+### GET /investments/performance?period=WEEK|MONTH|YEAR&entity=PF|PJ
+
+How the positions held did over the last 7, 30 or 365 days, ending today
+(`period` defaults to `MONTH`). `data`:
+
+```json
+{
+  "period": "MONTH", "from": date, "to": date,
+  "start": Money, "end": Money,
+  "contributions": Money, "withdrawals": Money, "yield": Money,
+  "yieldPercent": number | null, "cdiPercent": number | null,
+  "estimated": boolean,
+  "series": [{ "day": date, "value": Money }],
+  "positions": [{ "id": string, "start": Money, "end": Money,
+                  "yield": Money, "yieldPercent": number | null }]
+}
+```
+
+`start` is what the positions were worth on `from` (each one's last daily
+snapshot on or before it, 0 when it has none) and `end` is the current total,
+the same as `GET /investments`. `contributions` and `withdrawals` add up the
+buys and sells after `from` up to `to`; `yield` is `end - start -
+contributions + withdrawals`. `yieldPercent` is the Modified Dietz return:
+`yield` over `start` plus each buy (positive) or sell (negative) weighted by
+the share of the period left after it, null when that is not above zero.
+`cdiPercent` compounds the daily CDI after `from`, null before any rate is
+stored. Both are rounded to two decimals. `estimated` is true when a value
+behind `start` was rebuilt from market prices rather than synced. `series` has
+one point a day (one a week for `YEAR`, always ending on `to`), each the sum of
+the positions' last snapshot on or before that day; the last one equals
+`end`. `positions` follows the same rules per position, largest yield first.
+Only held positions in BRL count, as on `GET /investments`.
+
+### GET /investments/{id}?period=WEEK|MONTH|YEAR
+
+One position of the tenant, 404 otherwise. `data`:
+
+```json
+{
+  "position": { ...one item of GET /investments positions },
+  "performance": { ...GET /investments/performance without positions },
+  "movements": [{ "id": string,
+                  "kind": "BUY"|"SELL"|"INCOME"|"TAX"|"TRANSFER"|"OTHER",
+                  "occurredOn": date, "amount": Money,
+                  "quantity": number | null, "unitPrice": number | null }]
+}
+```
+
+The performance is in the position's own currency. Movements come newest
+first; `amount` is always positive and `kind` says which way it went.
+
+### History
+
+Each sync stores the movements the provider lists for every held position
+and a snapshot of its balance for the day. The first time a position has no
+snapshot older than 7 days, the 366 days before are estimated: units held each
+day (the current quantity less the buys and sells after it) times that day's
+price, the last Yahoo Finance close for B3 tickers and, for the rest, a
+geometric interpolation between the unit prices of its movements and today's.
+A position without units or prices keeps its current balance flat. A synced
+snapshot replaces an estimated one, never the other way round. The daily CDI
+(Banco Central SGS series 12) is fetched from the day after the last one
+stored, or 400 days back. None of this fails a sync.
 
 ## Transactions
 
@@ -571,14 +637,15 @@ again a few days back; a transaction already stored under its provider id is
 not added twice. It then marks paid the open bills of that entity that an
 outgoing transaction of the same amount paid, booked from 10 days before to 7
 days after the due date (15 for an auto-debit bill). It also refreshes the
-item's investment positions (see `GET /investments`); a provider that fails to
-list them leaves the last ones in place. `data`:
+item's investment positions, their movements and the day's balance (see
+`GET /investments` and its History); a provider that fails to list them leaves
+the last ones in place. `data`:
 `{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.
 
 ### DELETE /open-finance/connections/{id}
 
 Detaches the connection; its accounts stay, now manual, and its investment
-positions are dropped. `data`: `{ id }`.
+positions are dropped with their movements and snapshots. `data`: `{ id }`.
 
 ## Payment rails
 

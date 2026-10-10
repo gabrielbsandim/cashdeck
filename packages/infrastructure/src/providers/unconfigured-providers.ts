@@ -8,6 +8,7 @@ import {
   type ProviderConnector,
   type ProviderInvestment,
   type ProviderItem,
+  type ProviderMovement,
   type ProviderTransaction,
   ProviderNotConfiguredError,
 } from '@cashdeck/application'
@@ -34,6 +35,10 @@ export class PluggyOpenFinanceProvider implements OpenFinanceProvider {
   }
 
   async listInvestments(): Promise<ProviderInvestment[]> {
+    throw new ProviderNotConfiguredError('Pluggy')
+  }
+
+  async listInvestmentMovements(): Promise<ProviderMovement[]> {
     throw new ProviderNotConfiguredError('Pluggy')
   }
 }

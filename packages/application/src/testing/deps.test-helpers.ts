@@ -46,7 +46,11 @@ import {
 } from '@/testing/repositories'
 import { type WebhookProvider, type WebhookReader } from '@/ports/webhooks'
 import { InMemoryChatRepository } from '@/testing/chat'
-import { InMemoryInvestmentRepository } from '@/testing/investments'
+import {
+  FakeMarketData,
+  InMemoryIndexRateRepository,
+  InMemoryInvestmentRepository,
+} from '@/testing/investments'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import { InMemoryWebhookEventStore } from '@/testing/webhooks'
 import {
@@ -62,6 +66,7 @@ type Options = {
   settings?: Partial<PaymentSettings>
   railStatus?: RailStatusReader[]
   billSources?: BillSource[]
+  marketData?: FakeMarketData
   openFinance?: OpenFinanceProvider
   pixLocations?: FakePixLocationResolver
   documentText?: FakeDocumentTextReader
@@ -77,6 +82,8 @@ export function fullDeps(options: Options = {}) {
     transactions: new InMemoryTransactionRepository(),
     cardBills: new InMemoryCardBillRepository(),
     investments: new InMemoryInvestmentRepository(),
+    indexRates: new InMemoryIndexRateRepository(),
+    marketData: options.marketData ?? new FakeMarketData(),
     recurrences: new InMemoryRecurrenceRepository(),
     connections: new InMemoryConnectionRepository(),
     transfers: new InMemoryTransferRepository(),

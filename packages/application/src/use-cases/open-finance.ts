@@ -25,6 +25,7 @@ import {
 import { type Connection, type Institution } from '@/ports/records'
 import { type Deps } from '@/use-cases/deps'
 import { isAggregator, matchConnector } from '@/use-cases/institution-match'
+import { makeInvestmentHistory } from '@/use-cases/investment-history'
 import { makeSettleFromStatement } from '@/use-cases/settle-from-statement'
 import {
   required,
@@ -45,6 +46,8 @@ type OpenFinanceDeps = Pick<
   | 'transactions'
   | 'cardBills'
   | 'investments'
+  | 'indexRates'
+  | 'marketData'
   | 'connections'
   | 'openFinance'
   | 'clock'
@@ -187,6 +190,7 @@ async function freshnessOf(
 
 export function makeOpenFinance(deps: OpenFinanceDeps) {
   const settleFromStatement = makeSettleFromStatement(deps)
+  const history = makeInvestmentHistory(deps)
 
   // Logos are a nicety: a provider that cannot list connectors leaves the
   // accounts under the connection's own institution.
@@ -285,6 +289,8 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       investedCents,
       profitCents,
       currency,
+      code: _code,
+      unitPrice: _unitPrice,
       ...details
     }: ProviderInvestment,
     now: Date,
@@ -307,8 +313,9 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     institutionId: string,
     now: Date,
   ): Promise<void> {
+    const link = connectionOf(connection.itemId)
     const fetched = await deps.openFinance
-      .listInvestments(connectionOf(connection.itemId))
+      .listInvestments(link)
       .catch(() => null)
     if (!fetched) {
       return
@@ -318,6 +325,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
         toPosition(connection, institutionId, position, now),
       ),
     )
+    await history.record(connection, link, fetched, now)
   }
 
   async function lookup(
