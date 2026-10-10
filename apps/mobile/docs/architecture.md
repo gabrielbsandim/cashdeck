@@ -125,7 +125,9 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   remembers which apps notify, queues the notifications of the apps picked in
   Ajustes and hands them to `CardNotificationUploader`, a WorkManager job that
   posts them to `POST /api/v1/card-notifications` with the session token,
-  retrying while offline and stopping on a 401. Settings, queue and token sit
+  retrying while offline and stopping on a 401. Notifications still in the
+  shade are read again when the listener connects and when forwarding turns
+  on, so a charge from before setup is not lost. Settings, queue and token sit
   in app-private preferences; signing out clears them. Dart reaches it through
   the `io.cashdeck.app/card_notifications` channel
   (`features/card_notifications`).

@@ -33,7 +33,10 @@ class CardNotificationChannel(private val context: Context) : MethodChannel.Meth
                     baseUrl = call.argument<String>("baseUrl"),
                     token = call.argument<String>("token"),
                 )
-                if (store.enabled) CardNotificationUploader.schedule(context)
+                if (store.enabled) {
+                    CardNotificationListener.readActiveNotifications()
+                    CardNotificationUploader.schedule(context)
+                }
                 result.success(status(store))
             }
             else -> result.notImplemented()

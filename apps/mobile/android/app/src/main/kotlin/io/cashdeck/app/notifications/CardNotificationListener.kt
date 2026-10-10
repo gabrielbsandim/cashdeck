@@ -16,6 +16,21 @@ import java.util.TimeZone
  * [CardNotificationUploader]. Every other app is only remembered by name.
  */
 class CardNotificationListener : NotificationListenerService() {
+    // Charges still in the shade when access is granted or forwarding turns on.
+    override fun onListenerConnected() {
+        connected = this
+        readActive()
+    }
+
+    override fun onListenerDisconnected() {
+        connected = null
+    }
+
+    private fun readActive() {
+        val active = runCatching { activeNotifications }.getOrNull() ?: return
+        active.forEach(::onNotificationPosted)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val notification = sbn.notification ?: return
         if (sbn.packageName == packageName) return
@@ -52,6 +67,13 @@ class CardNotificationListener : NotificationListenerService() {
     }
 
     companion object {
+        @Volatile
+        private var connected: CardNotificationListener? = null
+
+        fun readActiveNotifications() {
+            connected?.readActive()
+        }
+
         private const val ID_LENGTH = 40
         private const val MAX_TITLE = 500
         private const val MAX_TEXT = 2000
