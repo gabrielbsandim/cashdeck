@@ -32,6 +32,7 @@ import {
   type StatementDraft,
   type StatementImporter,
 } from '@/ports/providers'
+import { type ProviderInvestment } from '@/ports/investments'
 import { type RailStatusScope } from '@/ports/rail-status'
 import {
   type FundingRequest,
@@ -123,6 +124,7 @@ export class FakePaymentRail implements PaymentRail {
 export class FakeOpenFinanceProvider implements OpenFinanceProvider {
   bills = new Map<string, ProviderBill[]>()
   connectors: ProviderConnector[] = []
+  investments: ProviderInvestment[] | Error = []
 
   constructor(
     private readonly accounts: ProviderAccount[] = [],
@@ -139,6 +141,13 @@ export class FakeOpenFinanceProvider implements OpenFinanceProvider {
 
   async listConnectors(): Promise<ProviderConnector[]> {
     return this.connectors
+  }
+
+  async listInvestments(): Promise<ProviderInvestment[]> {
+    if (this.investments instanceof Error) {
+      throw this.investments
+    }
+    return this.investments
   }
 
   async getItem(itemId: string): Promise<ProviderItem> {

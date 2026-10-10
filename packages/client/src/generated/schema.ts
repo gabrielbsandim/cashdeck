@@ -225,6 +225,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Investment positions held, by institution and kind */
+        get: operations["listInvestments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/subscriptions": {
         parameters: {
             query?: never;
@@ -2564,6 +2581,116 @@ export interface operations {
                                         to: string;
                                     };
                                 }[];
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listInvestments: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Investment positions held, by institution and kind */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            total: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            profit: {
+                                cents: number;
+                                currency: string;
+                            };
+                            syncedAt: string | null;
+                            institutions: {
+                                institutionId: string;
+                                institution: string;
+                                logo: {
+                                    imageUrl: string;
+                                    color: string | null;
+                                } | null;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                count: number;
+                            }[];
+                            kinds: {
+                                /** @enum {string} */
+                                kind: "FIXED_INCOME" | "FUND" | "EQUITY" | "ETF" | "PENSION" | "STRUCTURED" | "OTHER";
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                count: number;
+                            }[];
+                            positions: {
+                                id: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                institutionId: string;
+                                institution: string;
+                                logo: {
+                                    imageUrl: string;
+                                    color: string | null;
+                                } | null;
+                                name: string;
+                                /** @enum {string} */
+                                kind: "FIXED_INCOME" | "FUND" | "EQUITY" | "ETF" | "PENSION" | "STRUCTURED" | "OTHER";
+                                subtype: string | null;
+                                issuer: string | null;
+                                /** @enum {string} */
+                                status: "ACTIVE" | "PENDING";
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                profit: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                profitPercent: number | null;
+                                quantity: number | null;
+                                rate: {
+                                    percent: number | null;
+                                    index: string | null;
+                                    fixedAnnual: number | null;
+                                } | null;
+                                lastMonthRate: number | null;
+                                lastTwelveMonthsRate: number | null;
+                                dueOn: string | null;
+                                valuedOn: string | null;
                             }[];
                         };
                     };

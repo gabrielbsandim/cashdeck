@@ -129,7 +129,7 @@ function openBillView(account: Account): AccountView['openBill'] {
   return money(openBillOf(account))
 }
 
-function logoView(institution: Institution | null): AccountView['logo'] {
+export function logoView(institution: Institution | null): AccountView['logo'] {
   if (!institution?.imageUrl) {
     return null
   }

@@ -118,6 +118,22 @@ enum CardBillStatus {
   PAID
 }
 
+enum InvestmentKind {
+  FIXED_INCOME
+  FUND
+  EQUITY
+  ETF
+  PENSION
+  STRUCTURED
+  OTHER
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  PENDING
+  CLOSED
+}
+
 enum CategorizedBy {
   RULE
   AI
@@ -316,6 +332,39 @@ model CreditCardBill {
 
   @@unique([tenantId, accountId, dueDate])
   @@map("credit_card_bills")
+}
+
+// A position an Open Finance item reports, refreshed on every sync. The
+// balance is net of taxes and fees.
+model Investment {
+  id                   String           @id
+  tenantId             String           @map("tenant_id")
+  entityId             String           @map("entity_id")
+  connectionId         String           @map("connection_id")
+  institutionId        String           @map("institution_id")
+  externalId           String           @map("external_id")
+  name                 String
+  kind                 InvestmentKind
+  subtype              String?
+  issuer               String?
+  status               InvestmentStatus
+  balanceCents         BigInt           @map("balance_cents")
+  investedCents        BigInt?          @map("invested_cents")
+  profitCents          BigInt?          @map("profit_cents")
+  currency             String           @default("BRL") @db.Char(3)
+  quantity             Float?
+  ratePercent          Float?           @map("rate_percent")
+  rateIndex            String?          @map("rate_index")
+  fixedAnnualRate      Float?           @map("fixed_annual_rate")
+  lastMonthRate        Float?           @map("last_month_rate")
+  lastTwelveMonthsRate Float?           @map("last_twelve_months_rate")
+  dueOn                DateTime?        @map("due_on") @db.Date
+  valuedOn             DateTime?        @map("valued_on") @db.Date
+  syncedAt             DateTime         @map("synced_at")
+
+  @@unique([tenantId, connectionId, externalId])
+  @@index([tenantId, entityId])
+  @@map("investments")
 }
 
 model Holding {

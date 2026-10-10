@@ -214,6 +214,7 @@ describe('open finance', () => {
       listTransactions: async () => [],
       listBills: async () => [],
       listConnectors: async () => [],
+      listInvestments: async () => [],
     }
     const { deps, of } = setup(flaky)
     const { connectionId } = await of.connect(TENANT, {
@@ -484,6 +485,9 @@ describe('open finance', () => {
       },
       listConnectors: async () => {
         throw new Error('connectors unavailable')
+      },
+      listInvestments: async () => {
+        throw new Error('investments unavailable')
       },
     }
     const { deps, of } = setup(broken)

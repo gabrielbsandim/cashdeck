@@ -56,6 +56,7 @@ import {
   installmentsViewSchema,
   cardBillsViewSchema,
   cardTimelineViewSchema,
+  investmentsViewSchema,
   subscriptionDecisionSchema,
   subscriptionsViewSchema,
   personalSummarySchema,
@@ -243,6 +244,14 @@ const OPERATIONS: Operation[] = [
     summary: 'Each card with its open bill and the closed ones before it',
     query: insightsScopeQuerySchema,
     response: cardBillsViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/investments',
+    id: 'listInvestments',
+    summary: 'Investment positions held, by institution and kind',
+    query: insightsScopeQuerySchema,
+    response: investmentsViewSchema,
   },
   {
     method: 'get',

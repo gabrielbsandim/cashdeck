@@ -40,6 +40,7 @@ import {
   PrismaCategoryRepository,
   PrismaChatRepository,
 } from '@/repositories/prisma-insights'
+import { PrismaInvestmentRepository } from '@/repositories/prisma-investments'
 import {
   fromDbDate,
   toDbDate,
@@ -872,6 +873,7 @@ export function createPrismaRecords(db: PrismaClient) {
     institutions: new PrismaInstitutionRepository(db),
     transactions: new PrismaTransactionRepository(db),
     cardBills: new PrismaCardBillRepository(db),
+    investments: new PrismaInvestmentRepository(db),
     recurrences: new PrismaRecurrenceRepository(db),
     connections: new PrismaConnectionRepository(db),
     transfers: new PrismaTransferRepository(db),

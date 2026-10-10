@@ -251,6 +251,48 @@ the credits posted to the card from 5 days before closing to 10 days after the
 due date cover the total, `DUE` while the due date is ahead, `UNCONFIRMED`
 after it, which can mean a payment the bank did not report.
 
+## Investments
+
+### GET /investments?entity=PF|PJ
+
+The positions every Open Finance item reports, refreshed on each sync of its
+connection. Sold positions are left out. `data`:
+
+```json
+{
+  "total": Money, "invested": Money, "profit": Money,
+  "syncedAt": timestamp | null,
+  "institutions": [{ "institutionId": string, "institution": string,
+                     "logo": { "imageUrl": string, "color": string | null } | null,
+                     "total": Money, "count": int }],
+  "kinds": [{ "kind": Kind, "total": Money, "count": int }],
+  "positions": [{
+    "id": string, "entityKind": "PF"|"PJ", "institutionId": string,
+    "institution": string, "logo": { ... } | null, "name": string,
+    "kind": Kind, "subtype": string | null, "issuer": string | null,
+    "status": "ACTIVE"|"PENDING", "balance": Money, "invested": Money | null,
+    "profit": Money | null, "profitPercent": number | null,
+    "quantity": number | null,
+    "rate": { "percent": number | null, "index": string | null,
+              "fixedAnnual": number | null } | null,
+    "lastMonthRate": number | null, "lastTwelveMonthsRate": number | null,
+    "dueOn": date | null, "valuedOn": date | null
+  }]
+}
+```
+
+`Kind` is `FIXED_INCOME`, `FUND`, `EQUITY`, `ETF`, `PENSION`, `STRUCTURED` or
+`OTHER`; `subtype` is the provider's own label (`CDB`, `LCI`, `TREASURY`,
+`STOCK`, `REAL_ESTATE_FUND`, `MULTIMARKET_FUND` and so on). `balance` is net
+of taxes and fees. `profit` is what the provider reports, else `balance` minus
+`invested`; `profitPercent` is that profit over `invested`. A rate reads as
+`percent` of `index` (102 of CDI) plus `fixedAnnual` points a year (IPCA plus
+6.5). The fund rates are the provider's own returns for the period.
+
+Totals and both groupings add up the positions in BRL only, largest first.
+Positions of an aggregator item are filed under the bank its accounts resolved
+to, as on `GET /accounts`.
+
 ## Transactions
 
 ### GET /transactions?entity=&accountId=&categoryId=&uncategorized=&search=&from=&to=&cursor=&limit=
@@ -528,12 +570,15 @@ when given), then from a week before the last one, since the provider collects
 again a few days back; a transaction already stored under its provider id is
 not added twice. It then marks paid the open bills of that entity that an
 outgoing transaction of the same amount paid, booked from 10 days before to 7
-days after the due date (15 for an auto-debit bill). `data`:
+days after the due date (15 for an auto-debit bill). It also refreshes the
+item's investment positions (see `GET /investments`); a provider that fails to
+list them leaves the last ones in place. `data`:
 `{ accounts: int, transactions: int, settledBills: int, syncedAt: timestamp }`.
 
 ### DELETE /open-finance/connections/{id}
 
-Detaches the connection; its accounts stay, now manual. `data`: `{ id }`.
+Detaches the connection; its accounts stay, now manual, and its investment
+positions are dropped. `data`: `{ id }`.
 
 ## Payment rails
 

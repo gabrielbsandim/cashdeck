@@ -46,6 +46,7 @@ import {
 } from '@/testing/repositories'
 import { type WebhookProvider, type WebhookReader } from '@/ports/webhooks'
 import { InMemoryChatRepository } from '@/testing/chat'
+import { InMemoryInvestmentRepository } from '@/testing/investments'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import { InMemoryWebhookEventStore } from '@/testing/webhooks'
 import {
@@ -75,6 +76,7 @@ export function fullDeps(options: Options = {}) {
     institutions: new InMemoryInstitutionRepository(),
     transactions: new InMemoryTransactionRepository(),
     cardBills: new InMemoryCardBillRepository(),
+    investments: new InMemoryInvestmentRepository(),
     recurrences: new InMemoryRecurrenceRepository(),
     connections: new InMemoryConnectionRepository(),
     transfers: new InMemoryTransferRepository(),

@@ -1,4 +1,6 @@
 import {
+  type InvestmentKind,
+  type InvestmentStatus,
   type OpenFinanceConnection,
   type OpenFinanceProvider,
   type ProviderAccount,
@@ -7,6 +9,7 @@ import {
   type ProviderCreditLine,
   type ProviderInstallment,
   type ProviderItem,
+  type ProviderInvestment,
   type ProviderItemStatus,
   type ProviderTransaction,
 } from '@cashdeck/application'
@@ -44,6 +47,21 @@ const ACCOUNT_TYPES: Record<string, ProviderAccount['type']> = {
   CHECKING_ACCOUNT: 'CHECKING',
   SAVINGS_ACCOUNT: 'SAVINGS',
   CREDIT_CARD: 'CREDIT_CARD',
+}
+
+const INVESTMENT_KINDS: Record<string, InvestmentKind> = {
+  FIXED_INCOME: 'FIXED_INCOME',
+  MUTUAL_FUND: 'FUND',
+  EQUITY: 'EQUITY',
+  ETF: 'ETF',
+  SECURITY: 'PENSION',
+  COE: 'STRUCTURED',
+}
+
+const INVESTMENT_STATUSES: Record<string, InvestmentStatus> = {
+  ACTIVE: 'ACTIVE',
+  PENDING: 'PENDING',
+  TOTAL_WITHDRAWAL: 'CLOSED',
 }
 
 type PluggyConnector = {
@@ -108,6 +126,28 @@ type PluggyBill = {
   minimumPaymentAmount?: number | null
 }
 
+type PluggyInvestment = {
+  id: string
+  name?: string | null
+  code?: string | null
+  type?: string | null
+  subtype?: string | null
+  issuer?: string | null
+  status?: string | null
+  balance?: number | null
+  amountOriginal?: number | null
+  amountProfit?: number | null
+  currencyCode?: string | null
+  quantity?: number | null
+  rate?: number | null
+  rateType?: string | null
+  fixedAnnualRate?: number | null
+  lastMonthRate?: number | null
+  lastTwelveMonthsRate?: number | null
+  dueDate?: string | null
+  date?: string | null
+}
+
 type Page<T> = { results?: T[]; page?: number; totalPages?: number }
 
 type CursorPage<T> = { results?: T[]; next?: string | null }
@@ -165,6 +205,15 @@ export class PluggyProvider implements OpenFinanceProvider {
         ? []
         : [toConnector(connector)],
     )
+  }
+
+  async listInvestments(
+    connection: OpenFinanceConnection,
+  ): Promise<ProviderInvestment[]> {
+    const investments = await this.pages<PluggyInvestment>(
+      `/investments?itemId=${encodeURIComponent(connection.itemId)}`,
+    )
+    return investments.map(toInvestment)
   }
 
   async listTransactions(
@@ -382,4 +431,45 @@ function toBill(bill: PluggyBill): ProviderBill[] {
       currency,
     },
   ]
+}
+
+const optionalCents = (value: number | null | undefined) =>
+  typeof value === 'number' ? toCents(value) : null
+
+const optionalNumber = (value: number | null | undefined) =>
+  typeof value === 'number' ? value : null
+
+function toRate(investment: PluggyInvestment) {
+  const percent = optionalNumber(investment.rate)
+  const index = investment.rateType || null
+  const fixedAnnual = optionalNumber(investment.fixedAnnualRate)
+  if (percent === null && index === null && fixedAnnual === null) {
+    return null
+  }
+  return { percent, index, fixedAnnual }
+}
+
+// A sold position stays listed with a zero balance and no status of its own.
+function toInvestment(investment: PluggyInvestment): ProviderInvestment {
+  const balanceCents = toCents(investment.balance ?? 0)
+  return {
+    externalId: investment.id,
+    name: investment.name || investment.code || 'Investment',
+    kind: INVESTMENT_KINDS[investment.type ?? ''] ?? 'OTHER',
+    subtype: investment.subtype || null,
+    issuer: investment.issuer || null,
+    status:
+      INVESTMENT_STATUSES[investment.status ?? ''] ??
+      (balanceCents > 0 ? 'ACTIVE' : 'CLOSED'),
+    balanceCents,
+    investedCents: optionalCents(investment.amountOriginal),
+    profitCents: optionalCents(investment.amountProfit),
+    currency: investment.currencyCode ?? 'BRL',
+    quantity: optionalNumber(investment.quantity),
+    rate: toRate(investment),
+    lastMonthRate: optionalNumber(investment.lastMonthRate),
+    lastTwelveMonthsRate: optionalNumber(investment.lastTwelveMonthsRate),
+    dueOn: calendarDay(investment.dueDate),
+    valuedOn: calendarDay(investment.date),
+  }
 }

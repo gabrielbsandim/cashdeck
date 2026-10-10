@@ -5,6 +5,7 @@ import {
   type Money,
 } from '@cashdeck/domain'
 import { type DeviceLocale } from '@/ports/alerts'
+import { type ProviderInvestment } from '@/ports/investments'
 
 export type OpenFinanceConnection = { provider: string; itemId: string }
 
@@ -95,6 +96,9 @@ export interface OpenFinanceProvider {
   ): Promise<ProviderBill[]>
   // Every institution the provider can connect, to name aggregated accounts.
   listConnectors(): Promise<ProviderConnector[]>
+  listInvestments(
+    connection: OpenFinanceConnection,
+  ): Promise<ProviderInvestment[]>
 }
 
 export type ImportFile = { name: string; mimeType: string; bytes: Uint8Array }

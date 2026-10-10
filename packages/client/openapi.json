@@ -3921,6 +3921,473 @@
         }
       }
     },
+    "/investments": {
+      "get": {
+        "operationId": "listInvestments",
+        "summary": "Investment positions held, by institution and kind",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Investment positions held, by institution and kind",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "invested": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "profit": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "syncedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "institutions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "institutionId": {
+                                "type": "string"
+                              },
+                              "institution": {
+                                "type": "string"
+                              },
+                              "logo": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "imageUrl": {
+                                    "type": "string"
+                                  },
+                                  "color": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "imageUrl",
+                                  "color"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "institutionId",
+                              "institution",
+                              "logo",
+                              "total",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "kinds": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "FIXED_INCOME",
+                                  "FUND",
+                                  "EQUITY",
+                                  "ETF",
+                                  "PENSION",
+                                  "STRUCTURED",
+                                  "OTHER"
+                                ]
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "total",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "positions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "institutionId": {
+                                "type": "string"
+                              },
+                              "institution": {
+                                "type": "string"
+                              },
+                              "logo": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "imageUrl": {
+                                    "type": "string"
+                                  },
+                                  "color": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "imageUrl",
+                                  "color"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "FIXED_INCOME",
+                                  "FUND",
+                                  "EQUITY",
+                                  "ETF",
+                                  "PENSION",
+                                  "STRUCTURED",
+                                  "OTHER"
+                                ]
+                              },
+                              "subtype": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "issuer": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "ACTIVE",
+                                  "PENDING"
+                                ]
+                              },
+                              "balance": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "invested": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "profit": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "profitPercent": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "quantity": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "rate": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "percent": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  },
+                                  "index": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "fixedAnnual": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "percent",
+                                  "index",
+                                  "fixedAnnual"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "lastMonthRate": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "lastTwelveMonthsRate": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "dueOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "valuedOn": {
+                                "nullable": true,
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "entityKind",
+                              "institutionId",
+                              "institution",
+                              "logo",
+                              "name",
+                              "kind",
+                              "subtype",
+                              "issuer",
+                              "status",
+                              "balance",
+                              "invested",
+                              "profit",
+                              "profitPercent",
+                              "quantity",
+                              "rate",
+                              "lastMonthRate",
+                              "lastTwelveMonthsRate",
+                              "dueOn",
+                              "valuedOn"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "invested",
+                        "profit",
+                        "syncedAt",
+                        "institutions",
+                        "kinds",
+                        "positions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/subscriptions": {
       "get": {
         "operationId": "listSubscriptions",

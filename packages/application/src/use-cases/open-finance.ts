@@ -15,6 +15,7 @@ import {
   type SyncOptions,
 } from '@/dtos/open-finance'
 import { NotFoundError } from '@/errors/errors'
+import { type ProviderInvestment } from '@/ports/investments'
 import {
   type ProviderAccount,
   type ProviderConnector,
@@ -43,6 +44,7 @@ type OpenFinanceDeps = Pick<
   | 'institutions'
   | 'transactions'
   | 'cardBills'
+  | 'investments'
   | 'connections'
   | 'openFinance'
   | 'clock'
@@ -138,6 +140,23 @@ async function findItem(
     }
     throw error
   }
+}
+
+// An aggregator item files its positions under the one bank its accounts
+// resolved to, else under the connection's own institution.
+function bankOf(
+  connection: Connection,
+  remote: readonly ProviderAccount[],
+  resolve: (accountName: string) => Institution | null,
+): string {
+  const banks = new Set(
+    remote.flatMap(account => {
+      const owner = resolve(account.name)
+      return owner ? [owner.id] : []
+    }),
+  )
+  const [sole] = banks
+  return banks.size === 1 && sole ? sole : connection.institutionId
 }
 
 const connectionOf = (itemId: string) => ({
@@ -255,6 +274,49 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
             ? null
             : Money.of(bill.minimumCents, bill.currency),
       })),
+    )
+  }
+
+  const toPosition = (
+    connection: Connection,
+    institutionId: string,
+    {
+      balanceCents,
+      investedCents,
+      profitCents,
+      currency,
+      ...details
+    }: ProviderInvestment,
+    now: Date,
+  ) => ({
+    ...details,
+    id: deps.ids.next(),
+    tenantId: connection.tenantId,
+    entityId: connection.entityId,
+    connectionId: connection.id,
+    institutionId,
+    balance: Money.of(balanceCents, currency),
+    invested: investedCents === null ? null : Money.of(investedCents, currency),
+    profit: profitCents === null ? null : Money.of(profitCents, currency),
+    syncedAt: now,
+  })
+
+  // Positions sit beside balances: a failure keeps the last ones stored.
+  async function syncInvestments(
+    connection: Connection,
+    institutionId: string,
+    now: Date,
+  ): Promise<void> {
+    const fetched = await deps.openFinance
+      .listInvestments(connectionOf(connection.itemId))
+      .catch(() => null)
+    if (!fetched) {
+      return
+    }
+    await deps.investments.saveAll(
+      fetched.map(position =>
+        toPosition(connection, institutionId, position, now),
+      ),
     )
   }
 
@@ -457,6 +519,11 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
         context,
       )
     }
+    await syncInvestments(
+      connection,
+      bankOf(connection, remote, context.resolve),
+      now,
+    )
     await deps.connections.save({
       ...connection,
       ...(await freshnessOf(deps, connection.itemId, now)),
@@ -498,6 +565,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
         origin: 'MANUAL',
       })
     }
+    await deps.investments.deleteByConnection(tenantId, connection.id)
     await deps.connections.delete(tenantId, connection.id)
     return { id: connection.id }
   }

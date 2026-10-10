@@ -74,6 +74,7 @@ type ProcessDeps = Pick<
   | 'institutions'
   | 'transactions'
   | 'cardBills'
+  | 'investments'
   | 'connections'
   | 'openFinance'
   | 'bills'

@@ -52,6 +52,9 @@ describe('unconfigured providers', () => {
     await expect(pluggy.listConnectors()).rejects.toThrow(
       ProviderNotConfiguredError,
     )
+    await expect(pluggy.listInvestments()).rejects.toThrow(
+      ProviderNotConfiguredError,
+    )
     const notaas = new NotaasInvoiceIssuer()
     expect(notaas.id).toBe('notaas')
     await expect(notaas.issue()).rejects.toThrow('Notaas is not configured.')

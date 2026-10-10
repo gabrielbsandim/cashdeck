@@ -4,6 +4,7 @@ import {
   type DeviceTokenRepository,
 } from '@/ports/alerts'
 import { type ChatRepository } from '@/ports/chat'
+import { type InvestmentRepository } from '@/ports/investments'
 import { type LlmProvider } from '@/ports/llm-provider'
 import { type RailId } from '@cashdeck/domain'
 import {
@@ -63,6 +64,7 @@ export type Deps = {
   institutions: InstitutionRepository
   transactions: TransactionRepository
   cardBills: CardBillRepository
+  investments: InvestmentRepository
   recurrences: RecurrenceRepository
   connections: ConnectionRepository
   transfers: TransferRepository

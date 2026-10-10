@@ -377,6 +377,95 @@ describe('PluggyProvider', () => {
     ])
   })
 
+  it('lists investments and maps their kind, status, yield and dates', async () => {
+    const scripted = new ScriptedTransport().on(
+      'GET',
+      `${PLUGGY_URL}/investments?itemId=item-1&page=1`,
+      {
+        json: {
+          page: 1,
+          totalPages: 1,
+          results: [
+            {
+              id: 'i1',
+              name: 'CDB - BANCO EXEMPLO S.A.',
+              type: 'FIXED_INCOME',
+              subtype: 'CDB',
+              issuer: 'BANCO EXEMPLO S.A.',
+              status: 'ACTIVE',
+              balance: 1050.25,
+              amountOriginal: 1000,
+              amountProfit: null,
+              currencyCode: 'BRL',
+              quantity: 1,
+              rate: 102,
+              rateType: 'CDI',
+              fixedAnnualRate: 0,
+              dueDate: '2028-04-04T03:00:00.000Z',
+              date: '2026-10-08T00:00:00.000Z',
+            },
+            {
+              id: 'i2',
+              code: 'ABCD11',
+              type: 'EQUITY',
+              subtype: 'REAL_ESTATE_FUND',
+              status: 'TOTAL_WITHDRAWAL',
+              balance: 0,
+              amountProfit: -12.5,
+              lastMonthRate: 0.8,
+              lastTwelveMonthsRate: 9.1,
+            },
+            { id: 'i3', type: 'CRYPTO', balance: 10 },
+            { id: 'i4' },
+          ],
+        },
+      },
+    )
+    const [cdb, fund, unknown, empty] =
+      await provider(scripted).listInvestments(connection)
+    expect(cdb).toEqual({
+      externalId: 'i1',
+      name: 'CDB - BANCO EXEMPLO S.A.',
+      kind: 'FIXED_INCOME',
+      subtype: 'CDB',
+      issuer: 'BANCO EXEMPLO S.A.',
+      status: 'ACTIVE',
+      balanceCents: 105_025,
+      investedCents: 100_000,
+      profitCents: null,
+      currency: 'BRL',
+      quantity: 1,
+      rate: { percent: 102, index: 'CDI', fixedAnnual: 0 },
+      lastMonthRate: null,
+      lastTwelveMonthsRate: null,
+      dueOn: '2028-04-04',
+      valuedOn: '2026-10-08',
+    })
+    expect(fund).toMatchObject({
+      name: 'ABCD11',
+      kind: 'EQUITY',
+      status: 'CLOSED',
+      profitCents: -1_250,
+      rate: null,
+      lastMonthRate: 0.8,
+      lastTwelveMonthsRate: 9.1,
+    })
+    expect(unknown).toMatchObject({
+      name: 'Investment',
+      kind: 'OTHER',
+      status: 'ACTIVE',
+      subtype: null,
+      issuer: null,
+    })
+    expect(empty).toMatchObject({
+      balanceCents: 0,
+      status: 'CLOSED',
+      currency: 'BRL',
+      quantity: null,
+      dueOn: null,
+    })
+  })
+
   it('authenticates again when the api key expires', async () => {
     const scripted = new ScriptedTransport().on(
       'GET',
