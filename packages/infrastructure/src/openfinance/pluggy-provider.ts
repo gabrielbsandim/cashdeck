@@ -111,6 +111,10 @@ type PluggyAccount = {
   creditData?: PluggyCreditData | null
 }
 
+type PluggyParty = {
+  documentNumber?: { value?: string | null } | null
+}
+
 type PluggyTransaction = {
   id: string
   accountId?: string
@@ -123,6 +127,10 @@ type PluggyTransaction = {
   status?: 'PENDING' | 'POSTED'
   operationType?: string | null
   merchant?: { name?: string | null; businessName?: string | null } | null
+  paymentData?: {
+    payer?: PluggyParty | null
+    receiver?: PluggyParty | null
+  } | null
   creditCardMetadata?: {
     billId?: string | null
     installmentNumber?: number | null
@@ -430,6 +438,12 @@ function openBillCents(tx: PluggyTransaction): number | null {
   return BILL_CREDITS.includes(tx.operationType ?? '') ? cents : 0
 }
 
+function counterpartyOf(tx: PluggyTransaction): string | null {
+  const party =
+    tx.type === 'CREDIT' ? tx.paymentData?.payer : tx.paymentData?.receiver
+  return party?.documentNumber?.value ?? null
+}
+
 function toTransaction(
   tx: PluggyTransaction,
   accountExternalId: string,
@@ -443,6 +457,7 @@ function toTransaction(
     bookedOn: tx.date ? toLocalDate(new Date(tx.date)) : '',
     description: tx.description ?? '',
     merchant: tx.merchant?.name || tx.merchant?.businessName || null,
+    counterparty: counterpartyOf(tx),
     installment: toInstallment(tx.creditCardMetadata),
     openBillCents: openBillCents(tx),
   }

@@ -186,6 +186,15 @@ describe('createTransaction', () => {
       createTransaction({ ...txInput, merchant: '  Loja  ', installment }),
     ).toMatchObject({ merchant: 'Loja', installment })
     expect(createTransaction({ ...txInput, merchant: ' ' }).merchant).toBeNull()
+    expect(
+      createTransaction({ ...txInput, counterparty: '11.222.333/0001-81' })
+        .counterparty,
+    ).toBe('11222333000181')
+    expect(
+      createTransaction({ ...txInput, counterparty: '***452308**' })
+        .counterparty,
+    ).toBeNull()
+    expect(plain.counterparty).toBeNull()
     for (const bad of [
       { number: 0, count: 3 },
       { number: 4, count: 3 },

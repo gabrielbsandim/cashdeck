@@ -229,6 +229,7 @@ describe('transactions', () => {
     const detailed = createTransaction({
       ...transaction,
       merchant: 'Loja',
+      counterparty: '11222333000181',
       installment: { number: 2, count: 3, purchaseOn: '2026-08-01' },
     })
     const bare = createTransaction({ ...transaction, externalId: null })
@@ -240,12 +241,14 @@ describe('transactions', () => {
         accountId: 'a1',
         externalId: 'e1',
         merchant: null,
+        counterparty: null,
         installmentNumber: null,
       },
       {
         accountId: 'a1',
         externalId: 'e2',
         merchant: 'Loja',
+        counterparty: '11222333000181',
         installmentNumber: 2,
       },
     ])
@@ -272,6 +275,15 @@ describe('transactions', () => {
           merchant: null,
         },
         data: { merchant: 'Loja' },
+      },
+      {
+        where: {
+          tenantId: TENANT,
+          accountId: 'a1',
+          externalId: 'e1',
+          counterparty: null,
+        },
+        data: { counterparty: '11222333000181' },
       },
       {
         where: {

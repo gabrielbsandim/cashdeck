@@ -1,6 +1,7 @@
 import { type LocalDate } from '@/calendar/local-date'
 import { type Money } from '@/money/money'
 import { ValidationError } from '@/shared/domain-error'
+import { onlyDigits } from '@/shared/digits'
 import { guard } from '@/shared/guard'
 
 export type TransactionKind = 'INCOME' | 'EXPENSE' | 'TRANSFER'
@@ -31,6 +32,8 @@ export type Transaction = {
   // 0 to 1; how sure the source was, so a weak AI guess can be told apart.
   readonly categoryConfidence: number | null
   readonly merchant: string | null
+  // CPF or CNPJ digits of the other side of a payment, when the bank says.
+  readonly counterparty: string | null
   readonly installment: Installment | null
 }
 
@@ -44,6 +47,7 @@ export type CreateTransactionInput = Omit<
   | 'categorizedBy'
   | 'categoryConfidence'
   | 'merchant'
+  | 'counterparty'
   | 'installment'
 > & {
   categoryId?: string | null
@@ -54,7 +58,15 @@ export type CreateTransactionInput = Omit<
   categorizedBy?: CategorizedBy | null
   categoryConfidence?: number | null
   merchant?: string | null
+  counterparty?: string | null
   installment?: Installment | null
+}
+
+// A masked or partial document would match strangers, so only a whole CPF or
+// CNPJ counts.
+export function toCounterparty(value: string | null): string | null {
+  const digits = onlyDigits(value ?? '')
+  return digits.length === 11 || digits.length === 14 ? digits : null
 }
 
 function checkInstallment(installment: Installment): Installment {
@@ -84,6 +96,7 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
     categorizedBy: input.categorizedBy ?? null,
     categoryConfidence: input.categoryConfidence ?? null,
     merchant: input.merchant?.trim() || null,
+    counterparty: toCounterparty(input.counterparty ?? null),
     installment: input.installment ? checkInstallment(input.installment) : null,
   }
 }

@@ -11,6 +11,12 @@ import { categorize, createTransaction, withNote } from '@/entities/transaction'
 import { Money } from '@/money/money'
 
 const NOW = new Date('2026-10-08T12:00:00Z')
+const PAYEE = '11144477735'
+
+const subject = (description: string, counterparty: string | null = null) => ({
+  description,
+  counterparty,
+})
 
 function rule(overrides: Partial<CategoryRule> & { id: string }): CategoryRule {
   return createCategoryRule({
@@ -56,8 +62,10 @@ describe('category rules', () => {
 
   it('matches whole words only', () => {
     const market = rule({ id: 'r1' })
-    expect(ruleMatches(market, 'Compra cartao MERCADO SOL centro')).toBe(true)
-    expect(ruleMatches(market, 'Supermercado Solar')).toBe(false)
+    expect(
+      ruleMatches(market, subject('Compra cartao MERCADO SOL centro')),
+    ).toBe(true)
+    expect(ruleMatches(market, subject('Supermercado Solar'))).toBe(false)
   })
 
   it('prefers an entity rule, then priority, then the longer pattern', () => {
@@ -66,12 +74,33 @@ describe('category rules', () => {
     const other = rule({ id: 'other', entityId: 'pj', categoryId: 'fees' })
     const urgent = rule({ id: 'urgent', pattern: 'sol', priority: 5 })
     const longer = rule({ id: 'longer', pattern: 'mercado sol centro' })
-    const description = 'Mercado Sol Centro'
+    const description = subject('Mercado Sol Centro')
     expect(findRule([global, own, other], description, 'pf')?.id).toBe('own')
     expect(findRule([global, other], description, 'pf')?.id).toBe('global')
     expect(findRule([global, urgent], description, 'pf')?.id).toBe('urgent')
     expect(findRule([global, longer], description, 'pf')?.id).toBe('longer')
-    expect(findRule([global], 'Posto Azul', 'pf')).toBeNull()
+    expect(findRule([global], subject('Posto Azul'), 'pf')).toBeNull()
+  })
+
+  it('matches a counterparty rule by the document alone', () => {
+    const payee = rule({
+      id: 'payee',
+      pattern: 'pix key transfer',
+      counterparty: '111.444.777-35',
+      categoryId: 'restaurants',
+    })
+    expect(payee).toMatchObject({ pattern: '', counterparty: PAYEE })
+    expect(ruleMatches(payee, subject('pix key transfer', PAYEE))).toBe(true)
+    expect(ruleMatches(payee, subject('Mercado Sol', '11222333000181'))).toBe(
+      false,
+    )
+    const market = rule({ id: 'market' })
+    expect(
+      findRule([market, payee], subject('Mercado Sol', PAYEE), 'pf')?.id,
+    ).toBe('payee')
+    expect(() =>
+      rule({ id: 'masked', pattern: 'pix', counterparty: '***452308**' }),
+    ).toThrow('A rule needs a merchant or description.')
   })
 })
 

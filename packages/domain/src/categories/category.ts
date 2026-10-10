@@ -1,3 +1,4 @@
+import { type Transaction, toCounterparty } from '@/entities/transaction'
 import { ValidationError } from '@/shared/domain-error'
 import { guard } from '@/shared/guard'
 
@@ -39,7 +40,9 @@ export type CategoryRule = {
   readonly tenantId: string
   // Null applies to every entity; an entity rule wins over a global one.
   readonly entityId: string | null
+  // Empty on a counterparty rule, which matches the document instead.
   readonly pattern: string
+  readonly counterparty: string | null
   readonly categoryId: string
   readonly priority: number
   readonly createdAt: Date
@@ -85,44 +88,56 @@ export function normalizeDescription(text: string): string {
     .join(' ')
 }
 
-export type CreateCategoryRuleInput = Omit<CategoryRule, 'priority'> & {
+export type CreateCategoryRuleInput = Omit<
+  CategoryRule,
+  'priority' | 'counterparty'
+> & {
   priority?: number
+  counterparty?: string | null
 }
 
 export function createCategoryRule(
   input: CreateCategoryRuleInput,
 ): CategoryRule {
-  const pattern = normalizeDescription(input.pattern)
-  if (pattern === '') {
+  const counterparty = toCounterparty(input.counterparty ?? null)
+  const pattern = counterparty ? '' : normalizeDescription(input.pattern)
+  if (pattern === '' && counterparty === null) {
     throw new ValidationError('A rule needs a merchant or description.')
   }
   return {
     ...input,
     pattern,
+    counterparty,
     categoryId: guard.notEmpty(input.categoryId, 'Category'),
     priority: input.priority ?? 0,
   }
 }
 
-export function ruleMatches(rule: CategoryRule, description: string): boolean {
-  const normalized = normalizeDescription(description)
+export type RuleSubject = Pick<Transaction, 'description' | 'counterparty'>
+
+export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
+  if (rule.counterparty !== null) {
+    return rule.counterparty === subject.counterparty
+  }
+  const normalized = normalizeDescription(subject.description)
   return ` ${normalized} `.includes(` ${rule.pattern} `)
 }
 
 const precedence = (a: CategoryRule, b: CategoryRule) =>
   Number(b.entityId !== null) - Number(a.entityId !== null) ||
+  Number(b.counterparty !== null) - Number(a.counterparty !== null) ||
   b.priority - a.priority ||
   b.pattern.length - a.pattern.length
 
 export function findRule(
   rules: readonly CategoryRule[],
-  description: string,
+  subject: RuleSubject,
   entityId: string,
 ): CategoryRule | null {
   const candidates = rules.filter(
     rule =>
       (rule.entityId === null || rule.entityId === entityId) &&
-      ruleMatches(rule, description),
+      ruleMatches(rule, subject),
   )
   return candidates.sort(precedence)[0] ?? null
 }

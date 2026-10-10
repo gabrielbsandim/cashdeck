@@ -144,6 +144,21 @@ function transactionWhere(tenantId: string, filter: TransactionFilter) {
 
 const NEWEST_FIRST = [{ bookedOn: 'desc' as const }, { id: 'asc' as const }]
 
+type Details = Pick<
+  TransactionRow,
+  'merchant' | 'counterparty' | 'installmentNumber'
+>
+
+const hasDetails = (row: Details) =>
+  row.merchant !== null ||
+  row.counterparty !== null ||
+  row.installmentNumber !== null
+
+const takesDetails = (row: Details, stored: Details) =>
+  (row.merchant !== null && stored.merchant === null) ||
+  (row.counterparty !== null && stored.counterparty === null) ||
+  (row.installmentNumber !== null && stored.installmentNumber === null)
+
 export class PrismaTransactionRepository implements TransactionRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -174,7 +189,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const rows = transactions
       .map(transactionToRow)
       .filter(row => row.externalId)
-      .filter(row => row.merchant || row.installmentNumber !== null)
+      .filter(hasDetails)
     if (rows.length === 0) {
       return
     }
@@ -187,6 +202,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         accountId: true,
         externalId: true,
         merchant: true,
+        counterparty: true,
         installmentNumber: true,
       },
     })
@@ -195,12 +211,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     const lacking = new Map(stored.map(row => [keyOf(row), row]))
     for (const row of rows) {
       const current = lacking.get(keyOf(row))
-      const needs =
-        current !== undefined &&
-        ((row.merchant !== null && current.merchant === null) ||
-          (row.installmentNumber !== null &&
-            current.installmentNumber === null))
-      if (needs) {
+      if (current !== undefined && takesDetails(row, current)) {
         await this.fillRow(row)
       }
     }
@@ -216,6 +227,12 @@ export class PrismaTransactionRepository implements TransactionRepository {
       await this.db.transaction.updateMany({
         where: { ...where, merchant: null },
         data: { merchant: row.merchant },
+      })
+    }
+    if (row.counterparty) {
+      await this.db.transaction.updateMany({
+        where: { ...where, counterparty: null },
+        data: { counterparty: row.counterparty },
       })
     }
     if (row.installmentNumber !== null) {

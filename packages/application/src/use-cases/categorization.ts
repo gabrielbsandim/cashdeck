@@ -10,6 +10,7 @@ import {
   findRule,
   normalizeDescription,
   ruleMatches,
+  toCounterparty,
   type Transaction,
   ValidationError,
   withNote,
@@ -81,20 +82,28 @@ async function learnRule(
   entityId: string | null,
   pattern: string,
   categoryId: string,
+  counterparty: string | null = null,
 ): Promise<CategoryRule | null> {
   const normalized = normalizeDescription(pattern)
-  if (normalized === '') {
+  // A generic description such as a bare Pix says nothing of the merchant;
+  // the document of the other side still tells who it was.
+  const document = normalized === '' ? toCounterparty(counterparty) : null
+  if (normalized === '' && document === null) {
     return null
   }
   const rules = await deps.categories.listRules(tenantId)
   const existing = rules.find(
-    rule => rule.entityId === entityId && rule.pattern === normalized,
+    rule =>
+      rule.entityId === entityId &&
+      rule.pattern === normalized &&
+      rule.counterparty === document,
   )
   const rule = createCategoryRule({
     id: existing?.id ?? deps.ids.next(),
     tenantId,
     entityId,
     pattern: normalized,
+    counterparty: document,
     categoryId,
     priority: existing?.priority ?? 0,
     createdAt: existing?.createdAt ?? deps.clock.now(),
@@ -119,7 +128,7 @@ async function applyRule(
       tx.categorizedBy !== 'USER' &&
       tx.transferGroupId === null &&
       tx.categoryId !== rule.categoryId &&
-      ruleMatches(rule, tx.description),
+      ruleMatches(rule, tx),
   )
   for (const tx of matching) {
     await deps.transactions.save(
@@ -172,6 +181,7 @@ export function makeUpdateTransaction(deps: UpdateDeps) {
       account.entityId,
       tx.description,
       categoryId,
+      tx.counterparty,
     )
     if (!rule || !applyToSimilar) {
       return { transaction, similar: 0 }
@@ -391,11 +401,7 @@ export function makeCategorizeTransactions(deps: CategorizeDeps) {
       .slice(0, MAX_PER_RUN)
     const pending: Transaction[] = []
     for (const tx of candidates) {
-      const rule = findRule(
-        rules,
-        tx.description,
-        owner.get(tx.accountId) as string,
-      )
+      const rule = findRule(rules, tx, owner.get(tx.accountId) as string)
       if (!rule) {
         pending.push(tx)
         continue

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCategoryRule, ValidationError } from '@cashdeck/domain'
+import { createCategoryRule, Money, ValidationError } from '@cashdeck/domain'
 import { listTransactionsQuerySchema } from '@/dtos/finance'
 import { NotFoundError } from '@/errors/errors'
 import { LlmProviderError } from '@/ports/llm-provider'
@@ -14,6 +14,9 @@ import {
   makeUpdateTransaction,
 } from '@/use-cases/categorization'
 import { makeListTransactions } from '@/use-cases/finance'
+
+const PAYEE = '11144477735'
+const OTHER = '52998224725'
 
 async function seeded() {
   const deps = fullDeps()
@@ -110,6 +113,51 @@ describe('updating a transaction', () => {
       expect.objectContaining({
         id: rules[0]?.id,
         categoryId: id('restaurants'),
+      }),
+    ])
+  })
+
+  it('learns a counterparty rule from a bare Pix', async () => {
+    const { deps, id } = await seeded()
+    const pix = (txId: string, counterparty: string | null, cents: number) =>
+      transaction({
+        id: txId,
+        accountId: 'pf-1',
+        description: 'pix key transfer',
+        amount: Money.of(cents),
+        counterparty,
+      })
+    await deps.transactions.save(pix('t1', PAYEE, -18700))
+    await deps.transactions.save(pix('t2', PAYEE, -5100))
+    await deps.transactions.save(pix('t3', OTHER, -18700))
+    await deps.transactions.save(pix('t4', null, -18700))
+    const update = makeUpdateTransaction(deps)
+    const first = await update(TENANT, 't1', {
+      categoryId: id('restaurants'),
+      applyToSimilar: true,
+    })
+    expect(first.similarUpdated).toBe(1)
+    const stored = async (txId: string) =>
+      (await deps.transactions.findById(TENANT, txId))?.categoryId
+    expect(await stored('t2')).toBe(id('restaurants'))
+    expect(await stored('t3')).toBeNull()
+    expect(await stored('t4')).toBeNull()
+    const rules = await deps.categories.listRules(TENANT)
+    expect(rules).toEqual([
+      expect.objectContaining({
+        entityId: 'pf',
+        pattern: '',
+        counterparty: PAYEE,
+      }),
+    ])
+    await update(TENANT, 't2', {
+      categoryId: id('groceries'),
+      applyToSimilar: false,
+    })
+    expect(await deps.categories.listRules(TENANT)).toEqual([
+      expect.objectContaining({
+        id: rules[0]?.id,
+        categoryId: id('groceries'),
       }),
     ])
   })

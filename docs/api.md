@@ -412,8 +412,10 @@ own score for `AI` (guesses below 0.5 are not stored).
 Body `{ categoryId?: string | null, note?: string | null, applyToSimilar?: bool }`
 (note at most 500 characters; a blank note clears it). Setting a category marks
 it `USER` and learns a rule for the account's entity from the description's
-merchant words (bank noise such as `PIX`, `COMPRA` and digits is dropped). With
-`applyToSimilar: true` the rule also relabels existing transactions of that
+merchant words (bank noise such as `PIX`, `COMPRA` and digits is dropped). When
+nothing is left, as on a bare Pix, it learns the rule from the CPF or CNPJ the
+bank reports for the other side instead, so every payment to that person
+matches. With `applyToSimilar: true` the rule also relabels existing transactions of that
 entity that the user did not set. `data`:
 `{ transaction: Transaction, similarUpdated: int }`.
 

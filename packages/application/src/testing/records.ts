@@ -184,6 +184,7 @@ export class InMemoryTransactionRepository
       await this.save({
         ...stored,
         merchant: stored.merchant ?? candidate.merchant,
+        counterparty: stored.counterparty ?? candidate.counterparty,
         installment: stored.installment ?? candidate.installment,
       })
     }

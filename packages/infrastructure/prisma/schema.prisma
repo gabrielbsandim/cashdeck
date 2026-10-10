@@ -259,6 +259,7 @@ model Transaction {
   categorizedBy      CategorizedBy? @map("categorized_by")
   categoryConfidence Float?         @map("category_confidence")
   merchant           String?
+  counterparty       String?
   installmentNumber  Int?           @map("installment_number")
   installmentCount   Int?           @map("installment_count")
   purchaseOn         DateTime?      @map("purchase_on") @db.Date
@@ -287,9 +288,10 @@ model CategoryRule {
   id         String   @id
   tenantId   String   @map("tenant_id")
   entityId   String?  @map("entity_id")
-  pattern    String
-  categoryId String   @map("category_id")
-  priority   Int      @default(0)
+  pattern      String
+  counterparty String?
+  categoryId   String   @map("category_id")
+  priority     Int      @default(0)
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])

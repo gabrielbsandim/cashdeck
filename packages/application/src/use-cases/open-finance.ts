@@ -249,6 +249,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       description: tx.description,
       externalId: tx.externalId,
       merchant: tx.merchant ?? null,
+      counterparty: tx.counterparty ?? null,
       installment: tx.installment ?? null,
     })
 

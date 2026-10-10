@@ -75,6 +75,7 @@ export type TransactionRow = {
   categorizedBy: CategorizedBy | null
   categoryConfidence: number | null
   merchant: string | null
+  counterparty: string | null
   installmentNumber: number | null
   installmentCount: number | null
   purchaseOn: Date | null
@@ -250,6 +251,7 @@ export function transactionFromRow(row: TransactionRow): Transaction {
     categorizedBy: row.categorizedBy,
     categoryConfidence: row.categoryConfidence,
     merchant: row.merchant,
+    counterparty: row.counterparty,
     installment: installmentFromRow(row),
   })
 }
@@ -271,6 +273,7 @@ export function transactionToRow(transaction: Transaction): TransactionRow {
     categorizedBy: transaction.categorizedBy,
     categoryConfidence: transaction.categoryConfidence,
     merchant: transaction.merchant,
+    counterparty: transaction.counterparty,
     installmentNumber: transaction.installment?.number ?? null,
     installmentCount: transaction.installment?.count ?? null,
     purchaseOn: optionalDbDate(transaction.installment?.purchaseOn ?? null),

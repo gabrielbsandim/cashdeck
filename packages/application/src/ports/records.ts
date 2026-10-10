@@ -40,7 +40,8 @@ export type TransactionFilter = {
 export interface TransactionRepository {
   save(transaction: Transaction): Promise<void>
   // Inserts the ones not stored yet, by account and external id, and returns
-  // how many; a stored one only takes the merchant and installment it lacks.
+  // how many; a stored one only takes the merchant, counterparty and
+  // installment it lacks.
   saveNew(transactions: readonly Transaction[]): Promise<number>
   findById(tenantId: string, id: string): Promise<Transaction | null>
   list(
