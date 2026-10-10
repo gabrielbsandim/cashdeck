@@ -109,6 +109,33 @@ describe('PierreProvider', () => {
         json: {
           data: [
             {
+              id: 'pending-payment',
+              account_id: 'pa-2',
+              description: 'Inclusao de Pagamento',
+              amount: -900,
+              date: '2026-10-04T03:00:00.000Z',
+              type: 'CREDIT',
+              status: 'PENDING',
+            },
+            {
+              id: '4',
+              account_id: 'pa-2',
+              description: 'Pagamento recebido',
+              amount: -900,
+              date: '2026-10-05T03:00:00.000Z',
+              type: 'CREDIT',
+              status: 'POSTED',
+            },
+            {
+              id: 'refund',
+              account_id: 'pa-2',
+              description: 'Estorno',
+              amount: -50,
+              date: '2026-10-04T03:00:00.000Z',
+              type: 'CREDIT',
+              status: 'PENDING',
+            },
+            {
               id: '3',
               account_id: 'pa-2',
               description: 'LOJA EXEMPLO',
@@ -126,7 +153,14 @@ describe('PierreProvider', () => {
         },
       })
     const movements = await provider(scripted).listTransactions(range)
-    expect(movements).toEqual([
+    expect(movements.map(tx => tx.externalId)).toEqual([
+      'pierre:1',
+      'pierre:2',
+      'pierre:4',
+      'pierre:refund',
+      'pierre:3',
+    ])
+    expect(movements.filter(tx => tx.accountExternalId === 'pa-1')).toEqual([
       {
         externalId: 'pierre:1',
         accountExternalId: 'pa-1',
@@ -149,18 +183,18 @@ describe('PierreProvider', () => {
         counterparty: '11.444.777/0001-61',
         installment: null,
       },
-      {
-        externalId: 'pierre:3',
-        accountExternalId: 'pa-2',
-        amountCents: -30000,
-        currency: 'BRL',
-        bookedOn: '2026-10-05',
-        description: 'LOJA EXEMPLO',
-        merchant: 'Loja Exemplo',
-        counterparty: null,
-        installment: { number: 2, count: 3, purchaseOn: '2026-08-05' },
-      },
     ])
+    expect(movements.at(-1)).toEqual({
+      externalId: 'pierre:3',
+      accountExternalId: 'pa-2',
+      amountCents: -30000,
+      currency: 'BRL',
+      bookedOn: '2026-10-05',
+      description: 'LOJA EXEMPLO',
+      merchant: 'Loja Exemplo',
+      counterparty: null,
+      installment: { number: 2, count: 3, purchaseOn: '2026-08-05' },
+    })
     expect(scripted.last('GET', `${PIERRE_URL}/get-transactions`).url).toBe(
       `${PIERRE_URL}/get-transactions?accountType=CREDIT&startDate=2026-10-01&endDate=2026-10-08&format=raw`,
     )

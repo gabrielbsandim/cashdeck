@@ -47,6 +47,7 @@ type PierreTransaction = {
   currency_code?: string | null
   date?: string
   type?: 'DEBIT' | 'CREDIT'
+  status?: 'PENDING' | 'POSTED'
   merchant?: { name?: string | null; businessName?: string | null } | null
   payment_data?: {
     payer?: PierreParty | null
@@ -90,7 +91,7 @@ export class PierreProvider implements PreviewProvider {
         'GET',
         `get-transactions?${query.toString()}`,
       )
-      transactions.push(...(answer.data ?? []).flatMap(toTransaction))
+      transactions.push(...current(answer.data ?? []).flatMap(toTransaction))
     }
     return transactions
   }
@@ -141,6 +142,27 @@ function counterpartyOf(tx: PierreTransaction): string | null {
   const party =
     tx.type === 'CREDIT' ? tx.payment_data?.payer : tx.payment_data?.receiver
   return party?.documentNumber?.value ?? null
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// A card payment shows up pending and again once posted, under another
+// description; only the posted one is kept.
+function current(transactions: readonly PierreTransaction[]) {
+  const posted = transactions.filter(
+    tx => tx.type === 'CREDIT' && tx.status === 'POSTED',
+  )
+  const superseded = (tx: PierreTransaction) =>
+    tx.type === 'CREDIT' &&
+    tx.status === 'PENDING' &&
+    posted.some(
+      other =>
+        other.account_id === tx.account_id &&
+        other.amount === tx.amount &&
+        Math.abs(Date.parse(other.date ?? '') - Date.parse(tx.date ?? '')) <=
+          2 * DAY_MS,
+    )
+  return transactions.filter(tx => !superseded(tx))
 }
 
 function toTransaction(tx: PierreTransaction): ProviderTransaction[] {

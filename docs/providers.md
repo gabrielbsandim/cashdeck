@@ -92,7 +92,9 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 - `listTransactions`: `GET /tools/api/get-transactions` once per
   `accountType` (`BANK`, `CREDIT`) with `startDate`, `endDate` and
   `format=raw`, unpaged. Fields are Pluggy's in snake case (`account_id`,
-  `payment_data`, `credit_card_data`); ids are prefixed `pierre:`.
+  `payment_data`, `credit_card_data`); ids are prefixed `pierre:`. A card
+  payment comes pending and again posted under another description, so a
+  pending credit with a posted one of the same amount within 2 days is dropped.
 - `requestRefresh`: `POST /tools/api/manual-update`; it answers at once and
   collects in the background, so its result is read on the next run.
 - Docs: https://docs.pierre.finance/api-reference/rest/get-transactions,
