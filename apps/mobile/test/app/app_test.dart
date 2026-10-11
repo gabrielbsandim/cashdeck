@@ -4,7 +4,7 @@ import 'package:cashdeck/core/widgets/layout/cd_ask_bar.dart';
 import 'package:cashdeck/core/widgets/layout/cd_nav_bar.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
-import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
+import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
 import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
@@ -33,7 +33,8 @@ void main() {
 
     await tester.tap(find.byKey(CdAskBar.barKey));
     await settle(tester);
-    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.byType(ConversationScreen), findsOneWidget);
+    expect(app.location, AppRoutes.chatNew);
     expect(find.byType(CdNavBar), findsNothing);
 
     app.router.pop();

@@ -2686,5 +2686,109 @@
   "safeZoneEndRelease": "Limitar",
   "safeZoneEmpty": "Nenhuma zona ainda. Toque abaixo para adicionar um local.",
   "safeZoneReleaseReason": "Liberar o Cashdeck fora da zona segura",
-  "errorSafeMode": "Bloqueado fora da zona segura."
+  "errorSafeMode": "Bloqueado fora da zona segura.",
+  "chatToolSendPix": "Enviar Pix",
+  "chatDetailPixKey": "Chave Pix",
+  "chatDetailContact": "Contato",
+  "chatNewContactNote": "Novo contato: será salvo como @{handle}",
+  "@chatNewContactNote": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "chatHistory": "Conversas",
+  "chatSuggestionWeek": "Como estão meus gastos dessa semana?",
+  "chatSuggestionBills": "Quais contas vencem nos próximos dias?",
+  "chatSuggestionMonth": "Faça um resumo do meu mês",
+  "chatSuggestionPix": "Fazer um Pix",
+  "chatSuggestionPixDraft": "Fazer um Pix para @",
+  "chatSending": "Enviando…",
+  "chatNotSent": "Não enviada",
+  "chatRetry": "Tentar de novo",
+  "chatEdit": "Editar",
+  "chatDiscard": "Descartar",
+  "chatCopy": "Copiar",
+  "chatCopied": "Copiado",
+  "chatRegenerate": "Gerar outra resposta",
+  "chatMessageOptions": "Mensagem",
+  "chatEditing": "Editando mensagem",
+  "chatEditingNote": "As mensagens depois desta serão substituídas.",
+  "chatCancelEdit": "Cancelar edição",
+  "chatMentionsEmpty": "Nenhum contato com esse nome. Cadastre em Ajustes > Pagamentos.",
+  "chatTyping": "O assistente está escrevendo",
+  "pixContactsTitle": "Contatos Pix",
+  "pixContactsHint": "Quem recebe Pix pelo chat, com @",
+  "pixContactsSearch": "Buscar por nome ou @",
+  "pixContactsEmptyTitle": "Nenhum contato ainda",
+  "pixContactsEmptyMessage": "Cadastre aqui ou peça um Pix no chat: quem recebe pela primeira vez vira contato.",
+  "pixContactsNoMatch": "Nenhum contato encontrado.",
+  "pixContactsAdd": "Novo contato",
+  "pixContactsEdit": "Editar contato",
+  "pixContactName": "Nome",
+  "pixContactHandle": "Apelido para mencionar com @",
+  "pixContactHandleHelp": "No chat: @{handle}",
+  "@pixContactHandleHelp": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "pixContactKeyKind": "Tipo de chave",
+  "pixContactKey": "Chave Pix",
+  "pixKeyKindTaxId": "CPF/CNPJ",
+  "pixKeyKindPhone": "Celular",
+  "pixKeyKindEmail": "E-mail",
+  "pixKeyKindEvp": "Aleatória",
+  "pixKeyTypeCpf": "CPF",
+  "pixKeyTypeCnpj": "CNPJ",
+  "pixKeyTypeEmail": "E-mail",
+  "pixKeyTypePhone": "Celular",
+  "pixKeyTypeEvp": "Chave aleatória",
+  "pixContactSave": "Salvar contato",
+  "pixContactSaved": "Contato salvo.",
+  "pixContactDelete": "Excluir contato",
+  "pixContactDeleteTitle": "Excluir {name}?",
+  "@pixContactDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pixContactDeleteMessage": "Os Pix já feitos continuam no histórico. No chat, @{handle} deixa de funcionar.",
+  "@pixContactDeleteMessage": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "pixContactDeleted": "Contato excluído.",
+  "pixContactNameMissing": "Escreva o nome.",
+  "pixContactKeyInvalid": "Essa chave não vale para o tipo escolhido.",
+  "pixContactHandleInvalid": "Use de 2 a 30 letras minúsculas, números, ponto ou _.",
+  "pixContactKeyTaken": "Essa chave já é de outro contato.",
+  "pixContactHandleTaken": "Esse @ já é de outro contato.",
+  "pixContactPaidTimes": "{count, plural, =0{Nenhum Pix ainda} =1{1 Pix feito} other{{count} Pix feitos}}",
+  "@pixContactPaidTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pixContactLastPaid": "{times} · último em {date}",
+  "@pixContactLastPaid": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

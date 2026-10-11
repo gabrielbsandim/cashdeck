@@ -62,7 +62,7 @@ class _TabsShellState extends ConsumerState<TabsShell> {
                   child: _askVisible
                       ? CdAskBar(
                           hint: l10n.askBarHint,
-                          onTap: () => context.push(AppRoutes.chat),
+                          onTap: () => context.push(AppRoutes.chatNew),
                         )
                       : const SizedBox(width: double.infinity),
                 ),

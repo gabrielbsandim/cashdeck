@@ -1,8 +1,10 @@
+import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:equatable/equatable.dart';
 
 enum ChatRole { user, assistant }
@@ -16,6 +18,7 @@ enum ChatTool {
   payBill,
   createCategoryRule,
   draftInvoice,
+  sendPix,
 }
 
 enum ChatActionStatus { pending, confirmed, cancelled, failed, expired }
@@ -68,6 +71,10 @@ final class ChatActionDetails extends Equatable {
     this.pattern,
     this.category,
     this.payer,
+    this.pixKey,
+    this.pixKeyType,
+    this.contactHandle,
+    this.newContact,
   });
 
   final String? payee;
@@ -77,6 +84,12 @@ final class ChatActionDetails extends Equatable {
   final String? pattern;
   final String? category;
   final String? payer;
+  final String? pixKey;
+  final PixKeyType? pixKeyType;
+  final String? contactHandle;
+
+  /// True when confirming saves the recipient as a new contact.
+  final bool? newContact;
 
   @override
   List<Object?> get props => [
@@ -87,21 +100,32 @@ final class ChatActionDetails extends Equatable {
     pattern,
     category,
     payer,
+    pixKey,
+    pixKeyType,
+    contactHandle,
+    newContact,
   ];
 }
 
 final class ChatActionResult extends Equatable {
-  const new({this.billId, this.invoiceId, this.ruleId, this.updated});
+  const new({
+    this.billId,
+    this.invoiceId,
+    this.ruleId,
+    this.updated,
+    this.contactId,
+  });
 
   final String? billId;
   final String? invoiceId;
   final String? ruleId;
+  final String? contactId;
 
   /// How many transactions a new rule re-labeled.
   final int? updated;
 
   @override
-  List<Object?> get props => [billId, invoiceId, ruleId, updated];
+  List<Object?> get props => [billId, invoiceId, ruleId, updated, contactId];
 }
 
 final class ChatAction extends Equatable {
@@ -168,6 +192,11 @@ final class ChatMessage extends Equatable {
   final List<ChatAttachment> attachments;
   final List<ChatAction> actions;
   final DateTime createdAt;
+
+  bool get isMine => role == ChatRole.user;
+
+  /// An answer that stopped short, which a new try may fix.
+  bool get canRetry => role == ChatRole.assistant && notice != null;
 
   /// This message with [action] in place of the one with its id.
   ChatMessage withAction(ChatAction action) => ChatMessage(
@@ -248,10 +277,87 @@ abstract interface class ChatRepository {
   /// Oldest first.
   Future<Result<List<ChatMessage>>> messages(String threadId);
 
-  /// The stored user message, then the assistant's answer.
-  Future<Result<List<ChatMessage>>> send(String threadId, ChatDraft draft);
+  /// The stored user message, then the assistant's answer. Sending again
+  /// with the same [clientId] returns that pair instead of a second answer.
+  Future<Result<List<ChatMessage>>> send(
+    String threadId,
+    ChatDraft draft, {
+    String? clientId,
+  });
+
+  /// Drops every message after [messageId], a user message, and answers it
+  /// again; [text] replaces what it said. The edited message, then the answer.
+  Future<Result<List<ChatMessage>>> regenerate(
+    String threadId,
+    String messageId, {
+    String? text,
+  });
 
   Future<Result<ChatAction>> confirm(String actionId, {EntityKind? entity});
 
   Future<Result<ChatAction>> cancel(String actionId);
+}
+
+enum Delivery { sending, failed }
+
+/// A message on its way, shown before the server stores it. [editOf] is the
+/// message it rewrites, when it is an edit or a retry of an answer.
+final class OutgoingMessage extends Equatable {
+  const new({
+    required this.clientId,
+    required this.text,
+    required this.createdAt,
+    this.files = const [],
+    this.attachments = const [],
+    this.delivery = Delivery.sending,
+    this.failure,
+    this.editOf,
+  });
+
+  final String clientId;
+  final String text;
+  final List<LocalFile> files;
+
+  /// The files an edited message already carries on the server.
+  final List<ChatAttachment> attachments;
+  final Delivery delivery;
+  final AppFailure? failure;
+  final String? editOf;
+  final DateTime createdAt;
+
+  bool get failed => delivery == Delivery.failed;
+
+  List<String> get fileNames => [
+    for (final file in files) file.name,
+    for (final attachment in attachments) attachment.fileName,
+  ];
+
+  OutgoingMessage sending() => _with(Delivery.sending, null);
+
+  OutgoingMessage failedWith(AppFailure failure) =>
+      _with(Delivery.failed, failure);
+
+  OutgoingMessage _with(Delivery delivery, AppFailure? failure) =>
+      OutgoingMessage(
+        clientId: clientId,
+        text: text,
+        createdAt: createdAt,
+        files: files,
+        attachments: attachments,
+        delivery: delivery,
+        failure: failure,
+        editOf: editOf,
+      );
+
+  @override
+  List<Object?> get props => [
+    clientId,
+    text,
+    files,
+    attachments,
+    delivery,
+    failure,
+    editOf,
+    createdAt,
+  ];
 }

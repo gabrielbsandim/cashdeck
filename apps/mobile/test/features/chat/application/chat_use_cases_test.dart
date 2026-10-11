@@ -27,6 +27,15 @@ void main() {
         .thenAnswer((_) async => Ok([message]));
     when(() => repository.send('thread-1', const ChatDraft(text: 'Oi')))
         .thenAnswer((_) async => Ok([message]));
+    when(
+      () => repository.send(
+        'thread-1',
+        const ChatDraft(text: 'Oi'),
+        clientId: 'c1',
+      ),
+    ).thenAnswer((_) async => Ok([message, message]));
+    when(() => repository.regenerate('thread-1', 'msg-1', text: 'Outra'))
+        .thenAnswer((_) async => Ok([message]));
     when(() => repository.confirm('action-1', entity: EntityKind.company))
         .thenAnswer((_) async => Ok(action));
     when(() => repository.cancel('action-1'))
@@ -44,6 +53,16 @@ void main() {
       Ok([message]),
     );
     expect(
+      await SendChatMessage(repository)
+          .call('thread-1', const ChatDraft(text: 'Oi'), clientId: 'c1'),
+      Ok([message, message]),
+    );
+    expect(
+      await RegenerateChatAnswer(repository)
+          .call('thread-1', 'msg-1', text: ' Outra '),
+      Ok([message]),
+    );
+    expect(
       await ConfirmChatAction(repository)
           .call('action-1', entity: EntityKind.company),
       Ok(action),
@@ -57,5 +76,15 @@ void main() {
 
     expect(result, const Err<List<ChatMessage>>(UnexpectedFailure()));
     verifyNever(() => repository.send(any(), any()));
+  });
+
+  test('an edit left blank never reaches the server', () async {
+    final result = await RegenerateChatAnswer(repository)
+        .call('thread-1', 'msg-1', text: '   ');
+
+    expect(result, const Err<List<ChatMessage>>(UnexpectedFailure()));
+    verifyNever(
+      () => repository.regenerate(any(), any(), text: any(named: 'text')),
+    );
   });
 }

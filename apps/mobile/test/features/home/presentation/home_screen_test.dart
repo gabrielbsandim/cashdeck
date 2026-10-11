@@ -230,7 +230,7 @@ void main() {
     );
     await tester.tap(find.byKey(PersonalHome.budgetsChatKey));
     await settle(tester);
-    expect(app.location, AppRoutes.chat);
+    expect(app.location, AppRoutes.chatNew);
   });
 
   testWidgets('a failed load retries, a failed action says why', (

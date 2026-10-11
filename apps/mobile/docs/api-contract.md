@@ -199,11 +199,38 @@ It never sums positions itself; totals come from the server in BRL.
 - `GET /api/v1/chat/threads` and `GET .../threads/{id}/messages` are paged;
   the app reads every page (limit 100), messages oldest first.
 - `POST /api/v1/chat/threads` takes `{ scope: PF | PJ | ALL }` and returns 201.
-- `POST .../threads/{id}/messages` takes `{ text, attachments? }`, each
-  attachment `{ fileName, mimeType, base64 }`, at most 3 files and 3 MB in
-  all, checked in the app first. It returns `{ "data": { "messages": [...] } }`.
-  429, 409 and 503 show the server message.
+- A new conversation (`/chat/new`) has no thread until its first message;
+  the app starts one over the switcher's scope right before sending.
+- `POST .../threads/{id}/messages` takes `{ text, attachments?, clientId }`,
+  each attachment `{ fileName, mimeType, base64 }`, at most 3 files and 3 MB
+  in all, checked in the app first. `clientId` is 32 hex characters made per
+  message and sent again on a retry, so the server answers it once. It returns
+  201 `{ "data": { "messages": [user, assistant] } }`. 429, 409 and 503 show
+  the server message.
+- `POST .../threads/{id}/messages/{messageId}/regenerate` takes `{ text? }`
+  and answers the user message again, with `text` in place of what it said
+  when given; later messages go. Same 201 shape as a send; 409 while a reply
+  is being written, 422 for a message that is not the user's.
+- Send and regenerate wait up to 90 s for the answer (`receiveTimeout`).
 - A message carries `notice` (`ROUND_LIMIT | TIME_BUDGET | EMPTY | ERROR`),
   `attachments` and `actions`. An action is a proposal the user confirms:
   `POST /api/v1/chat/actions/{id}/confirm` with `{ entity }` only when
   `needsEntity`, or `POST .../{id}/cancel`.
+- `SEND_PIX` details add `pixKey`, `pixKeyType`
+  (`CPF | CNPJ | EMAIL | PHONE | EVP`), `contactHandle` and `newContact`; a
+  result adds `contactId`. An unknown or missing value reads as null. With
+  `newContact` true the card says the contact will be saved under its handle.
+- The server resolves `@handle` mentions; the app only inserts `@handle `.
+
+## Pix contacts
+
+- `GET /api/v1/pix-contacts?search=` returns `{ "data": [PixContactView] }`,
+  each `{ id, name, handle, pixKey, pixKeyType, timesPaid, lastPaidAt | null,
+  createdAt }`. The screen and the mention panel load the list once and filter
+  it locally.
+- `POST` takes `{ name, pixKey, pixKeyType?, handle? }` and returns 201;
+  `PATCH /{id}` takes the same fields; `DELETE /{id}` returns `{ "data": { id } }`.
+  The app sends the key normalized (CPF or CNPJ digits, `+55` phone, lowercase
+  email or EVP) and checks a taken key or handle against the list first.
+- 409 (key or handle taken) and 422 (invalid key) show the server message.
+- A handle matches `^[a-z0-9][a-z0-9._]{1,29}$`.

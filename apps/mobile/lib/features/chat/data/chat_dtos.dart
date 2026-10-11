@@ -3,6 +3,7 @@ import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/entities/data/entity_dtos.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/data/pix_contact_dtos.dart';
 
 const Map<String, EntityScope> _scopes = {
   'PF': EntityScope.personal,
@@ -27,6 +28,7 @@ const Map<String, ChatTool> _tools = {
   'PAY_BILL': ChatTool.payBill,
   'CREATE_CATEGORY_RULE': ChatTool.createCategoryRule,
   'DRAFT_INVOICE': ChatTool.draftInvoice,
+  'SEND_PIX': ChatTool.sendPix,
 };
 
 const Map<String, ChatActionStatus> _statuses = {
@@ -68,6 +70,13 @@ ChatActionDetails _details(JsonMap json) {
     pattern: readOptionalString(json, 'pattern'),
     category: readOptionalString(json, 'category'),
     payer: readOptionalString(json, 'payer'),
+    pixKey: readOptionalString(json, 'pixKey'),
+    pixKeyType: readOptionalKeyType(json, 'pixKeyType'),
+    contactHandle: readOptionalString(json, 'contactHandle'),
+    newContact: switch (json['newContact']) {
+      final bool value => value,
+      _ => null,
+    },
   );
 }
 
@@ -78,6 +87,7 @@ ChatActionResult? _result(JsonMap? json) {
     invoiceId: readOptionalString(json, 'invoiceId'),
     ruleId: readOptionalString(json, 'ruleId'),
     updated: readOptionalInt(json, 'updated'),
+    contactId: readOptionalString(json, 'contactId'),
   );
 }
 
@@ -118,8 +128,12 @@ ChatMessage messageFromJson(JsonMap json) => ChatMessage(
   createdAt: readDateTime(json, 'createdAt'),
 );
 
-JsonMap draftToJson(ChatDraft draft) => {
+JsonMap draftToJson(ChatDraft draft, {String? clientId}) => {
   'text': draft.text.trim(),
   if (draft.files.isNotEmpty)
     'attachments': [for (final file in draft.files) uploadBody(file)],
+  'clientId': ?clientId,
 };
+
+/// No text asks for a new answer to the message as it is.
+JsonMap regenerateToJson(String? text) => {'text': ?text?.trim()};

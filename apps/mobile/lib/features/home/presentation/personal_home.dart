@@ -137,7 +137,7 @@ class _NoBudgets extends StatelessWidget {
         CdButton.text(
           key: PersonalHome.budgetsChatKey,
           label: l10n.budgetsAskChat,
-          onPressed: () => context.push(AppRoutes.chat),
+          onPressed: () => context.push(AppRoutes.chatNew),
         ),
       ],
     );

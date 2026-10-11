@@ -5,9 +5,11 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 
 /// A scripted assistant over fictional data. Asking to pay proposes the
-/// energy bill; a file proposes a bill read from it. Lives in memory.
+/// energy bill, a Pix proposes a transfer and a file proposes a bill read
+/// from it. Lives in memory.
 final class FakeChatRepository implements ChatRepository {
   new(this._clock, {this.latency = const Duration(milliseconds: 400)});
 
@@ -15,6 +17,7 @@ final class FakeChatRepository implements ChatRepository {
   final Duration latency;
   final Map<String, ChatThread> _threads = {};
   final Map<String, List<ChatMessage>> _messages = {};
+  final Map<String, List<ChatMessage>> _sent = {};
   var _seeded = false;
   var _counter = 0;
 
@@ -91,12 +94,15 @@ final class FakeChatRepository implements ChatRepository {
   @override
   Future<Result<List<ChatMessage>>> send(
     String threadId,
-    ChatDraft draft,
-  ) async {
+    ChatDraft draft, {
+    String? clientId,
+  }) async {
     await Future<void>.delayed(latency);
     _seed();
     final thread = _threads[threadId];
     if (thread == null) return const Err(NotFoundFailure());
+    final replay = _sent['$threadId:$clientId'];
+    if (clientId != null && replay != null) return Ok(replay);
     final now = _clock.now();
     final text = draft.text.trim();
     final user = ChatMessage(
@@ -117,6 +123,7 @@ final class FakeChatRepository implements ChatRepository {
     );
     final reply = _reply(thread, user, now);
     _messages[threadId]!.addAll([user, reply]);
+    if (clientId != null) _sent['$threadId:$clientId'] = [user, reply];
     _threads[threadId] = ChatThread(
       id: thread.id,
       scope: thread.scope,
@@ -127,17 +134,54 @@ final class FakeChatRepository implements ChatRepository {
     return Ok([user, reply]);
   }
 
+  @override
+  Future<Result<List<ChatMessage>>> regenerate(
+    String threadId,
+    String messageId, {
+    String? text,
+  }) async {
+    await Future<void>.delayed(latency);
+    _seed();
+    final thread = _threads[threadId];
+    final messages = _messages[threadId] ?? const <ChatMessage>[];
+    final index = messages.indexWhere((message) => message.id == messageId);
+    if (thread == null || index < 0) return const Err(NotFoundFailure());
+    final original = messages[index];
+    if (!original.isMine) {
+      return const Err(ValidationFailure('Escolha uma mensagem sua.'));
+    }
+    final now = _clock.now();
+    final user = ChatMessage(
+      id: original.id,
+      threadId: threadId,
+      role: ChatRole.user,
+      text: text?.trim() ?? original.text,
+      createdAt: original.createdAt,
+      attachments: original.attachments,
+    );
+    final reply = _reply(thread, user, now);
+    _messages[threadId] = [...messages.take(index), user, reply];
+    return Ok([user, reply]);
+  }
+
   static String _titleOf(String text, ChatDraft draft) {
     if (text.isEmpty) return draft.files.first.name;
     return text.length > 40 ? '${text.substring(0, 40)}...' : text;
   }
 
   ChatMessage _reply(ChatThread thread, ChatMessage user, DateTime now) {
+    final asksForPix = RegExp('pix', caseSensitive: false).hasMatch(user.text);
     final asksToPay = RegExp(
       'pag|pay',
       caseSensitive: false,
     ).hasMatch(user.text);
     final action = switch ((user.attachments.firstOrNull, asksToPay)) {
+      _ when asksForPix => _action(
+        thread,
+        ChatTool.sendPix,
+        _pixDetails(user.text),
+        now,
+      ),
       (final ChatAttachment file, _) => _action(
         thread,
         ChatTool.createBillFromAttachment,
@@ -165,6 +209,7 @@ final class FakeChatRepository implements ChatRepository {
           'Li o arquivo e encontrei um boleto. Confirme para criar a conta.',
         ChatTool.payBill =>
           'A conta de energia vence em 4 dias. Confirme para pagar agora.',
+        ChatTool.sendPix => 'Preparei o Pix. Confira e confirme.',
         _ =>
           r'Neste mês entraram R$ 6.500,00 e saíram R$ 4.120,00. As maiores '
               'categorias foram moradia, mercado e transporte.',
@@ -175,6 +220,39 @@ final class FakeChatRepository implements ChatRepository {
   }
 
   final Map<String, ChatAction> _actions = {};
+
+  static final _handle = RegExp('@([a-z0-9][a-z0-9._]{1,29})');
+  static final _amount = RegExp(r'R\$\s*(\d+)(?:,(\d{2}))?');
+
+  /// A mentioned handle is a saved contact; anyone else is a new one.
+  static ChatActionDetails _pixDetails(String text) {
+    final amount = _amount.firstMatch(text);
+    final cents = amount == null
+        ? 5000
+        : int.parse(amount.group(1)!) * 100 + int.parse(amount.group(2) ?? '0');
+    final handle = _handle.firstMatch(text)?.group(1);
+    if (handle == null) {
+      return ChatActionDetails(
+        payee: 'Ana Exemplo',
+        amount: Money(cents),
+        pixKey: 'ana@exemplo.com',
+        pixKeyType: PixKeyType.email,
+        contactHandle: 'ana.exemplo',
+        newContact: true,
+      );
+    }
+    return ChatActionDetails(
+      payee: handle.split('.').map(_capitalized).join(' '),
+      amount: Money(cents),
+      pixKey: '+5541999990000',
+      pixKeyType: PixKeyType.phone,
+      contactHandle: handle,
+      newContact: false,
+    );
+  }
+
+  static String _capitalized(String word) =>
+      word.isEmpty ? word : word[0].toUpperCase() + word.substring(1);
 
   ChatAction _action(
     ChatThread thread,
@@ -207,7 +285,10 @@ final class FakeChatRepository implements ChatRepository {
         actionId,
         ChatActionStatus.confirmed,
         entity: entity,
-        result: const ChatActionResult(billId: 'bill-energy'),
+        result: const ChatActionResult(
+          billId: 'bill-energy',
+          contactId: 'contact-new',
+        ),
       );
 
   @override

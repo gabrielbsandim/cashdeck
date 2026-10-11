@@ -23,6 +23,7 @@ void main() {
     for (final path in [
       AppRoutes.chat,
       AppRoutes.chatThread('t1'),
+      AppRoutes.chatNew,
       AppRoutes.rails,
       AppRoutes.settingsPayments,
       AppRoutes.settingsConnections,

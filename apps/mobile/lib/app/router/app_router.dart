@@ -33,6 +33,7 @@ import 'package:cashdeck/features/investments/presentation/investments_screen.da
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
 import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_screen.dart';
 import 'package:cashdeck/features/payroll/presentation/payroll_input_screen.dart';
+import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_screen.dart';
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
@@ -163,9 +164,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const ChatScreen(),
         routes: [
           GoRoute(
+            path: _below(AppRoutes.chatNew, AppRoutes.chat),
+            builder: (_, _) => const ConversationScreen(),
+          ),
+          GoRoute(
             path: ':threadId',
             builder: (_, state) =>
-                ConversationScreen(threadId: state.pathParameters['threadId']!),
+                ConversationScreen(threadId: state.pathParameters['threadId']),
           ),
         ],
       ),
@@ -229,6 +234,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ),
               ],
+            ),
+            _child(
+              AppRoutes.pixContacts,
+              AppRoutes.settingsPayments,
+              const PixContactsScreen(),
             ),
           ]),
           _section(AppRoutes.settingsCompany, const CompanySettingsScreen(), [

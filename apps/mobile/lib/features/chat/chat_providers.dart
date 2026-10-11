@@ -29,6 +29,10 @@ final sendChatMessageProvider = Provider<SendChatMessage>(
   (ref) => SendChatMessage(ref.watch(chatRepositoryProvider)),
 );
 
+final regenerateChatAnswerProvider = Provider<RegenerateChatAnswer>(
+  (ref) => RegenerateChatAnswer(ref.watch(chatRepositoryProvider)),
+);
+
 final confirmChatActionProvider = Provider<ConfirmChatAction>(
   (ref) => ConfirmChatAction(ref.watch(chatRepositoryProvider)),
 );

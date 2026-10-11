@@ -51,6 +51,12 @@ class PaymentsSettingsScreen extends ConsumerWidget {
           subtitle: l10n.moreRailsHint,
           route: AppRoutes.rails,
         ),
+        SettingsLink(
+          icon: Symbols.contacts_rounded,
+          title: l10n.pixContactsTitle,
+          subtitle: l10n.pixContactsHint,
+          route: AppRoutes.pixContacts,
+        ),
       ],
     );
   }

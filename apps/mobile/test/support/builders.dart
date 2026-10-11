@@ -3,6 +3,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 
 /// 2026-10-08 12:00 in Brazil.
@@ -234,3 +235,22 @@ String _crc(String text) {
 /// A fictional boleto digitable line (47 digits) and a tax guide line (48).
 const testBoletoLine = '23793.38128 60000.000003 00000.000400 1 98760000011990';
 const testGuideLine = '85890000014 7 76000328262 2 01000000000 5 00000000000 0';
+
+PixContact testContact({
+  String id = 'contact-1',
+  String name = 'Marina Exemplo',
+  String handle = 'marina',
+  String pixKey = '+5541999990001',
+  PixKeyType pixKeyType = PixKeyType.phone,
+  int timesPaid = 0,
+  DateTime? lastPaidAt,
+}) => PixContact(
+  id: id,
+  name: name,
+  handle: handle,
+  pixKey: pixKey,
+  pixKeyType: pixKeyType,
+  timesPaid: timesPaid,
+  lastPaidAt: lastPaidAt,
+  createdAt: testNow,
+);

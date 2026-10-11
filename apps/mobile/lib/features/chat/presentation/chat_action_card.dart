@@ -14,15 +14,18 @@ import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/chat/presentation/chat_controller.dart';
 import 'package:cashdeck/features/chat/presentation/chat_labels.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/presentation/pix_contact_labels.dart';
+import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// What the assistant proposes to do. Nothing runs until the user confirms
 /// here; a consolidated thread also asks which entity it is for.
 class ChatActionCard extends ConsumerStatefulWidget {
   const new({
-    required this.threadId,
+    required this.conversation,
     required this.action,
     required this.busy,
     super.key,
@@ -35,7 +38,9 @@ class ChatActionCard extends ConsumerStatefulWidget {
   static Key entityKey(EntityKind kind) =>
       Key('chat-action-entity-${kind.name}');
 
-  final String threadId;
+  static const newContactKey = Key('chat-action-new-contact');
+
+  final ConversationKey conversation;
   final ChatAction action;
   final bool busy;
 
@@ -47,12 +52,15 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
   EntityKind? _entity;
 
   ConversationController get _controller =>
-      ref.read(conversationControllerProvider(widget.threadId).notifier);
+      ref.read(conversationControllerProvider(widget.conversation).notifier);
 
   Future<void> _confirm() async {
     final l10n = AppLocalizations.of(context);
     final failure = await _controller.confirm(widget.action, entity: _entity);
     if (!mounted) return;
+    if (failure == null && widget.action.tool == ChatTool.sendPix) {
+      ref.invalidate(pixContactsControllerProvider);
+    }
     await showOutcomeToast(context, failure, success: l10n.chatActionDone);
   }
 
@@ -92,6 +100,8 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           ..._rows(l10n, action.details),
+          if (action.isPending && action.details.newContact == true)
+            _NewContactNote(handle: action.details.contactHandle),
           if (error != null)
             Text(
               error,
@@ -151,8 +161,19 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
         ? const SizedBox.shrink()
         : CdKeyValueRow(label: label, value: Text(value));
     final amount = details.amount;
+    final keyType = details.pixKeyType;
+    final pixKey = details.pixKey;
+    final handle = details.contactHandle;
     return [
       text(l10n.chatDetailPayee, details.payee),
+      text(l10n.chatDetailContact, handle == null ? null : '@$handle'),
+      if (pixKey != null)
+        text(
+          l10n.chatDetailPixKey,
+          keyType == null
+              ? pixKey
+              : '${pixKeyTypeLabel(l10n, keyType)} $pixKey',
+        ),
       if (amount != null)
         CdKeyValueRow(
           label: l10n.chatDetailAmount,
@@ -164,5 +185,44 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
       text(l10n.chatDetailCategory, details.category),
       text(l10n.chatDetailPayer, details.payer),
     ];
+  }
+}
+
+class _NewContactNote extends StatelessWidget {
+  const new({required this.handle});
+
+  final String? handle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final palette = context.palette;
+    return Container(
+      key: ChatActionCard.newContactKey,
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: palette.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Symbols.person_add_rounded,
+            size: 20,
+            color: palette.onPrimaryContainer,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              l10n.chatNewContactNote(handle ?? ''),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: palette.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

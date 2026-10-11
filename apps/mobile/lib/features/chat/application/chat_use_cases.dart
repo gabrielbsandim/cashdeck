@@ -37,11 +37,35 @@ final class SendChatMessage {
 
   final ChatRepository _repository;
 
-  Future<Result<List<ChatMessage>>> call(String threadId, ChatDraft draft) {
+  Future<Result<List<ChatMessage>>> call(
+    String threadId,
+    ChatDraft draft, {
+    String? clientId,
+  }) {
     if (draft.problem != null) {
       return Future.value(const Err(UnexpectedFailure()));
     }
-    return _repository.send(threadId, draft);
+    return _repository.send(threadId, draft, clientId: clientId);
+  }
+}
+
+/// A new answer to a user message, after `text` replaced it when given. An
+/// edit that leaves nothing to say never reaches the server.
+final class RegenerateChatAnswer {
+  const new(this._repository);
+
+  final ChatRepository _repository;
+
+  Future<Result<List<ChatMessage>>> call(
+    String threadId,
+    String messageId, {
+    String? text,
+  }) {
+    final edit = text?.trim();
+    if (edit != null && edit.isEmpty) {
+      return Future.value(const Err(UnexpectedFailure()));
+    }
+    return _repository.regenerate(threadId, messageId, text: edit);
   }
 }
 

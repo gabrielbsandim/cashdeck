@@ -48,7 +48,7 @@ void main() {
       AppRoutes.cardImport,
       AppRoutes.cardNotifications,
     ],
-    AppRoutes.settingsPayments: [AppRoutes.rails],
+    AppRoutes.settingsPayments: [AppRoutes.rails, AppRoutes.pixContacts],
     AppRoutes.settingsCompany: [
       AppRoutes.invoiceIssuer,
       AppRoutes.payroll,

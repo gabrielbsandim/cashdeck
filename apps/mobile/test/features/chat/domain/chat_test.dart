@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,7 +68,46 @@ void main() {
   test('value classes compare by value', () {
     expect(testThread().props, hasLength(5));
     expect(testAction().props, hasLength(10));
-    expect(testAction().details.props, hasLength(7));
-    expect(const ChatActionResult(billId: 'b', updated: 2).props, hasLength(4));
+    expect(testAction().details.props, hasLength(11));
+    expect(const ChatActionResult(billId: 'b', updated: 2).props, hasLength(5));
+  });
+
+  test('only an answer that stopped short can be retried', () {
+    expect(testMessage(notice: ChatNotice.error).canRetry, isTrue);
+    expect(testMessage().canRetry, isFalse);
+    expect(
+      testMessage(role: ChatRole.user, notice: ChatNotice.error).canRetry,
+      isFalse,
+    );
+    expect(testMessage(role: ChatRole.user).isMine, isTrue);
+  });
+
+  test('an outgoing message fails, goes again and names its files', () {
+    final outgoing = OutgoingMessage(
+      clientId: 'c1',
+      text: 'Oi',
+      createdAt: testNow,
+      files: [_file('a.pdf')],
+      attachments: const [
+        ChatAttachment(
+          id: 'att',
+          fileName: 'b.pdf',
+          mimeType: 'application/pdf',
+          size: 1,
+        ),
+      ],
+      editOf: 'msg-1',
+    );
+
+    final failed = outgoing.failedWith(const NetworkFailure());
+    final again = failed.sending();
+
+    expect(outgoing.failed, isFalse);
+    expect(failed.failed, isTrue);
+    expect(failed.failure, const NetworkFailure());
+    expect(again, outgoing);
+    expect(again.editOf, 'msg-1');
+    expect(outgoing.fileNames, ['a.pdf', 'b.pdf']);
+    expect(outgoing.props, hasLength(8));
   });
 }

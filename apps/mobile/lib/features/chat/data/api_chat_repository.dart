@@ -15,6 +15,12 @@ final class ApiChatRepository implements ChatRepository {
   static const threadsPath = '/api/v1/chat/threads';
   static const actionsPath = '/api/v1/chat/actions';
 
+  /// A turn runs the model and its tools for up to a minute on the server.
+  static const answerTimeout = Duration(seconds: 90);
+
+  static String messagesPath(String threadId) =>
+      '$threadsPath/${Uri.encodeComponent(threadId)}/messages';
+
   /// Every page of a cursor list, in the order the server sends it.
   Future<List<JsonMap>> _all(String path) async {
     final items = <JsonMap>[];
@@ -49,17 +55,32 @@ final class ApiChatRepository implements ChatRepository {
   @override
   Future<Result<List<ChatMessage>>> messages(String threadId) => guardRequest(
     () async =>
-        (await _all('$threadsPath/${Uri.encodeComponent(threadId)}/messages'))
-            .map(messageFromJson)
-            .toList(),
+        (await _all(messagesPath(threadId))).map(messageFromJson).toList(),
   );
 
   @override
-  Future<Result<List<ChatMessage>>> send(String threadId, ChatDraft draft) =>
+  Future<Result<List<ChatMessage>>> send(
+    String threadId,
+    ChatDraft draft, {
+    String? clientId,
+  }) => _answer(messagesPath(threadId), draftToJson(draft, clientId: clientId));
+
+  @override
+  Future<Result<List<ChatMessage>>> regenerate(
+    String threadId,
+    String messageId, {
+    String? text,
+  }) => _answer(
+    '${messagesPath(threadId)}/${Uri.encodeComponent(messageId)}/regenerate',
+    regenerateToJson(text),
+  );
+
+  Future<Result<List<ChatMessage>>> _answer(String path, JsonMap body) =>
       guardRequest(() async {
         final response = await _dio.post<Object?>(
-          '$threadsPath/${Uri.encodeComponent(threadId)}/messages',
-          data: draftToJson(draft),
+          path,
+          data: body,
+          options: Options(receiveTimeout: answerTimeout),
         );
         final data = asJsonMap(unwrapData(response.data));
         return readMapList(data, 'messages').map(messageFromJson).toList();

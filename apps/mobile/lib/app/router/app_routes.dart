@@ -4,6 +4,7 @@ abstract final class AppRoutes {
   static const bills = '/bills';
   static const insights = '/insights';
   static const chat = '/chat';
+  static const chatNew = '$chat/new';
   static const settings = '/settings';
 
   static const signIn = '/sign-in';
@@ -30,6 +31,7 @@ abstract final class AppRoutes {
   static const cardImport = '$settingsConnections/card-import';
   static const cardNotifications = '$settingsConnections/card-notifications';
   static const rails = '$settingsPayments/rails';
+  static const pixContacts = '$settingsPayments/pix-contacts';
   static const invoiceIssuer = '$settingsCompany/invoice-issuer';
   static const payroll = '$settingsCompany/payroll';
   static const accountantExport = '$settingsCompany/accountant-export';

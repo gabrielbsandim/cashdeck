@@ -13,6 +13,7 @@ import 'package:cashdeck/features/chat/data/chat_dtos.dart';
 import 'package:cashdeck/features/chat/data/fake_chat_repository.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -115,6 +116,7 @@ void main() {
         'PAY_BILL',
         'CREATE_CATEGORY_RULE',
         'DRAFT_INVOICE',
+        'SEND_PIX',
       ]) {
         expect(
           () => actionFromJson({..._action(), 'tool': tool}),
@@ -139,11 +141,46 @@ void main() {
       );
     });
 
+    test('a Pix proposal reads its contact, and odd values read as null', () {
+      final details = {
+        ...(_action()['details'] as Map<String, dynamic>),
+        'pixKey': 'ana@exemplo.com',
+        'pixKeyType': 'EMAIL',
+        'contactHandle': 'ana.exemplo',
+        'newContact': true,
+      };
+      final pix = actionFromJson({
+        ..._action(result: {'contactId': 'contact-9'}),
+        'tool': 'SEND_PIX',
+        'details': details,
+      });
+      final odd = actionFromJson({
+        ..._action(),
+        'details': {...details, 'pixKeyType': 'BANK', 'newContact': 'yes'},
+      });
+
+      expect(pix.tool, ChatTool.sendPix);
+      expect(pix.details.pixKey, 'ana@exemplo.com');
+      expect(pix.details.pixKeyType, PixKeyType.email);
+      expect(pix.details.contactHandle, 'ana.exemplo');
+      expect(pix.details.newContact, isTrue);
+      expect(pix.result?.contactId, 'contact-9');
+      expect(odd.details.pixKeyType, isNull);
+      expect(odd.details.newContact, isNull);
+      expect(actionFromJson(_action()).details.pixKey, isNull);
+    });
+
     test('scopes and drafts travel as the server reads them', () {
       expect(scopeToJson(EntityScope.personal), 'PF');
       expect(scopeToJson(EntityScope.company), 'PJ');
       expect(scopeToJson(EntityScope.consolidated), 'ALL');
       expect(draftToJson(const ChatDraft(text: ' Oi ')), {'text': 'Oi'});
+      expect(draftToJson(const ChatDraft(text: 'Oi'), clientId: 'c1'), {
+        'text': 'Oi',
+        'clientId': 'c1',
+      });
+      expect(regenerateToJson(null), isEmpty);
+      expect(regenerateToJson(' Outra '), {'text': 'Outra'});
       final withFile = draftToJson(
         ChatDraft(
           files: [
@@ -181,6 +218,12 @@ void main() {
               'messages': [_message(id: 'u', role: 'user'), _message()],
             },
           }),
+          'POST /api/v1/chat/threads/thread-1/messages/u/regenerate' =>
+            StubResponse(201, {
+              'data': {
+                'messages': [_message(id: 'u', role: 'user'), _message()],
+              },
+            }),
           'POST /api/v1/chat/actions/action-1/confirm' => StubResponse(200, {
             'data': _action(status: 'CONFIRMED'),
           }),
@@ -196,7 +239,14 @@ void main() {
       final started = _ok(await repository.startThread(EntityScope.company));
       final messages = _ok(await repository.messages('thread-1'));
       final sent = _ok(
-        await repository.send('thread-1', const ChatDraft(text: 'Oi')),
+        await repository.send(
+          'thread-1',
+          const ChatDraft(text: 'Oi'),
+          clientId: 'c1',
+        ),
+      );
+      final again = _ok(
+        await repository.regenerate('thread-1', 'u', text: 'Outra'),
       );
       final confirmed = _ok(
         await repository.confirm('action-1', entity: EntityKind.company),
@@ -212,10 +262,15 @@ void main() {
         ChatRole.user,
         ChatRole.assistant,
       ]);
-      expect(requests[5].data, {'entity': 'PJ'});
+      expect(requests[4].data, {'text': 'Oi', 'clientId': 'c1'});
+      expect(requests[4].receiveTimeout, ApiChatRepository.answerTimeout);
+      expect(again.first.id, 'u');
+      expect(requests[5].data, {'text': 'Outra'});
+      expect(requests[5].receiveTimeout, ApiChatRepository.answerTimeout);
+      expect(requests[6].data, {'entity': 'PJ'});
       expect(confirmed.status, ChatActionStatus.confirmed);
       expect(cancelled.status, ChatActionStatus.cancelled);
-      expect(requests[6].data, isEmpty);
+      expect(requests[7].data, isEmpty);
     });
 
     test('the quota answer is a rate limit failure', () async {
@@ -306,6 +361,80 @@ void main() {
       },
     );
 
+    test('the same client id answers once', () async {
+      final fake = repository();
+      final thread = _ok(await fake.startThread(EntityScope.personal));
+      const draft = ChatDraft(text: 'Como foi o mês?');
+
+      final first = _ok(await fake.send(thread.id, draft, clientId: 'c1'));
+      final again = _ok(await fake.send(thread.id, draft, clientId: 'c1'));
+
+      expect(again, first);
+      expect(_ok(await fake.messages(thread.id)), hasLength(2));
+    });
+
+    test('answers a user message again, with its text or a new one', () async {
+      final fake = repository();
+      final thread = _ok(await fake.startThread(EntityScope.personal));
+      final [question, answer] = _ok(
+        await fake.send(thread.id, const ChatDraft(text: 'Como foi o mês?')),
+      );
+      await fake.send(thread.id, const ChatDraft(text: 'E a semana?'));
+
+      final same = _ok(await fake.regenerate(thread.id, question.id));
+      final edited = _ok(
+        await fake.regenerate(thread.id, question.id, text: ' Quero pagar '),
+      );
+
+      expect(same.first.text, 'Como foi o mês?');
+      expect(edited.first.id, question.id);
+      expect(edited.first.text, 'Quero pagar');
+      expect(edited.last.actions.single.tool, ChatTool.payBill);
+      expect(_ok(await fake.messages(thread.id)), hasLength(2));
+      expect(
+        await fake.regenerate(thread.id, answer.id),
+        const Err<List<ChatMessage>>(NotFoundFailure()),
+      );
+      final reply = _ok(await fake.messages(thread.id)).last;
+      expect(
+        await fake.regenerate(thread.id, reply.id),
+        const Err<List<ChatMessage>>(
+          ValidationFailure('Escolha uma mensagem sua.'),
+        ),
+      );
+      expect(
+        await fake.regenerate('none', question.id),
+        const Err<List<ChatMessage>>(NotFoundFailure()),
+      );
+    });
+
+    test('a Pix goes to a mentioned contact or to someone new', () async {
+      final fake = repository();
+      final thread = _ok(await fake.startThread(EntityScope.personal));
+
+      final known = _ok(
+        await fake.send(
+          thread.id,
+          const ChatDraft(text: r'Pix de R$ 30 para @joao.ficticio'),
+        ),
+      ).last.actions.single;
+      final fresh = _ok(
+        await fake.send(thread.id, const ChatDraft(text: 'Faz um Pix pra Ana')),
+      ).last.actions.single;
+      final confirmed = _ok(await fake.confirm(fresh.id));
+
+      expect(known.tool, ChatTool.sendPix);
+      expect(known.details.payee, 'Joao Ficticio');
+      expect(known.details.amount, const Money(3000));
+      expect(known.details.contactHandle, 'joao.ficticio');
+      expect(known.details.newContact, isFalse);
+      expect(fresh.details.amount, const Money(5000));
+      expect(fresh.details.contactHandle, 'ana.exemplo');
+      expect(fresh.details.pixKeyType, PixKeyType.email);
+      expect(fresh.details.newContact, isTrue);
+      expect(confirmed.result?.contactId, 'contact-new');
+    });
+
     test('a long first message makes a short title', () async {
       final fake = repository();
       final thread = _ok(await fake.startThread(EntityScope.company));
@@ -332,5 +461,6 @@ void main() {
     expect(fake.read(chatRepositoryProvider), isA<FakeChatRepository>());
     expect(api.read(chatRepositoryProvider), isA<ApiChatRepository>());
     expect(fake.read(sendChatMessageProvider), isNotNull);
+    expect(fake.read(regenerateChatAnswerProvider), isNotNull);
   });
 }
