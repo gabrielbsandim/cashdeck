@@ -31,6 +31,7 @@ import {
   InMemoryInvoiceRepository,
   InMemoryPayeeDirectory,
   InMemoryPaymentRepository,
+  InMemoryPixContactRepository,
   InMemorySecretStore,
   InMemoryTransactionRepository,
   InMemoryTransferRepository,
@@ -46,6 +47,7 @@ import {
   makeCardStatements,
   makeCategorizeTransactions,
   makeChat,
+  makePixContacts,
   makeCompanySummary,
   makeConsolidatedSummary,
   makeInsightsOverview,
@@ -188,6 +190,7 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
     devices: new InMemoryDeviceTokenRepository(),
     categories: new InMemoryCategoryRepository(),
     chat: new InMemoryChatRepository(),
+    pixContacts: new InMemoryPixContactRepository(),
   }
 }
 
@@ -337,6 +340,7 @@ export function buildContainer(
     createCategoryRule: makeCreateCategoryRule(deps),
     categorizeTransactions,
     chat: makeChat(deps, chatConfig(env)),
+    pixContacts: makePixContacts(deps),
     listTransfers: makeListTransfers(deps),
     getTransfer: makeGetTransfer(deps),
     recordTransfer: makeRecordTransfer(deps),

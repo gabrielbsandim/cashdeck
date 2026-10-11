@@ -54,6 +54,30 @@ export class InMemoryChatRepository implements ChatRepository {
     this.messages.set(key(message.tenantId, message.id), message)
   }
 
+  async findMessage(tenantId: string, id: string): Promise<ChatMessage | null> {
+    return this.messages.get(key(tenantId, id)) ?? null
+  }
+
+  async deleteMessages(
+    tenantId: string,
+    threadId: string,
+    ids: readonly string[],
+  ): Promise<void> {
+    const doomed = new Set(
+      this.messagesOf(tenantId, threadId)
+        .map(message => message.id)
+        .filter(id => ids.includes(id)),
+    )
+    for (const id of doomed) {
+      this.messages.delete(key(tenantId, id))
+    }
+    for (const [id, attachment] of this.attachments) {
+      if (doomed.has(attachment.messageId)) {
+        this.attachments.delete(id)
+      }
+    }
+  }
+
   private messagesOf(tenantId: string, threadId: string): ChatMessage[] {
     return [...this.messages.values()]
       .filter(row => row.tenantId === tenantId && row.threadId === threadId)

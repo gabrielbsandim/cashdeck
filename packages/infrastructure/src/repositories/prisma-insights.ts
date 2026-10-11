@@ -16,11 +16,14 @@ import {
   type ChatThread,
   type Page,
   type PageRequest,
+  type PixContactRepository,
   type ToolTrace,
 } from '@cashdeck/application'
 import {
   type Category,
   type CategoryRule,
+  type PixContact,
+  type PixKeyType,
   RULE_DIRECTIONS,
   type RuleDirection,
 } from '@cashdeck/domain'
@@ -196,6 +199,25 @@ export class PrismaChatRepository implements ChatRepository {
     })
   }
 
+  async findMessage(tenantId: string, id: string): Promise<ChatMessage | null> {
+    const row = await this.db.chatMessage.findFirst({ where: { tenantId, id } })
+    return row && messageFromRow(row)
+  }
+
+  async deleteMessages(
+    tenantId: string,
+    threadId: string,
+    ids: readonly string[],
+  ): Promise<void> {
+    const messageId = { in: [...ids] }
+    await this.db.chatAttachment.deleteMany({
+      where: { tenantId, threadId, messageId },
+    })
+    await this.db.chatMessage.deleteMany({
+      where: { tenantId, threadId, id: messageId },
+    })
+  }
+
   async listMessages(
     tenantId: string,
     threadId: string,
@@ -279,5 +301,41 @@ export class PrismaChatRepository implements ChatRepository {
       orderBy: OLDEST_FIRST,
     })
     return rows.map(actionFromRow)
+  }
+}
+
+type PixContactRow = Omit<PixContact, 'pixKeyType'> & { pixKeyType: string }
+
+const contactFromRow = (row: PixContactRow): PixContact => ({
+  ...row,
+  pixKeyType: row.pixKeyType as PixKeyType,
+})
+
+export class PrismaPixContactRepository implements PixContactRepository {
+  constructor(private readonly db: PrismaClient) {}
+
+  async list(tenantId: string): Promise<PixContact[]> {
+    const rows = await this.db.pixContact.findMany({
+      where: { tenantId },
+      orderBy: { name: 'asc' },
+    })
+    return rows.map(contactFromRow)
+  }
+
+  async findById(tenantId: string, id: string): Promise<PixContact | null> {
+    const row = await this.db.pixContact.findFirst({ where: { tenantId, id } })
+    return row && contactFromRow(row)
+  }
+
+  async save(contact: PixContact): Promise<void> {
+    await this.db.pixContact.upsert({
+      where: { id: contact.id },
+      create: contact,
+      update: contact,
+    })
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    await this.db.pixContact.deleteMany({ where: { tenantId, id } })
   }
 }

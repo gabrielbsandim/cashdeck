@@ -1,4 +1,4 @@
-import { type EntityKind } from '@cashdeck/domain'
+import { type EntityKind, type PixKeyType } from '@cashdeck/domain'
 import { type Page, type PageRequest } from '@/ports/repositories'
 
 export const CHAT_SCOPES = ['PF', 'PJ', 'ALL'] as const
@@ -59,6 +59,7 @@ export const CHAT_ACTION_TOOLS = [
   'PAY_BILL',
   'CREATE_CATEGORY_RULE',
   'DRAFT_INVOICE',
+  'SEND_PIX',
 ] as const
 export type ChatActionTool = (typeof CHAT_ACTION_TOOLS)[number]
 
@@ -80,6 +81,10 @@ export type ChatActionDetails = {
   pattern: string | null
   category: string | null
   payer: string | null
+  pixKey: string | null
+  pixKeyType: PixKeyType | null
+  contactHandle: string | null
+  newContact: boolean | null
 }
 
 export type ChatActionResult = {
@@ -87,6 +92,7 @@ export type ChatActionResult = {
   invoiceId: string | null
   ruleId: string | null
   updated: number | null
+  contactId: string | null
 }
 
 export type ChatAction = {
@@ -112,6 +118,14 @@ export interface ChatRepository {
   findThread(tenantId: string, id: string): Promise<ChatThread | null>
   listThreads(tenantId: string, page: PageRequest): Promise<Page<ChatThread>>
   saveMessage(message: ChatMessage): Promise<void>
+  findMessage(tenantId: string, id: string): Promise<ChatMessage | null>
+  // Removes the messages and the files attached to them; actions stay for the
+  // audit trail.
+  deleteMessages(
+    tenantId: string,
+    threadId: string,
+    ids: readonly string[],
+  ): Promise<void>
   // Oldest first.
   listMessages(
     tenantId: string,

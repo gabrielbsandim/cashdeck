@@ -20144,7 +20144,8 @@
                                     "CREATE_BILL_FROM_ATTACHMENT",
                                     "PAY_BILL",
                                     "CREATE_CATEGORY_RULE",
-                                    "DRAFT_INVOICE"
+                                    "DRAFT_INVOICE",
+                                    "SEND_PIX"
                                   ]
                                 },
                                 "status": {
@@ -20215,6 +20216,29 @@
                                     "payer": {
                                       "nullable": true,
                                       "type": "string"
+                                    },
+                                    "pixKey": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "pixKeyType": {
+                                      "nullable": true,
+                                      "type": "string",
+                                      "enum": [
+                                        "CPF",
+                                        "CNPJ",
+                                        "EMAIL",
+                                        "PHONE",
+                                        "EVP"
+                                      ]
+                                    },
+                                    "contactHandle": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "newContact": {
+                                      "nullable": true,
+                                      "type": "boolean"
                                     }
                                   },
                                   "required": [
@@ -20224,7 +20248,11 @@
                                     "fileName",
                                     "pattern",
                                     "category",
-                                    "payer"
+                                    "payer",
+                                    "pixKey",
+                                    "pixKeyType",
+                                    "contactHandle",
+                                    "newContact"
                                   ],
                                   "additionalProperties": false
                                 },
@@ -20249,13 +20277,18 @@
                                       "type": "integer",
                                       "minimum": -9007199254740991,
                                       "maximum": 9007199254740991
+                                    },
+                                    "contactId": {
+                                      "nullable": true,
+                                      "type": "string"
                                     }
                                   },
                                   "required": [
                                     "billId",
                                     "invoiceId",
                                     "ruleId",
-                                    "updated"
+                                    "updated",
+                                    "contactId"
                                   ],
                                   "additionalProperties": false
                                 },
@@ -20394,6 +20427,10 @@
                         "base64"
                       ]
                     }
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "pattern": "^[\\w-]{8,64}$"
                   }
                 }
               }
@@ -20488,7 +20525,8 @@
                                         "CREATE_BILL_FROM_ATTACHMENT",
                                         "PAY_BILL",
                                         "CREATE_CATEGORY_RULE",
-                                        "DRAFT_INVOICE"
+                                        "DRAFT_INVOICE",
+                                        "SEND_PIX"
                                       ]
                                     },
                                     "status": {
@@ -20559,6 +20597,29 @@
                                         "payer": {
                                           "nullable": true,
                                           "type": "string"
+                                        },
+                                        "pixKey": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "pixKeyType": {
+                                          "nullable": true,
+                                          "type": "string",
+                                          "enum": [
+                                            "CPF",
+                                            "CNPJ",
+                                            "EMAIL",
+                                            "PHONE",
+                                            "EVP"
+                                          ]
+                                        },
+                                        "contactHandle": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "newContact": {
+                                          "nullable": true,
+                                          "type": "boolean"
                                         }
                                       },
                                       "required": [
@@ -20568,7 +20629,11 @@
                                         "fileName",
                                         "pattern",
                                         "category",
-                                        "payer"
+                                        "payer",
+                                        "pixKey",
+                                        "pixKeyType",
+                                        "contactHandle",
+                                        "newContact"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -20593,13 +20658,377 @@
                                           "type": "integer",
                                           "minimum": -9007199254740991,
                                           "maximum": 9007199254740991
+                                        },
+                                        "contactId": {
+                                          "nullable": true,
+                                          "type": "string"
                                         }
                                       },
                                       "required": [
                                         "billId",
                                         "invoiceId",
                                         "ruleId",
-                                        "updated"
+                                        "updated",
+                                        "contactId"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "error": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "createdAt": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "threadId",
+                                    "tool",
+                                    "status",
+                                    "entity",
+                                    "needsEntity",
+                                    "details",
+                                    "result",
+                                    "error",
+                                    "createdAt"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "threadId",
+                              "role",
+                              "text",
+                              "notice",
+                              "attachments",
+                              "actions",
+                              "createdAt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "messages"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/chat/threads/{id}/messages/{messageId}/regenerate": {
+      "post": {
+        "operationId": "regenerateChatMessage",
+        "summary": "Edit a message the user sent, or send it again, dropping what came after it; returns it and the new reply",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Edit a message the user sent, or send it again, dropping what came after it; returns it and the new reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "messages": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "threadId": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "user",
+                                  "assistant"
+                                ]
+                              },
+                              "text": {
+                                "type": "string"
+                              },
+                              "notice": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "ROUND_LIMIT",
+                                  "TIME_BUDGET",
+                                  "EMPTY",
+                                  "ERROR"
+                                ]
+                              },
+                              "attachments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "fileName": {
+                                      "type": "string"
+                                    },
+                                    "mimeType": {
+                                      "type": "string"
+                                    },
+                                    "size": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "fileName",
+                                    "mimeType",
+                                    "size"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "actions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "threadId": {
+                                      "type": "string"
+                                    },
+                                    "tool": {
+                                      "type": "string",
+                                      "enum": [
+                                        "CREATE_BILL_FROM_ATTACHMENT",
+                                        "PAY_BILL",
+                                        "CREATE_CATEGORY_RULE",
+                                        "DRAFT_INVOICE",
+                                        "SEND_PIX"
+                                      ]
+                                    },
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "PENDING",
+                                        "CONFIRMED",
+                                        "CANCELLED",
+                                        "FAILED",
+                                        "EXPIRED"
+                                      ]
+                                    },
+                                    "entity": {
+                                      "nullable": true,
+                                      "type": "string",
+                                      "enum": [
+                                        "PF",
+                                        "PJ"
+                                      ]
+                                    },
+                                    "needsEntity": {
+                                      "type": "boolean"
+                                    },
+                                    "details": {
+                                      "type": "object",
+                                      "properties": {
+                                        "payee": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "nullable": true,
+                                          "type": "object",
+                                          "properties": {
+                                            "cents": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "currency": {
+                                              "type": "string",
+                                              "minLength": 3,
+                                              "maxLength": 3
+                                            }
+                                          },
+                                          "required": [
+                                            "cents",
+                                            "currency"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "dueDate": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "fileName": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "pattern": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "category": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "payer": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "pixKey": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "pixKeyType": {
+                                          "nullable": true,
+                                          "type": "string",
+                                          "enum": [
+                                            "CPF",
+                                            "CNPJ",
+                                            "EMAIL",
+                                            "PHONE",
+                                            "EVP"
+                                          ]
+                                        },
+                                        "contactHandle": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "newContact": {
+                                          "nullable": true,
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "payee",
+                                        "amount",
+                                        "dueDate",
+                                        "fileName",
+                                        "pattern",
+                                        "category",
+                                        "payer",
+                                        "pixKey",
+                                        "pixKeyType",
+                                        "contactHandle",
+                                        "newContact"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "result": {
+                                      "nullable": true,
+                                      "type": "object",
+                                      "properties": {
+                                        "billId": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "invoiceId": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "ruleId": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "updated": {
+                                          "nullable": true,
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "contactId": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "billId",
+                                        "invoiceId",
+                                        "ruleId",
+                                        "updated",
+                                        "contactId"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -20744,7 +21173,8 @@
                             "CREATE_BILL_FROM_ATTACHMENT",
                             "PAY_BILL",
                             "CREATE_CATEGORY_RULE",
-                            "DRAFT_INVOICE"
+                            "DRAFT_INVOICE",
+                            "SEND_PIX"
                           ]
                         },
                         "status": {
@@ -20815,6 +21245,29 @@
                             "payer": {
                               "nullable": true,
                               "type": "string"
+                            },
+                            "pixKey": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pixKeyType": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "CPF",
+                                "CNPJ",
+                                "EMAIL",
+                                "PHONE",
+                                "EVP"
+                              ]
+                            },
+                            "contactHandle": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "newContact": {
+                              "nullable": true,
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -20824,7 +21277,11 @@
                             "fileName",
                             "pattern",
                             "category",
-                            "payer"
+                            "payer",
+                            "pixKey",
+                            "pixKeyType",
+                            "contactHandle",
+                            "newContact"
                           ],
                           "additionalProperties": false
                         },
@@ -20849,13 +21306,18 @@
                               "type": "integer",
                               "minimum": -9007199254740991,
                               "maximum": 9007199254740991
+                            },
+                            "contactId": {
+                              "nullable": true,
+                              "type": "string"
                             }
                           },
                           "required": [
                             "billId",
                             "invoiceId",
                             "ruleId",
-                            "updated"
+                            "updated",
+                            "contactId"
                           ],
                           "additionalProperties": false
                         },
@@ -20957,7 +21419,8 @@
                             "CREATE_BILL_FROM_ATTACHMENT",
                             "PAY_BILL",
                             "CREATE_CATEGORY_RULE",
-                            "DRAFT_INVOICE"
+                            "DRAFT_INVOICE",
+                            "SEND_PIX"
                           ]
                         },
                         "status": {
@@ -21028,6 +21491,29 @@
                             "payer": {
                               "nullable": true,
                               "type": "string"
+                            },
+                            "pixKey": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pixKeyType": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "CPF",
+                                "CNPJ",
+                                "EMAIL",
+                                "PHONE",
+                                "EVP"
+                              ]
+                            },
+                            "contactHandle": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "newContact": {
+                              "nullable": true,
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -21037,7 +21523,11 @@
                             "fileName",
                             "pattern",
                             "category",
-                            "payer"
+                            "payer",
+                            "pixKey",
+                            "pixKeyType",
+                            "contactHandle",
+                            "newContact"
                           ],
                           "additionalProperties": false
                         },
@@ -21062,13 +21552,18 @@
                               "type": "integer",
                               "minimum": -9007199254740991,
                               "maximum": 9007199254740991
+                            },
+                            "contactId": {
+                              "nullable": true,
+                              "type": "string"
                             }
                           },
                           "required": [
                             "billId",
                             "invoiceId",
                             "ruleId",
-                            "updated"
+                            "updated",
+                            "contactId"
                           ],
                           "additionalProperties": false
                         },
@@ -21091,6 +21586,481 @@
                         "result",
                         "error",
                         "createdAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/pix-contacts": {
+      "get": {
+        "operationId": "listPixContacts",
+        "summary": "Saved Pix contacts, best match for the search first",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 80
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved Pix contacts, best match for the search first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "handle": {
+                            "type": "string"
+                          },
+                          "pixKey": {
+                            "type": "string"
+                          },
+                          "pixKeyType": {
+                            "type": "string",
+                            "enum": [
+                              "CPF",
+                              "CNPJ",
+                              "EMAIL",
+                              "PHONE",
+                              "EVP"
+                            ]
+                          },
+                          "timesPaid": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "lastPaidAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "handle",
+                          "pixKey",
+                          "pixKeyType",
+                          "timesPaid",
+                          "lastPaidAt",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPixContact",
+        "summary": "Save someone to send Pix to; the handle defaults to the first name",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "pixKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "pixKeyType": {
+                    "type": "string",
+                    "enum": [
+                      "CPF",
+                      "CNPJ",
+                      "EMAIL",
+                      "PHONE",
+                      "EVP"
+                    ]
+                  },
+                  "handle": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 31
+                  }
+                },
+                "required": [
+                  "name",
+                  "pixKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Save someone to send Pix to; the handle defaults to the first name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "handle": {
+                          "type": "string"
+                        },
+                        "pixKey": {
+                          "type": "string"
+                        },
+                        "pixKeyType": {
+                          "type": "string",
+                          "enum": [
+                            "CPF",
+                            "CNPJ",
+                            "EMAIL",
+                            "PHONE",
+                            "EVP"
+                          ]
+                        },
+                        "timesPaid": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "lastPaidAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "handle",
+                        "pixKey",
+                        "pixKeyType",
+                        "timesPaid",
+                        "lastPaidAt",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/pix-contacts/{id}": {
+      "patch": {
+        "operationId": "updatePixContact",
+        "summary": "Rename a contact, change its handle or its Pix key",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "pixKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "pixKeyType": {
+                    "type": "string",
+                    "enum": [
+                      "CPF",
+                      "CNPJ",
+                      "EMAIL",
+                      "PHONE",
+                      "EVP"
+                    ]
+                  },
+                  "handle": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 31
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rename a contact, change its handle or its Pix key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "handle": {
+                          "type": "string"
+                        },
+                        "pixKey": {
+                          "type": "string"
+                        },
+                        "pixKeyType": {
+                          "type": "string",
+                          "enum": [
+                            "CPF",
+                            "CNPJ",
+                            "EMAIL",
+                            "PHONE",
+                            "EVP"
+                          ]
+                        },
+                        "timesPaid": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "lastPaidAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "handle",
+                        "pixKey",
+                        "pixKeyType",
+                        "timesPaid",
+                        "lastPaidAt",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePixContact",
+        "summary": "Forget a Pix contact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forget a Pix contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
                       ],
                       "additionalProperties": false
                     }

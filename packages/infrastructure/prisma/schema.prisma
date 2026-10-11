@@ -780,6 +780,23 @@ model Secret {
   @@map("secrets")
 }
 
+model PixContact {
+  id         String    @id
+  tenantId   String    @map("tenant_id")
+  name       String
+  handle     String
+  pixKey     String    @map("pix_key")
+  pixKeyType String    @map("pix_key_type")
+  timesPaid  Int       @default(0) @map("times_paid")
+  lastPaidAt DateTime? @map("last_paid_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @map("updated_at")
+
+  @@unique([tenantId, handle])
+  @@unique([tenantId, pixKey])
+  @@map("pix_contacts")
+}
+
 model ChatThread {
   id        String   @id
   tenantId  String   @map("tenant_id")

@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import {
+  createPixContactSchema,
+  pixContactQuerySchema,
+  pixContactViewSchema,
+  regenerateSchema,
+  updatePixContactSchema,
   accountViewSchema,
   alertSettingsViewSchema,
   alertViewSchema,
@@ -1024,6 +1029,16 @@ const OPERATIONS: Operation[] = [
   },
   {
     method: 'post',
+    path: '/chat/threads/{id}/messages/{messageId}/regenerate',
+    id: 'regenerateChatMessage',
+    summary:
+      'Edit a message the user sent, or send it again, dropping what came after it; returns it and the new reply',
+    body: regenerateSchema,
+    status: '201',
+    response: sendMessageResultSchema,
+  },
+  {
+    method: 'post',
     path: '/chat/actions/{id}/confirm',
     id: 'confirmChatAction',
     summary: 'Run an action the assistant proposed',
@@ -1036,6 +1051,39 @@ const OPERATIONS: Operation[] = [
     id: 'cancelChatAction',
     summary: 'Discard an action the assistant proposed',
     response: chatActionViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/pix-contacts',
+    id: 'listPixContacts',
+    summary: 'Saved Pix contacts, best match for the search first',
+    query: pixContactQuerySchema,
+    response: z.array(pixContactViewSchema),
+  },
+  {
+    method: 'post',
+    path: '/pix-contacts',
+    id: 'createPixContact',
+    summary:
+      'Save someone to send Pix to; the handle defaults to the first name',
+    body: createPixContactSchema,
+    status: '201',
+    response: pixContactViewSchema,
+  },
+  {
+    method: 'patch',
+    path: '/pix-contacts/{id}',
+    id: 'updatePixContact',
+    summary: 'Rename a contact, change its handle or its Pix key',
+    body: updatePixContactSchema,
+    response: pixContactViewSchema,
+  },
+  {
+    method: 'delete',
+    path: '/pix-contacts/{id}',
+    id: 'removePixContact',
+    summary: 'Forget a Pix contact',
+    response: idSchema,
   },
 ]
 

@@ -5,6 +5,7 @@ import { createCategoryRule } from '@cashdeck/domain'
 import {
   PrismaCategoryRepository,
   PrismaChatRepository,
+  PrismaPixContactRepository,
 } from '@/repositories/prisma-insights'
 
 const TENANT = 't1'
@@ -17,8 +18,15 @@ const DELEGATES = [
   'chatMessage',
   'chatAttachment',
   'chatAction',
+  'pixContact',
 ] as const
-const METHODS = ['upsert', 'findFirst', 'findMany', 'create'] as const
+const METHODS = [
+  'upsert',
+  'findFirst',
+  'findMany',
+  'create',
+  'deleteMany',
+] as const
 
 type Delegate = Record<(typeof METHODS)[number], ReturnType<typeof vi.fn>>
 
@@ -34,6 +42,7 @@ function mockClient() {
     db,
     categories: new PrismaCategoryRepository(client),
     chat: new PrismaChatRepository(client),
+    contacts: new PrismaPixContactRepository(client),
   }
 }
 
@@ -131,6 +140,10 @@ const action: ChatAction = {
     pattern: null,
     category: null,
     payer: null,
+    pixKey: null,
+    pixKeyType: null,
+    contactHandle: null,
+    newContact: null,
   },
   result: null,
   error: null,
@@ -229,7 +242,13 @@ describe('PrismaChatRepository', () => {
     const done = {
       ...action,
       status: 'CONFIRMED' as const,
-      result: { billId: 'b1', invoiceId: null, ruleId: null, updated: null },
+      result: {
+        billId: 'b1',
+        invoiceId: null,
+        ruleId: null,
+        updated: null,
+        contactId: null,
+      },
     }
     await chat.saveAction(done)
     expect(db.chatAction.upsert.mock.calls[1]?.[0].update.result).toEqual(
@@ -242,5 +261,67 @@ describe('PrismaChatRepository', () => {
     expect(await chat.findAction(TENANT, 'x')).toBeNull()
     db.chatAction.findMany.mockResolvedValueOnce([done])
     expect(await chat.listActions(TENANT, 'th1')).toEqual([done])
+  })
+})
+
+describe('PrismaChatRepository edits', () => {
+  it('finds one message and deletes messages with their files', async () => {
+    const { db, chat } = mockClient()
+    db.chatMessage.findFirst
+      .mockResolvedValueOnce(messageRow)
+      .mockResolvedValueOnce(null)
+    expect(await chat.findMessage(TENANT, 'm1')).toEqual(message)
+    expect(await chat.findMessage(TENANT, 'x')).toBeNull()
+    await chat.deleteMessages(TENANT, 'th1', ['m1', 'm2'])
+    expect(db.chatAttachment.deleteMany.mock.calls[0]?.[0]).toEqual({
+      where: {
+        tenantId: TENANT,
+        threadId: 'th1',
+        messageId: { in: ['m1', 'm2'] },
+      },
+    })
+    expect(db.chatMessage.deleteMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, threadId: 'th1', id: { in: ['m1', 'm2'] } },
+    })
+  })
+})
+
+describe('PrismaPixContactRepository', () => {
+  const contact = {
+    id: 'p1',
+    tenantId: TENANT,
+    name: 'Ana',
+    handle: 'ana',
+    pixKey: 'ana@example.com',
+    pixKeyType: 'EMAIL' as const,
+    timesPaid: 0,
+    lastPaidAt: null,
+    createdAt: NOW,
+    updatedAt: NOW,
+  }
+
+  it('stores contacts per tenant', async () => {
+    const { db, contacts } = mockClient()
+    db.pixContact.findMany.mockResolvedValueOnce([contact])
+    expect(await contacts.list(TENANT)).toEqual([contact])
+    expect(db.pixContact.findMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT },
+      orderBy: { name: 'asc' },
+    })
+    db.pixContact.findFirst
+      .mockResolvedValueOnce(contact)
+      .mockResolvedValueOnce(null)
+    expect(await contacts.findById(TENANT, 'p1')).toEqual(contact)
+    expect(await contacts.findById(TENANT, 'x')).toBeNull()
+    await contacts.save(contact)
+    expect(db.pixContact.upsert.mock.calls[0]?.[0]).toEqual({
+      where: { id: 'p1' },
+      create: contact,
+      update: contact,
+    })
+    await contacts.delete(TENANT, 'p1')
+    expect(db.pixContact.deleteMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, id: 'p1' },
+    })
   })
 })

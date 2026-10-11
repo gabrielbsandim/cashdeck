@@ -1666,6 +1666,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/chat/threads/{id}/messages/{messageId}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit a message the user sent, or send it again, dropping what came after it; returns it and the new reply */
+        post: operations["regenerateChatMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/chat/actions/{id}/confirm": {
         parameters: {
             query?: never;
@@ -1698,6 +1715,42 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/pix-contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved Pix contacts, best match for the search first */
+        get: operations["listPixContacts"];
+        put?: never;
+        /** Save someone to send Pix to; the handle defaults to the first name */
+        post: operations["createPixContact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pix-contacts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a Pix contact */
+        delete: operations["removePixContact"];
+        options?: never;
+        head?: never;
+        /** Rename a contact, change its handle or its Pix key */
+        patch: operations["updatePixContact"];
         trace?: never;
     };
 }
@@ -7992,7 +8045,7 @@ export interface operations {
                                 id: string;
                                 threadId: string;
                                 /** @enum {string} */
-                                tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                                tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
                                 /** @enum {string} */
                                 status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                                 /** @enum {string|null} */
@@ -8009,12 +8062,18 @@ export interface operations {
                                     pattern: string | null;
                                     category: string | null;
                                     payer: string | null;
+                                    pixKey: string | null;
+                                    /** @enum {string|null} */
+                                    pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
+                                    contactHandle: string | null;
+                                    newContact: boolean | null;
                                 };
                                 result: {
                                     billId: string | null;
                                     invoiceId: string | null;
                                     ruleId: string | null;
                                     updated: number | null;
+                                    contactId: string | null;
                                 } | null;
                                 error: string | null;
                                 createdAt: string;
@@ -8056,6 +8115,7 @@ export interface operations {
                         mimeType: string;
                         base64: string;
                     }[];
+                    clientId?: string;
                 };
             };
         };
@@ -8086,7 +8146,7 @@ export interface operations {
                                     id: string;
                                     threadId: string;
                                     /** @enum {string} */
-                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
                                     /** @enum {string} */
                                     status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                                     /** @enum {string|null} */
@@ -8103,12 +8163,112 @@ export interface operations {
                                         pattern: string | null;
                                         category: string | null;
                                         payer: string | null;
+                                        pixKey: string | null;
+                                        /** @enum {string|null} */
+                                        pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
+                                        contactHandle: string | null;
+                                        newContact: boolean | null;
                                     };
                                     result: {
                                         billId: string | null;
                                         invoiceId: string | null;
                                         ruleId: string | null;
                                         updated: number | null;
+                                        contactId: string | null;
+                                    } | null;
+                                    error: string | null;
+                                    createdAt: string;
+                                }[];
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    regenerateChatMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Edit a message the user sent, or send it again, dropping what came after it; returns it and the new reply */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            messages: {
+                                id: string;
+                                threadId: string;
+                                /** @enum {string} */
+                                role: "user" | "assistant";
+                                text: string;
+                                /** @enum {string|null} */
+                                notice: "ROUND_LIMIT" | "TIME_BUDGET" | "EMPTY" | "ERROR" | null;
+                                attachments: {
+                                    id: string;
+                                    fileName: string;
+                                    mimeType: string;
+                                    size: number;
+                                }[];
+                                actions: {
+                                    id: string;
+                                    threadId: string;
+                                    /** @enum {string} */
+                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                                    /** @enum {string} */
+                                    status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
+                                    /** @enum {string|null} */
+                                    entity: "PF" | "PJ" | null;
+                                    needsEntity: boolean;
+                                    details: {
+                                        payee: string | null;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        } | null;
+                                        dueDate: string | null;
+                                        fileName: string | null;
+                                        pattern: string | null;
+                                        category: string | null;
+                                        payer: string | null;
+                                        pixKey: string | null;
+                                        /** @enum {string|null} */
+                                        pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
+                                        contactHandle: string | null;
+                                        newContact: boolean | null;
+                                    };
+                                    result: {
+                                        billId: string | null;
+                                        invoiceId: string | null;
+                                        ruleId: string | null;
+                                        updated: number | null;
+                                        contactId: string | null;
                                     } | null;
                                     error: string | null;
                                     createdAt: string;
@@ -8159,7 +8319,7 @@ export interface operations {
                             id: string;
                             threadId: string;
                             /** @enum {string} */
-                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
                             /** @enum {string} */
                             status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                             /** @enum {string|null} */
@@ -8176,12 +8336,18 @@ export interface operations {
                                 pattern: string | null;
                                 category: string | null;
                                 payer: string | null;
+                                pixKey: string | null;
+                                /** @enum {string|null} */
+                                pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
+                                contactHandle: string | null;
+                                newContact: boolean | null;
                             };
                             result: {
                                 billId: string | null;
                                 invoiceId: string | null;
                                 ruleId: string | null;
                                 updated: number | null;
+                                contactId: string | null;
                             } | null;
                             error: string | null;
                             createdAt: string;
@@ -8222,7 +8388,7 @@ export interface operations {
                             id: string;
                             threadId: string;
                             /** @enum {string} */
-                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE";
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
                             /** @enum {string} */
                             status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                             /** @enum {string|null} */
@@ -8239,14 +8405,202 @@ export interface operations {
                                 pattern: string | null;
                                 category: string | null;
                                 payer: string | null;
+                                pixKey: string | null;
+                                /** @enum {string|null} */
+                                pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
+                                contactHandle: string | null;
+                                newContact: boolean | null;
                             };
                             result: {
                                 billId: string | null;
                                 invoiceId: string | null;
                                 ruleId: string | null;
                                 updated: number | null;
+                                contactId: string | null;
                             } | null;
                             error: string | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listPixContacts: {
+        parameters: {
+            query?: {
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved Pix contacts, best match for the search first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            name: string;
+                            handle: string;
+                            pixKey: string;
+                            /** @enum {string} */
+                            pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+                            timesPaid: number;
+                            lastPaidAt: string | null;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createPixContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    pixKey: string;
+                    /** @enum {string} */
+                    pixKeyType?: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+                    handle?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Save someone to send Pix to; the handle defaults to the first name */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            name: string;
+                            handle: string;
+                            pixKey: string;
+                            /** @enum {string} */
+                            pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+                            timesPaid: number;
+                            lastPaidAt: string | null;
+                            createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removePixContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forget a Pix contact */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updatePixContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    pixKey?: string;
+                    /** @enum {string} */
+                    pixKeyType?: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+                    handle?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Rename a contact, change its handle or its Pix key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            name: string;
+                            handle: string;
+                            pixKey: string;
+                            /** @enum {string} */
+                            pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
+                            timesPaid: number;
+                            lastPaidAt: string | null;
                             createdAt: string;
                         };
                     };

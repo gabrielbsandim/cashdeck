@@ -31,6 +31,7 @@ import {
   type DocumentStore,
   type InstitutionRepository,
   type InvoiceRepository,
+  type PixContactRepository,
   type RecurrenceRepository,
   type TransactionRepository,
   type TransferRepository,
@@ -79,6 +80,7 @@ export type Deps = {
   budgets: BudgetRepository
   categories: CategoryRepository
   chat: ChatRepository
+  pixContacts: PixContactRepository
   attachments: AttachmentRepository
   documents: DocumentStore
   bills: BillRepository

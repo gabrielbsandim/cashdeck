@@ -7,6 +7,8 @@ import {
   isSettled,
   Money,
   normalizeDescription,
+  PIX_KEY_TYPES,
+  rankContacts,
   type Transaction,
   ValidationError,
 } from '@cashdeck/domain'
@@ -23,6 +25,7 @@ import { type AgentTool } from '@/use-cases/chat/agent'
 import { sanitize } from '@/use-cases/chat/hardening'
 import { ensureCategories } from '@/use-cases/categorization'
 import { type Deps } from '@/use-cases/deps'
+import { makePixContacts, type PixRecipient } from '@/use-cases/pix-contacts'
 import { isoDate } from '@/dtos/common'
 
 export type Proposal = Pick<
@@ -49,10 +52,12 @@ type ToolDeps = Pick<
   | 'chat'
   | 'clock'
   | 'ids'
+  | 'pixContacts'
 >
 
 const DEFAULT_DAYS = 30
 const MAX_ROWS = 50
+const MAX_CONTACTS = 5
 const UNCATEGORIZED = 'Uncategorized'
 
 const text = (description: string): LlmToolParameter => ({
@@ -85,7 +90,11 @@ type Lookup = {
   categoryName(id: string | null): string
 }
 
+// The model needs the id to pay, not the whole key.
+const maskKey = (key: string) => `******${key.slice(-4)}`
+
 export function makeChatTools(deps: ToolDeps) {
+  const contacts = makePixContacts(deps)
   async function allowedEntities(
     ctx: ToolContext,
   ): Promise<Map<string, EntityKind>> {
@@ -608,6 +617,114 @@ export function makeChatTools(deps: ToolDeps) {
     }
   }
 
+  const contactArgs = z.object({ query: z.string().trim().min(1).max(80) })
+
+  function findPixContacts(ctx: ToolContext): AgentTool {
+    return {
+      name: 'find_pix_contacts',
+      description:
+        'Find saved Pix contacts by name, part of a name or @handle, best match first.',
+      parameters: object({ query: text('Name or @handle') }, ['query']),
+      async run(raw) {
+        const args = contactArgs.parse(raw)
+        const found = rankContacts(
+          await deps.pixContacts.list(ctx.tenantId),
+          args.query,
+        )
+        return found.slice(0, MAX_CONTACTS).map(contact => ({
+          id: contact.id,
+          name: sanitize(contact.name, 80),
+          handle: `@${contact.handle}`,
+          keyType: contact.pixKeyType,
+          key: maskKey(contact.pixKey),
+          timesPaid: contact.timesPaid,
+        }))
+      },
+    }
+  }
+
+  const sendPixArgs = z
+    .object({
+      contactId: z.string().min(1).optional(),
+      name: z.string().trim().min(1).max(80).optional(),
+      pixKey: z.string().trim().min(1).max(120).optional(),
+      pixKeyType: z.enum(PIX_KEY_TYPES).optional(),
+      amount: z.number().positive().max(1_000_000),
+    })
+    .refine(args => Boolean(args.contactId ?? (args.name && args.pixKey)), {
+      message:
+        'Give the contactId of a saved contact, or the name and the Pix key of a new one.',
+    })
+
+  function recipientOf(args: z.infer<typeof sendPixArgs>): PixRecipient {
+    if (args.contactId) {
+      return { contactId: args.contactId }
+    }
+    return {
+      name: args.name as string,
+      pixKey: args.pixKey as string,
+      pixKeyType: args.pixKeyType,
+    }
+  }
+
+  function sendPix(ctx: ToolContext): AgentTool {
+    return {
+      name: 'send_pix',
+      description:
+        'Propose a Pix transfer to a saved contact (contactId) or to someone new (name and Pix key, saved as a contact when the user confirms). The user must confirm in the app.',
+      parameters: object(
+        {
+          contactId: text('Id from find_pix_contacts'),
+          name: text('Full name of a new recipient'),
+          pixKey: text(
+            'Pix key of a new recipient: CPF, CNPJ, e-mail, phone or random key',
+          ),
+          pixKeyType: { type: 'string', enum: [...PIX_KEY_TYPES] },
+          amount: {
+            type: 'number',
+            description: 'Amount in reais, such as 50.5',
+          },
+        },
+        ['amount'],
+      ),
+      async run(raw) {
+        const args = sendPixArgs.parse(raw)
+        const { contact, isNew } = await contacts.resolve(
+          ctx.tenantId,
+          recipientOf(args),
+        )
+        const amount = Money.of(Math.round(args.amount * 100))
+        const entity = scopeKind(ctx.scope)
+        const target: Record<string, string> = isNew
+          ? {
+              name: contact.name,
+              pixKey: contact.pixKey,
+              pixKeyType: contact.pixKeyType,
+            }
+          : { contactId: contact.id }
+        const action = await ctx.propose({
+          tool: 'SEND_PIX',
+          entity,
+          needsEntity: entity === null,
+          target: { ...target, amountCents: String(amount.cents) },
+          details: {
+            payee: sanitize(contact.name, 80),
+            amount: amount.toJSON(),
+            dueDate: today(deps.clock.now()),
+            pixKey: contact.pixKey,
+            pixKeyType: contact.pixKeyType,
+            contactHandle: contact.handle,
+            newContact: isNew,
+          },
+        })
+        return {
+          ...pendingReply(action),
+          contact: { name: contact.name, handle: `@${contact.handle}`, isNew },
+        }
+      },
+    }
+  }
+
   return function toolsFor(ctx: ToolContext): AgentTool[] {
     return [
       queryTransactions(ctx),
@@ -620,6 +737,8 @@ export function makeChatTools(deps: ToolDeps) {
       payBill(ctx),
       createCategoryRule(ctx),
       draftInvoice(ctx),
+      findPixContacts(ctx),
+      sendPix(ctx),
     ]
   }
 }

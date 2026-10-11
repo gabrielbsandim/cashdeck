@@ -39,6 +39,7 @@ import { Money, type Transaction } from '@cashdeck/domain'
 import {
   PrismaCategoryRepository,
   PrismaChatRepository,
+  PrismaPixContactRepository,
 } from '@/repositories/prisma-insights'
 import {
   PrismaIndexRateRepository,
@@ -919,5 +920,6 @@ export function createPrismaRecords(db: PrismaClient) {
     webhookEvents: new PrismaWebhookEventStore(db),
     categories: new PrismaCategoryRepository(db),
     chat: new PrismaChatRepository(db),
+    pixContacts: new PrismaPixContactRepository(db),
   }
 }

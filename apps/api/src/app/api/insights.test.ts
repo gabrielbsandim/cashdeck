@@ -26,6 +26,15 @@ import {
   GET as listMessages,
   POST as sendMessage,
 } from '@/app/api/v1/chat/threads/[id]/messages/route'
+import { POST as regenerate } from '@/app/api/v1/chat/threads/[id]/messages/[messageId]/regenerate/route'
+import {
+  GET as listPixContacts,
+  POST as createPixContact,
+} from '@/app/api/v1/pix-contacts/route'
+import {
+  DELETE as removePixContact,
+  PATCH as updatePixContact,
+} from '@/app/api/v1/pix-contacts/[id]/route'
 import { POST as confirmAction } from '@/app/api/v1/chat/actions/[id]/confirm/route'
 import { POST as cancelAction } from '@/app/api/v1/chat/actions/[id]/cancel/route'
 import { POST as syncConnection } from '@/app/api/v1/open-finance/connections/[id]/sync/route'
@@ -393,6 +402,31 @@ describe('chat', () => {
     expect(missing.status).toBe(404)
   })
 
+  it('edits a message and answers it again', async () => {
+    const thread = await call(createThread, 'POST', { body: { scope: 'PF' } })
+    const params = { id: thread.body.data.id as string }
+    llm().enqueue({ text: 'Oi!', toolCalls: [], usage, stopReason: 'end' })
+    const sent = await call(sendMessage, 'POST', {
+      params,
+      body: { text: 'Oi', clientId: 'client-0001' },
+    })
+    const userId = sent.body.data.messages[0].id as string
+    llm().enqueue({ text: 'Olá!', toolCalls: [], usage, stopReason: 'end' })
+    const edited = await call(regenerate, 'POST', {
+      params: { ...params, messageId: userId },
+      body: { text: 'Olá' },
+    })
+    expect(edited.status).toBe(201)
+    expect(
+      edited.body.data.messages.map((m: { text: string }) => m.text),
+    ).toEqual(['Olá', 'Olá!'])
+    const assistantId = edited.body.data.messages[1].id as string
+    const refused = await call(regenerate, 'POST', {
+      params: { ...params, messageId: assistantId },
+    })
+    expect(refused.status).toBe(422)
+  })
+
   it('reads the chat settings from the environment', () => {
     expect(chatConfig(readEnv({}))).toMatchObject({
       enabled: true,
@@ -421,5 +455,39 @@ describe('chat', () => {
     expect(
       buildContainer(readEnv({ CHAT_ENABLED: 'false' })).chat,
     ).toBeDefined()
+  })
+})
+
+describe('pix contacts', () => {
+  it('saves, finds, edits and removes a contact', async () => {
+    const created = await call(createPixContact, 'POST', {
+      body: { name: 'Ana Souza', pixKey: 'ana@example.com' },
+    })
+    expect(created.status).toBe(201)
+    expect(created.body.data).toMatchObject({
+      handle: 'ana',
+      pixKeyType: 'EMAIL',
+      timesPaid: 0,
+    })
+    const id = created.body.data.id as string
+    const taken = await call(createPixContact, 'POST', {
+      body: { name: 'Ana', pixKey: 'ana@example.com' },
+    })
+    expect(taken.status).toBe(409)
+    const invalid = await call(createPixContact, 'POST', {
+      body: { name: 'Bia', pixKey: 'nope' },
+    })
+    expect(invalid.status).toBe(422)
+    const found = await call(listPixContacts, 'GET', { query: '?search=souza' })
+    expect(found.body.data.map((c: { id: string }) => c.id)).toEqual([id])
+    const updated = await call(updatePixContact, 'PATCH', {
+      params: { id },
+      body: { handle: '@aninha' },
+    })
+    expect(updated.body.data.handle).toBe('aninha')
+    const removed = await call(removePixContact, 'DELETE', { params: { id } })
+    expect(removed.body.data).toEqual({ id })
+    const all = await call(listPixContacts, 'GET')
+    expect(all.body.data).toEqual([])
   })
 })

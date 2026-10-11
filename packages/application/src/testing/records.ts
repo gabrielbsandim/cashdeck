@@ -1,6 +1,7 @@
 import {
   type Category,
   type CategoryRule,
+  type PixContact,
   type Transaction,
 } from '@cashdeck/domain'
 import { type Page, type PageRequest } from '@/ports/repositories'
@@ -26,6 +27,7 @@ import {
   type InvoiceFilter,
   type InvoiceRepository,
   type InvoiceTemplate,
+  type PixContactRepository,
   type Recurrence,
   type RecurrenceRepository,
   type TransactionFilter,
@@ -467,5 +469,28 @@ export class InMemoryCategoryRepository
 
   async saveRule(rule: CategoryRule): Promise<void> {
     this.rules.set(key(rule.tenantId, rule.id), rule)
+  }
+}
+
+export class InMemoryPixContactRepository implements PixContactRepository {
+  private readonly rows = new Map<string, PixContact>()
+
+  async list(tenantId: string): Promise<PixContact[]> {
+    return [...this.rows.values()].filter(row => row.tenantId === tenantId)
+  }
+
+  async findById(tenantId: string, id: string): Promise<PixContact | null> {
+    const row = this.rows.get(id)
+    return row?.tenantId === tenantId ? row : null
+  }
+
+  async save(contact: PixContact): Promise<void> {
+    this.rows.set(contact.id, contact)
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    if (this.rows.get(id)?.tenantId === tenantId) {
+      this.rows.delete(id)
+    }
   }
 }

@@ -1,6 +1,7 @@
 import {
   type Category,
   type CategoryRule,
+  type PixContact,
   type LocalDate,
   type Money,
   type Transaction,
@@ -306,4 +307,12 @@ export interface CategoryRepository {
   save(category: Category): Promise<void>
   listRules(tenantId: string): Promise<CategoryRule[]>
   saveRule(rule: CategoryRule): Promise<void>
+}
+
+// People the user sends Pix to, so the next transfer needs only a name.
+export interface PixContactRepository {
+  list(tenantId: string): Promise<PixContact[]>
+  findById(tenantId: string, id: string): Promise<PixContact | null>
+  save(contact: PixContact): Promise<void>
+  delete(tenantId: string, id: string): Promise<void>
 }

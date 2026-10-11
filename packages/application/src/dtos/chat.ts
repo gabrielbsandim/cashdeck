@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PIX_KEY_TYPES } from '@cashdeck/domain'
 import { entityKindSchema, moneyViewSchema, uploadSchema } from '@/dtos/common'
 import {
   CHAT_ACTION_STATUSES,
@@ -42,6 +43,11 @@ export const sendMessageSchema = z
   .object({
     text: z.string().max(4000).default(''),
     attachments: z.array(chatUploadSchema).max(3).default([]),
+    // Sent again on a retry, so a reply that did arrive is not paid for twice.
+    clientId: z
+      .string()
+      .regex(/^[\w-]{8,64}$/)
+      .optional(),
   })
   .refine(
     input => input.text.trim().length > 0 || input.attachments.length > 0,
@@ -57,6 +63,10 @@ export const sendMessageSchema = z
   )
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>
+
+export const regenerateSchema = z.object({
+  text: z.string().max(4000).optional(),
+})
 
 export const chatAttachmentViewSchema = z.object({
   id: z.string(),
@@ -80,6 +90,10 @@ export const chatActionViewSchema = z.object({
     pattern: z.string().nullable(),
     category: z.string().nullable(),
     payer: z.string().nullable(),
+    pixKey: z.string().nullable(),
+    pixKeyType: z.enum(PIX_KEY_TYPES).nullable(),
+    contactHandle: z.string().nullable(),
+    newContact: z.boolean().nullable(),
   }),
   result: z
     .object({
@@ -87,6 +101,7 @@ export const chatActionViewSchema = z.object({
       invoiceId: z.string().nullable(),
       ruleId: z.string().nullable(),
       updated: z.int().nullable(),
+      contactId: z.string().nullable(),
     })
     .nullable(),
   error: z.string().nullable(),

@@ -42,6 +42,7 @@ import {
   InMemoryDocumentStore,
   InMemoryInstitutionRepository,
   InMemoryInvoiceRepository,
+  InMemoryPixContactRepository,
   InMemoryTransactionRepository,
   InMemoryTransferRepository,
 } from '@/testing/records'
@@ -97,6 +98,7 @@ export function fullDeps(options: Options = {}) {
     budgets: options.budgets ?? new InMemoryBudgetRepository(),
     categories: new InMemoryCategoryRepository(),
     chat: new InMemoryChatRepository(),
+    pixContacts: new InMemoryPixContactRepository(),
     attachments: new InMemoryAttachmentRepository(),
     documents: new InMemoryDocumentStore(),
     secrets: new InMemorySecretStore(),
