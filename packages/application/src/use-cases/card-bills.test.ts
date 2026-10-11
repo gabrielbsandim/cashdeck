@@ -61,8 +61,10 @@ describe('card bills', () => {
         openBill: Money.of(40),
       }),
     )
+    await deps.accounts.save(card('g', 0, null))
     await deps.accounts.save(account({ id: 'checking', entityId: 'pf' }))
     await deps.cardBills.saveAll([
+      stored('g', '2026-10-16', '2026-10-11', 69_110),
       stored('a', '2026-09-22', '2026-09-12', 90_000),
       stored('a', '2026-08-22', null, 80_000),
       stored('b', '2026-10-10', '2026-10-03', 20_000),
@@ -74,7 +76,7 @@ describe('card bills', () => {
     const view = await makeListCardBills(deps)(TENANT, 'PF')
 
     const byId = new Map(view.cards.map(item => [item.accountId, item]))
-    expect(view.cards).toHaveLength(6)
+    expect(view.cards).toHaveLength(7)
     expect(byId.get('a')).toEqual({
       accountId: 'a',
       name: 'Cartao a',
@@ -133,6 +135,9 @@ describe('card bills', () => {
       }),
     ])
     expect(byId.get('e')?.bills).toEqual([])
+    expect(byId.get('g')?.bills).toEqual([
+      expect.objectContaining({ dueOn: '2026-10-16', state: 'OPEN' }),
+    ])
     expect(byId.get('f')?.bills).toEqual([
       {
         closesOn: null,

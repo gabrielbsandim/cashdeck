@@ -129,7 +129,9 @@ export function cardBillsOf(
     total: bill.total,
     minimum: bill.minimum,
   }))
-  const open = openBill(card, stored, gap, day)
+  // A stored bill that has not closed yet is the open one already.
+  const filling = dated.some(bill => day <= bill.closesOn)
+  const open = filling ? null : openBill(card, stored, gap, day)
   const known = new Set(dated.map(bill => bill.dueOn))
   const bills = [...(open && !known.has(open.dueOn) ? [open] : []), ...dated]
     .sort((a, b) => b.dueOn.localeCompare(a.dueOn))
