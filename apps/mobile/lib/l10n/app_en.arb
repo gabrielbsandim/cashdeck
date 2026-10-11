@@ -28,9 +28,6 @@
   "showAmounts": "Show amounts",
   "hideAmountsSetting": "Hide amounts on screen",
   "themeTitle": "Theme",
-  "themeSystem": "System",
-  "themeLight": "Light",
-  "themeDark": "Dark",
   "billsEmptyTitle": "No bills here",
   "billsEmptyMessage": "Bills from email, the camera and the chat show up in this list.",
   "billDetailTitle": "Bill",
@@ -790,6 +787,14 @@
   "settingsProfileTitle": "Personal + Company",
   "settingsProfileHint": "Profiles, CPF and CNPJ · self-hosted",
   "settingsPrivacy": "Privacy",
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "insightsTitle": "Insights",
   "installmentsTitle": "Installments",
   "subscriptionsTitle": "Subscriptions",

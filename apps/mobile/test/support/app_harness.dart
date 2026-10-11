@@ -1,5 +1,6 @@
 import 'package:cashdeck/app/app.dart';
 import 'package:cashdeck/app/router/app_router.dart';
+import 'package:cashdeck/core/config/app_version.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
@@ -12,6 +13,9 @@ import 'package:go_router/go_router.dart';
 
 import 'builders.dart';
 import 'pump_app.dart';
+
+/// A fictional build, so no test reaches the platform channel.
+const testVersion = '1.2.0 (7)';
 
 /// The whole app on the fake backend at [testNow], opened at [location].
 Future<ProviderContainer> pumpRoute(
@@ -29,6 +33,7 @@ Future<ProviderContainer> pumpRoute(
     ProviderScope(
       overrides: [
         clockProvider.overrideWithValue(FixedClock(testNow)),
+        appVersionProvider.overrideWith((ref) async => testVersion),
         ...overrides,
       ],
       child: const CashdeckApp(),

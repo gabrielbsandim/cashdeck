@@ -1,6 +1,5 @@
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,18 +39,11 @@ void main() {
       return container;
     }
 
-    launch().read(displayPreferencesProvider.notifier)
-      ..setThemeMode(ThemeMode.dark)
-      ..toggleHideAmounts();
+    launch().read(displayPreferencesProvider.notifier).toggleHideAmounts();
 
     expect(
       launch().read(displayPreferencesProvider),
-      const DisplayPreferences(themeMode: ThemeMode.dark, hideAmounts: true),
-    );
-    store.setString(DisplayPreferencesController.themeKey, 'neon').ignore();
-    expect(
-      launch().read(displayPreferencesProvider).themeMode,
-      ThemeMode.system,
+      const DisplayPreferences(hideAmounts: true),
     );
   });
 }

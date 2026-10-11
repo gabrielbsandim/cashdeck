@@ -28,9 +28,6 @@
   "showAmounts": "Mostrar valores",
   "hideAmountsSetting": "Ocultar valores na tela",
   "themeTitle": "Tema",
-  "themeSystem": "Sistema",
-  "themeLight": "Claro",
-  "themeDark": "Escuro",
   "billsEmptyTitle": "Nenhuma conta por aqui",
   "billsEmptyMessage": "Boletos do e-mail, da câmera e do chat aparecem nesta lista.",
   "billDetailTitle": "Conta",
@@ -1949,6 +1946,14 @@
   "settingsProfileTitle": "Pessoal + Empresa",
   "settingsProfileHint": "Perfis, CPF e CNPJ · servidor próprio",
   "settingsPrivacy": "Privacidade",
+  "settingsVersion": "Versão {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "insightsTitle": "Análises",
   "installmentsTitle": "Parcelamentos",
   "subscriptionsTitle": "Assinaturas",

@@ -26,8 +26,8 @@ Screens read colors only through `context.palette`, `context.money` and
 Geist and Geist Mono are bundled under `assets/fonts` with their OFL license
 (`assets/fonts/OFL.txt`).
 
-The theme mode (system, light, dark) and the privacy mode are chosen in Mais
-and held in `displayPreferencesProvider`.
+The theme always follows the phone's system setting. The privacy mode is
+chosen in Ajustes and held in `displayPreferencesProvider`.
 
 ## Rules from the brief
 

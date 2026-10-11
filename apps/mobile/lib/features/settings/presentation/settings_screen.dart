@@ -1,10 +1,12 @@
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/core/config/app_version.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
+import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
+import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
-import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/features/auth/auth_providers.dart';
@@ -19,7 +21,7 @@ import 'package:material_symbols_icons/symbols.dart';
 class SettingsScreen extends ConsumerWidget {
   const new({super.key});
 
-  static const themeSelectorKey = Key('settings-theme');
+  static const versionKey = Key('settings-version');
   static const hideAmountsKey = Key('settings-hide-amounts');
   static const signOutKey = Key('settings-sign-out');
   static const pauseKey = Key('settings-pause');
@@ -32,6 +34,7 @@ class SettingsScreen extends ConsumerWidget {
     final prefs = ref.watch(displayPreferencesProvider);
     final controller = ref.read(displayPreferencesProvider.notifier);
     final paused = ref.watch(automationControllerProvider).value?.paused;
+    final version = ref.watch(appVersionProvider).value;
     Widget link(IconData icon, String title, String subtitle, String route) =>
         CdListRow(
           key: rowKey(route),
@@ -145,21 +148,6 @@ class SettingsScreen extends ConsumerWidget {
             AppRoutes.accountantExport,
           ),
           section(l10n.settingsSectionAppearance),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenGutter,
-            ),
-            child: CdSegmented<ThemeMode>(
-              key: themeSelectorKey,
-              segments: [
-                CdSegment(ThemeMode.system, l10n.themeSystem),
-                CdSegment(ThemeMode.light, l10n.themeLight),
-                CdSegment(ThemeMode.dark, l10n.themeDark),
-              ],
-              selected: prefs.themeMode,
-              onChanged: controller.setThemeMode,
-            ),
-          ),
           CdListRow(
             key: hideAmountsKey,
             icon: Symbols.visibility_off_rounded,
@@ -195,6 +183,19 @@ class SettingsScreen extends ConsumerWidget {
             title: l10n.signOutButton,
             onTap: () => ref.read(signOutProvider).call(),
           ),
+          if (version != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xl),
+              child: Text(
+                l10n.settingsVersion(version),
+                key: versionKey,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMd.copyWith(
+                  fontSize: 12,
+                  color: context.palette.onSurfaceVariant,
+                ),
+              ),
+            ),
         ],
       ),
     );

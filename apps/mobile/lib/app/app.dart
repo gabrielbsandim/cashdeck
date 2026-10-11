@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cashdeck/app/router/app_router.dart';
 import 'package:cashdeck/app/router/app_routes.dart';
-import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/core/theme/app_theme.dart';
@@ -58,14 +57,10 @@ class _CashdeckAppState extends ConsumerState<CashdeckApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(
-      displayPreferencesProvider.select((prefs) => prefs.themeMode),
-    );
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: themeMode,
       localeResolutionCallback: CashdeckApp.resolveLocale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -63,12 +63,10 @@ void main() {
     expect(bar.items[2].label, l10n.tabBills);
   });
 
-  testWidgets('switches to the dark theme from Ajustes', (tester) async {
+  testWidgets('follows the dark mode of the phone', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     await pumpRoute(tester, AppRoutes.settings);
-    expect(find.byType(SettingsScreen), findsOneWidget);
-
-    await tester.tap(find.text(l10n.themeDark));
-    await settle(tester);
 
     final context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.dark);

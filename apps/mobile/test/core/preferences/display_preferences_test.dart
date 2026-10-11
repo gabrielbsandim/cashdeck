@@ -1,10 +1,9 @@
 import 'package:cashdeck/core/preferences/display_preferences.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('starts on the system theme with amounts visible', () {
+  test('starts with amounts visible', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -14,18 +13,15 @@ void main() {
     );
   });
 
-  test('changes the theme and toggles the privacy mode', () {
+  test('toggles the privacy mode', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
-    final controller = container.read(displayPreferencesProvider.notifier);
 
-    controller
-      ..setThemeMode(ThemeMode.dark)
-      ..toggleHideAmounts();
+    container.read(displayPreferencesProvider.notifier).toggleHideAmounts();
 
     expect(
       container.read(displayPreferencesProvider),
-      const DisplayPreferences(themeMode: ThemeMode.dark, hideAmounts: true),
+      const DisplayPreferences(hideAmounts: true),
     );
   });
 }

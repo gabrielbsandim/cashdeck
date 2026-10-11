@@ -16,16 +16,15 @@ import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
 void main() {
-  testWidgets('changes the theme and the privacy mode', (tester) async {
+  testWidgets('toggles the privacy mode and shows the version', (tester) async {
     final app = await pumpRoute(tester, AppRoutes.settings);
 
-    await tester.tap(find.text(l10n.themeDark));
-    await settle(tester);
+    expect(find.text(l10n.settingsVersion(testVersion)), findsOneWidget);
     await tester.tap(find.byKey(SettingsScreen.hideAmountsKey));
     await settle(tester);
     expect(
       app.read(displayPreferencesProvider),
-      const DisplayPreferences(themeMode: ThemeMode.dark, hideAmounts: true),
+      const DisplayPreferences(hideAmounts: true),
     );
 
     await tester.tap(

@@ -39,7 +39,7 @@ lib/
     result/                 Result<T> (sealed)
     money/                  Money (integer cents + currency), MoneyFormat
     network/                Dio factory, error mapping, guardRequest, JSON reading
-    preferences/            theme mode and the privacy toggle (hide amounts)
+    preferences/            the privacy toggle (hide amounts)
     push/                   PushMessaging port, disabled default, Firebase adapter
     time/                   Clock port, CalendarDate, Brazil local time
     theme/                  tokens (AppPalette, spacing, radius, motion, type)
@@ -51,7 +51,7 @@ lib/
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
-    settings/               the Mais tab: theme and privacy
+    settings/               Ajustes: links, privacy and the app version
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
 tool/
   check.sh                  the gate
@@ -81,10 +81,10 @@ test/                       mirrors lib/ one to one
 
 - `entityScopeProvider` (`features/entities`): Pessoal, Empresa or
   Consolidado. Every list controller watches it, so switching refetches.
-- `displayPreferencesProvider` (`core/preferences`): theme mode and
-  `hideAmounts`. `AmountText` and `PrivacyToggle` read it, so every amount
-  follows the toggle without the screens passing a flag. Both live in memory
-  for now; persisting them is a follow-up.
+- `displayPreferencesProvider` (`core/preferences`): `hideAmounts`, saved on
+  the device. `AmountText` and `PrivacyToggle` read it, so every amount
+  follows the toggle without the screens passing a flag. The theme has no
+  setting: it follows the system.
 
 ## Navigation
 
