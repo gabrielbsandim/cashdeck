@@ -2,41 +2,50 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/core/location/address_reader.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// A circle around a place the user trusts, such as home.
+/// A circle around a place the user trusts, such as home. [name] starts as
+/// the street address and the user may rename it.
 final class SafeZone extends Equatable {
-  const new(this.center, {this.radiusMeters = defaultRadiusMeters});
+  const new(this.center, {this.radiusMeters = defaultRadiusMeters, this.name});
 
   /// Wide enough for the drift of a phone fix indoors.
   static const defaultRadiusMeters = 300;
 
   final GeoPoint center;
   final int radiusMeters;
+  final String? name;
 
   bool contains(GeoPoint point) => center.metersTo(point) <= radiusMeters;
+
+  SafeZone named(String name) =>
+      SafeZone(center, radiusMeters: radiusMeters, name: name);
 
   Map<String, Object> toJson() => {
     'lat': center.latitude,
     'lng': center.longitude,
     'radius': radiusMeters,
+    'name': ?name,
   };
 
   static SafeZone? fromJson(Object? json) {
     if (json is! Map) return null;
     final (lat, lng, radius) = (json['lat'], json['lng'], json['radius']);
     if (lat is! num || lng is! num || radius is! int) return null;
+    final name = json['name'];
     return SafeZone(
       GeoPoint(lat.toDouble(), lng.toDouble()),
       radiusMeters: radius,
+      name: name is String ? name : null,
     );
   }
 
   @override
-  List<Object?> get props => [center, radiusMeters];
+  List<Object?> get props => [center, radiusMeters, name];
 }
 
 enum ZoneStatus { unknown, inside, outside }
@@ -140,8 +149,18 @@ class SafeModeController extends Notifier<SafeModeState> {
     if (state.limited) return SafeZoneChange.limited;
     final point = await ref.read(locationReaderProvider).current();
     if (point == null) return SafeZoneChange.noLocation;
-    await _save([...state.zones, SafeZone(point)]);
+    final address = await ref.read(addressReaderProvider).addressOf(point);
+    await _save([...state.zones, SafeZone(point, name: address)]);
     state = state.copyWith(status: ZoneStatus.inside);
+    return SafeZoneChange.saved;
+  }
+
+  Future<SafeZoneChange> renameZone(SafeZone zone, String name) async {
+    if (state.limited) return SafeZoneChange.limited;
+    await _save([
+      for (final each in state.zones)
+        if (each == zone) each.named(name) else each,
+    ]);
     return SafeZoneChange.saved;
   }
 

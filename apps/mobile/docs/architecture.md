@@ -36,7 +36,7 @@ lib/
     config/                 AppConfig from --dart-define
     di/                     core providers (AppConfig, Dio, Clock)
     error/                  AppFailure (sealed), LoadFailure, user messages
-    location/               LocationReader port, GeoPoint, geolocator adapter
+    location/               LocationReader and AddressReader ports, GeoPoint, adapters
     result/                 Result<T> (sealed)
     money/                  Money (integer cents + currency), MoneyFormat
     network/                Dio factory, error mapping, guardRequest, JSON reading
@@ -52,7 +52,7 @@ lib/
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
-    settings/               Ajustes: links, privacy, the safe zone and the app version
+    settings/               Ajustes: links, privacy, the safe zones and the app version
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
 tool/
   check.sh                  the gate
@@ -93,7 +93,8 @@ test/                       mirrors lib/ one to one
   client refuses every request but GET, the confirm sheet refuses, and the
   router sends the chat, receipts, shared files and settings subpages back
   home. Ten quick taps on the version in Ajustes, plus the device check,
-  release it for an hour. Zones change only while not limited.
+  release it for an hour. A new zone is named by its street address
+  (reverse geocoding) and can be renamed. Zones change only while not limited.
 
 ## Navigation
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/core/location/address_reader.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
@@ -14,6 +15,7 @@ import '../../support/safe_mode_support.dart';
 void main() {
   late InMemoryKeyValueStore store;
   late FakeLocationReader reader;
+  late FakeAddressReader addresses;
   late FixedClock clock;
 
   ProviderContainer container() {
@@ -21,6 +23,7 @@ void main() {
       overrides: [
         keyValueStoreProvider.overrideWithValue(store),
         locationReaderProvider.overrideWithValue(reader),
+        addressReaderProvider.overrideWithValue(addresses),
         clockProvider.overrideWithValue(clock),
       ],
     );
@@ -31,6 +34,7 @@ void main() {
   setUp(() {
     store = InMemoryKeyValueStore();
     reader = FakeLocationReader(homePoint);
+    addresses = FakeAddressReader();
     clock = FixedClock(DateTime.utc(2026, 10, 8, 15));
   });
 
@@ -147,6 +151,28 @@ void main() {
     expect(app.read(safeModeLimitedProvider), isTrue);
   });
 
+  test('names a zone by its address and renames it at home', () async {
+    addresses.address = 'Rua A, 1';
+    final app = container();
+    final mode = app.read(safeModeProvider.notifier);
+    await mode.addCurrentLocation();
+    const named = SafeZone(homePoint, name: 'Rua A, 1');
+    expect(app.read(safeModeProvider).zones, [named]);
+
+    expect(await mode.renameZone(named, 'Casa'), SafeZoneChange.saved);
+    expect(container().read(safeModeProvider).zones, [
+      const SafeZone(homePoint, name: 'Casa'),
+    ]);
+
+    reader.point = awayPoint;
+    await mode.check();
+    expect(
+      await mode.renameZone(app.read(safeModeProvider).zones.single, 'Outro'),
+      SafeZoneChange.limited,
+    );
+    expect(app.read(safeModeProvider).zones.single.name, 'Casa');
+  });
+
   test('removing the last zone turns the mode off', () async {
     final app = container();
     final mode = app.read(safeModeProvider.notifier);
@@ -179,6 +205,10 @@ void main() {
     expect(
       SafeZone.fromJson({'lat': 1, 'lng': 2.5, 'radius': 50}),
       const SafeZone(GeoPoint(1, 2.5), radiusMeters: 50),
+    );
+    expect(
+      SafeZone.fromJson({'lat': 1, 'lng': 2, 'radius': 50, 'name': 7}),
+      const SafeZone(GeoPoint(1, 2), radiusMeters: 50),
     );
   });
 

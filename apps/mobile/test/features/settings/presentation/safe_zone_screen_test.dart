@@ -1,5 +1,6 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/core/location/address_reader.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/security/safe_mode.dart';
@@ -30,12 +31,18 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('saves this place and removes it again', (tester) async {
+  testWidgets('saves this place by its address, renames and removes it', (
+    tester,
+  ) async {
+    const address = 'Rua das Flores, 10, Centro';
     final reader = FakeLocationReader(homePoint);
     final app = await pumpRoute(
       tester,
       AppRoutes.safeZone,
-      overrides: [locationReaderProvider.overrideWithValue(reader)],
+      overrides: [
+        locationReaderProvider.overrideWithValue(reader),
+        addressReaderProvider.overrideWithValue(FakeAddressReader(address)),
+      ],
     );
     expect(find.text(l10n.safeZoneOff), findsOneWidget);
     expect(find.text(l10n.safeZoneEmpty), findsOneWidget);
@@ -43,8 +50,22 @@ void main() {
     await tester.tap(find.byKey(SafeZoneScreen.addKey));
     await settle(tester);
     expect(find.text(l10n.safeZoneSaved), findsOneWidget);
-    expect(find.text(l10n.safeZoneItem(1, 300)), findsOneWidget);
+    expect(find.text(address), findsOneWidget);
+    expect(find.text(l10n.safeZoneRadius(300)), findsOneWidget);
     expect(find.text(l10n.safeZoneInside), findsOneWidget);
+    await waitForToast(tester);
+
+    await tester.tap(find.byKey(SafeZoneScreen.renameKey(0)));
+    await settle(tester);
+    final save = find.byKey(SafeZoneNameSheet.saveKey);
+    expect(tester.widget<CdButton>(save).onPressed, isNull);
+    await tester.enterText(find.byKey(SafeZoneNameSheet.fieldKey), '  Casa ');
+    await tester.pump();
+    await tester.tap(save);
+    await settle(tester);
+    expect(find.text('Casa'), findsOneWidget);
+    expect(find.text(l10n.safeZoneRenamed), findsOneWidget);
+    expect(app.read(safeModeProvider).zones.single.name, 'Casa');
     await waitForToast(tester);
 
     await tester.tap(find.byKey(SafeZoneScreen.removeKey(0)));
@@ -63,7 +84,12 @@ void main() {
     await pumpRoute(tester, AppRoutes.safeZone, overrides: safeModeOverrides());
 
     expect(find.text(l10n.safeZoneOutside), findsOneWidget);
+    expect(find.text(l10n.safeZoneItem(1)), findsOneWidget);
     expect(find.byKey(SafeZoneScreen.limitedNoteKey), findsOneWidget);
+    final rename = tester.widget<IconButton>(
+      find.byKey(SafeZoneScreen.renameKey(0)),
+    );
+    expect(rename.onPressed, isNull);
     final add = tester.widget<CdButton>(find.byKey(SafeZoneScreen.addKey));
     expect(add.onPressed, isNull);
     final remove = tester.widget<IconButton>(

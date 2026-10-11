@@ -2640,18 +2640,28 @@
   "safeZoneAddHere": "Usar a localização atual",
   "safeZoneSaved": "Zona segura salva",
   "safeZoneNoLocation": "Não conseguimos a localização. Confira a permissão e o GPS.",
-  "safeZoneItem": "Local {number} · raio de {radius} m",
+  "safeZoneItem": "Local {number}",
   "@safeZoneItem": {
     "placeholders": {
       "number": {
         "type": "int"
-      },
+      }
+    }
+  },
+  "safeZoneRadius": "Raio de {radius} m",
+  "@safeZoneRadius": {
+    "placeholders": {
       "radius": {
         "type": "int"
       }
     }
   },
   "safeZoneRemove": "Remover",
+  "safeZoneRename": "Renomear",
+  "safeZoneNameTitle": "Nome do local",
+  "safeZoneNameLabel": "Nome",
+  "safeZoneNameHelper": "Começa com o endereço; use um apelido como Casa.",
+  "safeZoneRenamed": "Nome salvo",
   "safeZoneLimitedNote": "Para mudar as zonas, volte para uma delas.",
   "safeZoneEndRelease": "Limitar",
   "safeZoneEmpty": "Nenhuma zona ainda. Em casa, toque abaixo para salvar este lugar.",
