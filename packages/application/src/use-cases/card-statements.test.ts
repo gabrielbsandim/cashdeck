@@ -301,6 +301,7 @@ describe('card statements', () => {
       'statement:2026-10-05:2026-10-02:5999:1',
     ])
     expect((await statements.get(TENANT, draft.id)).accountId).toBe('card')
+    expect(await statements.latest(TENANT)).toBeNull()
     const { accountId: _, ...older } = (await deps.documents.get<object>(
       TENANT,
       'card-statements',

@@ -200,8 +200,12 @@ export function makeCardStatements(deps: StatementDeps) {
 
   async function latest(tenantId: string): Promise<CardStatementView | null> {
     const all = await deps.documents.list<StoredStatement>(tenantId, COLLECTION)
+    // Posted lines already sit in the card account with its bill recorded, so
+    // only a statement neither billed nor posted is still waiting on the user.
     const open = all
-      .filter(statement => statement.billId === null)
+      .filter(
+        statement => statement.billId === null && statement.accountId === null,
+      )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     return open[0] ? view(tenantId, open[0]) : null
   }
