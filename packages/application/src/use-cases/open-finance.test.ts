@@ -172,6 +172,42 @@ describe('open finance', () => {
     expect(await deps.transactions.all(TENANT, {})).toHaveLength(1)
   })
 
+  it('fills the other side of a known row when the provider names it', async () => {
+    const named = provider()
+    const list = named.listTransactions.bind(named)
+    let calls = 0
+    named.listTransactions = async (connection, accountId, range) => {
+      calls += 1
+      const fetched = await list(connection, accountId, range)
+      return calls === 1
+        ? fetched
+        : fetched.map(tx => ({
+            ...tx,
+            merchant: 'Fulano de Tal',
+            counterparty: '529.982.247-25',
+          }))
+    }
+    const { deps, of } = setup(named)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1'],
+    })
+    await of.sync(TENANT, connectionId)
+    const [first] = await deps.transactions.all(TENANT, {})
+    expect(first).toMatchObject({ merchant: null, counterparty: null })
+    await deps.transactions.save({ ...first!, merchant: 'Feira' })
+
+    await of.sync(TENANT, connectionId)
+
+    expect(await deps.transactions.all(TENANT, {})).toEqual([
+      expect.objectContaining({
+        merchant: 'Feira',
+        counterparty: '52998224725',
+      }),
+    ])
+  })
+
   it('confirms a preview the provider brings instead of storing it twice', async () => {
     const collected = provider()
     collected.getItem = async () => ({

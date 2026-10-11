@@ -112,6 +112,7 @@ type PluggyAccount = {
 }
 
 type PluggyParty = {
+  name?: string | null
   documentNumber?: { value?: string | null } | null
 }
 
@@ -460,11 +461,16 @@ function withoutRepeatedPayments(transactions: readonly PluggyTransaction[]) {
   return transactions.filter(tx => !repeated(tx))
 }
 
-function counterpartyOf(tx: PluggyTransaction): string | null {
-  const party =
-    tx.type === 'CREDIT' ? tx.paymentData?.payer : tx.paymentData?.receiver
-  return party?.documentNumber?.value ?? null
-}
+const partyOf = (tx: PluggyTransaction) =>
+  tx.type === 'CREDIT' ? tx.paymentData?.payer : tx.paymentData?.receiver
+
+// A Pix or a transfer has no merchant, and its description is often just the
+// bank's label, so the other side's name says who it was.
+const merchantOf = (tx: PluggyTransaction) =>
+  tx.merchant?.name ||
+  tx.merchant?.businessName ||
+  partyOf(tx)?.name?.trim() ||
+  null
 
 function toTransaction(
   tx: PluggyTransaction,
@@ -478,8 +484,8 @@ function toTransaction(
     currency: tx.currencyCode ?? 'BRL',
     bookedOn: tx.date ? toLocalDate(new Date(tx.date)) : '',
     description: tx.description ?? '',
-    merchant: tx.merchant?.name || tx.merchant?.businessName || null,
-    counterparty: counterpartyOf(tx),
+    merchant: merchantOf(tx),
+    counterparty: partyOf(tx)?.documentNumber?.value ?? null,
     bankCategory: tx.category ?? null,
     installment: toInstallment(tx.creditCardMetadata),
     openBillCents: openBillCents(tx),

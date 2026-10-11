@@ -5,6 +5,7 @@ import {
   createTransaction,
   type CreditLine,
   Money,
+  type Transaction,
 } from '@cashdeck/domain'
 import { type z } from 'zod'
 import { money } from '@/dtos/common'
@@ -462,6 +463,38 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     collectedOn: string | null
   }
 
+  // Rows synced before the provider named the other side keep it empty, and
+  // only new rows are saved, so a later sync fills in what it now knows.
+  async function fillKnown(
+    tenantId: string,
+    account: Account,
+    fetched: readonly Transaction[],
+  ) {
+    const days = fetched
+      .map(tx => tx.bookedOn)
+      .filter(day => day !== '')
+      .sort()
+    const from = days.at(0)
+    if (!from) {
+      return
+    }
+    const remote = new Map(fetched.map(tx => [tx.externalId, tx]))
+    const stored = await deps.transactions.all(tenantId, {
+      accountIds: [account.id],
+      from,
+      to: days.at(-1) as string,
+    })
+    for (const tx of stored) {
+      const fresh = remote.get(tx.externalId)
+      const merchant = tx.merchant ?? fresh?.merchant ?? null
+      const counterparty = tx.counterparty ?? fresh?.counterparty ?? null
+      if (merchant === tx.merchant && counterparty === tx.counterparty) {
+        continue
+      }
+      await deps.transactions.save({ ...tx, merchant, counterparty })
+    }
+  }
+
   async function syncAccount(
     tenantId: string,
     account: Account,
@@ -486,6 +519,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     await deps.accounts.save(synced)
     await syncBills(context.connection, synced)
     const created = fetched.map(tx => toTransaction(tenantId, synced, tx))
+    await fillKnown(tenantId, synced, created)
     await settlePreviews(deps, synced, created, context.collectedOn)
     return deps.transactions.saveNew(created)
   }

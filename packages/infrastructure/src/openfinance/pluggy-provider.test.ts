@@ -178,7 +178,10 @@ describe('PluggyProvider', () => {
               type: 'CREDIT',
               date: '2026-10-05T03:00:00.000Z',
               paymentData: {
-                payer: { documentNumber: { value: '529.982.247-25' } },
+                payer: {
+                  name: ' Fulano de Tal ',
+                  documentNumber: { value: '529.982.247-25' },
+                },
                 receiver: { documentNumber: { value: '111.444.777-35' } },
               },
             },
@@ -261,7 +264,7 @@ describe('PluggyProvider', () => {
         externalId: 't3',
         amountCents: 100000,
         bookedOn: '2026-10-05',
-        merchant: null,
+        merchant: 'Fulano de Tal',
         counterparty: '529.982.247-25',
         installment: null,
         openBillCents: null,
