@@ -120,4 +120,27 @@ describe('installments', () => {
     ])
     expect(byName?.key).toBe('card|loja exemplo|10|10000')
   })
+
+  it('keeps the rounding cents of one installment in the same plan', () => {
+    const plans = groupInstallments(
+      [
+        ['first', -13_168, 1],
+        ['second', -13_166, 2],
+        ['other', -13_000, 1],
+      ].map(([id, cents, number]) =>
+        charge(id as string, {
+          cents: cents as number,
+          bookedOn: `2026-0${7 + (number as number)}-08`,
+          installment: { number: number as number, count: 3, purchaseOn: null },
+          description: 'SHOE STORE',
+        }),
+      ),
+    )
+    expect(
+      plans.map(plan => [plan.key, plan.number, plan.transactionIds]),
+    ).toEqual([
+      ['card|shoe store|3|13168', 2, ['second', 'first']],
+      ['card|shoe store|3|13000', 1, ['other']],
+    ])
+  })
 })

@@ -29,31 +29,50 @@ export function purchaseName(description: string): string {
 const installmentOf = (transaction: Transaction) =>
   transaction.installment as Installment
 
-function planKey(transaction: Transaction): string {
+function planBase(transaction: Transaction): string {
   const installment = installmentOf(transaction)
   const origin =
     installment.purchaseOn ??
     purchaseName(transaction.merchant ?? transaction.description).toLowerCase()
-  return [
-    transaction.accountId,
-    origin,
-    installment.count,
-    -transaction.amount.cents,
-  ].join('|')
+  return [transaction.accountId, origin, installment.count].join('|')
 }
 
 const isCharge = (transaction: Transaction) =>
   transaction.installment !== null && transaction.amount.isNegative()
 
+type PlanGroup = {
+  key: string
+  base: string
+  cents: number
+  charges: Transaction[]
+}
+
 export function groupInstallments(
   transactions: readonly Transaction[],
 ): InstallmentPlan[] {
-  const groups = new Map<string, Transaction[]>()
+  const groups: PlanGroup[] = []
   for (const transaction of transactions.filter(isCharge)) {
-    const key = planKey(transaction)
-    groups.set(key, [...(groups.get(key) ?? []), transaction])
+    const base = planBase(transaction)
+    const cents = -transaction.amount.cents
+    // Splitting a price leaves under a cent per installment, which the issuer
+    // adds to one of them, so the charges of one plan differ by that much.
+    const group = groups.find(
+      item =>
+        item.base === base &&
+        Math.abs(item.cents - cents) < installmentOf(transaction).count,
+    )
+    if (group) {
+      group.charges.push(transaction)
+      continue
+    }
+    groups.push({
+      key: `${base}|${cents}`,
+      base,
+      cents,
+      charges: [transaction],
+    })
   }
-  return [...groups].map(([key, charges]) => {
+  return groups.map(({ key, charges }) => {
     const ordered = [...charges].sort(
       (a, b) =>
         installmentOf(b).number - installmentOf(a).number ||
