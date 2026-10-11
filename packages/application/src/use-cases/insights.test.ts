@@ -275,9 +275,12 @@ describe('insight helpers', () => {
       type: 'CREDIT_CARD',
       credit: { ...CREDIT, dueOn: '2026-09-27' },
     })
-    const dues = new Map([['past', '2026-09-27']])
-    expect(cardsSummary([past, plain], dues, '2026-10-08')?.dueOn).toBe(
-      '2026-09-27',
-    )
+    const dues = new Map([
+      ['past', { total: Money.of(4_000), dueOn: '2026-09-27' }],
+    ])
+    expect(cardsSummary([past, plain], dues, '2026-10-08')).toMatchObject({
+      bill: cents(4_000),
+      dueOn: '2026-09-27',
+    })
   })
 })

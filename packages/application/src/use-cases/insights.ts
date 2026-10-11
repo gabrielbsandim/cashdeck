@@ -21,7 +21,11 @@ import {
   type InsightsOverview,
   type InsightsOverviewQuery,
 } from '@/dtos/insights'
-import { cardDues, type CardDues } from '@/use-cases/card-cycle'
+import {
+  type CardDue,
+  cardDues,
+  type CardDues,
+} from '@/use-cases/card-timeline'
 import { type Deps } from '@/use-cases/deps'
 import {
   addMonths,
@@ -255,13 +259,14 @@ function categoryItems(
   return { total: cents(total), items }
 }
 
-function earliestDue(
-  cards: readonly Account[],
-  dues: CardDues,
-  day: LocalDate,
-) {
-  const dates = cards
-    .map(card => dues.get(card.id) ?? null)
+const unknownDue = (card: Account): CardDue => ({
+  total: openBillOf(card),
+  dueOn: null,
+})
+
+function earliestDue(dues: readonly CardDue[], day: LocalDate) {
+  const dates = dues
+    .map(due => due.dueOn)
     .filter((due): due is LocalDate => due !== null)
     .sort()
   return dates.find(due => due >= day) ?? dates.at(0) ?? null
@@ -276,7 +281,8 @@ export function cardsSummary(
   if (cards.length === 0) {
     return null
   }
-  const owed = cards.reduce((total, card) => total + openBillOf(card).cents, 0)
+  const owed = cards.map(card => dues.get(card.id) ?? unknownDue(card))
+  const total = owed.reduce((sum, due) => sum + due.total.cents, 0)
   const lines = cards.flatMap(card => (card.credit ? [card.credit] : []))
   const limit = lines.reduce((total, line) => total + line.limit.cents, 0)
   const available = lines.reduce(
@@ -285,8 +291,8 @@ export function cardsSummary(
   )
   const withLimit = lines.length > 0
   return {
-    bill: cents(owed),
-    dueOn: earliestDue(cards, dues, day),
+    bill: cents(total),
+    dueOn: earliestDue(owed, day),
     count: cards.length,
     limit: withLimit ? cents(limit) : null,
     used: withLimit ? cents(limit - available) : null,

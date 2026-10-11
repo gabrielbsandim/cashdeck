@@ -38,6 +38,8 @@ export type StoredStatement = {
   rate: number
   iofBps: number
   paymentCode: string | null
+  // What the bill asks, in cents; absent on statements stored before it was read.
+  totalCents?: number
   lines: Array<{
     id: string
     merchant: string
@@ -71,6 +73,7 @@ const READING_SCHEMA: LlmToolParameter = {
     rate: { type: 'number', description: 'BRL per unit of the currency' },
     iofPercent: { type: 'number', description: 'IOF rate in percent' },
     paymentCode: text('Boleto digitable line, or empty'),
+    total: { type: 'number', description: 'Total due on this bill, in BRL' },
     lines: {
       type: 'array',
       items: {
@@ -99,6 +102,7 @@ const READING_SCHEMA: LlmToolParameter = {
     'currency',
     'rate',
     'iofPercent',
+    'total',
     'lines',
   ],
 }
@@ -117,6 +121,7 @@ type StatementDeps = Pick<
   | 'documents'
   | 'llm'
   | 'bills'
+  | 'cardBills'
   | 'audit'
   | 'pixLocations'
   | 'payments'
@@ -176,6 +181,7 @@ export function makeCardStatements(deps: StatementDeps) {
       rate: Math.round(reading.rate * RATE_SCALE),
       iofBps: Math.round(reading.iofPercent * 100),
       paymentCode: reading.paymentCode || null,
+      totalCents: Math.round(reading.total * 100),
       lines: reading.lines.map(line => ({
         id: deps.ids.next(),
         merchant: line.merchant,
@@ -319,6 +325,18 @@ export function makeCardStatements(deps: StatementDeps) {
     const unmatched = previews.filter(
       tx => !pairedPreviews.has(tx) && tx.bookedOn <= statement.closing,
     )
+    await deps.cardBills.saveAll([
+      {
+        id: deps.ids.next(),
+        tenantId,
+        accountId: account.id,
+        externalId: `${STATEMENT_ID_PREFIX}${statement.id}`,
+        closesOn: statement.closing,
+        dueOn: statement.due,
+        total: Money.of(statement.totalCents ?? billedCents(statement)),
+        minimum: null,
+      },
+    ])
     await deps.documents.put(tenantId, COLLECTION, id, {
       ...statement,
       accountId: account.id,
@@ -349,6 +367,10 @@ function keyedLines(statement: StoredStatement) {
     return { line, key: `${base}:${count}` }
   })
 }
+
+const billedCents = (statement: StoredStatement) =>
+  statementTotals(statement, new Set(statement.lines.map(line => line.id)))
+    .total.cents
 
 export function statementTotals(
   statement: StoredStatement,

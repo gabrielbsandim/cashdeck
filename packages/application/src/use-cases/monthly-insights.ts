@@ -5,7 +5,6 @@ import {
   committedByMonth,
   type EntityKind,
   type LocalDate,
-  openBillOf,
 } from '@cashdeck/domain'
 import {
   type Insight,
@@ -31,7 +30,7 @@ import {
   UNCATEGORIZED,
   within,
 } from '@/use-cases/insights'
-import { cardDues, type CardDues } from '@/use-cases/card-cycle'
+import { cardDues, type CardDues } from '@/use-cases/card-timeline'
 import { activePlans } from '@/use-cases/installments'
 import {
   addMonths,
@@ -132,18 +131,10 @@ const isCash = (account: Account) =>
   CASH_ACCOUNT_TYPES.includes(account.type) && !account.isReserve
 
 // What a card still owes on a bill due within the month, or of unknown date.
-function cardBillDue(
-  accounts: readonly Account[],
-  dues: CardDues,
-  range: DayRange,
-) {
-  return accounts
-    .filter(account => account.type === 'CREDIT_CARD')
-    .filter(card => {
-      const due = dues.get(card.id) ?? null
-      return due === null || due <= range.to
-    })
-    .reduce((total, card) => total + openBillOf(card).cents, 0)
+function cardBillDue(dues: CardDues, range: DayRange) {
+  return [...dues.values()]
+    .filter(due => due.dueOn === null || due.dueOn <= range.to)
+    .reduce((total, due) => total + due.total.cents, 0)
 }
 
 type MonthContext = {
@@ -210,7 +201,7 @@ export function makeMonthlyInsights(deps: MonthlyDeps) {
       context.scope.accounts,
       context.day,
     )
-    const cardBill = cardBillDue(context.scope.accounts, dues, rest)
+    const cardBill = cardBillDue(dues, rest)
     return {
       balance: cents(balance),
       billsDue: cents(billsDue),

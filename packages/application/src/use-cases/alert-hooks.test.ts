@@ -164,6 +164,7 @@ describe('alert hooks', () => {
       rate: 1,
       iofPercent: 0,
       paymentCode: '',
+      total: 0,
       lines: [],
     })
     await makeCardStatements(deps).read(TENANT, {

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { NotFoundError } from '@/errors/errors'
 import { account, fullDeps, transaction } from '@/testing/deps.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
-import { makeGetCardTimeline } from '@/use-cases/card-timeline'
+import { cardDues, makeGetCardTimeline } from '@/use-cases/card-timeline'
 
 const cents = (value: number) => ({ cents: value, currency: 'BRL' })
 
@@ -210,5 +210,73 @@ describe('card timeline', () => {
     await expect(timeline(TENANT, 'missing')).rejects.toBeInstanceOf(
       NotFoundError,
     )
+  })
+
+  it('tells what each card asks to be paid next', async () => {
+    const deps = fullDeps()
+    const manual = (id: string, cents: number) =>
+      account({
+        id,
+        entityId: 'pf',
+        type: 'CREDIT_CARD',
+        balance: Money.of(cents),
+      })
+    const cards = [
+      {
+        ...card('connected', credit(null, '2026-10-15', 795)),
+        origin: 'CONNECTED' as const,
+      },
+      manual('boleto', 0),
+      manual('unpaid', 0),
+      manual('bare', 0),
+      manual('kept', -4_000),
+    ]
+    const checking = account({ id: 'checking', entityId: 'pf' })
+    for (const item of [...cards, checking]) {
+      await deps.accounts.save(item)
+    }
+    await deps.cardBills.saveAll(
+      ['connected', 'boleto', 'unpaid'].map((id, index) =>
+        stored(
+          id,
+          '2026-10-15',
+          '2026-10-05',
+          [70_000, 50_000, 30_000][index] as number,
+        ),
+      ),
+    )
+    const lines: Array<[string, number, LocalDate]> = [
+      ['connected', 70_000, '2026-10-06'],
+      ['connected', -1_000, '2026-10-07'],
+      ['checking', -50_000, '2026-10-07'],
+      ['boleto', -2_000, '2026-10-07'],
+      ['bare', -1_500, '2026-10-01'],
+      ['bare', 500, '2026-10-02'],
+    ]
+    for (const [index, [accountId, cents, bookedOn]] of lines.entries()) {
+      await deps.transactions.save(
+        transaction({
+          id: `line-${index}`,
+          accountId,
+          amount: Money.of(cents),
+          bookedOn,
+        }),
+      )
+    }
+
+    const dues = await cardDues(
+      deps,
+      TENANT,
+      [...cards, checking],
+      '2026-10-08',
+    )
+
+    expect([...dues]).toEqual([
+      ['connected', { total: Money.of(1_000), dueOn: '2026-11-15' }],
+      ['boleto', { total: Money.of(2_000), dueOn: '2026-11-15' }],
+      ['unpaid', { total: Money.of(30_000), dueOn: '2026-10-15' }],
+      ['bare', { total: Money.of(1_000), dueOn: null }],
+      ['kept', { total: Money.of(4_000), dueOn: null }],
+    ])
   })
 })

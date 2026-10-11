@@ -19,6 +19,7 @@ const READING = {
   rate: 5.4,
   iofPercent: 4.38,
   paymentCode: '',
+  total: 0,
   lines: [
     {
       merchant: 'Cloud host',
@@ -148,6 +149,7 @@ describe('card statements', () => {
       currency: 'BRL',
       rate: 1,
       iofPercent: 0,
+      total: 685.99,
       lines: [
         {
           merchant: 'SHOE STORE CITY(02/04)',
@@ -194,6 +196,15 @@ describe('card statements', () => {
     })
     expect(byText.get('Bill payment')?.amount.cents).toBe(50_000)
     expect(byText.get('Bill payment')?.installment).toBeNull()
+    expect(await deps.cardBills.list(TENANT, ['card'])).toEqual([
+      expect.objectContaining({
+        externalId: `statement:${draft.id}`,
+        closesOn: '2026-10-08',
+        dueOn: '2026-10-25',
+        total: Money.of(68_599),
+        minimum: null,
+      }),
+    ])
   })
 
   it('posts the lines to the card, confirming the notified previews', async () => {
@@ -298,8 +309,16 @@ describe('card statements', () => {
     await deps.documents.put(TENANT, 'card-statements', 'older', {
       ...older,
       id: 'older',
+      totalCents: undefined,
     })
     expect((await statements.get(TENANT, 'older')).accountId).toBeNull()
+    await statements.post(TENANT, 'older', {
+      accountId: 'card',
+      lineIds: lineIds.slice(0, 1),
+    })
+    expect(
+      (await deps.cardBills.list(TENANT, ['card'])).map(bill => bill.total),
+    ).toEqual([Money.of(27_779)])
 
     const again = await statements.post(TENANT, draft.id, {
       accountId: 'card',

@@ -81,6 +81,7 @@ export const statementReadingSchema = z.object({
   rate: z.number().positive(),
   iofPercent: z.number().min(0),
   paymentCode: z.string().nullable(),
+  total: z.number(),
   lines: z.array(
     z.object({
       merchant: z.string().min(1),
