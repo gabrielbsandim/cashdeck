@@ -279,6 +279,25 @@ describe('funding plan', () => {
     expect(await makeSetDebitAccount(deps)(TENANT, 'bank')).toEqual({
       accountId: 'bank',
     })
+    const arrived = [
+      bill({ id: 'power', payee: 'EDP Energia', dueDate: '2026-10-15' }),
+      bill({ id: 'unnamed', payee: null, dueDate: '2026-10-20' }),
+      bill({ id: 'debited', payee: 'EDP Energia', dueDate: '2026-09-10' }),
+      bill({
+        id: 'settled',
+        payee: 'EDP Energia',
+        dueDate: '2026-10-14',
+        status: 'PAID',
+      }),
+    ]
+    const setAutoDebit = makeSetAutoDebit(deps, makeGetBill(deps))
+    for (const [index, item] of arrived.entries()) {
+      await deps.bills.save({
+        ...item,
+        amount: Money.of([36_500, 7_000, 1_000, 1_000][index] as number),
+      })
+      await setAutoDebit(TENANT, item.id, true)
+    }
 
     const plan = await makeFundingPlan(deps)(TENANT)
     expect(plan.debit).toEqual({
@@ -286,15 +305,16 @@ describe('funding plan', () => {
       name: 'Account bank',
       balance: cents(30_000),
       items: [
-        { name: 'CONTA DE LUZ EDP', amount: cents(34_000), on: '2026-10-16' },
+        { name: 'CONTA DE LUZ EDP', amount: cents(36_500), on: '2026-10-16' },
+        { name: 'BOLETO', amount: cents(7_000), on: '2026-10-20' },
         {
           name: 'PRESTACAO DE CRED IMOB',
           amount: cents(330_000),
           on: '2026-10-29',
         },
       ],
-      total: cents(364_000),
-      topUp: cents(334_000),
+      total: cents(373_500),
+      topUp: cents(343_500),
     })
   })
 

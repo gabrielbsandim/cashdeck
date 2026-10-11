@@ -6,6 +6,7 @@ import {
   type FinancialEntity,
   groupByRecurrence,
   isCardBillPayment,
+  normalizeDescription,
   type LocalDate,
   Money,
   recipientKeys,
@@ -46,6 +47,8 @@ export const FUNDING_SETTINGS_COLLECTION = 'funding-settings'
 const DEBIT_ACCOUNT_ID = 'debit-account'
 // Two months tell a monthly debit from a one-off.
 const MIN_DEBIT_MONTHS = 2
+// An unpaid bill on automatic debit older than this was debited already.
+const ARRIVED_DAYS = 20
 
 type DebitSetting = { accountId: string }
 // A payee that sent nothing for longer than this has stopped billing.
@@ -109,10 +112,50 @@ function nextDebits(
     .sort((a, b) => a.on.localeCompare(b.on))
 }
 
+const wordsOf = (text: string) =>
+  new Set(
+    normalizeDescription(text)
+      .split(' ')
+      .filter(word => word !== ''),
+  )
+
+const names = (bill: Bill, debit: FundingDebitView) => {
+  const words = wordsOf(debit.name)
+  return [...wordsOf(bill.payee ?? '')].some(word => words.has(word))
+}
+
+// A metered bill changes every month, so one that already arrived says what
+// the bank takes better than last month's debit does.
+function withArrived(
+  debits: readonly FundingDebitView[],
+  arrived: readonly Bill[],
+): FundingDebitView[] {
+  const used = new Set<string>()
+  const known = debits.map(debit => {
+    const bill = arrived.find(
+      other => !used.has(other.id) && names(other, debit),
+    )
+    if (!bill) {
+      return debit
+    }
+    used.add(bill.id)
+    return { ...debit, amount: money(bill.amount) }
+  })
+  const fresh = arrived
+    .filter(bill => !used.has(bill.id))
+    .map(bill => ({
+      name: bill.payee ?? bill.kind,
+      amount: money(bill.amount),
+      on: bill.dueDate,
+    }))
+  return [...known, ...fresh].sort((a, b) => a.on.localeCompare(b.on))
+}
+
 async function debitPlan(
   deps: Pick<Deps, 'accounts' | 'transactions' | 'documents'>,
   tenantId: string,
   day: LocalDate,
+  arrived: readonly Bill[],
 ): Promise<FundingPlan['debit']> {
   const setting = await deps.documents.get<DebitSetting>(
     tenantId,
@@ -130,7 +173,7 @@ async function debitPlan(
     from: `${addMonths(monthOf(day), -HISTORY_MONTHS)}-01`,
     to: day,
   })
-  const items = nextDebits(sent, day)
+  const items = withArrived(nextDebits(sent, day), arrived)
   const total = sum(items.map(item => Money.of(item.amount.cents)))
   const shortfall = total.subtract(account.balance)
   return {
@@ -221,11 +264,12 @@ export function makeFundingPlan(
     const entity = await requireEntity(deps.entities, tenantId, 'PF')
     const day = today(deps.clock.now())
     const isAutoDebit = await loadAutoDebit(deps, tenantId)
-    const bills = (
+    const known = (
       await allPages(request =>
         deps.bills.list(tenantId, { entityId: entity.id }, request),
       )
-    ).filter(bill => bill.status !== 'CANCELLED' && !isAutoDebit(bill))
+    ).filter(bill => bill.status !== 'CANCELLED')
+    const bills = known.filter(bill => !isAutoDebit(bill))
     const current = monthOf(day)
     const first = bills
       .map(bill => monthOf(bill.dueDate))
@@ -273,7 +317,18 @@ export function makeFundingPlan(
       pixReserve: money(pixReserve),
       items,
       topUp: money(shortfall.isPositive() ? shortfall : Money.zero()),
-      debit: await debitPlan(deps, tenantId, day),
+      debit: await debitPlan(
+        deps,
+        tenantId,
+        day,
+        known.filter(
+          bill =>
+            isAutoDebit(bill) &&
+            FUNDED.includes(bill.status) &&
+            bill.dueDate >= addDays(day, -ARRIVED_DAYS) &&
+            bill.dueDate <= end,
+        ),
+      ),
     }
   }
 }
