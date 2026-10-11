@@ -107,6 +107,7 @@ void main() {
     expect(plan.left, 2);
     expect(plan.owner, EntityKind.personal);
     expect(plan.finalMonth, const YearMonth(2026, 12));
+    expect(plan.missing, [6]);
     expect(installments.months.single.$2, const Money(5000));
 
     final subscriptions = valueOf(

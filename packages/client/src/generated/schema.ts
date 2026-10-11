@@ -2892,6 +2892,7 @@ export interface operations {
                                 lastBilledOn: string;
                                 finalMonth: string;
                                 transactionIds: string[];
+                                missing: number[];
                             }[];
                         };
                     };

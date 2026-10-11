@@ -37,6 +37,7 @@ const plan = (
   purchaseOn: null,
   lastBilledOn,
   transactionIds: [],
+  missing: [],
 })
 
 const september: BillCycle = {

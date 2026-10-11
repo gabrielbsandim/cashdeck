@@ -79,6 +79,15 @@ List<String> readStringList(JsonMap json, String key) {
   throw FormatException('Expected a list of strings at "$key"', json);
 }
 
+List<int> readIntList(JsonMap json, String key) {
+  final value = json[key];
+  if (value == null) return const [];
+  if (value is List && value.every((item) => item is int)) {
+    return value.cast<int>();
+  }
+  throw FormatException('Expected a list of integers at "$key"', json);
+}
+
 CalendarDate readDate(JsonMap json, String key) =>
     CalendarDate.parse(readString(json, key));
 

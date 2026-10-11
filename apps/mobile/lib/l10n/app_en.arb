@@ -860,6 +860,7 @@
   "installmentsPaid": "Paid",
   "installmentsLeft": "Left",
   "installmentsNumber": "Installment {number}",
+  "installmentsNotImported": "{month} · not in the bank's data",
   "subscriptionsPerMonth": "a month",
   "subscriptionsPerYear": "{amount} a year",
   "subscriptionsList": "List",

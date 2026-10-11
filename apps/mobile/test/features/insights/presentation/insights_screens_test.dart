@@ -185,6 +185,10 @@ void main() {
       await tester.tap(find.byKey(InstallmentsScreen.planKey('bike')));
       await settle(tester);
       expect(find.text(l10n.installmentsNumber(6)), findsOneWidget);
+      expect(
+        find.textContaining(l10n.installmentsNotImported('')),
+        findsOneWidget,
+      );
       expect(find.text(l10n.installmentsPurchase), findsOneWidget);
     });
 

@@ -153,6 +153,7 @@ JsonMap installmentsJson() => {
       'lastBilledOn': '2026-10-05',
       'finalMonth': '2026-12',
       'transactionIds': ['sofa'],
+      'missing': [6],
     },
   ],
 };

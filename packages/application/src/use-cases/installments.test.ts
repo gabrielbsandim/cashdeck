@@ -75,6 +75,7 @@ describe('installments', () => {
         lastBilledOn: '2026-10-05',
         finalMonth: '2026-11',
         transactionIds: ['tv-2', 'tv-1'],
+        missing: [],
       },
     ])
   })

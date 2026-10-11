@@ -96,6 +96,8 @@ export const installmentPlanViewSchema = z.object({
   lastBilledOn: isoDate,
   finalMonth: isoMonth,
   transactionIds: z.array(z.string()),
+  // Billed installments the bank's data never showed.
+  missing: z.array(z.int()),
 })
 
 export const installmentsViewSchema = z.object({

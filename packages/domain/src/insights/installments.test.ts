@@ -57,6 +57,7 @@ describe('installments', () => {
         bookedOn: '2026-10-05',
         installment: { number: 3, count: 10, purchaseOn: null },
         merchant: 'Curso Exemplo 3/10',
+        accountId: 'other-card',
       }),
       charge('refund', {
         cents: 5_000,
@@ -77,9 +78,10 @@ describe('installments', () => {
         purchaseOn: '2026-08-01',
         lastBilledOn: '2026-09-10',
         transactionIds: ['sep', 'aug'],
+        missing: [],
       },
       expect.objectContaining({
-        key: 'card|curso exemplo|10|5000',
+        key: 'other-card|curso exemplo|10|5000',
         name: 'Curso Exemplo',
         number: 3,
       }),
@@ -100,18 +102,25 @@ describe('installments', () => {
     ])
   })
 
-  it('orders two charges of the same number by date', () => {
-    const [plan] = groupInstallments([
-      charge('first', {
-        bookedOn: '2026-09-10',
-        installment: { number: 2, count: 4, purchaseOn: '2026-08-01' },
-      }),
-      charge('again', {
-        bookedOn: '2026-09-12',
-        installment: { number: 2, count: 4, purchaseOn: '2026-08-01' },
-      }),
+  it('keeps two purchases at the same price apart', () => {
+    const plans = groupInstallments(
+      ['a1', 'b1', 'a2', 'b2'].map((id, index) =>
+        charge(id, {
+          bookedOn: index < 2 ? '2026-08-08' : '2026-09-15',
+          installment: {
+            number: index < 2 ? 1 : 2,
+            count: 12,
+            purchaseOn: '2026-08-08',
+          },
+        }),
+      ),
+    )
+    expect(
+      plans.map(plan => [plan.key, plan.number, plan.transactionIds]),
+    ).toEqual([
+      ['card|2026-08-08|12|10000', 2, ['a2', 'a1']],
+      ['card|2026-08-08|12|10000|2', 2, ['b2', 'b1']],
     ])
-    expect(plan?.transactionIds).toEqual(['again', 'first'])
     const [byName] = groupInstallments([
       charge('named', {
         bookedOn: '2026-09-10',
@@ -119,6 +128,89 @@ describe('installments', () => {
       }),
     ])
     expect(byName?.key).toBe('card|loja exemplo|10|10000')
+  })
+
+  it('counts the installments of a statement the bank never sent', () => {
+    const trip = (number: number, bookedOn: string) =>
+      charge(`trip-${number}`, {
+        bookedOn,
+        installment: { number, count: 6, purchaseOn: '2026-02-23' },
+        description: 'TRAVEL AGENCY',
+      })
+    const gym = (number: number, bookedOn: string) =>
+      charge(`gym-${number}`, {
+        cents: -5_000,
+        bookedOn,
+        installment: { number, count: 12, purchaseOn: '2026-02-11' },
+        description: 'GYM',
+      })
+    const plans = groupInstallments([
+      trip(1, '2026-02-23'),
+      trip(4, '2026-05-15'),
+      trip(5, '2026-06-15'),
+      gym(5, '2026-06-15'),
+      gym(7, '2026-08-17'),
+      gym(8, '2026-09-15'),
+      charge('elsewhere', {
+        bookedOn: '2026-12-15',
+        installment: { number: 2, count: 3, purchaseOn: null },
+        accountId: 'other-card',
+      }),
+    ])
+    const [travel, club] = plans as [
+      (typeof plans)[number],
+      (typeof plans)[number],
+    ]
+    expect(travel).toMatchObject({
+      number: 6,
+      lastBilledOn: '2026-07-15',
+      missing: [2, 3, 6],
+    })
+    expect(remainingInstallments(travel)).toBe(0)
+    expect(finalMonth(travel)).toBe('2026-07')
+    const [fresh] = groupInstallments([
+      charge('fresh', {
+        bookedOn: '2026-10-02',
+        installment: { number: 1, count: 3, purchaseOn: null },
+      }),
+    ])
+    expect(fresh).toMatchObject({ number: 1, missing: [] })
+    const late = groupInstallments([
+      charge('late-1', {
+        bookedOn: '2026-09-28',
+        installment: { number: 1, count: 3, purchaseOn: '2026-09-28' },
+        description: 'LATE STORE',
+      }),
+      charge('running', {
+        bookedOn: '2026-10-08',
+        installment: { number: 2, count: 3, purchaseOn: null },
+      }),
+    ])
+    expect(late[0]).toMatchObject({
+      number: 1,
+      lastBilledOn: '2026-09-28',
+      missing: [],
+    })
+    expect(club).toMatchObject({
+      number: 8,
+      lastBilledOn: '2026-09-15',
+      missing: [6],
+    })
+  })
+
+  it('keeps the day of a shifted statement inside its month', () => {
+    const [plan] = groupInstallments([
+      charge('last', {
+        bookedOn: '2026-01-31',
+        installment: { number: 2, count: 4, purchaseOn: null },
+      }),
+      charge('later', {
+        bookedOn: '2026-02-28',
+        installment: { number: 3, count: 5, purchaseOn: null },
+        description: 'OTHER STORE',
+      }),
+    ])
+    expect(plan).toMatchObject({ number: 3, lastBilledOn: '2026-02-28' })
   })
 
   it('keeps the rounding cents of one installment in the same plan', () => {

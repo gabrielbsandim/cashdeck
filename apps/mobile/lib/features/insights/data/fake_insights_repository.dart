@@ -243,7 +243,15 @@ final class FakeInsightsRepository implements InsightsRepository {
     final plans = [
       _installment('notebook', 'Notebook Orion', 4, 10, 32_990, month),
       _installment('sofa', 'Sofá Linho', 7, 12, 41_500, month),
-      _installment('bike', 'Bicicleta Trilha', 2, 6, 46_750, month),
+      _installment(
+        'bike',
+        'Bicicleta Trilha',
+        2,
+        6,
+        46_750,
+        month,
+        missing: [1],
+      ),
     ];
     return Ok(
       Installments(
@@ -269,8 +277,9 @@ final class FakeInsightsRepository implements InsightsRepository {
     int number,
     int count,
     int cents,
-    YearMonth month,
-  ) => InstallmentPlan(
+    YearMonth month, {
+    List<int> missing = const [],
+  }) => InstallmentPlan(
     key: key,
     accountId: 'aurora-card',
     card: 'Aurora Platinum',
@@ -286,6 +295,7 @@ final class FakeInsightsRepository implements InsightsRepository {
     purchaseOn: month.add(1 - number).firstDay.addDays(4),
     lastBilledOn: month.firstDay.addDays(4),
     finalMonth: month.add(count - number),
+    missing: missing,
   );
 
   static const _charges = [

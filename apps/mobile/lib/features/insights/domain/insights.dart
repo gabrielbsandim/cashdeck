@@ -432,6 +432,7 @@ final class InstallmentPlan extends Equatable {
     this.cardSuffix,
     this.categoryId,
     this.purchaseOn,
+    this.missing = const [],
   });
 
   final String key;
@@ -453,6 +454,9 @@ final class InstallmentPlan extends Equatable {
   final CalendarDate lastBilledOn;
   final YearMonth finalMonth;
 
+  /// Billed installments the bank's data never showed.
+  final List<int> missing;
+
   int get left => count - number;
 
   @override
@@ -473,6 +477,7 @@ final class InstallmentPlan extends Equatable {
     purchaseOn,
     lastBilledOn,
     finalMonth,
+    missing,
   ];
 }
 

@@ -83,6 +83,7 @@ export function makeListInstallments(deps: InstallmentDeps) {
           lastBilledOn: plan.lastBilledOn,
           finalMonth: finalMonth(plan),
           transactionIds: [...plan.transactionIds],
+          missing: [...plan.missing],
         }
       })
       .sort(

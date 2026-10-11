@@ -223,6 +223,7 @@ InstallmentPlan _plan(JsonMap json) => InstallmentPlan(
   purchaseOn: readOptionalDate(json, 'purchaseOn'),
   lastBilledOn: readDate(json, 'lastBilledOn'),
   finalMonth: readMonth(json, 'finalMonth'),
+  missing: readIntList(json, 'missing'),
 );
 
 Installments installmentsFromJson(JsonMap json) => Installments(

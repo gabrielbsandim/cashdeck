@@ -11,6 +11,7 @@ void main() {
       <String, dynamic>{'k': 1},
     ],
     'strings': ['a', 'b'],
+    'ints': [1, 2],
     'date': '2026-10-08',
     'at': '2026-10-08T12:00:00Z',
     'badAt': 'later',
@@ -28,6 +29,8 @@ void main() {
     expect(readMapList(json, 'missing'), isEmpty);
     expect(readStringList(json, 'strings'), ['a', 'b']);
     expect(readStringList(json, 'missing'), isEmpty);
+    expect(readIntList(json, 'ints'), [1, 2]);
+    expect(readIntList(json, 'missing'), isEmpty);
     expect(readDate(json, 'date'), const CalendarDate(2026, 10, 8));
     expect(readDateTime(json, 'at'), DateTime.utc(2026, 10, 8, 12));
   });
@@ -39,6 +42,7 @@ void main() {
     expect(() => readMap(json, 'text'), throwsFormat);
     expect(() => readMapList(json, 'strings'), throwsFormat);
     expect(() => readStringList(json, 'maps'), throwsFormat);
+    expect(() => readIntList(json, 'strings'), throwsFormat);
     expect(() => readDateTime(json, 'badAt'), throwsFormat);
   });
 

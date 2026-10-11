@@ -248,7 +248,12 @@ Future<void> _showPlan(BuildContext context, InstallmentPlan plan) {
             for (var number = 1; number <= plan.count; number++)
               CdTimelineEntry(
                 title: l10n.installmentsNumber(number),
-                subtitle: monthTitle(l10n, last.add(number - plan.number)),
+                subtitle: _installmentMonth(
+                  l10n,
+                  plan,
+                  number,
+                  monthTitle(l10n, last.add(number - plan.number)),
+                ),
                 trailing: CdAmount(plan.amount, size: CdAmountSize.row),
                 state: switch (number.compareTo(plan.number)) {
                   -1 => CdTimelineState.done,
@@ -261,4 +266,14 @@ Future<void> _showPlan(BuildContext context, InstallmentPlan plan) {
       ],
     ),
   );
+}
+
+String _installmentMonth(
+  AppLocalizations l10n,
+  InstallmentPlan plan,
+  int number,
+  String month,
+) {
+  if (!plan.missing.contains(number)) return month;
+  return l10n.installmentsNotImported(month);
 }

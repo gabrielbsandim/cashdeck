@@ -2141,6 +2141,14 @@
       }
     }
   },
+  "installmentsNotImported": "{month} · não veio nos dados do banco",
+  "@installmentsNotImported": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "subscriptionsPerMonth": "por mês",
   "subscriptionsPerYear": "{amount} por ano",
   "@subscriptionsPerYear": {

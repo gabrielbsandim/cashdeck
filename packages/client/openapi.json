@@ -4330,6 +4330,14 @@
                                 "items": {
                                   "type": "string"
                                 }
+                              },
+                              "missing": {
+                                "type": "array",
+                                "items": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
                               }
                             },
                             "required": [
@@ -4349,7 +4357,8 @@
                               "purchaseOn",
                               "lastBilledOn",
                               "finalMonth",
-                              "transactionIds"
+                              "transactionIds",
+                              "missing"
                             ],
                             "additionalProperties": false
                           }
