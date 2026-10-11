@@ -18,7 +18,12 @@ import {
   type PageRequest,
   type ToolTrace,
 } from '@cashdeck/application'
-import { type Category, type CategoryRule } from '@cashdeck/domain'
+import {
+  type Category,
+  type CategoryRule,
+  RULE_DIRECTIONS,
+  type RuleDirection,
+} from '@cashdeck/domain'
 
 const json = (value: unknown) => value as Prisma.InputJsonValue
 
@@ -57,10 +62,14 @@ export class PrismaCategoryRepository implements CategoryRepository {
   }
 
   async listRules(tenantId: string): Promise<CategoryRule[]> {
-    return this.db.categoryRule.findMany({
+    const rows = await this.db.categoryRule.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'asc' },
     })
+    return rows.map(row => ({
+      ...row,
+      direction: directionFrom(row.direction),
+    }))
   }
 
   async saveRule(rule: CategoryRule): Promise<void> {
@@ -71,6 +80,9 @@ export class PrismaCategoryRepository implements CategoryRepository {
     })
   }
 }
+
+const directionFrom = (value: string | null): RuleDirection | null =>
+  RULE_DIRECTIONS.find(direction => direction === value) ?? null
 
 type ThreadRow = {
   id: string

@@ -14,9 +14,14 @@ import { Money } from '@/money/money'
 const NOW = new Date('2026-10-08T12:00:00Z')
 const PAYEE = '11144477735'
 
-const subject = (description: string, counterparty: string | null = null) => ({
+const subject = (
+  description: string,
+  counterparty: string | null = null,
+  cents = -5_000,
+) => ({
   description,
   counterparty,
+  amount: Money.of(cents),
 })
 
 function rule(overrides: Partial<CategoryRule> & { id: string }): CategoryRule {
@@ -112,6 +117,25 @@ describe('category rules', () => {
     expect(() =>
       rule({ id: 'masked', pattern: 'pix', counterparty: '***452308**' }),
     ).toThrow('A rule needs a merchant or description.')
+  })
+
+  it('keeps a directed rule to money going its way', () => {
+    const pay = rule({
+      id: 'pay',
+      counterparty: PAYEE,
+      direction: 'IN',
+      categoryId: 'salary',
+    })
+    const any = rule({ id: 'any', counterparty: PAYEE, categoryId: 'other' })
+    expect(rule({ id: 'plain' }).direction).toBeNull()
+    expect(ruleMatches(pay, subject('pix', PAYEE, 70_000))).toBe(true)
+    expect(ruleMatches(pay, subject('pix', PAYEE, -70_000))).toBe(false)
+    expect(findRule([any, pay], subject('pix', PAYEE, 70_000), 'pf')?.id).toBe(
+      'pay',
+    )
+    expect(findRule([any, pay], subject('pix', PAYEE, -70_000), 'pf')?.id).toBe(
+      'any',
+    )
   })
 })
 

@@ -5,6 +5,7 @@ import {
   type CategoryRule,
   categorize,
   createCategoryRule,
+  directionOf,
   DEFAULT_CATEGORIES,
   type EntityKind,
   findRule,
@@ -82,11 +83,14 @@ async function learnRule(
   entityId: string | null,
   pattern: string,
   categoryId: string,
-  counterparty: string | null = null,
+  learned: Pick<CategoryRule, 'counterparty' | 'direction'> = {
+    counterparty: null,
+    direction: null,
+  },
 ): Promise<CategoryRule | null> {
   // The document of the other side names who was paid better than the
   // description, which for a boleto or a bare Pix often names only the bank.
-  const document = learnableCounterparty(counterparty)
+  const document = learnableCounterparty(learned.counterparty)
   const normalized = document ? '' : normalizeDescription(pattern)
   if (normalized === '' && document === null) {
     return null
@@ -96,7 +100,8 @@ async function learnRule(
     rule =>
       rule.entityId === entityId &&
       rule.pattern === normalized &&
-      rule.counterparty === document,
+      rule.counterparty === document &&
+      rule.direction === learned.direction,
   )
   const rule = createCategoryRule({
     id: existing?.id ?? deps.ids.next(),
@@ -104,6 +109,7 @@ async function learnRule(
     entityId,
     pattern: normalized,
     counterparty: document,
+    direction: learned.direction,
     categoryId,
     priority: existing?.priority ?? 0,
     createdAt: existing?.createdAt ?? deps.clock.now(),
@@ -181,7 +187,7 @@ export function makeUpdateTransaction(deps: UpdateDeps) {
       account.entityId,
       tx.description,
       categoryId,
-      tx.counterparty,
+      { counterparty: tx.counterparty, direction: directionOf(tx) },
     )
     if (!rule || !applyToSimilar) {
       return { transaction, similar: 0 }

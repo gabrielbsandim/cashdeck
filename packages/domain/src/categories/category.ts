@@ -35,6 +35,10 @@ export const DEFAULT_CATEGORIES = [
   { key: 'other', name: 'Other' },
 ] as const
 
+// A rule learned from a credit says nothing of a debit to the same payee.
+export const RULE_DIRECTIONS = ['IN', 'OUT'] as const
+export type RuleDirection = (typeof RULE_DIRECTIONS)[number]
+
 export type CategoryRule = {
   readonly id: string
   readonly tenantId: string
@@ -43,6 +47,8 @@ export type CategoryRule = {
   // Empty on a counterparty rule, which matches the document instead.
   readonly pattern: string
   readonly counterparty: string | null
+  // Null matches money in both directions.
+  readonly direction: RuleDirection | null
   readonly categoryId: string
   readonly priority: number
   readonly createdAt: Date
@@ -90,10 +96,11 @@ export function normalizeDescription(text: string): string {
 
 export type CreateCategoryRuleInput = Omit<
   CategoryRule,
-  'priority' | 'counterparty'
+  'priority' | 'counterparty' | 'direction'
 > & {
   priority?: number
   counterparty?: string | null
+  direction?: RuleDirection | null
 }
 
 export function createCategoryRule(
@@ -108,6 +115,7 @@ export function createCategoryRule(
     ...input,
     pattern,
     counterparty,
+    direction: input.direction ?? null,
     categoryId: guard.notEmpty(input.categoryId, 'Category'),
     priority: input.priority ?? 0,
   }
@@ -139,9 +147,19 @@ export function learnableCounterparty(value: string | null): string | null {
   return processor ? null : document
 }
 
-export type RuleSubject = Pick<Transaction, 'description' | 'counterparty'>
+export type RuleSubject = Pick<
+  Transaction,
+  'description' | 'counterparty' | 'amount'
+>
+
+export const directionOf = (
+  subject: Pick<Transaction, 'amount'>,
+): RuleDirection => (subject.amount.isPositive() ? 'IN' : 'OUT')
 
 export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
+  if (rule.direction !== null && rule.direction !== directionOf(subject)) {
+    return false
+  }
   if (rule.counterparty !== null) {
     return rule.counterparty === subject.counterparty
   }
@@ -152,6 +170,7 @@ export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
 const precedence = (a: CategoryRule, b: CategoryRule) =>
   Number(b.entityId !== null) - Number(a.entityId !== null) ||
   Number(b.counterparty !== null) - Number(a.counterparty !== null) ||
+  Number(b.direction !== null) - Number(a.direction !== null) ||
   b.priority - a.priority ||
   b.pattern.length - a.pattern.length
 

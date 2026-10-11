@@ -148,6 +148,7 @@ describe('updating a transaction', () => {
         entityId: 'pf',
         pattern: '',
         counterparty: PAYEE,
+        direction: 'OUT',
       }),
     ])
     await update(TENANT, 't2', {
@@ -166,6 +167,23 @@ describe('updating a transaction', () => {
       applyToSimilar: true,
     })
     expect(await deps.categories.listRules(TENANT)).toHaveLength(1)
+    await deps.transactions.save(pix('t6', PAYEE, 70000))
+    await deps.transactions.save(pix('t7', PAYEE, 64000))
+    expect(await stored('t6')).toBeNull()
+    const credit = await update(TENANT, 't6', {
+      categoryId: id('salary'),
+      applyToSimilar: true,
+    })
+    expect(credit.similarUpdated).toBe(1)
+    expect(await stored('t7')).toBe(id('salary'))
+    expect(await stored('t2')).toBe(id('groceries'))
+    expect(await deps.categories.listRules(TENANT)).toEqual([
+      expect.objectContaining({
+        direction: 'OUT',
+        categoryId: id('groceries'),
+      }),
+      expect.objectContaining({ direction: 'IN', categoryId: id('salary') }),
+    ])
   })
 
   it('learns by the payee document even when the description names a bank', async () => {

@@ -71,8 +71,17 @@ describe('PrismaCategoryRepository', () => {
       categoryId: 'c1',
       createdAt: NOW,
     })
-    db.categoryRule.findMany.mockResolvedValueOnce([rule])
-    expect(await categories.listRules(TENANT)).toEqual([rule])
+    const credit = { ...rule, id: 'r2', direction: 'IN' }
+    db.categoryRule.findMany.mockResolvedValueOnce([
+      rule,
+      credit,
+      { ...rule, id: 'r3', direction: 'SIDEWAYS' },
+    ])
+    expect(await categories.listRules(TENANT)).toEqual([
+      rule,
+      credit,
+      { ...rule, id: 'r3', direction: null },
+    ])
     await categories.saveRule(rule)
     expect(db.categoryRule.upsert.mock.calls[0]?.[0].create).toEqual(rule)
   })

@@ -293,6 +293,7 @@ model CategoryRule {
   entityId   String?  @map("entity_id")
   pattern      String
   counterparty String?
+  direction    String?
   categoryId   String   @map("category_id")
   priority     Int      @default(0)
   createdAt  DateTime @default(now()) @map("created_at")
