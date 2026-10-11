@@ -2070,7 +2070,14 @@
   "insightsFixedSubscriptions": "Assinaturas",
   "insightsFixedInstallments": "Parcelas",
   "insightsFixedBills": "Contas",
-  "insightsFixedShare": "da renda",
+  "insightsFixedOfIncome": "da renda de {income}",
+  "@insightsFixedOfIncome": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      }
+    }
+  },
   "insightsFixedSemantics": "Custo fixo de {percent}% da renda",
   "@insightsFixedSemantics": {
     "placeholders": {

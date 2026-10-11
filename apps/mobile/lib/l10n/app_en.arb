@@ -834,7 +834,7 @@
   "insightsFixedSubscriptions": "Subscriptions",
   "insightsFixedInstallments": "Installments",
   "insightsFixedBills": "Bills",
-  "insightsFixedShare": "of income",
+  "insightsFixedOfIncome": "of income {income}",
   "insightsFixedSemantics": "Fixed costs at {percent}% of income",
   "insightsLeftTitle": "What is left until month end",
   "insightsLeftBalance": "Available balance",

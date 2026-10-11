@@ -420,13 +420,13 @@ class _ChangesCard extends ConsumerWidget {
   }
 }
 
-class _FixedCostCard extends StatelessWidget {
+class _FixedCostCard extends ConsumerWidget {
   const new({required this.cost});
 
   final FixedCost cost;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final series = context.charts.series;
@@ -438,84 +438,76 @@ class _FixedCostCard extends StatelessWidget {
       (cost.installments, series[1].fill, l10n.insightsFixedInstallments),
       (cost.bills, series[2].fill, l10n.insightsFixedBills),
     ];
+    final income = MoneyFormat.whole(
+      cost.income,
+      hide: ref.watch(hideAmountsProvider),
+    );
     return CdInsightCard(
       title: l10n.insightsFixedTitle,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CdProgressRing(
-            size: 96,
-            stroke: 10,
-            semanticsLabel: l10n.insightsFixedSemantics(share ?? 0),
-            parts: [
-              for (final (value, color, _) in entries) (part(value), color),
-            ],
-            center: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
+          Row(
+            children: [
+              CdProgressRing(
+                size: 72,
+                stroke: 8,
+                semanticsLabel: l10n.insightsFixedSemantics(share ?? 0),
+                parts: [
+                  for (final (value, color, _) in entries) (part(value), color),
+                ],
+                center: Text(
                   l10n.insightsPercent(share ?? 0),
                   style: AppTextStyles.titleMd.copyWith(
                     color: palette.onSurface,
                   ),
                 ),
-                Text(
-                  l10n.insightsFixedShare,
-                  style: AppTextStyles.labelMd.copyWith(
-                    color: palette.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              children: [
-                for (final (value, color, label) in entries)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.xs,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            label,
-                            style: AppTextStyles.bodyMd.copyWith(
-                              color: palette.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        CdAmount(value, size: CdAmountSize.sm),
-                      ],
-                    ),
-                  ),
-                const Divider(),
-                Row(
+              ),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        l10n.installmentsTotal,
-                        style: AppTextStyles.labelLg.copyWith(
-                          color: palette.onSurface,
+                    CdAmount(cost.total, textAlign: TextAlign.start),
+                    if (share != null)
+                      Text(
+                        l10n.insightsFixedOfIncome(income),
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: palette.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                    CdAmount(cost.total, size: CdAmountSize.sm),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: AppSpacing.md),
+          for (final (value, color, label) in entries)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: palette.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  CdAmount(value, size: CdAmountSize.row),
+                ],
+              ),
+            ),
         ],
       ),
     );

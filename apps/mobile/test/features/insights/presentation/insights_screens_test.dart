@@ -108,6 +108,12 @@ void main() {
       expect(find.text(monthTitle(l10n, _october)), findsOneWidget);
       expect(find.text(l10n.insightsLeftTitle), findsOneWidget);
       expect(
+        find.text(
+          l10n.insightsFixedOfIncome(MoneyFormat.whole(const Money(825_000))),
+        ),
+        findsOneWidget,
+      );
+      expect(
         tester.widget<IconButton>(find.byKey(InsightsScreen.nextKey)).onPressed,
         isNull,
       );
@@ -405,6 +411,7 @@ void main() {
       await settle(tester);
 
       expect(find.text(l10n.insightsSavingsNoIncome), findsOneWidget);
+      expect(find.textContaining(l10n.insightsFixedOfIncome('')), findsNothing);
       expect(find.text(l10n.insightsChangesEmpty), findsOneWidget);
       expect(find.text(l10n.insightSavingsDown(5, 11)), findsOneWidget);
       expect(
