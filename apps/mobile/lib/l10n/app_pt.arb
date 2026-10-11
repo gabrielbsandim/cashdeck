@@ -2519,20 +2519,23 @@
       }
     }
   },
-  "fundingUpcoming": "Próximos 30 dias: {upcoming}",
+  "fundingUpcoming": "Próximos 30 dias: {upcoming} em boletos, {expected} previstos e {pix} de Pix avulso",
   "@fundingUpcoming": {
     "placeholders": {
       "upcoming": {
         "type": "String"
+      },
+      "expected": {
+        "type": "String"
+      },
+      "pix": {
+        "type": "String"
       }
     }
   },
-  "fundingUpcomingBalance": "Próximos 30 dias: {upcoming} · Saldo: {balance}",
-  "@fundingUpcomingBalance": {
+  "fundingBalance": "Saldo no Asaas: {balance}",
+  "@fundingBalance": {
     "placeholders": {
-      "upcoming": {
-        "type": "String"
-      },
       "balance": {
         "type": "String"
       }

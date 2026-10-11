@@ -994,20 +994,23 @@
       }
     }
   },
-  "fundingUpcoming": "Next 30 days: {upcoming}",
+  "fundingUpcoming": "Next 30 days: {upcoming} in bills, {expected} expected and {pix} for loose Pix",
   "@fundingUpcoming": {
     "placeholders": {
       "upcoming": {
         "type": "String"
+      },
+      "expected": {
+        "type": "String"
+      },
+      "pix": {
+        "type": "String"
       }
     }
   },
-  "fundingUpcomingBalance": "Next 30 days: {upcoming} · Balance: {balance}",
-  "@fundingUpcomingBalance": {
+  "fundingBalance": "Asaas balance: {balance}",
+  "@fundingBalance": {
     "placeholders": {
-      "upcoming": {
-        "type": "String"
-      },
       "balance": {
         "type": "String"
       }

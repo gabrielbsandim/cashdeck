@@ -72,16 +72,22 @@ class _Plan extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(l10n.fundingAverage(plan.months), style: muted),
         const SizedBox(height: AppSpacing.sm),
-        CdPrivateText((hide) {
-          final upcoming = MoneyFormat.format(plan.upcoming, hide: hide);
-          return switch (plan.balance) {
-            null => l10n.fundingUpcoming(upcoming),
-            final balance => l10n.fundingUpcomingBalance(
-              upcoming,
-              MoneyFormat.format(balance, hide: hide),
-            ),
-          };
-        }, style: muted),
+        CdPrivateText(
+          (hide) => l10n.fundingUpcoming(
+            MoneyFormat.format(plan.upcoming, hide: hide),
+            MoneyFormat.format(plan.expected, hide: hide),
+            MoneyFormat.format(plan.pixReserve, hide: hide),
+          ),
+          style: muted,
+        ),
+        if (plan.balance case final balance?) ...[
+          const SizedBox(height: AppSpacing.xs),
+          CdPrivateText(
+            (hide) =>
+                l10n.fundingBalance(MoneyFormat.format(balance, hide: hide)),
+            style: muted,
+          ),
+        ],
         const SizedBox(height: AppSpacing.xs),
         CdPrivateText(
           (hide) => short

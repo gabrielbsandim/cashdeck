@@ -25,6 +25,8 @@ const _covered = FundingPlan(
   monthlyAverage: Money(120_000),
   months: 1,
   upcoming: Money(30_000),
+  expected: Money(5_000),
+  pixReserve: Money(2_000),
   topUp: Money(0),
 );
 
@@ -65,9 +67,10 @@ void main() {
     expect(
       _inCard(
         find.text(
-          l10n.fundingUpcomingBalance(
+          l10n.fundingUpcoming(
             MoneyFormat.format(const Money(96_300)),
-            MoneyFormat.format(const Money(42_000)),
+            MoneyFormat.format(const Money(55_000)),
+            MoneyFormat.format(const Money(30_000)),
           ),
         ),
       ),
@@ -75,7 +78,13 @@ void main() {
     );
     expect(
       _inCard(
-        find.text(l10n.fundingTopUp(MoneyFormat.format(const Money(54_300)))),
+        find.text(l10n.fundingBalance(MoneyFormat.format(const Money(42_000)))),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      _inCard(
+        find.text(l10n.fundingTopUp(MoneyFormat.format(const Money(139_300)))),
       ),
       findsOneWidget,
     );
@@ -101,6 +110,8 @@ void main() {
         find.text(
           l10n.fundingUpcoming(
             MoneyFormat.format(const Money(30_000), hide: true),
+            MoneyFormat.format(const Money(5_000), hide: true),
+            MoneyFormat.format(const Money(2_000), hide: true),
           ),
         ),
       ),
@@ -118,6 +129,8 @@ void main() {
           monthlyAverage: Money(0),
           months: 1,
           upcoming: Money(0),
+          expected: Money(0),
+          pixReserve: Money(0),
           topUp: Money(0),
         ),
       ),

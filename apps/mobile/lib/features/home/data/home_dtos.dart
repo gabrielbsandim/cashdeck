@@ -130,6 +130,8 @@ FundingPlan fundingFromJson(JsonMap json) {
     monthlyAverage: readMoney(json, 'monthlyAverage'),
     months: readMapList(json, 'months').length,
     upcoming: readMoney(json, 'upcoming'),
+    expected: readMoney(json, 'expected'),
+    pixReserve: readMoney(json, 'pixReserve'),
     topUp: readMoney(json, 'topUp'),
   );
 }

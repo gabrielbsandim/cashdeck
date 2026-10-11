@@ -100,11 +100,33 @@ export const consolidatedSummarySchema = z.object({
 
 export type ConsolidatedSummary = z.infer<typeof consolidatedSummarySchema>
 
+export const fundingItemViewSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  amount: moneyViewSchema,
+  dayOfMonth: z.int().min(1).max(31),
+})
+
+export type FundingItemView = z.infer<typeof fundingItemViewSchema>
+
+// A payment the Asaas balance makes every month without a bill in the app.
+export const fundingItemInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  amountCents: z.int().positive(),
+  dayOfMonth: z.int().min(1).max(31),
+})
+
+export type FundingItemInput = z.infer<typeof fundingItemInputSchema>
+
 export const fundingPlanSchema = z.object({
   balance: moneyViewSchema.nullable(),
   monthlyAverage: moneyViewSchema,
   months: z.array(z.object({ month: z.string(), total: moneyViewSchema })),
   upcoming: moneyViewSchema,
+  // Bills that repeat but have not arrived, plus the fixed payments.
+  expected: moneyViewSchema,
+  pixReserve: moneyViewSchema,
+  items: z.array(fundingItemViewSchema),
   topUp: moneyViewSchema,
 })
 

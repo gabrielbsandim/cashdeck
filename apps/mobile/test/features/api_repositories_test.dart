@@ -316,7 +316,9 @@ void main() {
             {'month': '2026-10', 'total': _money(400)},
           ],
           'upcoming': _money(150),
-          'topUp': _money(150),
+          'expected': _money(60),
+          'pixReserve': _money(40),
+          'topUp': _money(250),
         },
         'GET /api/v1/home/company': _company,
         'GET /api/v1/home/consolidated': {
@@ -346,7 +348,9 @@ void main() {
           monthlyAverage: Money(300),
           months: 2,
           upcoming: Money(150),
-          topUp: Money(150),
+          expected: Money(60),
+          pixReserve: Money(40),
+          topUp: Money(250),
         ),
       );
       expect(personal.reserve, isNull);

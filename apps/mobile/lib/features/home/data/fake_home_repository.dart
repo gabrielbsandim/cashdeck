@@ -136,7 +136,9 @@ final class FakeHomeRepository implements HomeRepository {
         monthlyAverage: Money(218_500),
         months: 3,
         upcoming: Money(96_300),
-        topUp: Money(54_300),
+        expected: Money(55_000),
+        pixReserve: Money(30_000),
+        topUp: Money(139_300),
       ),
     );
   }

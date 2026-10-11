@@ -332,13 +332,15 @@ final class ConsolidatedSummary extends HomeSummary {
 }
 
 /// What the Asaas balance pays a month for the person, and what it lacks for
-/// the bills of the next 30 days.
+/// the next 30 days of bills, expected bills, fixed payments and loose Pix.
 final class FundingPlan extends Equatable {
   const new({
     required this.balance,
     required this.monthlyAverage,
     required this.months,
     required this.upcoming,
+    required this.expected,
+    required this.pixReserve,
     required this.topUp,
   });
 
@@ -349,10 +351,28 @@ final class FundingPlan extends Equatable {
   /// How many months the average spans.
   final int months;
   final Money upcoming;
+
+  /// Bills that repeat but have not arrived, plus the fixed payments.
+  final Money expected;
+
+  /// What a typical month sends in small Pix to people.
+  final Money pixReserve;
   final Money topUp;
 
-  bool get isEmpty => monthlyAverage.cents == 0 && upcoming.cents == 0;
+  bool get isEmpty =>
+      monthlyAverage.cents == 0 &&
+      upcoming.cents == 0 &&
+      expected.cents == 0 &&
+      pixReserve.cents == 0;
 
   @override
-  List<Object?> get props => [balance, monthlyAverage, months, upcoming, topUp];
+  List<Object?> get props => [
+    balance,
+    monthlyAverage,
+    months,
+    upcoming,
+    expected,
+    pixReserve,
+    topUp,
+  ];
 }

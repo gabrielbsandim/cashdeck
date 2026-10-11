@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/personal/funding/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a fixed monthly payment the Asaas balance makes */
+        post: operations["addFundingItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/personal/funding/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a fixed monthly payment */
+        delete: operations["removeFundingItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/company": {
         parameters: {
             query?: never;
@@ -1979,10 +2013,109 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            expected: {
+                                cents: number;
+                                currency: string;
+                            };
+                            pixReserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            items: {
+                                id: string;
+                                name: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                dayOfMonth: number;
+                            }[];
                             topUp: {
                                 cents: number;
                                 currency: string;
                             };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    addFundingItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    amountCents: number;
+                    dayOfMonth: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Add a fixed monthly payment the Asaas balance makes */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            name: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dayOfMonth: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeFundingItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove a fixed monthly payment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
                         };
                     };
                 };
