@@ -6,7 +6,11 @@ import {
   creditUsedPercent,
   openBillOf,
 } from '@/entities/account'
-import { createTransaction, transactionKind } from '@/entities/transaction'
+import {
+  createTransaction,
+  installmentSuffix,
+  transactionKind,
+} from '@/entities/transaction'
 import { Money } from '@/money/money'
 
 const base = { id: 'e1', tenantId: 't1' }
@@ -176,6 +180,27 @@ describe('createTransaction', () => {
     expect(() =>
       createTransaction({ ...txInput, bookedOn: '08/10/2026' }),
     ).toThrow('ISO date')
+  })
+
+  it('reads the installment a statement prints after the merchant', () => {
+    expect(installmentSuffix('SHOE STORE CITY(02/04)')).toEqual({
+      description: 'SHOE STORE CITY',
+      number: 2,
+      count: 4,
+    })
+    expect(installmentSuffix('Travel agency (01/06) ')).toMatchObject({
+      number: 1,
+      count: 6,
+    })
+    for (const text of [
+      'Bakery',
+      '(01/03)',
+      'Gym (00/03)',
+      'Gym (04/03)',
+      'Gym (01/01)',
+    ]) {
+      expect(installmentSuffix(text)).toBeNull()
+    }
   })
 
   it('keeps the merchant and a valid installment', () => {

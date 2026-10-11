@@ -86,6 +86,25 @@ function checkInstallment(installment: Installment): Installment {
   return installment
 }
 
+const INSTALLMENT_SUFFIX = /\s*\((\d{1,2})\/(\d{1,2})\)\s*$/
+
+// Card statements print the installment after the merchant, as in Shoes (02/04).
+export function installmentSuffix(
+  description: string,
+): { description: string; number: number; count: number } | null {
+  const match = INSTALLMENT_SUFFIX.exec(description)
+  if (!match) {
+    return null
+  }
+  const number = Number(match[1])
+  const count = Number(match[2])
+  if (count < 2 || number < 1 || number > count) {
+    return null
+  }
+  const rest = description.slice(0, match.index).trim()
+  return rest === '' ? null : { description: rest, number, count }
+}
+
 export function createTransaction(input: CreateTransactionInput): Transaction {
   if (input.amount.isZero()) {
     throw new ValidationError('A transaction must move money.')

@@ -1,5 +1,6 @@
 import {
   createTransaction,
+  installmentSuffix,
   type EntityKind,
   Money,
   ValidationError,
@@ -66,7 +67,7 @@ const READING_SCHEMA: LlmToolParameter = {
     issuer: text('Card issuer'),
     closing: text('Closing date, YYYY-MM-DD'),
     due: text('Due date, YYYY-MM-DD'),
-    currency: text('ISO 4217 currency of the purchases'),
+    currency: text('ISO 4217 currency of the line amounts'),
     rate: { type: 'number', description: 'BRL per unit of the currency' },
     iofPercent: { type: 'number', description: 'IOF rate in percent' },
     paymentCode: text('Boleto digitable line, or empty'),
@@ -75,9 +76,15 @@ const READING_SCHEMA: LlmToolParameter = {
       items: {
         type: 'object',
         properties: {
-          merchant: text('Merchant'),
+          merchant: text(
+            'Merchant as printed, with an installment such as (02/04)',
+          ),
           date: text('Purchase date, YYYY-MM-DD'),
-          amount: { type: 'number', description: 'Amount, positive purchase' },
+          amount: {
+            type: 'number',
+            description:
+              'Amount, positive purchase, negative payment or refund',
+          },
           uncertain: { type: 'boolean', description: 'Unsure about this line' },
         },
         required: ['merchant', 'date', 'amount', 'uncertain'],
@@ -267,20 +274,28 @@ export function makeCardStatements(deps: StatementDeps) {
     if (lines.length === 0) {
       throw new ValidationError('Pick at least one line of the statement.')
     }
-    const incoming = lines.map(({ line, key }) =>
-      createTransaction({
+    const incoming = lines.map(({ line, key }) => {
+      const split = installmentSuffix(line.merchant)
+      const description = split?.description ?? line.merchant
+      return createTransaction({
         id: deps.ids.next(),
         tenantId,
         accountId: account.id,
         amount: Money.of(
           -Math.round((line.amountCents * statement.rate) / RATE_SCALE),
         ),
-        bookedOn: line.date,
-        description: line.merchant,
+        // A later installment is charged on this bill, not on the purchase day.
+        bookedOn: split && split.number > 1 ? statement.closing : line.date,
+        description,
         externalId: key,
-        merchant: line.merchant,
-      }),
-    )
+        merchant: description,
+        installment: split && {
+          number: split.number,
+          count: split.count,
+          purchaseOn: line.date,
+        },
+      })
+    })
     const stored = await deps.transactions.all(tenantId, {
       accountIds: [account.id],
     })
@@ -293,7 +308,7 @@ export function makeCardStatements(deps: StatementDeps) {
     for (const [line, preview] of pairs) {
       await deps.transactions.save({
         ...confirmPreview(preview, line),
-        installment: preview.installment,
+        installment: preview.installment ?? line.installment,
       })
     }
     const pairedLines = new Set(pairs.map(([line]) => line))

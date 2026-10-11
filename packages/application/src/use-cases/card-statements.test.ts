@@ -140,6 +140,62 @@ describe('card statements', () => {
     )
   })
 
+  it('books a later installment on the bill and keeps the purchase day', async () => {
+    const deps = fullDeps()
+    deps.llm.enqueueObject({
+      ...READING,
+      closing: '2026-10-08',
+      currency: 'BRL',
+      rate: 1,
+      iofPercent: 0,
+      lines: [
+        {
+          merchant: 'SHOE STORE CITY(02/04)',
+          date: '2026-08-20',
+          amount: 99.97,
+          uncertain: false,
+        },
+        {
+          merchant: 'Travel agency (01/06)',
+          date: '2026-10-01',
+          amount: 86.02,
+          uncertain: false,
+        },
+        {
+          merchant: 'Bill payment',
+          date: '2026-09-10',
+          amount: -500,
+          uncertain: false,
+        },
+      ],
+    })
+    await deps.accounts.save(
+      account({ id: 'card', type: 'CREDIT_CARD', entityId: 'pf' }),
+    )
+    const statements = makeCardStatements(deps)
+    const draft = await statements.read(TENANT, { ...upload, entity: 'PF' })
+
+    const posted = await statements.post(TENANT, draft.id, {
+      accountId: 'card',
+      lineIds: draft.lines.map(line => line.id),
+    })
+
+    expect(posted.added).toBe(3)
+    const stored = await deps.transactions.all(TENANT, { accountIds: ['card'] })
+    const byText = new Map(stored.map(tx => [tx.description, tx]))
+    expect(byText.get('SHOE STORE CITY')).toMatchObject({
+      bookedOn: '2026-10-08',
+      merchant: 'SHOE STORE CITY',
+      installment: { number: 2, count: 4, purchaseOn: '2026-08-20' },
+    })
+    expect(byText.get('Travel agency')).toMatchObject({
+      bookedOn: '2026-10-01',
+      installment: { number: 1, count: 6, purchaseOn: '2026-10-01' },
+    })
+    expect(byText.get('Bill payment')?.amount.cents).toBe(50_000)
+    expect(byText.get('Bill payment')?.installment).toBeNull()
+  })
+
   it('posts the lines to the card, confirming the notified previews', async () => {
     const deps = fullDeps()
     deps.llm.enqueueObject({
