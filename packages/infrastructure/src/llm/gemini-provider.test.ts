@@ -110,6 +110,45 @@ describe('GeminiProvider: chat', () => {
     expect(result.stopReason).toBe('tool_use')
   })
 
+  it('keeps the thought signature of a call and sends it back', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  functionCall: { name: 'lookup', args: {} },
+                  thoughtSignature: 'sig-1',
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    )
+    const provider = makeProvider(fetchMock as unknown as typeof fetch)
+    const first = await provider.chat(baseParams)
+    expect(first.toolCalls[0]?.signature).toBe('sig-1')
+
+    await provider.chat({
+      ...baseParams,
+      messages: [
+        { role: 'user', content: 'oi' },
+        { role: 'assistant', content: '', toolCalls: first.toolCalls },
+        { role: 'tool', toolName: 'lookup', content: '{}' },
+      ],
+    })
+    const call = fetchMock.mock.calls[1] as unknown as [unknown, RequestInit]
+    const sent = JSON.parse(String(call[1].body)) as {
+      contents: { parts: Record<string, unknown>[] }[]
+    }
+    expect(sent.contents[1]?.parts[0]).toEqual({
+      functionCall: { name: 'lookup', args: {} },
+      thoughtSignature: 'sig-1',
+    })
+  })
+
   it('falls back to empty arguments when functionCall has no args', async () => {
     const fetchMock = vi.fn(async () =>
       jsonResponse({

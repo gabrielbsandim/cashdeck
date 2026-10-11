@@ -118,11 +118,15 @@ export class GatewayProvider implements LlmProvider {
       )
     }
 
-    const toolCalls = (result.toolCalls ?? []).map(call => ({
-      id: call.toolCallId,
-      name: call.toolName,
-      arguments: (call.input ?? {}) as Record<string, unknown>,
-    }))
+    const toolCalls = (result.toolCalls ?? []).map(call => {
+      const signature = readSignature(call.providerMetadata)
+      return {
+        id: call.toolCallId,
+        name: call.toolName,
+        arguments: (call.input ?? {}) as Record<string, unknown>,
+        ...(signature ? { signature } : {}),
+      }
+    })
     const inputTokens = result.usage?.inputTokens ?? 0
     const outputTokens = result.usage?.outputTokens ?? 0
     const stopReason: LlmStopReason =
@@ -151,6 +155,14 @@ export class GatewayProvider implements LlmProvider {
         : {}),
     }
   }
+}
+
+function readSignature(metadata: unknown): string | undefined {
+  const google = (metadata as { google?: { thoughtSignature?: unknown } })
+    ?.google
+  return typeof google?.thoughtSignature === 'string'
+    ? google.thoughtSignature
+    : undefined
 }
 
 function readStructuredAnswer(result: {
@@ -207,6 +219,13 @@ function toModelMessage(message: LlmMessage): ModelMessage {
           toolCallId: call.id,
           toolName: call.name,
           input: call.arguments,
+          ...(call.signature
+            ? {
+                providerOptions: {
+                  google: { thoughtSignature: call.signature },
+                },
+              }
+            : {}),
         })),
       ],
     }

@@ -6,6 +6,8 @@ export type LlmToolCall = {
   id: string
   name: string
   arguments: Record<string, unknown>
+  // Gemini 3 rejects a replayed call without the opaque signature it sent.
+  signature?: string
 }
 
 export type LlmMessage = {

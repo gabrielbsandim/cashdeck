@@ -28,6 +28,7 @@ interface GeminiPart {
   inlineData?: { mimeType: string; data: string }
   functionCall?: { name: string; args: Record<string, unknown> }
   functionResponse?: { name: string; response: Record<string, unknown> }
+  thoughtSignature?: string
 }
 
 interface GeminiContent {
@@ -297,7 +298,10 @@ function toGeminiContent(message: LlmMessage): GeminiContent {
     const parts: GeminiPart[] = []
     if (message.content) parts.push({ text: message.content })
     for (const call of message.toolCalls) {
-      parts.push({ functionCall: { name: call.name, args: call.arguments } })
+      parts.push({
+        functionCall: { name: call.name, args: call.arguments },
+        ...(call.signature ? { thoughtSignature: call.signature } : {}),
+      })
     }
     return { role: 'model', parts }
   }
@@ -352,6 +356,7 @@ function extractToolCalls(parts: GeminiPart[]): LlmToolCall[] {
         id: `call_${index}`,
         name: part.functionCall.name,
         arguments: part.functionCall.args ?? {},
+        ...(part.thoughtSignature ? { signature: part.thoughtSignature } : {}),
       })
     }
   })

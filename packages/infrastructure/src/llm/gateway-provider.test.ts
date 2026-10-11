@@ -182,6 +182,54 @@ describe('GatewayProvider', () => {
     })
   })
 
+  it('carries the Gemini thought signature of a call both ways', async () => {
+    const generate = vi.fn(async () =>
+      fakeResult({
+        text: '',
+        toolCalls: [
+          {
+            toolCallId: 'c1',
+            toolName: 'list_bills',
+            input: {},
+            providerMetadata: { google: { thoughtSignature: 'sig-1' } },
+          },
+          {
+            toolCallId: 'c2',
+            toolName: 'list_bills',
+            input: {},
+            providerMetadata: { google: { thoughtSignature: 42 } },
+          },
+        ],
+        finishReason: 'tool-calls',
+      }),
+    )
+    const provider = new GatewayProvider({
+      models: ['google/gemini-3.1-flash-lite'],
+      generate: generate as never,
+    })
+    const result = await provider.chat(baseParams())
+    expect(result.toolCalls).toEqual([
+      { id: 'c1', name: 'list_bills', arguments: {}, signature: 'sig-1' },
+      { id: 'c2', name: 'list_bills', arguments: {} },
+    ])
+
+    await provider.chat(
+      baseParams({
+        messages: [
+          { role: 'user', content: 'oi' },
+          { role: 'assistant', content: '', toolCalls: result.toolCalls },
+        ],
+      }),
+    )
+    const args = (generate.mock.calls[1]! as unknown[])[0] as {
+      messages: Array<{ content: Array<Record<string, unknown>> }>
+    }
+    expect(args.messages[1]?.content[0]?.providerOptions).toEqual({
+      google: { thoughtSignature: 'sig-1' },
+    })
+    expect(args.messages[1]?.content[1]?.providerOptions).toBeUndefined()
+  })
+
   it('maps a plain assistant message and a tool result with invalid JSON', async () => {
     const generate = vi.fn(async () => fakeResult())
     const provider = new GatewayProvider({
