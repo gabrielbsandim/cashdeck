@@ -711,8 +711,8 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 
 ```json
 {
-  "id": string, "railId": "MERCADO_PAGO_PAYOUTS"|"ASAAS"|"INTER_EMPRESAS"|"C6_EMPRESAS"|"ASSISTED" | null,
-  "kind": "PIX_API"|"BOLETO_API"|"TAX_API"|"RESERVE_FUNDING"|"BANK_APPROVAL"|"ASSISTED",
+  "id": string, "railId": "ASAAS"|"INTER_EMPRESAS"|"C6_EMPRESAS"|"ASSISTED" | null,
+  "kind": "PIX_API"|"BOLETO_API"|"TAX_API"|"BANK_APPROVAL"|"ASSISTED",
   "owner": "PF"|"PJ", "step": 1|2|3, "institution": string,
   "status": "ACTIVE"|"NEEDS_AUTHORIZATION"|"UNAVAILABLE"|"ALWAYS",
   "configurable": bool
@@ -729,8 +729,7 @@ Rails that share a `RAIL_ID` on an entity share credentials.
 - `PUT /rails/{id}/credentials`: body
   `{ certificate?: Upload, privateKey?: Upload, certificateValidUntil?: date, apiKey?: string, clientId?: string, clientSecret?: string }`.
   Each rail takes only its own fields (422 `This rail does not use <field>`
-  otherwise): Mercado Pago `apiKey` (access token) and `privateKey` (signing
-  key); Asaas `apiKey`; Inter and C6 `clientId`, `clientSecret`,
+  otherwise): Asaas `apiKey`; Inter and C6 `clientId`, `clientSecret`,
   `certificate` and `privateKey`, both PEM.
   Secrets are sealed in the server vault and never returned; only the file
   name, expiry and the last four characters of the API key come back. A PEM
@@ -1092,14 +1091,14 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | `/api/cron/open-finance-sync` | daily 15:00 | syncs every connection, after Pluggy's daily collection (around 14:00) |
 | `/api/cron/preview-sync` | every 3 hours, 11:00 to 23:00 | reads the preview feed into `provisional` movements, then asks it to collect again for the next run; answers `{ accounts, previews }` |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
-| `/api/cron/payment-ladder` | weekdays 11:00 | funds the personal reserve transfer for the Asaas bills it is about to pay, then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
+| `/api/cron/payment-ladder` | weekdays 11:00 | checks that the Asaas balance covers the personal bills it is about to pay (no provider tops it up, so a shortfall sends them to assisted), then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
 
 ## Webhooks
 
-`POST /api/webhooks/{provider}` for `asaas`, `inter`, `mercado-pago`, `pluggy`
+`POST /api/webhooks/{provider}` for `asaas`, `inter`, `pluggy`
 and `notaas`. They do not take the bearer token: each provider proves the call
 with its signature or shared secret (see [providers.md](providers.md#webhooks)),
 and a call that fails the check, or arrives while the secret is not configured,

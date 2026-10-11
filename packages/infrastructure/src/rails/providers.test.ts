@@ -5,7 +5,6 @@ import {
   c6EmpresasRail,
   defaultRails,
   interEmpresasRail,
-  mercadoPagoPayoutsRail,
 } from '@/rails/unconfigured-rail'
 import {
   NotaasInvoiceIssuer,
@@ -14,14 +13,11 @@ import {
 
 describe('unconfigured rails', () => {
   it('declare the coverage from the payment plan', () => {
-    expect(mercadoPagoPayoutsRail().supports('PIX_KEY', 'PF')).toBe(true)
-    expect(mercadoPagoPayoutsRail().supports('PIX_KEY', 'PJ')).toBe(false)
     expect(asaasRail().supports('BOLETO', 'PF')).toBe(true)
     expect(asaasRail().supports('TAX_BARCODE', 'PF')).toBe(false)
     expect(interEmpresasRail().supports('DARF_NO_BARCODE', 'PJ')).toBe(true)
     expect(c6EmpresasRail().supports('TAX_BARCODE', 'PJ')).toBe(false)
     expect(defaultRails().map(rail => rail.id)).toEqual([
-      'MERCADO_PAGO_PAYOUTS',
       'ASAAS',
       'INTER_EMPRESAS',
       'C6_EMPRESAS',

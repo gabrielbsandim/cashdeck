@@ -42,10 +42,8 @@ const entry = (
 // The default ladder of each entity, as docs/plan.md section 5 routes it.
 const CATALOG: Record<EntityKind, readonly CatalogEntry[]> = {
   PF: [
-    entry('MERCADO_PAGO_PAYOUTS', 'PIX_API', 1, 'Mercado Pago'),
     entry('ASAAS', 'PIX_API', 1, 'Asaas'),
     entry('ASAAS', 'BOLETO_API', 1, 'Asaas'),
-    entry('ASAAS', 'RESERVE_FUNDING', 1, 'Asaas'),
     entry(null, 'BANK_APPROVAL', 2, ''),
     entry('ASSISTED', 'ASSISTED', 3, ''),
   ],
@@ -75,10 +73,6 @@ type CredentialField = keyof Omit<RailSecret, 'certificateValidUntil'>
 export const RAIL_CREDENTIAL_NAMES: Partial<
   Record<RailId, Partial<Record<CredentialField, string>>>
 > = {
-  MERCADO_PAGO_PAYOUTS: {
-    apiKey: 'MERCADO_PAGO_ACCESS_TOKEN',
-    privateKey: 'MERCADO_PAGO_SIGNING_KEY',
-  },
   ASAAS: { apiKey: 'ASAAS_API_KEY' },
   INTER_EMPRESAS: {
     clientId: 'INTER_CLIENT_ID',
@@ -107,7 +101,7 @@ type CredentialMap = Partial<Record<CredentialField, string>>
 function credentialFieldsOf(
   item: CatalogEntry | undefined,
 ): CredentialMap | null {
-  if (!item?.railId || item.kind === 'RESERVE_FUNDING') {
+  if (!item?.railId) {
     return null
   }
   return RAIL_CREDENTIAL_NAMES[item.railId] ?? null
@@ -149,7 +143,6 @@ type RailRef = {
 type RailDeps = Pick<
   Deps,
   | 'entities'
-  | 'accounts'
   | 'documents'
   | 'secrets'
   | 'vault'
@@ -184,18 +177,7 @@ export function makeRails(deps: RailDeps) {
       deps.settings.get(tenantId, entity.id),
     ])
     const ready = stored !== null && settings.enabledRails.includes(item.railId)
-    if (item.kind !== 'RESERVE_FUNDING') {
-      return ready ? 'ACTIVE' : 'NEEDS_AUTHORIZATION'
-    }
-    const payout = 'MERCADO_PAGO_PAYOUTS'
-    const payer = await meta(tenantId, entity.id, payout)
-    const accounts = await deps.accounts.listByEntity(tenantId, entity.id)
-    const funded =
-      ready &&
-      payer !== null &&
-      settings.enabledRails.includes(payout) &&
-      accounts.some(account => account.isReserve)
-    return funded ? 'ACTIVE' : 'NEEDS_AUTHORIZATION'
+    return ready ? 'ACTIVE' : 'NEEDS_AUTHORIZATION'
   }
 
   async function view(

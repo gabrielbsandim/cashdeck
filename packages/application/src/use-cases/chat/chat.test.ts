@@ -39,7 +39,7 @@ const use = (name: string, args: Record<string, unknown>): LlmChatResult => ({
 
 async function setup(config = {}) {
   const deps = fullDeps({
-    rails: [new FakePaymentRail('MERCADO_PAGO_PAYOUTS')],
+    rails: [new FakePaymentRail('ASAAS')],
   })
   await deps.accounts.save(account({ id: 'pf-1', entityId: 'pf' }))
   await deps.accounts.save(account({ id: 'pj-1', entityId: 'pj' }))

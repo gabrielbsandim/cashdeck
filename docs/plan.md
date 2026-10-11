@@ -36,8 +36,8 @@ product scope, architecture, integrations and delivery order.
 | Database | Neon (Postgres) via Prisma, pgvector for chat memory |
 | AI | Gemini, reusing the Obra Nova LLM infrastructure |
 | Open Finance | Pluggy (Meu Pluggy free tier first) |
-| PF reserve | A checking account yielding about 100% of CDI (Mercado Pago by default) |
-| PF payer | Asaas (boleto, Pix QR) funded from the reserve on the due date |
+| PF reserve | The personal Asaas balance, topped up by hand with a Pix sized by the monthly average of the bills it pays |
+| PF payer | Asaas (Pix key, Pix QR, boleto) from its own balance |
 | PJ payer | Inter Empresas if the API integration is approved, C6 Empresas otherwise |
 | Invoices | Notaas (free tier) behind an `InvoiceIssuer` port |
 | Base code | Obra Nova: its Next.js, Prisma 7, Neon and Vercel setup for the API, its Flutter app for mobile; Life Deck layout for the monorepo |
@@ -143,7 +143,7 @@ docs/
 | `OpenFinanceProvider` | Pluggy, Fake |
 | `StatementImporter` | Nomad bill (PDF or CSV via Gemini), B3 position XLSX, generic OFX and CSV |
 | `BillSource` | Gmail, ShareIntake, Camera, Chat, C6 DDA, Polp DDA |
-| `PaymentRail` | MercadoPagoPayouts, Asaas, InterEmpresas, C6Empresas, Assisted, Fake |
+| `PaymentRail` | Asaas, InterEmpresas, C6Empresas, Assisted, Fake |
 | `InvoiceIssuer` | Notaas, SefinNacional, FocusNfe, Fake |
 | `LlmProvider` | Gateway (Gemini Flash Lite with Flash fallback), Gemini direct, Mock |
 | `Notifier` | FCM, InApp, Fake |
@@ -190,14 +190,13 @@ attempt on either method is paid or pending, no other step runs for that bill.
 
 | Bill kind | Step 1 | Step 2 | Step 3 |
 |---|---|---|---|
-| Pix to a key | Mercado Pago Payouts from the reserve, or Asaas when payouts is not authorized | none | Assisted |
-| Pix QR, boleto | Pix from the reserve to Asaas on the due date, then Asaas pays (by Pix when the bill carries a BR Code, then by barcode) | none | Assisted (Pix code first) |
+| Pix to a key | Asaas | none | Assisted |
+| Pix QR, boleto | Asaas (by Pix when the bill carries a BR Code, then by barcode) | none | Assisted (Pix code first) |
 | Tax guide (PF DARF) | Asaas by Pix, only when the guide carries a BR Code | none | Assisted |
 
-Mercado Pago enables Payouts only through a commercial agreement. Without it,
-the Asaas balance is the reserve: a bill it cannot cover falls to assisted with
-`RESERVE_FUNDING_FAILED`. Authorizing the payouts rail later restores both the
-Pix route and the funding transfer, with no code change.
+No provider moves money into Asaas (Mercado Pago enables Payouts only through
+a commercial agreement), so the Asaas balance is the reserve and is topped up
+by hand: a bill it cannot cover falls to assisted with `RESERVE_FUNDING_FAILED`.
 The daily alerts read that balance and raise `LOW_BALANCE` the day before the
 ladder run that pays a bill (two or more days before its due date) when it does
 not cover them, so it can be topped up in time. `GET /home/personal/funding`
@@ -222,12 +221,11 @@ gives the monthly average those bills take, to size a recurring transfer.
 - Amount above a threshold, or differing by more than a set percentage (30% by
   default) from the median of the last paid bills to the same recipient,
   requires confirmation. The `Recurrence` model is not used for this yet.
-- Funding transfers (reserve to Asaas) run in the payment-ladder cron (08:00 in
-  Sao Paulo) right before the ladder, on the day the ladder works the bills
-  (one business day before the due date), sized to the shortfall of those
-  bills after the Asaas balance. A bill confirmed later gets its own round.
-  The ladder pays from Asaas only after its round is submitted or paid;
-  otherwise the bill falls to assisted with `RESERVE_FUNDING_FAILED`.
+- The Asaas balance is checked in the payment-ladder cron (08:00 in Sao Paulo)
+  right before the ladder, on the day the ladder works the bills (one business
+  day before the due date). A shortfall cannot be funded automatically, so
+  those bills fall to assisted with `RESERVE_FUNDING_FAILED` until the balance
+  is topped up. A bill confirmed later gets its own check.
 - Every rail call is written as an in-flight attempt first. A call whose answer
   is lost is never sent again: the rail is asked by idempotency key, and an
   unresolved one falls to assisted.
@@ -348,7 +346,8 @@ Phases group features, not partial versions of the ladder.
 1. Inter Empresas API integration approval, then a boleto, a DAS and a DARF payment
    in production with a small amount.
 2. C6 Empresas homologation: DDA query and a schedule-payments batch.
-3. Mercado Pago Payouts for a PF account (eligibility, signing key exchange).
+3. Mercado Pago Payouts for a PF account: closed, it needs a commercial
+   agreement, so Pix to a key goes by Asaas.
 4. Asaas PF: Pix in, boleto payment out, transfer token disabled.
 5. Notaas: emission in Mogi das Cruzes for one domestic and one export invoice in
    the sandbox, then production.
@@ -378,7 +377,6 @@ additional banks as rails, Life Deck merge.
 
 | Provider | Holder | Pix via API | Boleto and tax guides via API | Yield | Cost | Role |
 |---|---|---|---|---|---|---|
-| Mercado Pago | PF | Yes, to a key (Payouts) | No | about 100% CDI | Free | PF reserve |
 | Asaas | PF and PJ | Yes, key and QR | Boleto yes; DARF no | No | Free (PF) | PF payer |
 | Inter Empresas | PJ | Yes | Boleto, DAS, DARF (with or without barcode) | Only the manual "Porquinho" | Free | PJ payer |
 | C6 Empresas | PJ | Batch, needs approval | Boleto batch, needs approval; no tax guides | No | Free after homologation | PJ step 2 and DDA |
@@ -387,7 +385,8 @@ additional banks as rails, Life Deck merge.
 | Notaas | PJ | n/a | n/a | n/a | Free up to 50 invoices a month | NFS-e issuer |
 | Focus NFe | PJ | n/a | n/a | n/a | From R$89.90 a month | NFS-e fallback |
 
-Evaluated and not used: 99Pay, RecargaPay and InfinitePay (no payment API for
+Evaluated and not used: Mercado Pago (Payouts only with a commercial
+agreement), 99Pay, RecargaPay and InfinitePay (no payment API for
 personal use), Efí Pro (Pix limit too low for personal accounts), Cora (each
 payment approved in its app), Transfeera (commercial onboarding for established
 companies), TecnoSpeed, Azify, Dock, Diletta, Oracle and Accesstage (B2B
@@ -396,7 +395,6 @@ infrastructure).
 ### Sources
 
 - Pluggy: https://docs.pluggy.ai/en/reference, https://www.pluggy.ai/pricing
-- Mercado Pago: https://www.mercadopago.com.br/developers/pt/reference
 - C6 schedule-payments: https://developers.c6bank.com.br/yamls/schedule-payments.yaml
 - Inter Empresas: https://developers.inter.co/references/banking,
   https://ajuda.kobana.com.br/pt-BR/articles/9580163-como-fazer-pagamentos-pela-api-do-banco-inter
@@ -413,7 +411,8 @@ infrastructure).
 
 1. Inter now reviews new API integrations manually; if refused, C6 becomes the PJ
    default and tax guides stay assisted.
-2. Mercado Pago Payouts eligibility for PF accounts is unconfirmed.
+2. No PF provider moves money into Asaas by API, so its balance is topped up by
+   hand; `LOW_BALANCE` warns the day before a short ladder run.
 3. Notaas is a young vendor and its Mogi das Cruzes coverage is unconfirmed; the
    port keeps FocusNfe and SefinNacional ready.
 4. Meu Pluggy terms limit use to personal; a hosted Cashdeck needs a paid plan.

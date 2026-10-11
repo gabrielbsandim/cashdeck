@@ -96,7 +96,6 @@ void main() {
         RailKind.pixApi: true,
         RailKind.boletoApi: true,
         RailKind.taxApi: true,
-        RailKind.reserveFunding: false,
         RailKind.bankApproval: false,
         RailKind.assisted: false,
       },
@@ -147,7 +146,7 @@ void main() {
     );
     T valueOf<T>(Result<T> result) => (result as Ok<T>).value;
 
-    expect(valueOf(await repository.rails(EntityKind.personal)), hasLength(4));
+    expect(valueOf(await repository.rails(EntityKind.personal)), hasLength(3));
     expect(valueOf(await repository.rails(EntityKind.company)), hasLength(5));
     expect(
       valueOf(await repository.authorize('rail-pj-approval')).status,

@@ -20,12 +20,11 @@ describe('createProviders', () => {
   it('wires every adapter behind its port', async () => {
     const providers = createProviders({ env: {}, tenantId: TENANT })
     expect(providers.rails.map(rail => rail.id)).toEqual([
-      'MERCADO_PAGO_PAYOUTS',
       'ASAAS',
       'INTER_EMPRESAS',
       'C6_EMPRESAS',
     ])
-    expect([...providers.railStatus.keys()]).toHaveLength(4)
+    expect([...providers.railStatus.keys()]).toHaveLength(3)
     expect(providers.billSources.map(source => source.source)).toEqual([
       'GMAIL',
       'DDA',
@@ -79,7 +78,7 @@ describe('createProviders', () => {
       llm: new FakeLlmProvider(),
       now: () => new Date('2026-10-08T12:00:00Z'),
     })
-    const asaas = providers.rails[1]
+    const asaas = providers.rails[0]
     await expect(asaas?.pay(payment())).rejects.toThrow('not configured')
     await secrets.put(
       TENANT,
@@ -101,7 +100,7 @@ describe('createProviders', () => {
       tenantId: TENANT,
       fetch: fetchImpl as unknown as typeof fetch,
     })
-    expect(await providers.rails[1]?.check()).toEqual({
+    expect(await providers.rails[0]?.check()).toEqual({
       ok: true,
       message: null,
     })

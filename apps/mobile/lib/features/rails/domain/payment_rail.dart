@@ -4,14 +4,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
 
-enum RailKind {
-  pixApi,
-  boletoApi,
-  taxApi,
-  reserveFunding,
-  bankApproval,
-  assisted,
-}
+enum RailKind { pixApi, boletoApi, taxApi, bankApproval, assisted }
 
 enum RailStatus { active, needsAuthorization, unavailable, always }
 
@@ -38,9 +31,7 @@ final class PaymentRail extends Equatable {
   /// Only API rails carry credentials and a test.
   bool get configurable => switch (kind) {
     RailKind.pixApi || RailKind.boletoApi || RailKind.taxApi => true,
-    RailKind.reserveFunding ||
-    RailKind.bankApproval ||
-    RailKind.assisted => false,
+    RailKind.bankApproval || RailKind.assisted => false,
   };
 
   PaymentRail withStatus(RailStatus next) => PaymentRail(

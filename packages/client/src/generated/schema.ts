@@ -123,6 +123,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/personal/funding/debit-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Pick the account the bank debits by itself, or null to stop */
+        put: operations["setDebitAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/personal/funding/items/{id}": {
         parameters: {
             query?: never;
@@ -2034,6 +2051,30 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            debit: {
+                                accountId: string;
+                                name: string;
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                items: {
+                                    name: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    on: string;
+                                }[];
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                topUp: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
                         };
                     };
                 };
@@ -2081,6 +2122,45 @@ export interface operations {
                                 currency: string;
                             };
                             dayOfMonth: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setDebitAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    accountId: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Pick the account the bank debits by itself, or null to stop */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            accountId: string | null;
                         };
                     };
                 };
@@ -5145,7 +5225,7 @@ export interface operations {
                             /** @enum {string|null} */
                             railId: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED" | null;
                             /** @enum {string} */
-                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "RESERVE_FUNDING" | "BANK_APPROVAL" | "ASSISTED";
+                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "BANK_APPROVAL" | "ASSISTED";
                             /** @enum {string} */
                             owner: "PF" | "PJ";
                             step: number;
@@ -5226,7 +5306,7 @@ export interface operations {
                             /** @enum {string|null} */
                             railId: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED" | null;
                             /** @enum {string} */
-                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "RESERVE_FUNDING" | "BANK_APPROVAL" | "ASSISTED";
+                            kind: "PIX_API" | "BOLETO_API" | "TAX_API" | "BANK_APPROVAL" | "ASSISTED";
                             /** @enum {string} */
                             owner: "PF" | "PJ";
                             step: number;

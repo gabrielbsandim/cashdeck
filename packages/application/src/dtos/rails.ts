@@ -6,7 +6,6 @@ export const RAIL_KINDS = [
   'PIX_API',
   'BOLETO_API',
   'TAX_API',
-  'RESERVE_FUNDING',
   'BANK_APPROVAL',
   'ASSISTED',
 ] as const

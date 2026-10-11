@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto'
 import {
   UnauthorizedError,
   type WebhookDelivery,
@@ -60,67 +59,6 @@ export class AsaasWebhookReader implements WebhookReader {
         text(body.event) ?? 'UNKNOWN',
         'ASAAS',
         reference ?? null,
-      ),
-    ]
-  }
-}
-
-function signatureParts(header: string | undefined): Record<string, string> {
-  return Object.fromEntries(
-    (header ?? '')
-      .split(',')
-      .map(part => part.trim().split('='))
-      .filter(pair => pair.length === 2),
-  )
-}
-
-// x-signature is `ts=<ts>,v1=<hex HMAC-SHA256>` of the manifest
-// `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`, leaving out absent parts.
-export function mercadoPagoManifest(
-  dataId: string,
-  requestId: string,
-  ts: string,
-): string {
-  const parts: Array<[string, string]> = [
-    ['id', dataId.toLowerCase()],
-    ['request-id', requestId],
-    ['ts', ts],
-  ]
-  return parts
-    .filter(([, value]) => value.length > 0)
-    .map(([name, value]) => `${name}:${value};`)
-    .join('')
-}
-
-export class MercadoPagoWebhookReader implements WebhookReader {
-  readonly provider: WebhookProvider = 'mercado-pago'
-
-  constructor(private readonly deps: ReaderDeps) {}
-
-  async read(tenantId: string, delivery: WebhookDelivery) {
-    const secret = await webhookSecret(
-      this.deps.credentials,
-      'MERCADO_PAGO_WEBHOOK_SECRET',
-      tenantId,
-      delivery,
-    )
-    const { ts = '', v1 = '' } = signatureParts(delivery.headers['x-signature'])
-    const requestId = delivery.headers['x-request-id'] ?? ''
-    const dataId = delivery.query['data.id'] ?? ''
-    if (!ts) {
-      throw new UnauthorizedError('Missing webhook signature.')
-    }
-    const expected = createHmac('sha256', secret)
-      .update(mercadoPagoManifest(dataId, requestId, ts))
-      .digest('hex')
-    requireSame(v1, expected)
-    const body = parseObject(delivery.rawBody)
-    return [
-      payment(
-        text(body.id) ?? (requestId || bodyId(delivery.rawBody)),
-        text(body.action) ?? text(body.type) ?? 'UNKNOWN',
-        'MERCADO_PAGO_PAYOUTS',
-        text(field(body.data, 'id')) ?? (dataId || null),
       ),
     ]
   }
@@ -235,7 +173,6 @@ export class NotaasWebhookReader implements WebhookReader {
 export function createWebhookReaders(deps: ReaderDeps): WebhookReader[] {
   return [
     new AsaasWebhookReader(deps),
-    new MercadoPagoWebhookReader(deps),
     new InterWebhookReader(deps),
     new PluggyWebhookReader(deps),
     new NotaasWebhookReader(deps),

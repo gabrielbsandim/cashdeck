@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
-import { account, base64, fullDeps } from '@/testing/deps.test-helpers'
+import { base64, fullDeps } from '@/testing/deps.test-helpers'
 import { FakePaymentRail } from '@/testing/providers'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { makeAutomation } from '@/use-cases/automation'
@@ -29,14 +29,12 @@ describe('rails', () => {
     const { rails } = setup()
     const pf = await rails.list(TENANT, 'PF')
     expect(pf.map(rail => [rail.id, rail.status, rail.configurable])).toEqual([
-      ['PF.MERCADO_PAGO_PAYOUTS.PIX_API', 'NEEDS_AUTHORIZATION', true],
       ['PF.ASAAS.PIX_API', 'NEEDS_AUTHORIZATION', true],
       ['PF.ASAAS.BOLETO_API', 'NEEDS_AUTHORIZATION', true],
-      ['PF.ASAAS.RESERVE_FUNDING', 'NEEDS_AUTHORIZATION', false],
       ['PF.NONE.BANK_APPROVAL', 'UNAVAILABLE', false],
       ['PF.ASSISTED.ASSISTED', 'ALWAYS', false],
     ])
-    expect(pf[4]?.railId).toBeNull()
+    expect(pf[2]?.railId).toBeNull()
   })
 
   it('stores client credentials and the mTLS pair under adapter names', async () => {
@@ -96,28 +94,6 @@ describe('rails', () => {
     const test = await rails.test(TENANT, 'PF.ASAAS.PIX_API')
     expect(test.checks.map(check => check.kind)).not.toContain('CERTIFICATE')
     expect(test.checks[0]).toMatchObject({ kind: 'API_KEY', passed: true })
-  })
-
-  it('funds the reserve only when both rails and a reserve account exist', async () => {
-    const { deps, rails } = setup()
-    await rails.saveCredentials(TENANT, 'PF.ASAAS.PIX_API', {
-      apiKey: 'key-1234',
-    })
-    await rails.authorize(TENANT, 'PF.ASAAS.PIX_API')
-    const statusOf = async () =>
-      (await rails.list(TENANT, 'PF')).find(
-        rail => rail.kind === 'RESERVE_FUNDING',
-      )?.status
-    expect(await statusOf()).toBe('NEEDS_AUTHORIZATION')
-    await deps.accounts.save(
-      account({ id: 'r', entityId: 'pf', isReserve: true }),
-    )
-    expect(await statusOf()).toBe('NEEDS_AUTHORIZATION')
-    const payouts = 'PF.MERCADO_PAGO_PAYOUTS.PIX_API'
-    await rails.saveCredentials(TENANT, payouts, { apiKey: 'token-1234' })
-    expect(await statusOf()).toBe('NEEDS_AUTHORIZATION')
-    await rails.authorize(TENANT, payouts)
-    expect(await statusOf()).toBe('ACTIVE')
   })
 
   it('reads a test without a rail, or with a stale certificate, as failing', async () => {

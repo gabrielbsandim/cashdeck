@@ -1,12 +1,6 @@
 import { type RailId } from '@cashdeck/domain'
 
-export const WEBHOOK_PROVIDERS = [
-  'asaas',
-  'inter',
-  'mercado-pago',
-  'pluggy',
-  'notaas',
-] as const
+export const WEBHOOK_PROVIDERS = ['asaas', 'inter', 'pluggy', 'notaas'] as const
 export type WebhookProvider = (typeof WEBHOOK_PROVIDERS)[number]
 
 // Header names are lower case; the raw body is kept for signature checks.

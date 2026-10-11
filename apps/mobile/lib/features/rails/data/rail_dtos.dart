@@ -6,7 +6,6 @@ const Map<String, RailKind> _kinds = {
   'PIX_API': RailKind.pixApi,
   'BOLETO_API': RailKind.boletoApi,
   'TAX_API': RailKind.taxApi,
-  'RESERVE_FUNDING': RailKind.reserveFunding,
   'BANK_APPROVAL': RailKind.bankApproval,
   'ASSISTED': RailKind.assisted,
 };

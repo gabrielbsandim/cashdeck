@@ -130,7 +130,6 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 |---|---|
 | `ASAAS_API_KEY` | `access_token` header |
 | `ASAAS_ENVIRONMENT` | `sandbox` or `production` (default) |
-| `ASAAS_PIX_KEY` | Pix key of this Asaas account, the destination of the reserve funding payout (per entity: `ASAAS_PIX_KEY@<entityId>`) |
 
 - BR Code: `POST /v3/pix/qrCodes/decode` first (refuses when `canBePaid` is
   false or `totalValue` is above the bill), then `POST /v3/pix/qrCodes/pay` with
@@ -163,39 +162,16 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
   still never resends it (it writes an `IN_FLIGHT` attempt before the call) and
   the bill falls to assisted with `IN_FLIGHT_UNRESOLVED`.
 
-### Mercado Pago Payouts (`MercadoPagoPayoutsRail`, PF)
+### Asaas top-up (`ManualTopUpFunder`, PF)
 
-| Credential | Use |
-|---|---|
-| `MERCADO_PAGO_ACCESS_TOKEN` | `Authorization: Bearer` |
-| `MERCADO_PAGO_SIGNING_KEY` | PEM private key for `X-signature`, required in production |
-| `MERCADO_PAGO_ENVIRONMENT` | `sandbox` sends `X-test-token: true` and `X-enforce-signature: false` |
-
-- `POST /v1/payouts` with `X-Idempotency-Key`, one `transactions[]` item of
-  `type: pix` with `pix.type` and `pix.chave`. Status:
-  `GET /v1/payouts/{payout}/transactions/{transaction}` (`success` is paid,
-  `error` and `canceled` failed).
-- **Pix BR Code is not supported.** Payouts accept a Pix key or bank account
-  data only, so this rail serves `PIX_KEY` bills; a bolepix for the personal
-  entity is paid by Asaas from the reserve-funded account, or falls to assisted.
-
-### Reserve funding (`PixReserveFunder`, PF)
-
-Implements the `ReserveFunder` port by composing the two rails above: it reads
-the Asaas balance (`AsaasRail.balanceCents`) and sends the shortfall from the
-Mercado Pago reserve with `MercadoPagoPayoutsRail.payout` to the Pix key in
-`ASAAS_PIX_KEY`, with the round's idempotency key
-(`reserve:<entityId>:<day>:<round>`) as `X-Idempotency-Key`. A round left in
-flight by a crash is resent with the same key, so it relies on Mercado Pago
-answering a repeated key with the first payout (**unconfirmed** for payouts).
-Without `ASAAS_PIX_KEY` the funder reports not configured, the round fails and
-the Asaas bills fall to assisted with `RESERVE_FUNDING_FAILED`, unless the
-Asaas balance already covers them.
-- Docs: https://www.mercadopago.com.br/developers/en/docs/money-out/integration-configuration.
-- **Unconfirmed:** the `X-signature` algorithm (implemented as the base64
-  RSA-SHA256 signature of the body; injectable through `signer`), the Pix key
-  type names beyond `CPF`, the format limits of `external_reference`, and an
-  end-to-end id field on the transaction status.
+No provider moves money into the personal Asaas account: Mercado Pago enables
+Payouts only through a commercial agreement, so the account is topped up by
+hand with a Pix from the bank, sized by the "Abastecer o Asaas" card (the
+monthly average of `GET /home/personal/funding`). The `ReserveFunder` port is
+kept for the check before each personal Asaas payment: `ManualTopUpFunder`
+reads the Asaas balance (`AsaasRail.balanceCents`) and, when it falls short,
+fails the round with a reason that asks for a top-up, so the bills fall to
+assisted with `RESERVE_FUNDING_FAILED`. `LOW_BALANCE` warns the day before.
 
 ### Inter Empresas (`InterEmpresasRail`, PJ)
 
@@ -346,7 +322,6 @@ selects which secret to check against, so it grants nothing by itself.
 | Provider | URL to register | Secret | Proof |
 |---|---|---|---|
 | Asaas | `/api/webhooks/asaas` | `ASAAS_WEBHOOK_TOKEN` | the `authToken` set on the webhook, sent back in `asaas-access-token` |
-| Mercado Pago | `/api/webhooks/mercado-pago` | `MERCADO_PAGO_WEBHOOK_SECRET` | `x-signature: ts=<ts>,v1=<hex>`, HMAC-SHA256 of `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` |
 | Inter Empresas | `/api/webhooks/inter?token=<secret>` | `INTER_WEBHOOK_TOKEN` | the token in the registered URL (or the `x-cashdeck-webhook-token` header) |
 | Pluggy | `/api/webhooks/pluggy?token=<secret>` (event `all`) | `PLUGGY_WEBHOOK_SECRET` | the token in the registered URL (or the `x-cashdeck-webhook-token` header); the dashboard form has no header field |
 | Notaas | `/api/webhooks/notaas` | `NOTAAS_WEBHOOK_SECRET` | `X-Notaas-Signature: sha256=<hex HMAC of the raw body>` |
@@ -360,10 +335,6 @@ selects which secret to check against, so it grants nothing by itself.
   pauses the queue after 15 consecutive failed deliveries, which is why the
   route answers before the work. Docs:
   https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook.
-- **Mercado Pago:** `data.id` (query or body) is matched against the payout id
-  of the stored `payout/transaction` pair. The event id is the body `id`, then
-  `x-request-id`. Docs:
-  https://www.mercadopago.com.br/developers/en/docs/your-integrations/notifications/webhooks.
 - **Inter Empresas:** the body is an array (or one object) of payment items;
   `codigoSolicitacao` or `codigoTransacao` reconciles the `INTER_EMPRESAS`
   attempt (`pix:`, `pagamento:`, `darf:`). Each item's event id is the SHA-256
@@ -380,9 +351,6 @@ selects which secret to check against, so it grants nothing by itself.
 
 - Asaas: that a Pix QR code payment is reported through transfer events, and
   the name of the bill payment object (`bill`).
-- Mercado Pago: the manifest template and `ts` units come from the published
-  algorithm, not checked against a live delivery; which topic money-out
-  (payouts) notifications use; whether `data.id` is the payout id.
 - Inter: the payload fields. Registration was confirmed live:
   `PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
   `boleto-pagamento` answers 204 under the `webhook-banking.write` scope, and

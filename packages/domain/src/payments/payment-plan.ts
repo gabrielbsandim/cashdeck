@@ -7,6 +7,8 @@ import { ValidationError } from '@/shared/domain-error'
 export const STEP_MODES = ['AUTOMATIC', 'BANK_APPROVAL', 'ASSISTED'] as const
 export type StepMode = (typeof STEP_MODES)[number]
 
+// MERCADO_PAGO_PAYOUTS routes nothing: it stays only because stored settings
+// and the audit history still name it.
 export const RAIL_IDS = [
   'MERCADO_PAGO_PAYOUTS',
   'ASAAS',
@@ -198,7 +200,7 @@ const approval = (rail: RailId): Route => ({ mode: 'BANK_APPROVAL', rail })
 // skipped, so switching provider is authorizing one rail and removing another.
 const DEFAULT_ROUTES: Record<EntityKind, Record<BillKind, readonly Route[]>> = {
   PF: {
-    PIX_KEY: [auto('MERCADO_PAGO_PAYOUTS'), auto('ASAAS')],
+    PIX_KEY: [auto('ASAAS')],
     PIX_QR: [auto('ASAAS')],
     BOLETO: [auto('ASAAS')],
     TAX_BARCODE: [],

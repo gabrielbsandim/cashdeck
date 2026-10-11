@@ -35,7 +35,7 @@ function seed(id: string, dueDate: string) {
 
 describe('bill queries and manual payment', () => {
   it('returns the bill detail with its plan and attempts', async () => {
-    const deps = scenario([new FakePaymentRail('MERCADO_PAGO_PAYOUTS')])
+    const deps = scenario([new FakePaymentRail('ASAAS')])
     const target = seed('b1', '2026-10-20')
     await deps.bills.save(target)
     await trust(deps.payees, target)
@@ -47,10 +47,7 @@ describe('bill queries and manual payment', () => {
     expect(detail.status).toBe('PAID')
     expect(detail.entityKind).toBe('PF')
     expect(detail.paidAt).toBe(NOW.toISOString())
-    expect(detail.plan?.steps.map(s => s.rail)).toEqual([
-      'MERCADO_PAGO_PAYOUTS',
-      'ASSISTED',
-    ])
+    expect(detail.plan?.steps.map(s => s.rail)).toEqual(['ASAAS', 'ASSISTED'])
     expect(detail.attempts[0]).toMatchObject({
       outcome: 'PAID',
       amount: { cents: 100 },

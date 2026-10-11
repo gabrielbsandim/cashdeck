@@ -11,7 +11,7 @@ import {
 
 describe('runDuePayments', () => {
   it('runs the ladder for open bills due by the next business day', async () => {
-    const deps = scenario([new FakePaymentRail('MERCADO_PAGO_PAYOUTS')])
+    const deps = scenario([new FakePaymentRail('ASAAS')])
     const due = [
       '2026-10-07',
       '2026-10-08',
@@ -48,13 +48,13 @@ describe('runDuePayments', () => {
     expect(summary).toEqual({
       checked: 2,
       byStatus: { PAID: 2 },
-      funding: { rounds: 0, fundedCents: 0 },
+      funding: { rounds: 1, fundedCents: 200 },
     })
     expect((await deps.bills.findById(TENANT, 'b3'))?.status).toBe('OPEN')
   })
 
   it('skips the month paid by hand and pays the next one', async () => {
-    const rail = new FakePaymentRail('MERCADO_PAGO_PAYOUTS')
+    const rail = new FakePaymentRail('ASAAS')
     const deps = scenario([rail])
     for (const [id, dueDate] of [
       ['oct', '2026-10-09'],

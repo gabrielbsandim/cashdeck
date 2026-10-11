@@ -69,12 +69,11 @@ read from are in [providers.md](providers.md).
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | for Open Finance | Aggregator |
 | `PIERRE_API_KEY` | optional | Preview feed between Pluggy's daily collections |
 | `ASAAS_API_KEY`, `ASAAS_ENVIRONMENT` | no | Tenant-wide Asaas fallback |
-| `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_SIGNING_KEY`, `MERCADO_PAGO_ENVIRONMENT` | no | Tenant-wide Mercado Pago fallback |
 | `INTER_CLIENT_ID`, `INTER_CLIENT_SECRET`, `INTER_CERT`, `INTER_KEY`, `INTER_ACCOUNT`, `INTER_ENVIRONMENT` | no | Tenant-wide Inter fallback |
 | `C6_CLIENT_ID`, `C6_CLIENT_SECRET`, `C6_CERT`, `C6_KEY`, `C6_TOKEN_URL`, `C6_UPLOADER_NAME`, `C6_ENVIRONMENT` | no | Tenant-wide C6 fallback and DDA |
 | `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REDIRECT_URI` | for Gmail capture | Google OAuth client |
 | `NOTAAS_API_KEY`, `NOTAAS_WEBHOOK_SECRET`, `NOTAAS_ALIQUOTA_ISS`, `NOTAAS_LOCAL_PRESTACAO`, `NOTAAS_EXPORT_COUNTRY` | for invoices | NFS-e issuer |
-| `ASAAS_WEBHOOK_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET`, `INTER_WEBHOOK_TOKEN`, `PLUGGY_WEBHOOK_SECRET` | for webhooks | Shared secrets of each provider webhook; without one that webhook answers 401 |
+| `ASAAS_WEBHOOK_TOKEN`, `INTER_WEBHOOK_TOKEN`, `PLUGGY_WEBHOOK_SECRET` | for webhooks | Shared secrets of each provider webhook; without one that webhook answers 401 |
 | `FCM_SERVICE_ACCOUNT_JSON` | for push | Firebase service account |
 
 Rail credentials saved from the app live in the database, sealed with
@@ -104,9 +103,6 @@ the crons do the same work on their schedule. For each provider you use:
    - **Asaas** (each account, under Integrations, Webhooks): URL
      `https://<api domain>/api/webhooks/asaas`, authentication token = the
      secret (`ASAAS_WEBHOOK_TOKEN`), events for transfers and bill payments.
-   - **Mercado Pago** (Your integrations, Webhooks): URL
-     `https://<api domain>/api/webhooks/mercado-pago`; copy the signing secret
-     the panel shows into `MERCADO_PAGO_WEBHOOK_SECRET`.
    - **Inter Empresas** (banking webhook API, once per type):
      `https://<api domain>/api/webhooks/inter?token=<INTER_WEBHOOK_TOKEN>`.
    - **Pluggy** (dashboard webhook form, or `POST /webhooks`): URL

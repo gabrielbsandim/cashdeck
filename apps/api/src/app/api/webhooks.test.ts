@@ -4,7 +4,6 @@ import { Money } from '@cashdeck/domain'
 import { getContainer, resetContainer } from '@/server/container'
 import { POST as asaas } from '@/app/api/webhooks/asaas/route'
 import { POST as inter } from '@/app/api/webhooks/inter/route'
-import { POST as mercadoPago } from '@/app/api/webhooks/mercado-pago/route'
 import { POST as pluggy } from '@/app/api/webhooks/pluggy/route'
 import { POST as notaas } from '@/app/api/webhooks/notaas/route'
 import { POST as cancel } from '@/app/api/v1/invoices/[id]/cancel/route'
@@ -65,7 +64,6 @@ beforeEach(() => {
   vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
   vi.stubEnv('CRON_SECRET', 'cron-secret')
   vi.stubEnv('ASAAS_WEBHOOK_TOKEN', 'asaas-token')
-  vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', 'mp-secret')
   vi.stubEnv('INTER_WEBHOOK_TOKEN', 'inter-token')
   vi.stubEnv('PLUGGY_WEBHOOK_SECRET', 'pluggy-secret')
   vi.stubEnv('NOTAAS_WEBHOOK_SECRET', 'notaas-secret')
@@ -80,7 +78,7 @@ afterEach(() => {
 describe('webhook routes', () => {
   it('reject unauthenticated calls with 401 and ignore the bearer token', async () => {
     const bearer = { authorization: `Bearer ${TOKEN}` }
-    for (const handler of [asaas, inter, mercadoPago, pluggy, notaas]) {
+    for (const handler of [asaas, inter, pluggy, notaas]) {
       const anonymous = await json(await handler(hook('x', {})))
       expect([anonymous.status, anonymous.body.error.code]).toEqual([
         401,
@@ -111,26 +109,6 @@ describe('webhook routes', () => {
   })
 
   it('verifies each provider and runs the work', async () => {
-    const ts = '1704908010'
-    const signature = createHmac('sha256', 'mp-secret')
-      .update(`id:pay-1;request-id:req-1;ts:${ts};`)
-      .digest('hex')
-    const mp = new Request(
-      'http://localhost/api/webhooks/mercado-pago?data.id=PAY-1',
-      {
-        method: 'POST',
-        headers: {
-          'x-signature': `ts=${ts},v1=${signature}`,
-          'x-request-id': 'req-1',
-        },
-        body: JSON.stringify({
-          id: 1,
-          action: 'payout.updated',
-          data: { id: 'PAY-1' },
-        }),
-      },
-    )
-    expect((await mercadoPago(mp)).status).toBe(200)
     const interCall = new Request(
       'http://localhost/api/webhooks/inter?token=inter-token',
       {

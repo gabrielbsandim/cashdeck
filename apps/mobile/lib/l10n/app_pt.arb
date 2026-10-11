@@ -834,7 +834,6 @@
   "railPixApi": "Pix via API",
   "railBoletoApi": "Boleto via API",
   "railTaxApi": "Guias DAS e DARF",
-  "railReserveFunding": "Reserva para contas",
   "railBankApproval": "Aprovação no banco",
   "railAssisted": "Assistido",
   "railPayer": "{bank} · pagadora",
@@ -847,14 +846,6 @@
   },
   "railViaApi": "{bank} · via API",
   "@railViaApi": {
-    "placeholders": {
-      "bank": {
-        "type": "String"
-      }
-    }
-  },
-  "railFundingDetail": "{bank} · abastece o passo 1",
-  "@railFundingDetail": {
     "placeholders": {
       "bank": {
         "type": "String"

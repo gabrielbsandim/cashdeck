@@ -37,13 +37,6 @@ export class UnconfiguredRail implements PaymentRail {
   }
 }
 
-export function mercadoPagoPayoutsRail(): UnconfiguredRail {
-  return new UnconfiguredRail('MERCADO_PAGO_PAYOUTS', 'Mercado Pago Payouts', {
-    entityKinds: ['PF'],
-    billKinds: ['PIX_KEY'],
-  })
-}
-
 export function asaasRail(): UnconfiguredRail {
   return new UnconfiguredRail('ASAAS', 'Asaas', {
     entityKinds: ['PF', 'PJ'],
@@ -72,10 +65,5 @@ export function c6EmpresasRail(): UnconfiguredRail {
 }
 
 export function defaultRails(): UnconfiguredRail[] {
-  return [
-    mercadoPagoPayoutsRail(),
-    asaasRail(),
-    interEmpresasRail(),
-    c6EmpresasRail(),
-  ]
+  return [asaasRail(), interEmpresasRail(), c6EmpresasRail()]
 }

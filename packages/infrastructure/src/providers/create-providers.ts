@@ -35,8 +35,7 @@ import {
   type DarfDetailsLookup,
   InterEmpresasRail,
 } from '@/rails/inter-empresas-rail'
-import { MercadoPagoPayoutsRail } from '@/rails/mercado-pago-rail'
-import { PixReserveFunder } from '@/rails/reserve-funder'
+import { ManualTopUpFunder } from '@/rails/manual-top-up-funder'
 import { createWebhookReaders } from '@/webhooks/webhook-readers'
 
 export type CreateProvidersInput = {
@@ -84,10 +83,8 @@ export function createProviders(input: CreateProvidersInput): Providers {
   const clients = new BankClients(input.mtls)
   const now = input.now ?? (() => new Date())
   const documentText = new PdfTextReader()
-  const payouts = new MercadoPagoPayoutsRail({ credentials, transport })
   const asaas = new AsaasRail({ credentials, transport })
   const rails = [
-    payouts,
     asaas,
     new InterEmpresasRail({
       credentials,
@@ -102,11 +99,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
     railStatus: new Map<RailId, RailStatusReader>(
       rails.map(rail => [rail.id, rail]),
     ),
-    reserveFunder: new PixReserveFunder({
-      credentials,
-      balance: asaas,
-      payouts,
-    }),
+    reserveFunder: new ManualTopUpFunder({ balance: asaas }),
     openFinance: new PluggyProvider({ credentials, transport }),
     preview: new PierreProvider({ credentials, transport }),
     marketData: new PublicMarketData({ transport }),

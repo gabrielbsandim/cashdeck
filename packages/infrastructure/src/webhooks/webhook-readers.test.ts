@@ -9,10 +9,7 @@ import {
 } from '@cashdeck/application'
 import { CredentialResolver } from '@/credentials/credential-resolver'
 import { credentials, TENANT } from '@/testing/provider-fixtures'
-import {
-  createWebhookReaders,
-  mercadoPagoManifest,
-} from '@/webhooks/webhook-readers'
+import { createWebhookReaders } from '@/webhooks/webhook-readers'
 import {
   bodyId,
   field,
@@ -24,7 +21,6 @@ import {
 
 const SECRETS = {
   ASAAS_WEBHOOK_TOKEN: 'asaas-token',
-  MERCADO_PAGO_WEBHOOK_SECRET: 'mp-secret',
   INTER_WEBHOOK_TOKEN: 'inter-token',
   PLUGGY_WEBHOOK_SECRET: 'pluggy-secret',
   NOTAAS_WEBHOOK_SECRET: 'notaas-secret',
@@ -131,82 +127,6 @@ describe('Asaas webhooks', () => {
         headers: auth,
       }),
     ).toHaveLength(1)
-  })
-})
-
-describe('Mercado Pago webhooks', () => {
-  const sign = (dataId: string, requestId: string, ts: string) =>
-    createHmac('sha256', 'mp-secret')
-      .update(mercadoPagoManifest(dataId, requestId, ts))
-      .digest('hex')
-
-  it('builds the manifest and leaves out absent parts', () => {
-    expect(mercadoPagoManifest('ABC123', 'req-1', '1704908010')).toBe(
-      'id:abc123;request-id:req-1;ts:1704908010;',
-    )
-    expect(mercadoPagoManifest('', '', '1704908010')).toBe('ts:1704908010;')
-  })
-
-  it('verifies the signature and maps the resource id', async () => {
-    const mp = reader('mercado-pago')
-    const headers = {
-      'x-signature': `ts=1704908010, v1=${sign('PAY-1', 'req-1', '1704908010')}`,
-      'x-request-id': 'req-1',
-    }
-    const events = await mp.read(
-      TENANT,
-      delivery(
-        'mercado-pago',
-        { id: 12345, action: 'payout.updated', data: { id: 'PAY-1' } },
-        headers,
-        { 'data.id': 'PAY-1' },
-      ),
-    )
-    expect(events).toEqual([
-      {
-        eventId: '12345',
-        type: 'payout.updated',
-        kind: 'PAYMENT',
-        rail: 'MERCADO_PAGO_PAYOUTS',
-        reference: 'PAY-1',
-      },
-    ])
-    const bare = await mp.read(
-      TENANT,
-      delivery('mercado-pago', { type: 'payment' }, headers, {
-        'data.id': 'PAY-1',
-      }),
-    )
-    expect(bare[0]).toMatchObject({
-      eventId: 'req-1',
-      type: 'payment',
-      reference: 'PAY-1',
-    })
-    const unsignedId = {
-      'x-signature': `ts=1,v1=${sign('', '', '1')}`,
-    }
-    const empty = await mp.read(
-      TENANT,
-      delivery('mercado-pago', {}, unsignedId),
-    )
-    expect(empty[0]).toMatchObject({ kind: 'IGNORED', type: 'UNKNOWN' })
-    expect(empty[0]?.eventId).toHaveLength(64)
-  })
-
-  it('refuses a forged or missing signature', async () => {
-    const mp = reader('mercado-pago')
-    const forged = {
-      'x-signature': 'ts=1704908010,v1=deadbeef',
-      'x-request-id': 'req-1',
-    }
-    await refused(mp.read(TENANT, delivery('mercado-pago', {}, forged)))
-    await refused(
-      mp.read(
-        TENANT,
-        delivery('mercado-pago', {}, { 'x-signature': 'v1=abc' }),
-      ),
-    )
-    await refused(mp.read(TENANT, delivery('mercado-pago', {})))
   })
 })
 

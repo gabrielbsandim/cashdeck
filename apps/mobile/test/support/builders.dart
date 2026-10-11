@@ -57,7 +57,6 @@ Map<String, dynamic> billJson({
   String status = 'OPEN',
   Object? plan = const {
     'steps': [
-      {'mode': 'AUTOMATIC', 'rail': 'MERCADO_PAGO_PAYOUTS'},
       {'mode': 'AUTOMATIC', 'rail': 'ASAAS'},
       {'mode': 'ASSISTED', 'rail': 'ASSISTED'},
     ],

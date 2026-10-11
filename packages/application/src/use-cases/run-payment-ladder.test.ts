@@ -636,34 +636,24 @@ describe('runPaymentLadder', () => {
 describe('prepareFunding', () => {
   it('funds the personal Asaas bills that would be paid now, in one round', async () => {
     const asaas = new FakePaymentRail('ASAAS')
-    const deps = scenario([
-      asaas,
-      new FakePaymentRail('MERCADO_PAGO_PAYOUTS'),
-      new FakePaymentRail('INTER_EMPRESAS'),
-    ])
+    const deps = scenario([asaas, new FakePaymentRail('INTER_EMPRESAS')])
     deps.funder = new FakeReserveFunder(2000)
     const ready = [
       personalBill({ id: 'p1', amount: Money.of(5000) }),
       personalBill({ id: 'p2', amount: Money.of(7000) }),
     ]
     const company = bill({ id: 'company' })
-    const key = personalBill({
-      id: 'key',
-      kind: 'PIX_KEY',
-      code: 'friend@example.com',
-    })
     const sent = personalBill({ id: 'sent' })
     const skipped = [
       personalBill({ id: 'new', payee: 'Stranger' }),
       company,
       personalBill({ id: 'ghost', entityId: 'ghost' }),
-      key,
       sent,
     ]
     for (const item of [...ready, ...skipped]) {
       await deps.bills.save(item)
     }
-    for (const item of [...ready, company, key, sent]) {
+    for (const item of [...ready, company, sent]) {
       await trust(deps.payees, item)
     }
     await deps.payments.addAttempt(

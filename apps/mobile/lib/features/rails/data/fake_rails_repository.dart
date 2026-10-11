@@ -25,14 +25,6 @@ final class FakeRailsRepository implements RailsRepository {
       status: RailStatus.active,
     ),
     const PaymentRail(
-      id: 'rail-pf-reserve',
-      kind: RailKind.reserveFunding,
-      owner: EntityKind.personal,
-      step: 1,
-      institution: 'Banco Aurora',
-      status: RailStatus.active,
-    ),
-    const PaymentRail(
       id: 'rail-pf-approval',
       kind: RailKind.bankApproval,
       owner: EntityKind.personal,

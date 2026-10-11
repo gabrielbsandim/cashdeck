@@ -55,7 +55,7 @@ export function makeReserveFunding(deps: ReserveFundingDeps) {
       requestId: actor.requestId,
       action: 'reserve.funding',
       subjectId: round.id,
-      rail: 'MERCADO_PAGO_PAYOUTS',
+      rail: 'ASAAS',
       result: round.status,
       details: {
         day: round.day,

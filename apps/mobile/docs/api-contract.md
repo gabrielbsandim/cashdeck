@@ -129,7 +129,7 @@ exposes it.
       "id": "attempt-1",
       "stepIndex": 0,
       "mode": "AUTOMATIC | BANK_APPROVAL | ASSISTED",
-      "rail": "MERCADO_PAGO_PAYOUTS | ASAAS | INTER_EMPRESAS | C6_EMPRESAS | ASSISTED",
+      "rail": "ASAAS | INTER_EMPRESAS | C6_EMPRESAS | ASSISTED",
       "amount": { "cents": 12345, "currency": "BRL" },
       "outcome": "PAID | SUBMITTED | PENDING_APPROVAL | ASSISTED | FAILED",
       "reason": "optional, a machine code such as NOT_CONFIGURED",
