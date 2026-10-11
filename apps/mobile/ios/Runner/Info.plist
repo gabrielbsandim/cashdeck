@@ -43,6 +43,8 @@
 		<string>A câmera lê o código de barras ou o QR Pix do boleto.</string>
 		<key>NSFaceIDUsageDescription</key>
 		<string>O Face ID desbloqueia o Cashdeck.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>A localização diz se você está numa zona segura; longe dela o Cashdeck limita o que mostra e o que faz.</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIApplicationSceneManifest</key>

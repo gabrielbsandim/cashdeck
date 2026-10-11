@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/preferences/display_preferences.dart';
+import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,17 +14,19 @@ class PrivacyToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final hidden = ref.watch(
-      displayPreferencesProvider.select((prefs) => prefs.hideAmounts),
-    );
+    final hidden = ref.watch(hideAmountsProvider);
+    final limited = ref.watch(safeModeLimitedProvider);
     return IconButton(
       key: buttonKey,
       tooltip: hidden ? l10n.showAmounts : l10n.hideAmounts,
       icon: Icon(
         hidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded,
       ),
-      onPressed: () =>
-          ref.read(displayPreferencesProvider.notifier).toggleHideAmounts(),
+      onPressed: limited
+          ? null
+          : () => ref
+                .read(displayPreferencesProvider.notifier)
+                .toggleHideAmounts(),
     );
   }
 }

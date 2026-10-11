@@ -49,4 +49,25 @@ void main() {
 
     expect(unauthorized, 1);
   });
+
+  test('refuses writes while asked to, and lets reads through', () async {
+    var refuse = true;
+    final dio = createApiDio(config, refuseWrites: () => refuse)
+      ..httpClientAdapter = StubHttpAdapter((_) => const StubResponse(200));
+
+    expect((await dio.get<Object?>('/bills')).statusCode, 200);
+    await expectLater(
+      dio.post<Object?>('/bills/1/pay'),
+      throwsA(
+        isA<DioException>().having(
+          (error) => error.error,
+          'error',
+          isA<SafeModeRefusal>(),
+        ),
+      ),
+    );
+
+    refuse = false;
+    expect((await dio.post<Object?>('/bills/1/pay')).statusCode, 200);
+  });
 }

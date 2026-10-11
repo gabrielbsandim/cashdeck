@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/network/api_error_mapper.dart';
+import 'package:cashdeck/core/network/dio_factory.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -71,5 +72,14 @@ void main() {
       type: DioExceptionType.cancel,
     );
     expect(mapDioException(exception), const UnexpectedFailure());
+  });
+
+  test('a write the safe mode held back is its own failure', () {
+    final exception = DioException(
+      requestOptions: RequestOptions(path: '/x'),
+      error: const SafeModeRefusal(),
+    );
+
+    expect(mapDioException(exception), const SafeModeFailure());
   });
 }

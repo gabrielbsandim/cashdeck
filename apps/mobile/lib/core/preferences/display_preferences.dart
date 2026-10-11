@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/preferences/key_value_store.dart';
+import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,9 +38,11 @@ final displayPreferencesProvider =
     );
 
 /// Whether amounts are masked right now; every amount, alert and chart label
-/// built from money reads this.
+/// built from money reads this. Away from a safe zone they always are.
 final hideAmountsProvider = Provider<bool>(
-  (ref) => ref.watch(
-    displayPreferencesProvider.select((prefs) => prefs.hideAmounts),
-  ),
+  (ref) =>
+      ref.watch(safeModeLimitedProvider) ||
+      ref.watch(
+        displayPreferencesProvider.select((prefs) => prefs.hideAmounts),
+      ),
 );

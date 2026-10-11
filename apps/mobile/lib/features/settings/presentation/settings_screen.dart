@@ -3,6 +3,7 @@ import 'package:cashdeck/core/config/app_version.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
+import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
@@ -11,13 +12,16 @@ import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/features/auth/auth_providers.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
+import 'package:cashdeck/features/settings/presentation/safe_mode_release_tap.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone_screen.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Ajustes, opened from the avatar on every tab, in four groups.
+/// Ajustes, opened from the avatar on every tab, in four groups. Away from a
+/// safe zone only the account group stays.
 class SettingsScreen extends ConsumerWidget {
   const new({super.key});
 
@@ -35,6 +39,9 @@ class SettingsScreen extends ConsumerWidget {
     final controller = ref.read(displayPreferencesProvider.notifier);
     final paused = ref.watch(automationControllerProvider).value?.paused;
     final version = ref.watch(appVersionProvider).value;
+    final safeMode = ref.watch(safeModeProvider);
+    final limited = safeMode.limited;
+    final locale = Localizations.localeOf(context).toLanguageTag();
     Widget link(IconData icon, String title, String subtitle, String route) =>
         CdListRow(
           key: rowKey(route),
@@ -66,87 +73,89 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
         children: [
           const SizedBox(height: AppSpacing.sm),
-          link(
-            Symbols.badge_rounded,
-            l10n.settingsProfileTitle,
-            l10n.settingsProfileHint,
-            AppRoutes.entityProfiles,
-          ),
-          section(l10n.settingsSectionConnections),
-          link(
-            Symbols.account_balance_rounded,
-            l10n.itemIdTitle,
-            l10n.moreItemIdHint,
-            AppRoutes.connectItemId,
-          ),
-          link(
-            Symbols.route_rounded,
-            l10n.railsTitle,
-            l10n.moreRailsHint,
-            AppRoutes.rails,
-          ),
-          link(
-            Symbols.inbox_rounded,
-            l10n.captureTitle,
-            l10n.moreCaptureHint,
-            AppRoutes.captureSources,
-          ),
-          link(
-            Symbols.credit_card_rounded,
-            l10n.cardImportMenu,
-            l10n.moreCardImportHint,
-            AppRoutes.cardImport,
-          ),
-          link(
-            Symbols.notifications_active_rounded,
-            l10n.cardNotificationsMenu,
-            l10n.moreCardNotificationsHint,
-            AppRoutes.cardNotifications,
-          ),
-          section(l10n.settingsSectionPayments),
-          CdListRow(
-            key: pauseKey,
-            icon: Symbols.pause_circle_rounded,
-            title: l10n.pauseAutomationSetting,
-            subtitle: l10n.pauseAutomationHint,
-            trailing: Switch(
-              value: paused ?? false,
-              onChanged: paused == null
-                  ? null
-                  : (value) async {
-                      final failure = await ref
-                          .read(automationControllerProvider.notifier)
-                          .setPaused(paused: value);
-                      if (failure == null || !context.mounted) return;
-                      await showCdToast(
-                        context,
-                        message: failure.userMessage(l10n),
-                      );
-                    },
+          if (!limited) ...[
+            link(
+              Symbols.badge_rounded,
+              l10n.settingsProfileTitle,
+              l10n.settingsProfileHint,
+              AppRoutes.entityProfiles,
             ),
-          ),
-          section(
-            l10n.settingsSectionCompany,
-            trailing: l10n.settingsCompanyOnly,
-          ),
-          link(
-            Symbols.receipt_rounded,
-            l10n.issuerTitle,
-            l10n.moreIssuerHint,
-            AppRoutes.invoiceIssuer,
-          ),
-          link(
-            Symbols.groups_rounded,
-            l10n.payrollMenu,
-            l10n.morePayrollHint,
-            AppRoutes.payroll,
-          ),
-          link(
-            Symbols.folder_zip_rounded,
-            l10n.exportTitle,
-            l10n.moreExportHint,
-            AppRoutes.accountantExport,
-          ),
+            section(l10n.settingsSectionConnections),
+            link(
+              Symbols.account_balance_rounded,
+              l10n.itemIdTitle,
+              l10n.moreItemIdHint,
+              AppRoutes.connectItemId,
+            ),
+            link(
+              Symbols.route_rounded,
+              l10n.railsTitle,
+              l10n.moreRailsHint,
+              AppRoutes.rails,
+            ),
+            link(
+              Symbols.inbox_rounded,
+              l10n.captureTitle,
+              l10n.moreCaptureHint,
+              AppRoutes.captureSources,
+            ),
+            link(
+              Symbols.credit_card_rounded,
+              l10n.cardImportMenu,
+              l10n.moreCardImportHint,
+              AppRoutes.cardImport,
+            ),
+            link(
+              Symbols.notifications_active_rounded,
+              l10n.cardNotificationsMenu,
+              l10n.moreCardNotificationsHint,
+              AppRoutes.cardNotifications,
+            ),
+            section(l10n.settingsSectionPayments),
+            CdListRow(
+              key: pauseKey,
+              icon: Symbols.pause_circle_rounded,
+              title: l10n.pauseAutomationSetting,
+              subtitle: l10n.pauseAutomationHint,
+              trailing: Switch(
+                value: paused ?? false,
+                onChanged: paused == null
+                    ? null
+                    : (value) async {
+                        final failure = await ref
+                            .read(automationControllerProvider.notifier)
+                            .setPaused(paused: value);
+                        if (failure == null || !context.mounted) return;
+                        await showCdToast(
+                          context,
+                          message: failure.userMessage(l10n),
+                        );
+                      },
+              ),
+            ),
+            section(
+              l10n.settingsSectionCompany,
+              trailing: l10n.settingsCompanyOnly,
+            ),
+            link(
+              Symbols.receipt_rounded,
+              l10n.issuerTitle,
+              l10n.moreIssuerHint,
+              AppRoutes.invoiceIssuer,
+            ),
+            link(
+              Symbols.groups_rounded,
+              l10n.payrollMenu,
+              l10n.morePayrollHint,
+              AppRoutes.payroll,
+            ),
+            link(
+              Symbols.folder_zip_rounded,
+              l10n.exportTitle,
+              l10n.moreExportHint,
+              AppRoutes.accountantExport,
+            ),
+          ],
           section(l10n.settingsSectionAppearance),
           CdListRow(
             key: hideAmountsKey,
@@ -154,10 +163,10 @@ class SettingsScreen extends ConsumerWidget {
             title: l10n.settingsPrivacy,
             subtitle: l10n.hideAmountsSetting,
             trailing: Switch(
-              value: prefs.hideAmounts,
-              onChanged: (_) => controller.toggleHideAmounts(),
+              value: prefs.hideAmounts || limited,
+              onChanged: limited ? null : (_) => controller.toggleHideAmounts(),
             ),
-            onTap: controller.toggleHideAmounts,
+            onTap: limited ? null : controller.toggleHideAmounts,
           ),
           link(
             Symbols.notifications_rounded,
@@ -170,6 +179,12 @@ class SettingsScreen extends ConsumerWidget {
             l10n.alertSettingsTitle,
             l10n.moreAlertSettingsHint,
             AppRoutes.alertSettings,
+          ),
+          link(
+            Symbols.shield_rounded,
+            l10n.safeZoneTitle,
+            safeModeStatusLabel(l10n, safeMode, locale),
+            AppRoutes.safeZone,
           ),
           CdListRow(
             key: rowKey(AppRoutes.unlock),
@@ -186,13 +201,15 @@ class SettingsScreen extends ConsumerWidget {
           if (version != null)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xl),
-              child: Text(
-                l10n.settingsVersion(version),
-                key: versionKey,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMd.copyWith(
-                  fontSize: 12,
-                  color: context.palette.onSurfaceVariant,
+              child: SafeModeReleaseTap(
+                child: Text(
+                  l10n.settingsVersion(version),
+                  key: versionKey,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    fontSize: 12,
+                    color: context.palette.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),

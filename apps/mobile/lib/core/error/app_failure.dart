@@ -48,3 +48,9 @@ final class UnexpectedFailure extends AppFailure {
 final class UnsupportedFailure extends AppFailure {
   const new();
 }
+
+/// The phone is away from every safe zone, so nothing that changes data
+/// leaves it.
+final class SafeModeFailure extends AppFailure {
+  const new();
+}

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cashdeck/app/router/app_router.dart';
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
+import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/core/theme/app_theme.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_inset.dart';
@@ -36,7 +37,15 @@ class _CashdeckAppState extends ConsumerState<CashdeckApp> {
   void initState() {
     super.initState();
     final lock = ref.read(appLockProvider.notifier);
-    _lifecycle = AppLifecycleListener(onHide: lock.hidden, onShow: lock.shown);
+    final safeMode = ref.read(safeModeProvider.notifier);
+    _lifecycle = AppLifecycleListener(
+      onHide: lock.hidden,
+      onShow: () {
+        lock.shown();
+        safeMode.check().ignore();
+      },
+    );
+    safeMode.check().ignore();
     _shared = ref.read(shareIntakeProvider).received().listen(_open);
   }
 

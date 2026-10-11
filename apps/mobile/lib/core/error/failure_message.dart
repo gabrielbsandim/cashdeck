@@ -13,6 +13,7 @@ extension FailureMessage on AppFailure {
       ServerFailure() => l10n.errorServer,
       UnexpectedFailure() => l10n.errorUnexpected,
       UnsupportedFailure() => l10n.errorUnsupported,
+      SafeModeFailure() => l10n.errorSafeMode,
     };
   }
 }

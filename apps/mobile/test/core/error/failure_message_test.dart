@@ -16,6 +16,7 @@ void main() {
       const RateLimitedFailure(): l10n.errorRateLimited,
       const ServerFailure(): l10n.errorServer,
       const UnexpectedFailure(): l10n.errorUnexpected,
+      const SafeModeFailure(): l10n.errorSafeMode,
     };
     for (final MapEntry(:key, :value) in cases.entries) {
       expect(key.userMessage(l10n), value);

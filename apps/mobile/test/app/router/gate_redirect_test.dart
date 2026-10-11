@@ -15,4 +15,29 @@ void main() {
     expect(gate(AppRoutes.unlock), AppRoutes.home);
     expect(gate(AppRoutes.bills), isNull);
   });
+
+  test('away from a safe zone closes what the mask cannot cover', () {
+    String? gate(String path) =>
+        gateRedirect(path, signedIn: true, locked: false, limited: true);
+
+    for (final path in [
+      AppRoutes.chat,
+      AppRoutes.chatThread('t1'),
+      AppRoutes.rails,
+      AppRoutes.billReceipt('b1'),
+      AppRoutes.sharedFile,
+      AppRoutes.pasteCode,
+    ]) {
+      expect(gate(path), AppRoutes.home, reason: path);
+    }
+    for (final path in [
+      AppRoutes.home,
+      AppRoutes.bill('b1'),
+      AppRoutes.settings,
+      AppRoutes.safeZone,
+    ]) {
+      expect(gate(path), isNull, reason: path);
+    }
+    expect(gateRedirect(AppRoutes.chat, signedIn: true, locked: false), isNull);
+  });
 }

@@ -19,6 +19,7 @@ abstract final class AppRoutes {
   static const investments = '/investments';
 
   static const entityProfiles = '$settings/profiles';
+  static const safeZone = '$settings/safe-zone';
   static const captureSources = '$settings/capture';
   static const scanBill = '$settings/capture/scan';
   static const rails = '$settings/rails';

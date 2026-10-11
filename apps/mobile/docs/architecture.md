@@ -36,6 +36,7 @@ lib/
     config/                 AppConfig from --dart-define
     di/                     core providers (AppConfig, Dio, Clock)
     error/                  AppFailure (sealed), LoadFailure, user messages
+    location/               LocationReader port, GeoPoint, geolocator adapter
     result/                 Result<T> (sealed)
     money/                  Money (integer cents + currency), MoneyFormat
     network/                Dio factory, error mapping, guardRequest, JSON reading
@@ -51,7 +52,7 @@ lib/
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
-    settings/               Ajustes: links, privacy and the app version
+    settings/               Ajustes: links, privacy, the safe zone and the app version
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
 tool/
   check.sh                  the gate
@@ -85,6 +86,14 @@ test/                       mirrors lib/ one to one
   the device. `AmountText` and `PrivacyToggle` read it, so every amount
   follows the toggle without the screens passing a flag. The theme has no
   setting: it follows the system.
+- `safeModeProvider` (`core/security`): the safe zones saved on the device and
+  whether the phone is inside one, checked at launch and on every return to
+  the screen. With a zone saved and the phone away from all of them (or with
+  no fix), `safeModeLimitedProvider` is true: amounts stay hidden, the API
+  client refuses every request but GET, the confirm sheet refuses, and the
+  router sends the chat, receipts, shared files and settings subpages back
+  home. Ten quick taps on the version in Ajustes, plus the device check,
+  release it for an hour. Zones change only while not limited.
 
 ## Navigation
 
@@ -131,6 +140,9 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   in app-private preferences; signing out clears them. Dart reaches it through
   the `io.cashdeck.app/card_notifications` channel
   (`features/card_notifications`).
+- Location: the Android manifest asks for coarse and fine location and
+  `Info.plist` carries `NSLocationWhenInUseUsageDescription`; only the
+  foreground fix is read, never in the background.
 - iOS: `Info.plist` carries the Face ID and camera usage strings and the
   `cashdeck` URL scheme. Receiving a shared file needs a Share Extension
   target, which only Xcode can add: follow the iOS section of the

@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
+import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -55,6 +56,7 @@ class CdConfirmSheet extends ConsumerStatefulWidget {
 
   static const confirmKey = Key('cd-confirm');
   static const secondaryKey = Key('cd-confirm-secondary');
+  static const limitedKey = Key('cd-confirm-limited');
 
   final String title;
   final List<CdConfirmRow> rows;
@@ -99,6 +101,7 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final reason = widget.reason;
+    final limited = ref.watch(safeModeLimitedProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -133,6 +136,14 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
             style: AppTextStyles.bodyMd.copyWith(color: context.money.failed),
           ),
         ],
+        if (limited) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.errorSafeMode,
+            key: CdConfirmSheet.limitedKey,
+            style: AppTextStyles.bodyMd.copyWith(color: context.money.failed),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
         CdButton.filled(
           key: CdConfirmSheet.confirmKey,
@@ -140,7 +151,7 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
           icon: Symbols.fingerprint_rounded,
           label: widget.confirmLabel,
           loading: _checking,
-          onPressed: _confirm,
+          onPressed: limited ? null : _confirm,
         ),
         const SizedBox(height: AppSpacing.sm),
         CdButton.text(

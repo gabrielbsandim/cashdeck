@@ -16,10 +16,12 @@ import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../support/pump_app.dart';
+import '../../support/safe_mode_support.dart';
 
 void main() {
   const nbsp = '\u00A0';
@@ -243,11 +245,28 @@ void main() {
     );
   });
 
+  testWidgets('away from a safe zone the eye stays shut', (tester) async {
+    await tester.pumpApp(
+      const Column(
+        children: [
+          PrivacyToggle(),
+          CdAmount(Money(1050), kind: CdAmountKind.expense),
+        ],
+      ),
+      overrides: safeModeOverrides(),
+    );
+
+    final eye = tester.widget<IconButton>(find.byKey(PrivacyToggle.buttonKey));
+    expect(eye.onPressed, isNull);
+    expect(find.textContaining('10,50'), findsNothing);
+  });
+
   group('CdConfirmSheet', () {
     Future<({Future<bool?> closed})> open(
       WidgetTester tester,
       FakeBiometricAuthenticator biometrics, {
       String? secondary,
+      List<Override> overrides = const [],
     }) async {
       late BuildContext context;
       await tester.pumpApp(
@@ -259,6 +278,7 @@ void main() {
         ),
         overrides: [
           biometricAuthenticatorProvider.overrideWithValue(biometrics),
+          ...overrides,
         ],
       );
       final result = showCdConfirmSheet(
@@ -294,6 +314,19 @@ void main() {
         'Confirmar pagamento',
         'Confirmar pagamento',
       ]);
+    });
+
+    testWidgets('away from a safe zone nothing can be confirmed', (
+      tester,
+    ) async {
+      final biometrics = FakeBiometricAuthenticator();
+      await open(tester, biometrics, overrides: safeModeOverrides());
+
+      expect(find.byKey(CdConfirmSheet.limitedKey), findsOneWidget);
+      await tester.tap(find.byKey(CdConfirmSheet.confirmKey));
+      await tester.pumpAndSettle();
+
+      expect(biometrics.reasons, isEmpty);
     });
 
     testWidgets('the secondary action declines', (tester) async {

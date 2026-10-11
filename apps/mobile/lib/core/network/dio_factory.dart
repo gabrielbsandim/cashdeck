@@ -14,14 +14,39 @@ BaseOptions apiBaseOptions(AppConfig config, [ServerCredentials? session]) =>
       },
     );
 
+/// Why a request never left the phone: the safe mode refuses writes.
+final class SafeModeRefusal {
+  const new();
+}
+
 /// Signs every request with the session token; a 401 means the token was
-/// revoked on the server, so [onUnauthorized] signs the device out.
+/// revoked on the server, so [onUnauthorized] signs the device out. While
+/// [refuseWrites] answers true only reads go out.
 Dio createApiDio(
   AppConfig config, {
   ServerCredentials? session,
   void Function()? onUnauthorized,
+  bool Function()? refuseWrites,
 }) {
   final dio = Dio(apiBaseOptions(config, session));
+  if (refuseWrites != null) {
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.method.toUpperCase() == 'GET' || !refuseWrites()) {
+            handler.next(options);
+            return;
+          }
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              error: const SafeModeRefusal(),
+            ),
+          );
+        },
+      ),
+    );
+  }
   if (onUnauthorized == null) return dio;
   dio.interceptors.add(
     InterceptorsWrapper(

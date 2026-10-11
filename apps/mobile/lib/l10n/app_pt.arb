@@ -2622,5 +2622,39 @@
     }
   },
   "cardUnmatchedTitle": "Prévias fora da fatura",
-  "cardUnmatchedHint": "Confira se foram canceladas ou se entram na próxima fatura."
+  "cardUnmatchedHint": "Confira se foram canceladas ou se entram na próxima fatura.",
+  "safeZoneTitle": "Zona segura",
+  "safeZoneIntro": "Longe de uma zona segura, o Cashdeck esconde os valores, recusa pagamentos e alterações e fecha o chat, os comprovantes e os ajustes de conexão.",
+  "safeZoneOff": "Desligada",
+  "safeZoneChecking": "Conferindo a localização",
+  "safeZoneInside": "Dentro da zona segura",
+  "safeZoneOutside": "Fora da zona segura: app limitado",
+  "safeZoneReleased": "Liberado até {time}",
+  "@safeZoneReleased": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "safeZoneAddHere": "Usar a localização atual",
+  "safeZoneSaved": "Zona segura salva",
+  "safeZoneNoLocation": "Não conseguimos a localização. Confira a permissão e o GPS.",
+  "safeZoneItem": "Local {number} · raio de {radius} m",
+  "@safeZoneItem": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "radius": {
+        "type": "int"
+      }
+    }
+  },
+  "safeZoneRemove": "Remover",
+  "safeZoneLimitedNote": "Para mudar as zonas, volte para uma delas.",
+  "safeZoneEndRelease": "Limitar",
+  "safeZoneEmpty": "Nenhuma zona ainda. Em casa, toque abaixo para salvar este lugar.",
+  "safeZoneReleaseReason": "Liberar o Cashdeck fora da zona segura",
+  "errorSafeMode": "Bloqueado fora da zona segura."
 }

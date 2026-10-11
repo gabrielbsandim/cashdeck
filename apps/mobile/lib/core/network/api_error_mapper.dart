@@ -1,7 +1,9 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/network/dio_factory.dart';
 import 'package:dio/dio.dart';
 
 AppFailure mapDioException(DioException exception) {
+  if (exception.error is SafeModeRefusal) return const SafeModeFailure();
   return switch (exception.type) {
     DioExceptionType.connectionTimeout ||
     DioExceptionType.sendTimeout ||

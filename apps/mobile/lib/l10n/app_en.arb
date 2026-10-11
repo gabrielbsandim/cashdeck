@@ -1097,5 +1097,22 @@
     }
   },
   "cardUnmatchedTitle": "Previews not on the statement",
-  "cardUnmatchedHint": "Check whether they were cancelled or fall in the next bill."
+  "cardUnmatchedHint": "Check whether they were cancelled or fall in the next bill.",
+  "safeZoneTitle": "Safe zone",
+  "safeZoneIntro": "Away from a safe zone, Cashdeck hides amounts, refuses payments and changes, and closes the chat, receipts and connection settings.",
+  "safeZoneOff": "Off",
+  "safeZoneChecking": "Checking the location",
+  "safeZoneInside": "Inside the safe zone",
+  "safeZoneOutside": "Outside the safe zone: app limited",
+  "safeZoneReleased": "Released until {time}",
+  "safeZoneAddHere": "Use the current location",
+  "safeZoneSaved": "Safe zone saved",
+  "safeZoneNoLocation": "Could not get the location. Check the permission and the GPS.",
+  "safeZoneItem": "Place {number} · {radius} m radius",
+  "safeZoneRemove": "Remove",
+  "safeZoneLimitedNote": "To change the zones, go back to one of them.",
+  "safeZoneEndRelease": "Limit",
+  "safeZoneEmpty": "No zone yet. At home, tap below to save this place.",
+  "safeZoneReleaseReason": "Release Cashdeck outside the safe zone",
+  "errorSafeMode": "Blocked outside the safe zone."
 }
