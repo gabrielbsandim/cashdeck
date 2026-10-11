@@ -6,7 +6,7 @@ import {
   fullDeps,
   transaction,
 } from '@/testing/deps.test-helpers'
-import { TENANT } from '@/testing/scenario.test-helpers'
+import { company, TENANT } from '@/testing/scenario.test-helpers'
 import {
   cardsSummary,
   flowEntries,
@@ -282,5 +282,31 @@ describe('insight helpers', () => {
       bill: cents(4_000),
       dueOn: '2026-09-27',
     })
+  })
+
+  it('counts money from an own entity without accounts as income', async () => {
+    const deps = fullDeps()
+    await deps.entities.save({ ...company, name: 'Example Systems Ltda' })
+    await deps.transactions.save(
+      transaction({
+        id: 'pay',
+        accountId: 'checking',
+        amount: Money.of(500_000),
+        bookedOn: '2026-10-05',
+        description: 'Pix recebido de Example Systems Ltda',
+      }),
+    )
+    const checking = account({ id: 'checking', entityId: 'pf' })
+    const firm = account({ id: 'firm', entityId: 'pj' })
+    const kinds = async (accounts: ReturnType<typeof account>[]) =>
+      (
+        await flowEntries(deps, TENANT, accounts, new Map(), {
+          from: '2026-10-01',
+          to: '2026-10-08',
+        })
+      ).map(entry => entry.kind)
+
+    expect(await kinds([checking])).toEqual(['INCOME'])
+    expect(await kinds([checking, firm])).toEqual(['NEUTRAL'])
   })
 })

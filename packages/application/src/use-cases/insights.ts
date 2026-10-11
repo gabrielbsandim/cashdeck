@@ -152,7 +152,12 @@ export async function flowEntries(
     accountIds: accounts.map(account => account.id),
     ...range,
   })
-  const entities = await deps.entities.list(tenantId)
+  // A Pix to an own entity moves money between own accounts only when that
+  // entity's accounts are counted too; otherwise the money really left.
+  const counted = new Set(accounts.map(account => account.entityId))
+  const entities = (await deps.entities.list(tenantId)).filter(entity =>
+    counted.has(entity.id),
+  )
   const kinds = classifyFlow(
     transactions.map(transaction => ({
       transaction,
