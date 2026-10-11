@@ -111,6 +111,25 @@ void main() {
     expect(app.read(safeModeLimitedProvider), isTrue);
   });
 
+  test(
+    'a release survives going to the background but not a relaunch',
+    () async {
+      final app = container();
+      final mode = app.read(safeModeProvider.notifier);
+      await mode.addCurrentLocation();
+      reader.point = awayPoint;
+      mode.release();
+
+      await mode.check();
+      expect(app.read(safeModeLimitedProvider), isFalse);
+
+      final relaunched = container();
+      await relaunched.read(safeModeProvider.notifier).check();
+      expect(relaunched.read(safeModeProvider).releasedUntil, isNull);
+      expect(relaunched.read(safeModeLimitedProvider), isTrue);
+    },
+  );
+
   testWidgets('the release ends on its own while the app stays open', (
     tester,
   ) async {

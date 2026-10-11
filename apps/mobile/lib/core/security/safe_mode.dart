@@ -120,8 +120,8 @@ class SafeModeController extends Notifier<SafeModeState> {
     endRelease();
   }
 
-  /// The secret gesture already passed the device check; the release ends
-  /// by itself so a phone left unlocked does not stay open.
+  /// The secret gesture already passed the device check. The release lives
+  /// only in memory: it outlasts the background but not a closed app.
   void release() {
     _expiry?.cancel();
     _expiry = Timer(releaseWindow, endRelease);
