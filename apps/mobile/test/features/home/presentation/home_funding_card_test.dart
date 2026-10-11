@@ -28,6 +28,12 @@ const _covered = FundingPlan(
   expected: Money(5_000),
   pixReserve: Money(2_000),
   topUp: Money(0),
+  debit: FundingDebit(
+    name: 'Banco Azul',
+    balance: Money(90_000),
+    total: Money(80_000),
+    topUp: Money(0),
+  ),
 );
 
 Finder _inCard(Finder matching) => find.descendant(
@@ -88,6 +94,29 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(
+      _inCard(
+        find.text(
+          l10n.fundingDebit(
+            'Banco Azul',
+            MoneyFormat.format(const Money(210_000)),
+            MoneyFormat.format(const Money(150_000)),
+          ),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      _inCard(
+        find.text(
+          l10n.fundingDebitTopUp(
+            MoneyFormat.format(const Money(60_000)),
+            'Banco Azul',
+          ),
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('waits, fails, retries and says when the balance covers', (
@@ -118,6 +147,10 @@ void main() {
       findsOneWidget,
     );
     expect(_inCard(find.text(l10n.fundingCovered)), findsOneWidget);
+    expect(
+      _inCard(find.text(l10n.fundingDebitCovered('Banco Azul'))),
+      findsOneWidget,
+    );
   });
 
   testWidgets('hides without bills', (tester) async {

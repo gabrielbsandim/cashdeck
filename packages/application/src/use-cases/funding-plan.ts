@@ -4,14 +4,19 @@ import {
   type BillStatus,
   CASH_ACCOUNT_TYPES,
   type FinancialEntity,
+  groupByRecurrence,
+  isCardBillPayment,
   type LocalDate,
   Money,
   recipientKeys,
+  summarizeCharges,
   toCounterparty,
+  type Transaction,
   ValidationError,
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
 import {
+  type FundingDebitView,
   type FundingItemInput,
   type FundingItemView,
   type FundingPlan,
@@ -37,6 +42,12 @@ export const FUNDING_ITEMS_COLLECTION = 'funding-items'
 // reserve is for.
 const LOOSE_PIX_MAX_CENTS = 50_000
 const MAX_ITEMS = 30
+export const FUNDING_SETTINGS_COLLECTION = 'funding-settings'
+const DEBIT_ACCOUNT_ID = 'debit-account'
+// Two months tell a monthly debit from a one-off.
+const MIN_DEBIT_MONTHS = 2
+
+type DebitSetting = { accountId: string }
 // A payee that sent nothing for longer than this has stopped billing.
 const STALE_DAYS = 45
 
@@ -54,13 +65,9 @@ function median(values: readonly number[]): number {
   )
 }
 
-// A payee that bills every month sends the next bill only days before it is
-// due, so the last one stands in for it until it arrives.
-function expectedBills(
-  bills: readonly Bill[],
-  day: LocalDate,
-  end: LocalDate,
-): Money[] {
+// Once a monthly payee's bill is paid, the next one is a month away and
+// arrives only days before it is due, so the last one stands in for it.
+function expectedBills(bills: readonly Bill[], day: LocalDate): Money[] {
   const byPayee = new Map<string, Bill[]>()
   for (const bill of bills) {
     byPayee.set(keyOf(bill), [...(byPayee.get(keyOf(bill)) ?? []), bill])
@@ -70,10 +77,70 @@ function expectedBills(
       b.dueDate.localeCompare(a.dueDate),
     )[0] as Bill
     const current = latest.dueDate >= addDays(day, -STALE_DAYS)
-    return current && dueAfter(latest.dueDate, day) <= end
-      ? [latest.amount]
-      : []
+    return current && !FUNDED.includes(latest.status) ? [latest.amount] : []
   })
+}
+
+// What the bank debits by itself every month: the mortgage, power and TV
+// bills on automatic debit. Each one counts once, at its next date.
+function nextDebits(
+  sent: readonly Transaction[],
+  day: LocalDate,
+): FundingDebitView[] {
+  const debits = sent.filter(
+    tx =>
+      tx.transferGroupId === null &&
+      toCounterparty(tx.counterparty)?.length !== 11 &&
+      !isCardBillPayment(tx.description),
+  )
+  return [...groupByRecurrence(debits)]
+    .map(([key, group]) => summarizeCharges(key, group))
+    .filter(
+      charge =>
+        charge.months >= MIN_DEBIT_MONTHS &&
+        charge.charges.length <= charge.months + 1 &&
+        charge.lastChargeOn >= addDays(day, -STALE_DAYS),
+    )
+    .map(charge => ({
+      name: charge.name,
+      amount: money(charge.amount),
+      on: dueAfter(charge.lastChargeOn, day),
+    }))
+    .sort((a, b) => a.on.localeCompare(b.on))
+}
+
+async function debitPlan(
+  deps: Pick<Deps, 'accounts' | 'transactions' | 'documents'>,
+  tenantId: string,
+  day: LocalDate,
+): Promise<FundingPlan['debit']> {
+  const setting = await deps.documents.get<DebitSetting>(
+    tenantId,
+    FUNDING_SETTINGS_COLLECTION,
+    DEBIT_ACCOUNT_ID,
+  )
+  const account = setting
+    ? await deps.accounts.findById(tenantId, setting.accountId)
+    : null
+  if (!account) {
+    return null
+  }
+  const sent = await deps.transactions.all(tenantId, {
+    accountIds: [account.id],
+    from: `${addMonths(monthOf(day), -HISTORY_MONTHS)}-01`,
+    to: day,
+  })
+  const items = nextDebits(sent, day)
+  const total = sum(items.map(item => Money.of(item.amount.cents)))
+  const shortfall = total.subtract(account.balance)
+  return {
+    accountId: account.id,
+    name: account.name,
+    balance: money(account.balance),
+    items,
+    total: money(total),
+    topUp: money(shortfall.isPositive() ? shortfall : Money.zero()),
+  }
 }
 
 // The small Pix sent to people in a typical month: a friend's share of a
@@ -188,7 +255,7 @@ export function makeFundingPlan(
     // Every day of the month falls within the next 30 days.
     const items = await listItems(deps, tenantId)
     const expected = sum([
-      ...expectedBills(bills, day, end),
+      ...expectedBills(bills, day),
       ...items.map(item => Money.of(item.amount.cents)),
     ])
     const pixReserve = await loosePixReserve(deps, tenantId, entity, day)
@@ -206,7 +273,45 @@ export function makeFundingPlan(
       pixReserve: money(pixReserve),
       items,
       topUp: money(shortfall.isPositive() ? shortfall : Money.zero()),
+      debit: await debitPlan(deps, tenantId, day),
     }
+  }
+}
+
+// The account the bank debits by itself; the plan says what it needs too.
+export function makeSetDebitAccount(
+  deps: Pick<Deps, 'accounts' | 'documents' | 'entities'>,
+) {
+  return async function setDebitAccount(
+    tenantId: string,
+    accountId: string | null,
+  ): Promise<{ accountId: string | null }> {
+    if (accountId === null) {
+      await deps.documents.delete(
+        tenantId,
+        FUNDING_SETTINGS_COLLECTION,
+        DEBIT_ACCOUNT_ID,
+      )
+      return { accountId }
+    }
+    const entity = await requireEntity(deps.entities, tenantId, 'PF')
+    const account = await deps.accounts.findById(tenantId, accountId)
+    if (!account) {
+      throw new NotFoundError('Account')
+    }
+    const usable =
+      account.entityId === entity.id &&
+      CASH_ACCOUNT_TYPES.includes(account.type)
+    if (!usable) {
+      throw new ValidationError('Pick a personal checking or savings account.')
+    }
+    await deps.documents.put<DebitSetting>(
+      tenantId,
+      FUNDING_SETTINGS_COLLECTION,
+      DEBIT_ACCOUNT_ID,
+      { accountId },
+    )
+    return { accountId }
   }
 }
 

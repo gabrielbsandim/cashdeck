@@ -6,6 +6,7 @@ import { GET as authCheck } from '@/app/api/v1/auth/check/route'
 import { GET as entities } from '@/app/api/v1/entities/route'
 import { GET as homePersonal } from '@/app/api/v1/home/personal/route'
 import { GET as fundingPlan } from '@/app/api/v1/home/personal/funding/route'
+import { PUT as setDebitAccount } from '@/app/api/v1/home/personal/funding/debit-account/route'
 import { POST as addFundingItem } from '@/app/api/v1/home/personal/funding/items/route'
 import { DELETE as removeFundingItem } from '@/app/api/v1/home/personal/funding/items/[id]/route'
 import { GET as homeCompany } from '@/app/api/v1/home/company/route'
@@ -226,6 +227,10 @@ describe('money views', () => {
       params: { id: item.body.data.id },
     })
     expect(removed.body.data).toEqual({ id: item.body.data.id })
+    const debit = await call(h(setDebitAccount), 'PUT', {
+      body: { accountId: null },
+    })
+    expect(debit.body.data).toEqual({ accountId: null })
     expect((await call(h(homeCompany), 'GET')).status).toBe(200)
     expect((await call(h(homeConsolidated), 'GET')).status).toBe(200)
   })

@@ -139,6 +139,12 @@ final class FakeHomeRepository implements HomeRepository {
         expected: Money(55_000),
         pixReserve: Money(30_000),
         topUp: Money(139_300),
+        debit: FundingDebit(
+          name: 'Banco Azul',
+          balance: Money(150_000),
+          total: Money(210_000),
+          topUp: Money(60_000),
+        ),
       ),
     );
   }

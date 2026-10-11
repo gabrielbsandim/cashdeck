@@ -2541,6 +2541,39 @@
       }
     }
   },
+  "fundingDebit": "No {account}: {total} em débitos automáticos · Saldo: {balance}",
+  "@fundingDebit": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingDebitTopUp": "Transfira {amount} para {account}",
+  "@fundingDebitTopUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingDebitCovered": "O saldo de {account} cobre os débitos",
+  "@fundingDebitCovered": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
   "fundingTopUp": "Transfira {amount} para cobrir os próximos 30 dias",
   "@fundingTopUp": {
     "placeholders": {

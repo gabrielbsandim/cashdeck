@@ -31,6 +31,7 @@ import {
   declareAnnexSchema,
   entityKindSchema,
   entityViewSchema,
+  debitAccountInputSchema,
   fundingItemInputSchema,
   fundingItemViewSchema,
   fundingPlanSchema,
@@ -213,6 +214,14 @@ const OPERATIONS: Operation[] = [
     body: fundingItemInputSchema,
     status: '201',
     response: fundingItemViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/home/personal/funding/debit-account',
+    id: 'setDebitAccount',
+    summary: 'Pick the account the bank debits by itself, or null to stop',
+    body: debitAccountInputSchema,
+    response: z.object({ accountId: z.string().nullable() }),
   },
   {
     method: 'delete',

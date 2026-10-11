@@ -342,6 +342,7 @@ final class FundingPlan extends Equatable {
     required this.expected,
     required this.pixReserve,
     required this.topUp,
+    this.debit,
   });
 
   /// Null when the balance could not be read.
@@ -359,6 +360,9 @@ final class FundingPlan extends Equatable {
   final Money pixReserve;
   final Money topUp;
 
+  /// The account the bank debits by itself, once one is picked.
+  final FundingDebit? debit;
+
   bool get isEmpty =>
       monthlyAverage.cents == 0 &&
       upcoming.cents == 0 &&
@@ -374,5 +378,24 @@ final class FundingPlan extends Equatable {
     expected,
     pixReserve,
     topUp,
+    debit,
   ];
+}
+
+/// What the account on automatic debit needs for its next monthly debits.
+final class FundingDebit extends Equatable {
+  const new({
+    required this.name,
+    required this.balance,
+    required this.total,
+    required this.topUp,
+  });
+
+  final String name;
+  final Money balance;
+  final Money total;
+  final Money topUp;
+
+  @override
+  List<Object?> get props => [name, balance, total, topUp];
 }

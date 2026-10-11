@@ -319,6 +319,14 @@ void main() {
           'expected': _money(60),
           'pixReserve': _money(40),
           'topUp': _money(250),
+          'debit': {
+            'accountId': 'a1',
+            'name': 'Banco Azul',
+            'balance': _money(500),
+            'items': <Object>[],
+            'total': _money(700),
+            'topUp': _money(200),
+          },
         },
         'GET /api/v1/home/company': _company,
         'GET /api/v1/home/consolidated': {
@@ -351,6 +359,12 @@ void main() {
           expected: Money(60),
           pixReserve: Money(40),
           topUp: Money(250),
+          debit: FundingDebit(
+            name: 'Banco Azul',
+            balance: Money(500),
+            total: Money(700),
+            topUp: Money(200),
+          ),
         ),
       );
       expect(personal.reserve, isNull);

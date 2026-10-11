@@ -89,16 +89,52 @@ class _Plan extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppSpacing.xs),
-        CdPrivateText(
-          (hide) => short
+        _Verdict(
+          text: (hide) => short
               ? l10n.fundingTopUp(MoneyFormat.format(plan.topUp, hide: hide))
               : l10n.fundingCovered,
-          style: AppTextStyles.bodyMd.copyWith(
-            color: short ? context.money.pending : context.money.income,
-            fontWeight: FontWeight.w600,
-          ),
+          short: short,
         ),
+        if (plan.debit case final debit?) ...[
+          const SizedBox(height: AppSpacing.md),
+          CdPrivateText(
+            (hide) => l10n.fundingDebit(
+              debit.name,
+              MoneyFormat.format(debit.total, hide: hide),
+              MoneyFormat.format(debit.balance, hide: hide),
+            ),
+            style: muted,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _Verdict(
+            text: (hide) => debit.topUp.cents > 0
+                ? l10n.fundingDebitTopUp(
+                    MoneyFormat.format(debit.topUp, hide: hide),
+                    debit.name,
+                  )
+                : l10n.fundingDebitCovered(debit.name),
+            short: debit.topUp.cents > 0,
+          ),
+        ],
       ],
     );
   }
+}
+
+class _Verdict extends StatelessWidget {
+  const new({required this.text, required this.short});
+
+  // Passed through to CdPrivateText, which takes the flag the same way.
+  // ignore: avoid_positional_boolean_parameters
+  final String Function(bool hide) text;
+  final bool short;
+
+  @override
+  Widget build(BuildContext context) => CdPrivateText(
+    text,
+    style: AppTextStyles.bodyMd.copyWith(
+      color: short ? context.money.pending : context.money.income,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 }

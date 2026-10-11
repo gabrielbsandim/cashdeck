@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { type LocalDate, Money, ValidationError } from '@cashdeck/domain'
+import {
+  type LocalDate,
+  Money,
+  type Transaction,
+  ValidationError,
+} from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
 import {
   account,
@@ -11,7 +16,12 @@ import { FakeReserveFunder } from '@/testing/providers'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { makeSetAutoDebit } from '@/use-cases/auto-debit'
 import { makeGetBill } from '@/use-cases/bills'
-import { makeFundingItems, makeFundingPlan } from '@/use-cases/funding-plan'
+import {
+  FUNDING_SETTINGS_COLLECTION,
+  makeFundingItems,
+  makeFundingPlan,
+  makeSetDebitAccount,
+} from '@/use-cases/funding-plan'
 
 const cents = (value: number) => ({ cents: value, currency: 'BRL' })
 
@@ -56,6 +66,7 @@ describe('funding plan', () => {
       pixReserve: cents(0),
       items: [],
       topUp: cents(30_000),
+      debit: null,
     })
   })
 
@@ -223,5 +234,104 @@ describe('funding plan', () => {
     await expect(items.remove(TENANT, first)).rejects.toBeInstanceOf(
       NotFoundError,
     )
+  })
+
+  it('tells what the debit account needs for the next monthly debits', async () => {
+    const deps = fullDeps()
+    await deps.accounts.save(
+      account({ id: 'bank', entityId: 'pf', balance: Money.of(30_000) }),
+    )
+    const person = '11144477735'
+    const lines: Array<[string, LocalDate, number, Partial<Transaction>]> = [
+      ['PRESTACAO DE CRED IMOB', '2026-08-17', -330_000, {}],
+      ['PRESTACAO DE CRED IMOB', '2026-09-29', -330_000, {}],
+      ['CONTA DE LUZ EDP', '2026-07-16', -31_000, {}],
+      ['CONTA DE LUZ EDP', '2026-08-19', -33_000, {}],
+      ['CONTA DE LUZ EDP', '2026-09-16', -34_000, {}],
+      ['LOJA UNICA', '2026-09-01', -9_000, {}],
+      ['ACADEMIA', '2026-06-10', -10_000, {}],
+      ['ACADEMIA', '2026-07-10', -10_000, {}],
+      ['PIX MENSAL', '2026-08-01', -5_000, { counterparty: person }],
+      ['PIX MENSAL', '2026-09-01', -5_000, { counterparty: person }],
+      ['PAGAMENTO FATURA CARTAO', '2026-08-10', -100_000, {}],
+      ['PAGAMENTO FATURA CARTAO', '2026-09-10', -100_000, {}],
+      ['TED POUPANCA', '2026-08-05', -20_000, { transferGroupId: 'g1' }],
+      ['TED POUPANCA', '2026-09-05', -20_000, { transferGroupId: 'g2' }],
+      ['PADARIA', '2026-08-01', -1_000, {}],
+      ['PADARIA', '2026-09-01', -1_000, {}],
+      ['PADARIA', '2026-09-08', -1_000, {}],
+      ['PADARIA', '2026-09-15', -1_000, {}],
+    ]
+    for (const [index, [description, bookedOn, value, extra]] of [
+      ...lines.entries(),
+    ]) {
+      await deps.transactions.save(
+        transaction({
+          id: `debit-${index}`,
+          accountId: 'bank',
+          description,
+          bookedOn,
+          amount: Money.of(value),
+          ...extra,
+        }),
+      )
+    }
+    expect(await makeSetDebitAccount(deps)(TENANT, 'bank')).toEqual({
+      accountId: 'bank',
+    })
+
+    const plan = await makeFundingPlan(deps)(TENANT)
+    expect(plan.debit).toEqual({
+      accountId: 'bank',
+      name: 'Account bank',
+      balance: cents(30_000),
+      items: [
+        { name: 'CONTA DE LUZ EDP', amount: cents(34_000), on: '2026-10-16' },
+        {
+          name: 'PRESTACAO DE CRED IMOB',
+          amount: cents(330_000),
+          on: '2026-10-29',
+        },
+      ],
+      total: cents(364_000),
+      topUp: cents(334_000),
+    })
+  })
+
+  it('checks the debit account and forgets one that is gone', async () => {
+    const deps = fullDeps()
+    const setDebit = makeSetDebitAccount(deps)
+    await deps.accounts.save(
+      account({ id: 'rich', entityId: 'pf', balance: Money.of(900_000) }),
+    )
+    await deps.accounts.save(account({ id: 'company', entityId: 'pj' }))
+    await deps.accounts.save(
+      account({ id: 'card', entityId: 'pf', type: 'CREDIT_CARD' }),
+    )
+    await expect(setDebit(TENANT, 'missing')).rejects.toBeInstanceOf(
+      NotFoundError,
+    )
+    await expect(setDebit(TENANT, 'company')).rejects.toBeInstanceOf(
+      ValidationError,
+    )
+    await expect(setDebit(TENANT, 'card')).rejects.toBeInstanceOf(
+      ValidationError,
+    )
+    await setDebit(TENANT, 'rich')
+    expect((await makeFundingPlan(deps)(TENANT)).debit).toMatchObject({
+      items: [],
+      topUp: cents(0),
+    })
+    await deps.documents.put(
+      TENANT,
+      FUNDING_SETTINGS_COLLECTION,
+      'debit-account',
+      {
+        accountId: 'gone',
+      },
+    )
+    expect((await makeFundingPlan(deps)(TENANT)).debit).toBeNull()
+    expect(await setDebit(TENANT, null)).toEqual({ accountId: null })
+    expect((await makeFundingPlan(deps)(TENANT)).debit).toBeNull()
   })
 })

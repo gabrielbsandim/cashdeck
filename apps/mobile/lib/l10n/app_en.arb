@@ -1016,6 +1016,39 @@
       }
     }
   },
+  "fundingDebit": "At {account}: {total} in automatic debits · Balance: {balance}",
+  "@fundingDebit": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingDebitTopUp": "Send {amount} to {account}",
+  "@fundingDebitTopUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingDebitCovered": "The {account} balance covers the debits",
+  "@fundingDebitCovered": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
   "fundingTopUp": "Send {amount} to cover the next 30 days",
   "@fundingTopUp": {
     "placeholders": {

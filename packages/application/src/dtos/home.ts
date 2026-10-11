@@ -118,6 +118,18 @@ export const fundingItemInputSchema = z.object({
 
 export type FundingItemInput = z.infer<typeof fundingItemInputSchema>
 
+export const fundingDebitViewSchema = z.object({
+  name: z.string(),
+  amount: moneyViewSchema,
+  on: isoDate,
+})
+
+export type FundingDebitView = z.infer<typeof fundingDebitViewSchema>
+
+export const debitAccountInputSchema = z.object({
+  accountId: z.string().min(1).nullable(),
+})
+
 export const fundingPlanSchema = z.object({
   balance: moneyViewSchema.nullable(),
   monthlyAverage: moneyViewSchema,
@@ -128,6 +140,17 @@ export const fundingPlanSchema = z.object({
   pixReserve: moneyViewSchema,
   items: z.array(fundingItemViewSchema),
   topUp: moneyViewSchema,
+  // The account the bank debits by itself, once one is picked.
+  debit: z
+    .object({
+      accountId: z.string(),
+      name: z.string(),
+      balance: moneyViewSchema,
+      items: z.array(fundingDebitViewSchema),
+      total: moneyViewSchema,
+      topUp: moneyViewSchema,
+    })
+    .nullable(),
 })
 
 export type FundingPlan = z.infer<typeof fundingPlanSchema>

@@ -125,6 +125,7 @@ TaxEstimate? taxEstimateFromJson(JsonMap? json) {
 
 FundingPlan fundingFromJson(JsonMap json) {
   final balance = readOptionalMap(json, 'balance');
+  final debit = readOptionalMap(json, 'debit');
   return FundingPlan(
     balance: balance == null ? null : moneyFromJson(balance),
     monthlyAverage: readMoney(json, 'monthlyAverage'),
@@ -133,5 +134,13 @@ FundingPlan fundingFromJson(JsonMap json) {
     expected: readMoney(json, 'expected'),
     pixReserve: readMoney(json, 'pixReserve'),
     topUp: readMoney(json, 'topUp'),
+    debit: debit == null
+        ? null
+        : FundingDebit(
+            name: readString(debit, 'name'),
+            balance: readMoney(debit, 'balance'),
+            total: readMoney(debit, 'total'),
+            topUp: readMoney(debit, 'topUp'),
+          ),
   );
 }
