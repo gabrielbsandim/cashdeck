@@ -7,12 +7,11 @@ import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
-import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_sheets.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -61,15 +60,24 @@ class _SafeZoneScreenState extends ConsumerState<SafeZoneScreen> {
       SafeZoneChange.saved => saved ?? l10n.safeZoneSaved,
       SafeZoneChange.limited => l10n.errorSafeMode,
       SafeZoneChange.noLocation => l10n.safeZoneNoLocation,
+      SafeZoneChange.notFound => l10n.safeZoneAddressNotFound,
     };
     await showCdToast(context, message: message);
   }
 
-  Future<void> _addHere() async {
+  Future<void> _add() async {
+    final source = await showCdBottomSheet<ZoneSource>(
+      context,
+      title: AppLocalizations.of(context).safeZoneAdd,
+      builder: (_) => const SafeZoneAddSheet(),
+    );
+    if (source == null || !mounted) return;
+    final mode = ref.read(safeModeProvider.notifier);
     setState(() => _saving = true);
-    final change = await ref
-        .read(safeModeProvider.notifier)
-        .addCurrentLocation();
+    final change = await switch (source) {
+      CurrentPlace() => mode.addCurrentLocation(),
+      TypedAddress(:final address) => mode.addAddress(address),
+    };
     if (!mounted) return;
     setState(() => _saving = false);
     await _report(change);
@@ -161,10 +169,10 @@ class _SafeZoneScreenState extends ConsumerState<SafeZoneScreen> {
             child: CdButton.tonal(
               key: SafeZoneScreen.addKey,
               expand: true,
-              icon: Symbols.my_location_rounded,
-              label: l10n.safeZoneAddHere,
+              icon: Symbols.add_location_alt_rounded,
+              label: l10n.safeZoneAdd,
               loading: _saving,
-              onPressed: mode.limited ? null : _addHere,
+              onPressed: mode.limited ? null : _add,
             ),
           ),
           if (mode.limited)
@@ -219,58 +227,6 @@ class _SafeZoneScreenState extends ConsumerState<SafeZoneScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Asks for a zone's name; pops the trimmed name, or null when dismissed.
-class SafeZoneNameSheet extends StatefulWidget {
-  const new({required this.current, super.key});
-
-  static const fieldKey = Key('safe-zone-name-field');
-  static const saveKey = Key('safe-zone-name-save');
-  static const maxLength = 60;
-
-  final String current;
-
-  @override
-  State<SafeZoneNameSheet> createState() => _SafeZoneNameSheetState();
-}
-
-class _SafeZoneNameSheetState extends State<SafeZoneNameSheet> {
-  late String _name = widget.current;
-
-  VoidCallback? get _save {
-    final name = _name.trim();
-    if (name.isEmpty || name == widget.current) return null;
-    return () => Navigator.of(context).pop(name);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        CdTextField(
-          key: SafeZoneNameSheet.fieldKey,
-          label: l10n.safeZoneNameLabel,
-          initialValue: widget.current,
-          helperText: l10n.safeZoneNameHelper,
-          textInputAction: TextInputAction.done,
-          inputFormatters: [
-            LengthLimitingTextInputFormatter(SafeZoneNameSheet.maxLength),
-          ],
-          onChanged: (value) => setState(() => _name = value),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        CdButton.filled(
-          key: SafeZoneNameSheet.saveKey,
-          expand: true,
-          label: l10n.saveButton,
-          onPressed: _save,
-        ),
-      ],
     );
   }
 }

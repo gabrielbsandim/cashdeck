@@ -3,7 +3,7 @@ import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/links/link_opener.dart';
-import 'package:cashdeck/core/location/address_reader.dart';
+import 'package:cashdeck/core/location/geocoder.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
 import 'package:cashdeck/core/push/firebase_push_messaging.dart';
@@ -48,7 +48,7 @@ Future<void> main() async {
           LocalAuthBiometricAuthenticator(),
         ),
         locationReaderProvider.overrideWithValue(DeviceLocationReader()),
-        addressReaderProvider.overrideWithValue(DeviceAddressReader()),
+        geocoderProvider.overrideWithValue(DeviceGeocoder()),
         fileChooserProvider.overrideWithValue(const PlatformFileChooser()),
         fileSharerProvider.overrideWithValue(PlatformFileSharer()),
         linkOpenerProvider.overrideWithValue(const PlatformLinkOpener()),

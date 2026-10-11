@@ -2,7 +2,7 @@ import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
-import 'package:cashdeck/features/settings/presentation/safe_zone_screen.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_screen.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

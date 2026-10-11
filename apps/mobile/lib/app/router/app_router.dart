@@ -37,7 +37,11 @@ import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
-import 'package:cashdeck/features/settings/presentation/safe_zone_screen.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_screen.dart';
+import 'package:cashdeck/features/settings/presentation/sections/company_settings_screen.dart';
+import 'package:cashdeck/features/settings/presentation/sections/connections_settings_screen.dart';
+import 'package:cashdeck/features/settings/presentation/sections/payments_settings_screen.dart';
+import 'package:cashdeck/features/settings/presentation/sections/security_settings_screen.dart';
 import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_detail_screen.dart';
@@ -61,10 +65,27 @@ GoRoute _page(String path, Widget screen) =>
 /// The part of [full] below the tab root [root], as a child route path.
 String _below(String full, String root) => full.substring(root.length + 1);
 
+GoRoute _child(String full, String parent, Widget screen) =>
+    _page(_below(full, parent), screen);
+
+/// One group of Ajustes: its own screen, with the screens it links to below.
+GoRoute _section(String full, Widget screen, List<RouteBase> routes) => GoRoute(
+  path: _below(full, AppRoutes.settings),
+  builder: (_, _) => screen,
+  routes: routes,
+);
+
+/// The security group stays open away from a safe zone: it is where the
+/// zones and the lock live.
+const Set<String> _openWhileLimited = {
+  AppRoutes.settingsSecurity,
+  AppRoutes.safeZone,
+};
+
 /// Screens that show what the amount mask cannot cover, such as the chat's
 /// answers and receipts, or that change connections and payments.
 bool closedWhileLimited(String path) {
-  if (path == AppRoutes.safeZone) return false;
+  if (_openWhileLimited.contains(path)) return false;
   return path.startsWith(AppRoutes.chat) ||
       path.startsWith('${AppRoutes.settings}/') ||
       path.endsWith('/receipt') ||
@@ -152,59 +173,88 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.settings,
         builder: (_, _) => const SettingsScreen(),
         routes: [
-          _page(
-            _below(AppRoutes.entityProfiles, AppRoutes.settings),
+          _child(
+            AppRoutes.entityProfiles,
+            AppRoutes.settings,
             const EntityProfilesScreen(),
           ),
-          _page(
-            _below(AppRoutes.safeZone, AppRoutes.settings),
-            const SafeZoneScreen(),
-          ),
-          GoRoute(
-            path: _below(AppRoutes.captureSources, AppRoutes.settings),
-            builder: (_, _) => const CaptureSourcesScreen(),
-            routes: [_page('scan', const ScanBillScreen())],
-          ),
-          GoRoute(
-            path: _below(AppRoutes.rails, AppRoutes.settings),
-            builder: (_, _) => const PaymentRailsScreen(),
-            routes: [
+          _section(
+            AppRoutes.settingsConnections,
+            const ConnectionsSettingsScreen(),
+            [
+              _child(
+                AppRoutes.connectItemId,
+                AppRoutes.settingsConnections,
+                const ConnectByItemIdScreen(),
+              ),
               GoRoute(
-                path: ':railId',
-                builder: (_, state) => RailDetailScreen(
-                  railId: state.pathParameters['railId']!,
-                  rail: switch (state.extra) {
-                    final PaymentRail rail => rail,
-                    _ => null,
-                  },
+                path: _below(
+                  AppRoutes.captureSources,
+                  AppRoutes.settingsConnections,
                 ),
+                builder: (_, _) => const CaptureSourcesScreen(),
+                routes: [
+                  _child(
+                    AppRoutes.scanBill,
+                    AppRoutes.captureSources,
+                    const ScanBillScreen(),
+                  ),
+                ],
+              ),
+              _child(
+                AppRoutes.cardImport,
+                AppRoutes.settingsConnections,
+                const ManualCardBillImportScreen(),
+              ),
+              _child(
+                AppRoutes.cardNotifications,
+                AppRoutes.settingsConnections,
+                const CardNotificationsScreen(),
               ),
             ],
           ),
-          _page(
-            _below(AppRoutes.connectItemId, AppRoutes.settings),
-            const ConnectByItemIdScreen(),
-          ),
-          _page(
-            _below(AppRoutes.cardImport, AppRoutes.settings),
-            const ManualCardBillImportScreen(),
-          ),
-          _page(
-            _below(AppRoutes.cardNotifications, AppRoutes.settings),
-            const CardNotificationsScreen(),
-          ),
-          _page(
-            _below(AppRoutes.invoiceIssuer, AppRoutes.settings),
-            const InvoiceIssuerSetupScreen(),
-          ),
-          _page(
-            _below(AppRoutes.payroll, AppRoutes.settings),
-            const PayrollInputScreen(),
-          ),
-          _page(
-            _below(AppRoutes.accountantExport, AppRoutes.settings),
-            const AccountantExportScreen(),
-          ),
+          _section(AppRoutes.settingsPayments, const PaymentsSettingsScreen(), [
+            GoRoute(
+              path: _below(AppRoutes.rails, AppRoutes.settingsPayments),
+              builder: (_, _) => const PaymentRailsScreen(),
+              routes: [
+                GoRoute(
+                  path: ':railId',
+                  builder: (_, state) => RailDetailScreen(
+                    railId: state.pathParameters['railId']!,
+                    rail: switch (state.extra) {
+                      final PaymentRail rail => rail,
+                      _ => null,
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ]),
+          _section(AppRoutes.settingsCompany, const CompanySettingsScreen(), [
+            _child(
+              AppRoutes.invoiceIssuer,
+              AppRoutes.settingsCompany,
+              const InvoiceIssuerSetupScreen(),
+            ),
+            _child(
+              AppRoutes.payroll,
+              AppRoutes.settingsCompany,
+              const PayrollInputScreen(),
+            ),
+            _child(
+              AppRoutes.accountantExport,
+              AppRoutes.settingsCompany,
+              const AccountantExportScreen(),
+            ),
+          ]),
+          _section(AppRoutes.settingsSecurity, const SecuritySettingsScreen(), [
+            _child(
+              AppRoutes.safeZone,
+              AppRoutes.settingsSecurity,
+              const SafeZoneScreen(),
+            ),
+          ]),
         ],
       ),
       _page(AppRoutes.installments, const InstallmentsScreen()),

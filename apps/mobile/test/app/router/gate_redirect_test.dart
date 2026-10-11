@@ -24,6 +24,8 @@ void main() {
       AppRoutes.chat,
       AppRoutes.chatThread('t1'),
       AppRoutes.rails,
+      AppRoutes.settingsPayments,
+      AppRoutes.settingsConnections,
       AppRoutes.billReceipt('b1'),
       AppRoutes.sharedFile,
       AppRoutes.pasteCode,
@@ -34,6 +36,7 @@ void main() {
       AppRoutes.home,
       AppRoutes.bill('b1'),
       AppRoutes.settings,
+      AppRoutes.settingsSecurity,
       AppRoutes.safeZone,
     ]) {
       expect(gate(path), isNull, reason: path);

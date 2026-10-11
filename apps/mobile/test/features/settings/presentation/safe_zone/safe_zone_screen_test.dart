@@ -1,27 +1,37 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
-import 'package:cashdeck/core/location/address_reader.dart';
+import 'package:cashdeck/core/location/geocoder.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
-import 'package:cashdeck/features/settings/presentation/safe_zone_screen.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_screen.dart';
+import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_sheets.dart';
+import 'package:cashdeck/features/settings/presentation/sections/security_settings_screen.dart';
 import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
+import 'package:cashdeck/features/settings/presentation/settings_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
-import '../../../support/app_harness.dart';
-import '../../../support/builders.dart';
-import '../../../support/pump_app.dart';
-import '../../../support/safe_mode_support.dart';
+import '../../../../support/app_harness.dart';
+import '../../../../support/builders.dart';
+import '../../../../support/pump_app.dart';
+import '../../../../support/safe_mode_support.dart';
 
 void main() {
   String released() => l10n.safeZoneReleased(
     DateFormat.Hm('pt-BR')
         .format(testNow.add(SafeModeController.releaseWindow).toLocal()),
   );
+
+  Future<void> addHere(WidgetTester tester) async {
+    await tester.tap(find.byKey(SafeZoneScreen.addKey));
+    await settle(tester);
+    await tester.tap(find.byKey(SafeZoneAddSheet.hereKey));
+    await settle(tester);
+  }
 
   Future<void> tapVersion(WidgetTester tester, int times) async {
     for (var tap = 0; tap < times; tap++) {
@@ -41,14 +51,13 @@ void main() {
       AppRoutes.safeZone,
       overrides: [
         locationReaderProvider.overrideWithValue(reader),
-        addressReaderProvider.overrideWithValue(FakeAddressReader(address)),
+        geocoderProvider.overrideWithValue(FakeGeocoder(address)),
       ],
     );
     expect(find.text(l10n.safeZoneOff), findsOneWidget);
     expect(find.text(l10n.safeZoneEmpty), findsOneWidget);
 
-    await tester.tap(find.byKey(SafeZoneScreen.addKey));
-    await settle(tester);
+    await addHere(tester);
     expect(find.text(l10n.safeZoneSaved), findsOneWidget);
     expect(find.text(address), findsOneWidget);
     expect(find.text(l10n.safeZoneRadius(300)), findsOneWidget);
@@ -73,9 +82,50 @@ void main() {
     expect(app.read(safeModeProvider).enabled, isFalse);
 
     reader.point = null;
+    await addHere(tester);
+    expect(find.text(l10n.safeZoneNoLocation), findsOneWidget);
+  });
+
+  testWidgets('saves a typed address and says when it is not found', (
+    tester,
+  ) async {
+    final geocoder = FakeGeocoder(null, homePoint);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.safeZone,
+      overrides: [
+        locationReaderProvider.overrideWithValue(FakeLocationReader(homePoint)),
+        geocoderProvider.overrideWithValue(geocoder),
+      ],
+    );
+    expect(find.text(l10n.safeZoneAdd), findsOneWidget);
+
     await tester.tap(find.byKey(SafeZoneScreen.addKey));
     await settle(tester);
-    expect(find.text(l10n.safeZoneNoLocation), findsOneWidget);
+    final save = find.byKey(SafeZoneAddSheet.saveKey);
+    expect(tester.widget<CdButton>(save).onPressed, isNull);
+    await tester.enterText(
+      find.byKey(SafeZoneAddSheet.addressKey),
+      ' Rua A, 1, Cidade ',
+    );
+    await tester.pump();
+    await tester.tap(save);
+    await settle(tester);
+    expect(geocoder.searched, ['Rua A, 1, Cidade']);
+    expect(find.text('Rua A, 1, Cidade'), findsOneWidget);
+    expect(find.text(l10n.safeZoneInside), findsOneWidget);
+    expect(app.read(safeModeLimitedProvider), isFalse);
+    await waitForToast(tester);
+
+    geocoder.point = null;
+    await tester.tap(find.byKey(SafeZoneScreen.addKey));
+    await settle(tester);
+    await tester.enterText(find.byKey(SafeZoneAddSheet.addressKey), 'Nada');
+    await tester.pump();
+    await tester.tap(find.byKey(SafeZoneAddSheet.saveKey));
+    await settle(tester);
+    expect(find.text(l10n.safeZoneAddressNotFound), findsOneWidget);
+    expect(app.read(safeModeProvider).zones, hasLength(1));
   });
 
   testWidgets('away from home the zones lock and the note says why', (
@@ -110,19 +160,14 @@ void main() {
         biometricAuthenticatorProvider.overrideWithValue(biometrics),
       ],
     );
-    expect(find.byKey(SettingsScreen.pauseKey), findsNothing);
-    expect(
-      find.byKey(SettingsScreen.rowKey(AppRoutes.entityProfiles)),
-      findsNothing,
-    );
-    final hide = tester.widget<Switch>(
-      find.descendant(
-        of: find.byKey(SettingsScreen.hideAmountsKey),
-        matching: find.byType(Switch),
-      ),
-    );
-    expect(hide.value, isTrue);
-    expect(hide.onChanged, isNull);
+    for (final route in [
+      AppRoutes.entityProfiles,
+      AppRoutes.settingsConnections,
+      AppRoutes.settingsPayments,
+      AppRoutes.settingsCompany,
+    ]) {
+      expect(find.byKey(SettingsLink.keyOf(route)), findsNothing);
+    }
 
     await tapVersion(tester, 9);
     expect(biometrics.reasons, isEmpty);
@@ -130,11 +175,16 @@ void main() {
     expect(biometrics.reasons, [l10n.safeZoneReleaseReason]);
     expect(app.read(safeModeLimitedProvider), isFalse);
     expect(find.text(released()), findsWidgets);
-    expect(find.byKey(SettingsScreen.pauseKey), findsOneWidget);
+    expect(
+      find.byKey(SettingsLink.keyOf(AppRoutes.settingsPayments)),
+      findsOneWidget,
+    );
     await waitForToast(tester);
 
-    await tester.tap(find.byKey(SettingsScreen.rowKey(AppRoutes.safeZone)));
-    await settle(tester);
+    for (final route in [AppRoutes.settingsSecurity, AppRoutes.safeZone]) {
+      await tester.tap(find.byKey(SettingsLink.keyOf(route)));
+      await settle(tester);
+    }
     await tester.tap(find.byKey(SafeZoneScreen.endReleaseKey));
     await settle(tester);
     expect(app.read(safeModeLimitedProvider), isTrue);
@@ -174,11 +224,40 @@ void main() {
         biometricAuthenticatorProvider.overrideWithValue(biometrics),
       ],
     );
-    expect(find.text(l10n.safeZoneInside), findsOneWidget);
+    expect(
+      find.byKey(SettingsLink.keyOf(AppRoutes.settingsPayments)),
+      findsOneWidget,
+    );
 
     await tapVersion(tester, 10);
 
     expect(biometrics.reasons, isEmpty);
+  });
+
+  testWidgets('away from home security stays open with the mask forced on', (
+    tester,
+  ) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.settings,
+      overrides: safeModeOverrides(),
+    );
+
+    await tester.tap(
+      find.byKey(SettingsLink.keyOf(AppRoutes.settingsSecurity)),
+    );
+    await settle(tester);
+
+    expect(app.location, AppRoutes.settingsSecurity);
+    expect(find.text(l10n.safeZoneOutside), findsOneWidget);
+    final hide = tester.widget<Switch>(
+      find.descendant(
+        of: find.byKey(SecuritySettingsScreen.hideAmountsKey),
+        matching: find.byType(Switch),
+      ),
+    );
+    expect(hide.value, isTrue);
+    expect(hide.onChanged, isNull);
   });
 
   testWidgets('away from home a closed screen sends back home', (tester) async {

@@ -36,7 +36,7 @@ lib/
     config/                 AppConfig from --dart-define
     di/                     core providers (AppConfig, Dio, Clock)
     error/                  AppFailure (sealed), LoadFailure, user messages
-    location/               LocationReader and AddressReader ports, GeoPoint, adapters
+    location/               LocationReader and Geocoder ports, GeoPoint, adapters
     result/                 Result<T> (sealed)
     money/                  Money (integer cents + currency), MoneyFormat
     network/                Dio factory, error mapping, guardRequest, JSON reading
@@ -52,7 +52,7 @@ lib/
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
-    settings/               Ajustes: links, privacy, the safe zones and the app version
+    settings/               Ajustes: a hub of groups (sections/), the safe zones and the app version
   l10n/                     app_pt.arb, app_en.arb, generated AppLocalizations
 tool/
   check.sh                  the gate
@@ -91,10 +91,12 @@ test/                       mirrors lib/ one to one
   the screen. With a zone saved and the phone away from all of them (or with
   no fix), `safeModeLimitedProvider` is true: amounts stay hidden, the API
   client refuses every request but GET, the confirm sheet refuses, and the
-  router sends the chat, receipts, shared files and settings subpages back
-  home. Ten quick taps on the version in Ajustes, plus the device check,
-  release it for an hour. A new zone is named by its street address
-  (reverse geocoding) and can be renamed. Zones change only while not limited.
+  router sends the chat, receipts, shared files and every Ajustes group but
+  security back home. Ten quick taps on the version in Ajustes, plus the
+  device check, release it for an hour. A zone comes from the current
+  location, named by its street address, or from a typed address (both
+  through the `Geocoder` port), and can be renamed. Zones change only while
+  not limited.
 
 ## Navigation
 

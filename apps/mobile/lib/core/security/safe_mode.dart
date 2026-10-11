@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cashdeck/core/di/core_providers.dart';
-import 'package:cashdeck/core/location/address_reader.dart';
+import 'package:cashdeck/core/location/geocoder.dart';
 import 'package:cashdeck/core/location/location_reader.dart';
 import 'package:cashdeck/core/preferences/key_value_store.dart';
 import 'package:equatable/equatable.dart';
@@ -82,7 +82,7 @@ final class SafeModeState extends Equatable {
   List<Object?> get props => [zones, status, releasedUntil];
 }
 
-enum SafeZoneChange { saved, limited, noLocation }
+enum SafeZoneChange { saved, limited, noLocation, notFound }
 
 class SafeModeController extends Notifier<SafeModeState> {
   static const zonesKey = 'safe_zones';
@@ -149,9 +149,20 @@ class SafeModeController extends Notifier<SafeModeState> {
     if (state.limited) return SafeZoneChange.limited;
     final point = await ref.read(locationReaderProvider).current();
     if (point == null) return SafeZoneChange.noLocation;
-    final address = await ref.read(addressReaderProvider).addressOf(point);
+    final address = await ref.read(geocoderProvider).addressOf(point);
     await _save([...state.zones, SafeZone(point, name: address)]);
     state = state.copyWith(status: ZoneStatus.inside);
+    return SafeZoneChange.saved;
+  }
+
+  /// A place the phone is not at, such as home while at work. The check right
+  /// after tells whether the phone is inside one of the zones.
+  Future<SafeZoneChange> addAddress(String address) async {
+    if (state.limited) return SafeZoneChange.limited;
+    final point = await ref.read(geocoderProvider).pointOf(address);
+    if (point == null) return SafeZoneChange.notFound;
+    await _save([...state.zones, SafeZone(point, name: address)]);
+    await check();
     return SafeZoneChange.saved;
   }
 

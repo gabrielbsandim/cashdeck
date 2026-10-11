@@ -19,16 +19,21 @@ abstract final class AppRoutes {
   static const investments = '/investments';
 
   static const entityProfiles = '$settings/profiles';
-  static const safeZone = '$settings/safe-zone';
-  static const captureSources = '$settings/capture';
-  static const scanBill = '$settings/capture/scan';
-  static const rails = '$settings/rails';
-  static const connectItemId = '$settings/open-finance/item-id';
-  static const cardImport = '$settings/card-import';
-  static const cardNotifications = '$settings/card-notifications';
-  static const invoiceIssuer = '$settings/invoice-issuer';
-  static const payroll = '$settings/payroll';
-  static const accountantExport = '$settings/accountant-export';
+  static const settingsConnections = '$settings/connections';
+  static const settingsPayments = '$settings/payments';
+  static const settingsCompany = '$settings/company';
+  static const settingsSecurity = '$settings/security';
+
+  static const connectItemId = '$settingsConnections/item-id';
+  static const captureSources = '$settingsConnections/capture';
+  static const scanBill = '$captureSources/scan';
+  static const cardImport = '$settingsConnections/card-import';
+  static const cardNotifications = '$settingsConnections/card-notifications';
+  static const rails = '$settingsPayments/rails';
+  static const invoiceIssuer = '$settingsCompany/invoice-issuer';
+  static const payroll = '$settingsCompany/payroll';
+  static const accountantExport = '$settingsCompany/accountant-export';
+  static const safeZone = '$settingsSecurity/safe-zone';
 
   /// The tab roots, the only places the bottom navigation shows.
   static const List<String> tabs = [home, transactions, bills, insights];
