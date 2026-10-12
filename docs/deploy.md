@@ -68,6 +68,7 @@ read from are in [providers.md](providers.md).
 | `CHAT_TURN_BUDGET_MS` | no | Wall time of a chat turn, 1000 to 50000, defaults to `25000` (the route allows 60 s) |
 | `BRL_PER_USD` | no | Fallback exchange rate |
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | for Open Finance | Aggregator |
+| `PLUGGY_CLIENT_ID_2`, `PLUGGY_CLIENT_SECRET_2` | optional | A second aggregator account; each item is served by the account that owns it |
 | `PIERRE_API_KEY` | optional | Preview feed between Pluggy's daily collections |
 | `ASAAS_API_KEY`, `ASAAS_ENVIRONMENT` | no | Tenant-wide Asaas fallback |
 | `INTER_CLIENT_ID`, `INTER_CLIENT_SECRET`, `INTER_CERT`, `INTER_KEY`, `INTER_ACCOUNT`, `INTER_ENVIRONMENT` | no | Tenant-wide Inter fallback |

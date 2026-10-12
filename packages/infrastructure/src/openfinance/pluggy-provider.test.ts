@@ -644,4 +644,25 @@ describe('PluggyProvider', () => {
       'Pluggy is not configured.',
     )
   })
+
+  it('signs in with the credentials of its login', async () => {
+    const scripted = new ScriptedTransport()
+      .on('POST', `${PLUGGY_URL}/auth`, { json: { apiKey: 'api-key' } })
+      .on('GET', `${PLUGGY_URL}/items/item-1`, { json: { id: 'item-1' } })
+    const second = new PluggyProvider({
+      credentials: credentials({
+        PLUGGY_CLIENT_ID: 'id',
+        PLUGGY_CLIENT_SECRET: 'secret',
+        PLUGGY_CLIENT_ID_2: 'id-2',
+        PLUGGY_CLIENT_SECRET_2: 'secret-2',
+      }),
+      transport: scripted.transport,
+      login: '_2',
+    })
+    await second.getItem('item-1')
+    expect(scripted.body('POST', `${PLUGGY_URL}/auth`)).toEqual({
+      clientId: 'id-2',
+      clientSecret: 'secret-2',
+    })
+  })
 })

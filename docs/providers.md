@@ -105,6 +105,11 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
 | Credential | Use |
 |---|---|
 | `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | `POST /auth` returns an API key sent as `X-API-KEY`, cached for two hours |
+| `PLUGGY_CLIENT_ID_2`, `PLUGGY_CLIENT_SECRET_2` | Optional second Pluggy account, for a household whose connections outgrow one free account |
+
+- With two accounts, `OpenFinanceLogins` asks each for an item in order and
+  keeps the one that does not answer 403 or 404, per server instance. The
+  second account registers the same webhook URL and token.
 
 - `getItem`: `GET /items/{id}`; `connector.name`, `status`, `lastUpdatedAt`.
 - `listAccounts`: `GET /accounts?itemId=` with `page`; a credit card balance is

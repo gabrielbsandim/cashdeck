@@ -193,6 +193,9 @@ export type PluggyProviderDeps = {
   credentials: Credentials
   transport: Transport
   now?: () => number
+  // Suffix of the credential names, so a second Pluggy account reads
+  // PLUGGY_CLIENT_ID_2 and PLUGGY_CLIENT_SECRET_2.
+  login?: string
 }
 
 export class PluggyProvider implements OpenFinanceProvider {
@@ -332,15 +335,17 @@ export class PluggyProvider implements OpenFinanceProvider {
   }
 
   private async authenticate() {
-    const { PLUGGY_CLIENT_ID, PLUGGY_CLIENT_SECRET } = await requireCredentials(
-      this.deps.credentials,
-      PROVIDER,
-      ['PLUGGY_CLIENT_ID', 'PLUGGY_CLIENT_SECRET'],
-    )
+    const login = this.deps.login ?? ''
+    const id = `PLUGGY_CLIENT_ID${login}`
+    const secret = `PLUGGY_CLIENT_SECRET${login}`
+    const found = await requireCredentials(this.deps.credentials, PROVIDER, [
+      id,
+      secret,
+    ])
     const response = await send(this.deps.transport, {
       method: 'POST',
       url: `${PLUGGY_URL}/auth`,
-      json: { clientId: PLUGGY_CLIENT_ID, clientSecret: PLUGGY_CLIENT_SECRET },
+      json: { clientId: found[id], clientSecret: found[secret] },
     })
     const answer = this.parse<{ apiKey?: string }>(response)
     if (!answer.apiKey) {

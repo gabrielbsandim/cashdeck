@@ -28,6 +28,7 @@ import { NotaasIssuer } from '@/invoices/notaas-issuer'
 import { PublicMarketData } from '@/market/public-market-data'
 import { type DeviceTokens, FcmNotifier } from '@/notify/fcm-notifier'
 import { PierreProvider } from '@/openfinance/pierre-provider'
+import { OpenFinanceLogins } from '@/openfinance/open-finance-logins'
 import { PluggyProvider } from '@/openfinance/pluggy-provider'
 import { AsaasRail } from '@/rails/asaas-rail'
 import { C6EmpresasRail } from '@/rails/c6-empresas-rail'
@@ -37,6 +38,9 @@ import {
 } from '@/rails/inter-empresas-rail'
 import { ManualTopUpFunder } from '@/rails/manual-top-up-funder'
 import { createWebhookReaders } from '@/webhooks/webhook-readers'
+
+// Credential name suffixes of each Pluggy account, the first one unsuffixed.
+const PLUGGY_LOGINS = ['', '_2']
 
 export type CreateProvidersInput = {
   env: Record<string, string | undefined>
@@ -100,7 +104,11 @@ export function createProviders(input: CreateProvidersInput): Providers {
       rails.map(rail => [rail.id, rail]),
     ),
     reserveFunder: new ManualTopUpFunder({ balance: asaas }),
-    openFinance: new PluggyProvider({ credentials, transport }),
+    openFinance: new OpenFinanceLogins(
+      PLUGGY_LOGINS.map(
+        login => new PluggyProvider({ credentials, transport, login }),
+      ),
+    ),
     preview: new PierreProvider({ credentials, transport }),
     marketData: new PublicMarketData({ transport }),
     invoiceIssuer: new NotaasIssuer({ credentials, transport, now }),
