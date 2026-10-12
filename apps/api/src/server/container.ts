@@ -26,6 +26,7 @@ import {
   InMemoryDocumentStore,
   InMemoryEntityRepository,
   InMemoryFundingRepository,
+  InMemoryGoalRepository,
   InMemoryIdempotencyStore,
   InMemoryInstitutionRepository,
   InMemoryInvoiceRepository,
@@ -40,6 +41,7 @@ import {
   makeAlertEmitter,
   makeAlerts,
   makeAutomation,
+  makeBudgets,
   makeCaptureBill,
   makeCaptureFile,
   makeCaptureSources,
@@ -54,6 +56,7 @@ import {
   makeMonthlyInsights,
   makeListCardBills,
   makeGetCardTimeline,
+  makeGoals,
   makeListInvestments,
   makeInvestmentPerformance,
   makeListInstallments,
@@ -116,6 +119,7 @@ import { createFinancialEntity, RAIL_IDS, type RailId } from '@cashdeck/domain'
 import {
   createLlmProvider,
   createPrismaAlertStores,
+  createPrismaPlanning,
   createPrismaRecords,
   createPrismaRepositories,
   createProviders,
@@ -183,6 +187,7 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
     transfers: new InMemoryTransferRepository(),
     invoices: new InMemoryInvoiceRepository(),
     budgets: new InMemoryBudgetRepository(),
+    goals: new InMemoryGoalRepository(),
     attachments: new InMemoryAttachmentRepository(),
     documents: new InMemoryDocumentStore(),
     webhookEvents: new InMemoryWebhookEventStore(),
@@ -236,6 +241,7 @@ function stores(env: ServerEnv, settings: PaymentSettings) {
   return {
     ...createPrismaRepositories(db, settings),
     ...createPrismaRecords(db),
+    ...createPrismaPlanning(db),
     ...createPrismaAlertStores(db),
   }
 }
@@ -397,6 +403,8 @@ export function buildContainer(
     accountantExport: makeAccountantExport(deps),
     alerts: makeAlerts(deps),
     runDailyAlerts: makeRunDailyAlerts(deps),
+    goals: makeGoals(deps),
+    budgets: makeBudgets(deps),
   }
 }
 

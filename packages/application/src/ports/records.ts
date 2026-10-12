@@ -1,4 +1,5 @@
 import {
+  type Budget,
   type Category,
   type CategoryRule,
   type PixContact,
@@ -263,11 +264,20 @@ export type BudgetLimit = {
 }
 
 export interface BudgetRepository {
+  // Named by category, with the carried leftover in the limit.
   list(
     tenantId: string,
     entityId: string,
     month: string,
   ): Promise<BudgetLimit[]>
+  listMonth(
+    tenantId: string,
+    entityId: string,
+    month: string,
+  ): Promise<Budget[]>
+  findById(tenantId: string, id: string): Promise<Budget | null>
+  save(budget: Budget): Promise<void>
+  delete(tenantId: string, id: string): Promise<void>
 }
 
 export type AttachmentMeta = {

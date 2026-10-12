@@ -9,6 +9,7 @@ import {
 } from '@cashdeck/domain'
 import { billAlert, formatDay, formatMoney } from '@/use-cases/alert-events'
 import { loadAutoDebit } from '@/use-cases/auto-debit'
+import { makeRunBudgetAlerts } from '@/use-cases/budget-alerts'
 import { type Deps } from '@/use-cases/deps'
 import { allPages } from '@/use-cases/shared'
 
@@ -21,9 +22,18 @@ type DailyAlertDeps = Pick<
   | 'documents'
   | 'funder'
   | 'entities'
+  | 'transactions'
+  | 'categories'
+  | 'budgets'
+  | 'audit'
+  | 'ids'
 >
 
-export type DailyAlertsResult = { dueSoon: number; lowBalance: number }
+export type DailyAlertsResult = {
+  dueSoon: number
+  lowBalance: number
+  budgets: number
+}
 
 const UNPAID: readonly BillStatus[] = [
   'OPEN',
@@ -37,6 +47,8 @@ const UNPAID: readonly BillStatus[] = [
 const FUNDED: readonly BillStatus[] = ['OPEN', 'NEEDS_CONFIRMATION']
 
 export function makeRunDailyAlerts(deps: DailyAlertDeps) {
+  const runBudgetAlerts = makeRunBudgetAlerts(deps)
+
   async function dueBetween(
     tenantId: string,
     from: LocalDate,
@@ -127,7 +139,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
     const bills = (await dueBetween(tenantId, tomorrow, horizon)).filter(
       bill => !isAutoDebit(bill),
     )
-    const result: DailyAlertsResult = { dueSoon: 0, lowBalance: 0 }
+    const result: DailyAlertsResult = { dueSoon: 0, lowBalance: 0, budgets: 0 }
     for (const bill of bills.filter(item => item.dueDate === tomorrow)) {
       const alert = billAlert(
         'BILL_DUE_SOON',
@@ -145,6 +157,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
         ? 1
         : 0
     }
+    result.budgets = await runBudgetAlerts(tenantId)
     return result
   }
 }

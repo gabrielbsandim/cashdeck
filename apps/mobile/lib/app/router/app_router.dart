@@ -11,6 +11,7 @@ import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
+import 'package:cashdeck/features/budgets/presentation/budget_routes.dart';
 import 'package:cashdeck/features/capture/presentation/capture_sources_screen.dart';
 import 'package:cashdeck/features/capture/presentation/paste_code_screen.dart';
 import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
@@ -20,6 +21,7 @@ import 'package:cashdeck/features/card_notifications/presentation/card_notificat
 import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
 import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.dart';
+import 'package:cashdeck/features/goals/presentation/goal_routes.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/insights/presentation/card_timeline_screen.dart';
@@ -268,6 +270,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       _page(AppRoutes.installments, const InstallmentsScreen()),
+      ...goalRoutes,
+      ...budgetRoutes,
       GoRoute(
         path: AppRoutes.investments,
         builder: (_, _) => const InvestmentsScreen(),

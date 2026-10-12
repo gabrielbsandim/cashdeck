@@ -3,8 +3,6 @@ import {
   type Attachment,
   type AttachmentMeta,
   type AttachmentRepository,
-  type BudgetLimit,
-  type BudgetRepository,
   type CardBill,
   type CardBillRepository,
   type Connection,
@@ -672,32 +670,6 @@ export class PrismaWebhookEventStore implements WebhookEventStore {
   }
 }
 
-export class PrismaBudgetRepository implements BudgetRepository {
-  constructor(private readonly db: PrismaClient) {}
-
-  async list(
-    tenantId: string,
-    entityId: string,
-    month: string,
-  ): Promise<BudgetLimit[]> {
-    const budgets = await this.db.budget.findMany({
-      where: { tenantId, entityId, month },
-      orderBy: { categoryId: 'asc' },
-    })
-    const categories = await this.db.category.findMany({
-      where: { tenantId, id: { in: budgets.map(budget => budget.categoryId) } },
-    })
-    const names = new Map(
-      categories.map(category => [category.id, category.name]),
-    )
-    return budgets.map(budget => ({
-      categoryId: budget.categoryId,
-      categoryName: names.get(budget.categoryId) ?? budget.categoryId,
-      limit: Money.of(Number(budget.limitCents)),
-    }))
-  }
-}
-
 const ATTACHMENT_META = {
   id: true,
   tenantId: true,
@@ -914,7 +886,6 @@ export function createPrismaRecords(db: PrismaClient) {
     connections: new PrismaConnectionRepository(db),
     transfers: new PrismaTransferRepository(db),
     invoices: new PrismaInvoiceRepository(db),
-    budgets: new PrismaBudgetRepository(db),
     attachments: new PrismaAttachmentRepository(db),
     documents: new PrismaDocumentStore(db),
     webhookEvents: new PrismaWebhookEventStore(db),

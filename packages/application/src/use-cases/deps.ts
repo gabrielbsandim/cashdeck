@@ -10,6 +10,7 @@ import {
   type MarketData,
 } from '@/ports/investments'
 import { type LlmProvider } from '@/ports/llm-provider'
+import { type GoalRepository } from '@/ports/planning'
 import { type RailId } from '@cashdeck/domain'
 import {
   type BillSource,
@@ -78,6 +79,7 @@ export type Deps = {
   transfers: TransferRepository
   invoices: InvoiceRepository
   budgets: BudgetRepository
+  goals: GoalRepository
   categories: CategoryRepository
   chat: ChatRepository
   pixContacts: PixContactRepository

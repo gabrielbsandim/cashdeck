@@ -1,6 +1,9 @@
 import {
+  type Budget,
+  budgetAvailable,
   type Category,
   type CategoryRule,
+  Money,
   type PixContact,
   type Transaction,
 } from '@cashdeck/domain'
@@ -365,30 +368,74 @@ export class InMemoryInvoiceRepository
   }
 }
 
+type SeededBudget = BudgetLimit & {
+  tenantId: string
+  entityId: string
+  month: string
+}
+
+// Seeded limits keep the category name they were given; saved budgets are
+// named by their category id.
 export class InMemoryBudgetRepository implements BudgetRepository {
-  constructor(
-    private readonly budgets: Array<
-      BudgetLimit & { tenantId: string; entityId: string; month: string }
-    > = [],
-  ) {}
+  private readonly rows = new Map<string, Budget>()
+  private readonly names = new Map<string, string>()
+
+  constructor(seed: readonly SeededBudget[] = []) {
+    for (const [index, row] of seed.entries()) {
+      const id = `budget-${index + 1}`
+      this.names.set(id, row.categoryName)
+      this.rows.set(id, {
+        id,
+        tenantId: row.tenantId,
+        entityId: row.entityId,
+        categoryId: row.categoryId,
+        month: row.month,
+        limit: row.limit,
+        carried: Money.zero(row.limit.currency),
+        rollover: false,
+      })
+    }
+  }
 
   async list(
     tenantId: string,
     entityId: string,
     month: string,
   ): Promise<BudgetLimit[]> {
-    return this.budgets
-      .filter(
-        row =>
-          row.tenantId === tenantId &&
-          row.entityId === entityId &&
-          row.month === month,
-      )
-      .map(row => ({
-        categoryId: row.categoryId,
-        categoryName: row.categoryName,
-        limit: row.limit,
-      }))
+    const budgets = await this.listMonth(tenantId, entityId, month)
+    return budgets.map(budget => ({
+      categoryId: budget.categoryId,
+      categoryName: this.names.get(budget.id) ?? budget.categoryId,
+      limit: budgetAvailable(budget),
+    }))
+  }
+
+  async listMonth(
+    tenantId: string,
+    entityId: string,
+    month: string,
+  ): Promise<Budget[]> {
+    return [...this.rows.values()].filter(
+      row =>
+        row.tenantId === tenantId &&
+        row.entityId === entityId &&
+        row.month === month,
+    )
+  }
+
+  async findById(tenantId: string, id: string): Promise<Budget | null> {
+    const row = this.rows.get(id)
+    return row?.tenantId === tenantId ? row : null
+  }
+
+  async save(budget: Budget): Promise<void> {
+    this.rows.set(budget.id, budget)
+  }
+
+  async delete(tenantId: string, id: string): Promise<void> {
+    if (this.rows.get(id)?.tenantId === tenantId) {
+      this.rows.delete(id)
+    }
   }
 }
 

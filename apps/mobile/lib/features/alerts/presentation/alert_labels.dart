@@ -1,4 +1,6 @@
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -16,6 +18,8 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => l10n.alertKindInvoiceIssued,
   AlertKind.invoiceFailed => l10n.alertKindInvoiceFailed,
   AlertKind.cardBillClosed => l10n.alertKindCardBillClosed,
+  AlertKind.budgetNearLimit => l10n.alertKindBudgetNearLimit,
+  AlertKind.budgetLimitReached => l10n.alertKindBudgetLimitReached,
   AlertKind.other => l10n.alertKindOther,
 };
 
@@ -32,6 +36,8 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => Symbols.receipt_rounded,
   AlertKind.invoiceFailed => Symbols.error_rounded,
   AlertKind.cardBillClosed => Symbols.credit_card_rounded,
+  AlertKind.budgetNearLimit => Symbols.donut_small_rounded,
+  AlertKind.budgetLimitReached => Symbols.donut_large_rounded,
   AlertKind.other => Symbols.notifications_rounded,
 };
 
@@ -115,7 +121,37 @@ final Map<AlertKind, _Builder> _builders = {
     title: l10n.alertTextCardClosedTitle,
     body: l10n.alertTextCardClosedBody(d['card'], d['closing'], d['dueDate']),
   ),
+  AlertKind.budgetNearLimit: (l10n, d) => (
+    title: l10n.alertTextBudgetNearTitle,
+    body: l10n.alertTextBudgetNearBody(
+      _category(l10n, d),
+      d['spent'],
+      d['limit'],
+      d['percent'],
+    ),
+  ),
+  AlertKind.budgetLimitReached: (l10n, d) => (
+    title: l10n.alertTextBudgetReachedTitle,
+    body: l10n.alertTextBudgetReachedBody(
+      _category(l10n, d),
+      d['spent'],
+      d['limit'],
+    ),
+  ),
 };
+
+/// A built-in category in the app language, from the key the alert carries.
+String _category(AppLocalizations l10n, _AlertData d) {
+  final key = d.fields['categoryKey'];
+  return categoryName(
+    l10n,
+    Category(
+      id: d.fields['categoryId'] ?? '',
+      key: key == null || key.isEmpty ? null : key,
+      name: d['category'],
+    ),
+  );
+}
 
 String _hint(AppLocalizations l10n, String method) => switch (method) {
   'PIX' => l10n.alertTextHintPix,

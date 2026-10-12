@@ -20,7 +20,6 @@ const DELEGATES = [
   'internalTransfer',
   'invoice',
   'invoiceClient',
-  'budget',
   'category',
   'billAttachment',
   'document',
@@ -489,24 +488,7 @@ describe('invoices', () => {
   })
 })
 
-describe('budgets, attachments and documents', () => {
-  it('names each budget by its category', async () => {
-    const { db, repos } = mockClient()
-    db.budget.findMany.mockResolvedValueOnce([
-      { categoryId: 'food', limitCents: 10000n },
-      { categoryId: 'gone', limitCents: 500n },
-    ])
-    db.category.findMany.mockResolvedValueOnce([{ id: 'food', name: 'Food' }])
-    expect(await repos.budgets.list(TENANT, 'pf', '2026-10')).toEqual([
-      { categoryId: 'food', categoryName: 'Food', limit: Money.of(10000) },
-      { categoryId: 'gone', categoryName: 'gone', limit: Money.of(500) },
-    ])
-    expect(db.category.findMany.mock.calls[0]?.[0].where).toEqual({
-      tenantId: TENANT,
-      id: { in: ['food', 'gone'] },
-    })
-  })
-
+describe('attachments and documents', () => {
   it('stores attachment bytes and lists only metadata', async () => {
     const { db, repos } = mockClient()
     const attachment = {

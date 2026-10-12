@@ -39,6 +39,29 @@ const SOURCE_NAMES_EN: Record<string, string> = { GMAIL: 'email', DDA: 'DDA' }
 
 const due = (d: AlertData) => `${d.payee} · ${d.amount}`
 
+// Built-in categories are stored with their English name.
+const CATEGORY_NAMES_PT: Record<string, string> = {
+  groceries: 'Mercado',
+  restaurants: 'Restaurantes',
+  transport: 'Transporte',
+  fuel: 'Combustível',
+  housing: 'Moradia',
+  utilities: 'Contas da casa',
+  health: 'Saúde',
+  education: 'Educação',
+  leisure: 'Lazer',
+  shopping: 'Compras',
+  subscriptions: 'Assinaturas',
+  travel: 'Viagens',
+  taxes: 'Impostos',
+  fees: 'Tarifas',
+  services: 'Serviços',
+  other: 'Outros',
+}
+
+const categoryPt = (d: AlertData) =>
+  CATEGORY_NAMES_PT[`${d.categoryKey}`] ?? d.category
+
 const invoiceEn = (d: AlertData) =>
   d.number ? `Invoice ${d.number}` : 'Invoice'
 
@@ -92,6 +115,14 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Fatura do cartão fechou',
     body: `${d.card}: fechou em ${d.closing}, vence em ${d.dueDate}.`,
   }),
+  BUDGET_NEAR_LIMIT: d => ({
+    title: 'Orçamento perto do limite',
+    body: `${categoryPt(d)}: ${d.spent} de ${d.limit} (${d.percent}%) neste mês.`,
+  }),
+  BUDGET_LIMIT_REACHED: d => ({
+    title: 'Orçamento no limite',
+    body: `${categoryPt(d)}: ${d.spent} de ${d.limit} neste mês.`,
+  }),
 }
 
 export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
@@ -142,6 +173,14 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
   CARD_BILL_CLOSED: d => ({
     title: 'Card bill closed',
     body: `${d.card}: closed on ${d.closing}, due ${d.dueDate}.`,
+  }),
+  BUDGET_NEAR_LIMIT: d => ({
+    title: 'Budget near its limit',
+    body: `${d.category}: ${d.spent} of ${d.limit} (${d.percent}%) this month.`,
+  }),
+  BUDGET_LIMIT_REACHED: d => ({
+    title: 'Budget limit reached',
+    body: `${d.category}: ${d.spent} of ${d.limit} this month.`,
   }),
 }
 

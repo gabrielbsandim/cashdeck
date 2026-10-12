@@ -87,6 +87,10 @@ describe('alert text', () => {
       card: 'Card Bank Visa',
       closing: '01/10',
       source: 'DDA',
+      category: 'Groceries',
+      spent: 'R$ 400,00',
+      limit: 'R$ 500,00',
+      percent: '80',
     }
     for (const type of ALERT_TYPES) {
       for (const text of [

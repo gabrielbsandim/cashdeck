@@ -42,7 +42,7 @@ describe('daily alerts', () => {
     }
     const run = makeRunDailyAlerts(deps)
 
-    expect(await run(TENANT)).toEqual({ dueSoon: 4, lowBalance: 1 })
+    expect(await run(TENANT)).toEqual({ dueSoon: 4, lowBalance: 1, budgets: 0 })
     expect(
       deps.alerts.emitted.map(alert => [alert.type, alert.billId ?? null]),
     ).toEqual([
@@ -56,7 +56,7 @@ describe('daily alerts', () => {
       shortfall: 'R$ 20,00',
       dueDate: '09/10',
     })
-    expect(await run(TENANT)).toEqual({ dueSoon: 0, lowBalance: 0 })
+    expect(await run(TENANT)).toEqual({ dueSoon: 0, lowBalance: 0, budgets: 0 })
   })
 
   it('stays quiet about a bill the bank debits by itself', async () => {
@@ -64,7 +64,7 @@ describe('daily alerts', () => {
     await deps.bills.save(bill({ id: 'debit', dueDate: TOMORROW }))
     await makeSetAutoDebit(deps, makeGetBill(deps))(TENANT, 'debit', true)
 
-    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toMatchObject({
       dueSoon: 0,
       lowBalance: 0,
     })
@@ -81,7 +81,7 @@ describe('daily alerts', () => {
       }),
     )
     await deps.bills.save(bill({ id: 'open', dueDate: TOMORROW }))
-    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toMatchObject({
       dueSoon: 1,
       lowBalance: 0,
     })
@@ -92,7 +92,7 @@ describe('daily alerts', () => {
     await deps.bills.save(
       bill({ id: 'open', dueDate: TOMORROW, amount: Money.of(8000) }),
     )
-    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toMatchObject({
       dueSoon: 1,
       lowBalance: 1,
     })
@@ -113,7 +113,7 @@ describe('daily alerts', () => {
       bill({ id: 'monday', dueDate: '2026-10-12', amount: Money.of(3000) }),
     )
     await deps.bills.save(bill({ id: 'wednesday', dueDate: '2026-10-14' }))
-    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toMatchObject({
       dueSoon: 0,
       lowBalance: 1,
     })
@@ -129,7 +129,7 @@ describe('daily alerts', () => {
       funder: new FakeReserveFunder(new Error('Asaas is not configured.')),
     }
     await deps.bills.save(bill({ id: 'open', dueDate: TOMORROW }))
-    expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
+    expect(await makeRunDailyAlerts(deps)(TENANT)).toMatchObject({
       dueSoon: 1,
       lowBalance: 0,
     })

@@ -57,6 +57,7 @@ import {
   InMemoryIndexRateRepository,
   InMemoryInvestmentRepository,
 } from '@/testing/investments'
+import { InMemoryGoalRepository } from '@/testing/planning'
 import { NOW, scenario, TENANT } from '@/testing/scenario.test-helpers'
 import { InMemoryWebhookEventStore } from '@/testing/webhooks'
 import {
@@ -96,6 +97,7 @@ export function fullDeps(options: Options = {}) {
     transfers: new InMemoryTransferRepository(),
     invoices: new InMemoryInvoiceRepository(),
     budgets: options.budgets ?? new InMemoryBudgetRepository(),
+    goals: new InMemoryGoalRepository(),
     categories: new InMemoryCategoryRepository(),
     chat: new InMemoryChatRepository(),
     pixContacts: new InMemoryPixContactRepository(),

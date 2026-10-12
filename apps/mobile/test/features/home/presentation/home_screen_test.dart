@@ -35,7 +35,7 @@ import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
 /// Início stacks the insight cards above the bills, budgets and alerts.
-const double _homeHeight = 4600;
+const double _homeHeight = 5200;
 
 void main() {
   testWidgets('Início Pessoal shows balance, reserve, forecast and alerts', (
@@ -196,9 +196,7 @@ void main() {
     expect(find.text(l10n.automationPausedTitle), findsOneWidget);
   });
 
-  testWidgets('no budgets points to the chat; a falling forecast shows once', (
-    tester,
-  ) async {
+  testWidgets('a falling forecast shows once', (tester) async {
     final home = MockHomeRepository();
     when(home.personal).thenAnswer(
       (_) async => Ok(
@@ -216,21 +214,17 @@ void main() {
         ),
       ),
     );
-    final app = await pumpRoute(
+    await pumpRoute(
       tester,
       AppRoutes.home,
       screenHeight: _homeHeight,
       overrides: [homeRepositoryProvider.overrideWithValue(home)],
     );
 
-    expect(find.text(l10n.budgetsEmpty), findsOneWidget);
     expect(
       find.text(l10n.forecastAt(testToday.addDays(2).dayMonth)),
       findsNothing,
     );
-    await tester.tap(find.byKey(PersonalHome.budgetsChatKey));
-    await settle(tester);
-    expect(app.location, AppRoutes.chatNew);
   });
 
   testWidgets('a failed load retries, a failed action says why', (

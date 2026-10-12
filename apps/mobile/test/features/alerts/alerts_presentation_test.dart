@@ -188,6 +188,31 @@ void main() {
           body: 'Bank 1234: closed on 01/10, due 08/10.',
         ),
       ),
+      AlertKind.budgetNearLimit: (
+        {
+          'categoryKey': 'groceries',
+          'category': 'Mercado',
+          'spent': r'R$ 820,00',
+          'limit': r'R$ 1.000,00',
+          'percent': '82',
+        },
+        (
+          title: 'Budget near its limit',
+          body: r'Groceries: R$ 820,00 of R$ 1.000,00 (82%) this month.',
+        ),
+      ),
+      AlertKind.budgetLimitReached: (
+        {
+          'categoryKey': '',
+          'category': 'Pet',
+          'spent': r'R$ 120,00',
+          'limit': r'R$ 100,00',
+        },
+        (
+          title: 'Budget limit reached',
+          body: r'Pet: R$ 120,00 of R$ 100,00 this month.',
+        ),
+      ),
     };
     for (final MapEntry(key: kind, value: (data, text)) in cases.entries) {
       expect(textOf(kind, data), text, reason: kind.name);

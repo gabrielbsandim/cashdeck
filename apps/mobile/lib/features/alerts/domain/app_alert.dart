@@ -16,6 +16,8 @@ enum AlertKind {
   invoiceIssued('INVOICE_ISSUED'),
   invoiceFailed('INVOICE_FAILED'),
   cardBillClosed('CARD_BILL_CLOSED'),
+  budgetNearLimit('BUDGET_NEAR_LIMIT'),
+  budgetLimitReached('BUDGET_LIMIT_REACHED'),
   other('OTHER');
 
   new(this.wire);

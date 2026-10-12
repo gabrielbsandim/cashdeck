@@ -1753,6 +1753,148 @@ export interface paths {
         patch: operations["updatePixContact"];
         trace?: never;
     };
+    "/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saving goals with progress, pace and projection */
+        get: operations["listGoals"];
+        put?: never;
+        /** Start a goal, optionally tied to an account or an investment */
+        post: operations["createGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A goal with its projection and contributions */
+        get: operations["getGoal"];
+        put?: never;
+        post?: never;
+        /** Delete a goal and its contributions */
+        delete: operations["removeGoal"];
+        options?: never;
+        head?: never;
+        /** Rename, retarget, relink or archive a goal */
+        patch: operations["updateGoal"];
+        trace?: never;
+    };
+    "/goals/{id}/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Put money into a manual goal, or take it out with a negative amount */
+        post: operations["contributeToGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}/contributions/{contributionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undo a contribution */
+        delete: operations["removeGoalContribution"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The budgets of a month with spent and remaining per category */
+        get: operations["getBudgetMonth"];
+        put?: never;
+        /** Set a limit for a category in a month */
+        post: operations["createBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Drop a category budget */
+        delete: operations["removeBudget"];
+        options?: never;
+        head?: never;
+        /** Change a budget limit or whether it rolls over */
+        patch: operations["updateBudget"];
+        trace?: never;
+    };
+    "/budgets/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy the budgets of a month to the next, carrying the leftover of those that roll over */
+        post: operations["copyBudgets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A limit per category from the median of the last three complete months */
+        get: operations["suggestBudgets"];
+        put?: never;
+        /** Set every suggested limit in one go */
+        post: operations["acceptBudgetSuggestions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7607,7 +7749,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7688,7 +7830,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7766,7 +7908,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
                                 muted: boolean;
                             }[];
                         };
@@ -7811,7 +7953,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
                                 muted: boolean;
                             }[];
                         };
@@ -8602,6 +8744,1236 @@ export interface operations {
                             timesPaid: number;
                             lastPaidAt: string | null;
                             createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    listGoals: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                archived?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saving goals with progress, pace and projection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default PF
+                     * @enum {string}
+                     */
+                    entity?: "PF" | "PJ";
+                    name: string;
+                    targetCents: number;
+                    deadline?: string | null;
+                    accountId?: string | null;
+                    investmentId?: string | null;
+                    icon?: string | null;
+                    color?: string | null;
+                    initialCents?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Start a goal, optionally tied to an account or an investment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                            contributions: {
+                                id: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                                note: string | null;
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A goal with its projection and contributions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                            contributions: {
+                                id: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                                note: string | null;
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delete a goal and its contributions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    targetCents?: number;
+                    deadline?: string | null;
+                    accountId?: string | null;
+                    investmentId?: string | null;
+                    icon?: string | null;
+                    color?: string | null;
+                    archived?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Rename, retarget, relink or archive a goal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                            contributions: {
+                                id: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                                note: string | null;
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    contributeToGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    amountCents: number;
+                    on?: string;
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Put money into a manual goal, or take it out with a negative amount */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                            contributions: {
+                                id: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                                note: string | null;
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeGoalContribution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                contributionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undo a contribution */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            icon: string | null;
+                            color: string | null;
+                            target: {
+                                cents: number;
+                                currency: string;
+                            };
+                            saved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            remaining: {
+                                cents: number;
+                                currency: string;
+                            };
+                            percent: number;
+                            /** @enum {string} */
+                            status: "DONE" | "ON_TRACK" | "BEHIND";
+                            deadline: string | null;
+                            requiredMonthly: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            monthlyPace: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            projectedOn: string | null;
+                            /** @enum {string} */
+                            source: "MANUAL" | "ACCOUNT" | "INVESTMENT";
+                            accountId: string | null;
+                            investmentId: string | null;
+                            linkedName: string | null;
+                            createdAt: string;
+                            archivedAt: string | null;
+                            contributions: {
+                                id: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string;
+                                note: string | null;
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getBudgetMonth: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The budgets of a month with spent and remaining per category */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default PF
+                     * @enum {string}
+                     */
+                    entity?: "PF" | "PJ";
+                    categoryId: string;
+                    month?: string;
+                    limitCents: number;
+                    /** @default false */
+                    rollover?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Set a limit for a category in a month */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Drop a category budget */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    limitCents?: number;
+                    rollover?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Change a budget limit or whether it rolls over */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    copyBudgets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default PF
+                     * @enum {string}
+                     */
+                    entity?: "PF" | "PJ";
+                    month: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Copy the budgets of a month to the next, carrying the leftover of those that roll over */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    suggestBudgets: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A limit per category from the median of the last three complete months */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            basedOn: string[];
+                            total: {
+                                cents: number;
+                                currency: string;
+                            };
+                            items: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                months: {
+                                    cents: number;
+                                    currency: string;
+                                }[];
+                                suggested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    acceptBudgetSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default PF
+                     * @enum {string}
+                     */
+                    entity?: "PF" | "PJ";
+                    month?: string;
+                    items: {
+                        categoryId: string;
+                        limitCents: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Set every suggested limit in one go */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            total: {
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            };
+                            items: {
+                                id: string;
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                limit: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                carried: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                rollover: boolean;
+                                available: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                remaining: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number;
+                                /** @enum {string} */
+                                level: "OK" | "NEAR" | "REACHED";
+                            }[];
+                            unbudgeted: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                spent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
                         };
                     };
                 };
