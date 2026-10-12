@@ -24,6 +24,7 @@ Bill testBill({
   String? pixCode,
   List<PaymentAttempt> attempts = const [],
   bool autoDebit = false,
+  ConfirmationReason? confirmationReason,
 }) => Bill(
   id: id,
   payee: payee,
@@ -38,6 +39,7 @@ Bill testBill({
   pixCode: pixCode,
   attempts: attempts,
   autoDebit: autoDebit,
+  confirmationReason: confirmationReason,
 );
 
 PaymentAttempt testAttempt(

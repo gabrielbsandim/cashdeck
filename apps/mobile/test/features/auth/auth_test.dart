@@ -21,8 +21,10 @@ import 'package:cashdeck/features/auth/data/fake_device_sessions_repository.dart
 import 'package:cashdeck/features/auth/data/fake_server_access_repository.dart';
 import 'package:cashdeck/features/auth/domain/device_session.dart';
 import 'package:cashdeck/features/auth/domain/server_access.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/builders.dart';
 import '../../support/stub_http_adapter.dart';
@@ -101,6 +103,12 @@ Map<String, Object?> _sessionJson(String id, {bool current = false}) => {
   'current': current,
 };
 
+final class _MockDeviceInfo extends Mock implements DeviceInfoPlugin;
+
+final class _MockAndroidInfo extends Mock implements AndroidDeviceInfo;
+
+final class _MockIosInfo extends Mock implements IosDeviceInfo;
+
 void main() {
   test('flags an invalid address and an empty token', () {
     expect(signInErrorsOf(serverUrl: 'cashdeck.casa', token: 't'), isEmpty);
@@ -117,6 +125,41 @@ void main() {
     );
     expect(deviceIdentityFor('android'), _phone);
     expect(deviceIdentityFor('linux'), _phone);
+    expect(deviceIdentityFor('android', model: '  '), _phone);
+  });
+
+  test('names this phone by the model it reports', () {
+    expect(
+      deviceIdentityFor('ios', model: 'iPhone 15 Pro'),
+      const DeviceIdentity(
+        name: 'iPhone 15 Pro',
+        platform: SessionPlatform.ios,
+      ),
+    );
+    expect(deviceIdentityFor('android', model: ' Phone X ').name, 'Phone X');
+    expect(deviceIdentityFor('android', model: 'x' * 90).name, 'x' * 80);
+    expect(androidModelName('acme', 'Phone 8'), 'Acme Phone 8');
+    expect(androidModelName('Acme', 'acme Phone 8'), 'acme Phone 8');
+    expect(androidModelName(' ', 'Phone 8'), 'Phone 8');
+  });
+
+  test('reads the model from the platform, or nothing', () async {
+    final plugin = _MockDeviceInfo();
+    final android = _MockAndroidInfo();
+    final ios = _MockIosInfo();
+    when(() => android.manufacturer).thenReturn('acme');
+    when(() => android.model).thenReturn('Phone 8');
+    when(() => ios.modelName).thenReturn('iPhone 15');
+    when(() => plugin.androidInfo).thenAnswer((_) async => android);
+    when(() => plugin.iosInfo).thenAnswer((_) async => ios);
+
+    expect(await readDeviceModel('android', plugin), 'Acme Phone 8');
+    expect(await readDeviceModel('ios', plugin), 'iPhone 15');
+    expect(await readDeviceModel('linux', plugin), isNull);
+
+    when(() => plugin.iosInfo).thenThrow(Exception('no plugin'));
+    expect(await readDeviceModel('ios', plugin), isNull);
+    expect(await readDeviceModel('fuchsia'), isNull);
   });
 
   test('devices and sessions compare by value', () {

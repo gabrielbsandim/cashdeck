@@ -11,9 +11,11 @@ import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
@@ -51,6 +53,8 @@ class BillDetailScreen extends ConsumerWidget {
   static const markUnpaidKey = Key('bill-menu-mark-unpaid');
   static const confirmKey = Key('bill-menu-confirm');
   static const cancelKey = Key('bill-menu-cancel');
+  static const unverifiedBadgeKey = Key('bill-unverified-sender-badge');
+  static const unverifiedBannerKey = Key('bill-unverified-sender-banner');
 
   final String billId;
 
@@ -222,10 +226,14 @@ class _BillDetail extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final hide = ref.read(hideAmountsProvider);
     final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+    final reason = bill.confirmationReason;
     final confirmed = await showCdConfirmSheet(
       context,
       title: l10n.confirmBillTitle(billPayeeOf(l10n, bill)),
-      reason: confirmationReasonLabel(l10n, bill.confirmationReason),
+      reason: confirmationReasonLabel(l10n, reason),
+      reasonTone: confirmationReasonTone(reason),
+      reasonIcon: confirmationReasonIcon(reason),
+      warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
       rows: [
         CdConfirmRow(
           l10n.confirmRowAmount,
@@ -364,6 +372,13 @@ class _BillDetail extends ConsumerWidget {
           children: [
             if (bill.status == BillStatus.paid) CdPaidPop(child: badge),
             if (bill.status != BillStatus.paid) badge,
+            if (warnsAboutSender(bill))
+              CdStatusBadge(
+                key: BillDetailScreen.unverifiedBadgeKey,
+                tone: MoneyTone.overdue,
+                label: l10n.billUnverifiedSenderBadge,
+                icon: Symbols.gpp_maybe_rounded,
+              ),
             Text(billDueLabel(l10n, bill, today), style: secondary),
           ],
         ),
@@ -375,6 +390,16 @@ class _BillDetail extends ConsumerWidget {
           ),
           style: secondary,
         ),
+        if (warnsAboutSender(bill)) ...[
+          const SizedBox(height: AppSpacing.md),
+          CdInlineBanner(
+            key: BillDetailScreen.unverifiedBannerKey,
+            icon: Symbols.gpp_maybe_rounded,
+            tone: MoneyTone.overdue,
+            title: l10n.billUnverifiedSenderTitle,
+            message: l10n.billUnverifiedSenderBody,
+          ),
+        ],
         if (!bill.isSettled) ...[
           const SizedBox(height: AppSpacing.md),
           CdListRow(

@@ -170,7 +170,7 @@ describe('monthly recap', () => {
     expect(deps.llm.calls).toHaveLength(1)
   })
 
-  it('falls back to the template and retries the model on the next read', async () => {
+  it('falls back to the template and keeps it an hour before asking again', async () => {
     const { deps, recap } = await seeded()
     deps.llm.chat = async () => {
       throw new LlmProviderError('down', 'unavailable')
@@ -184,9 +184,30 @@ describe('monthly recap', () => {
       locale: 'pt',
       source: 'TEMPLATE',
     })
-    expect(await deps.documents.list(TENANT, MONTHLY_RECAP_COLLECTION)).toEqual(
-      [],
-    )
+    expect(
+      await deps.documents.get(
+        TENANT,
+        MONTHLY_RECAP_COLLECTION,
+        'ALL:2026-09:pt',
+      ),
+    ).toEqual(view)
+
+    const calls: string[] = []
+    deps.llm.chat = async () => {
+      calls.push('chat')
+      return reply(AI_TEXT)
+    }
+    deps.clock.set(new Date(NOW.getTime() + 59 * 60 * 1000))
+    expect(await recap.get(TENANT, '2026-09', {})).toEqual(view)
+    expect(calls).toEqual([])
+
+    deps.clock.set(new Date(NOW.getTime() + 60 * 60 * 1000))
+    const retried = await recap.get(TENANT, '2026-09', {})
+    expect(retried.story.source).toBe('AI')
+    expect(calls).toEqual(['chat'])
+    deps.clock.set(new Date(NOW.getTime() + 30 * 24 * 60 * 60 * 1000))
+    expect(await recap.get(TENANT, '2026-09', {})).toEqual(retried)
+    expect(calls).toEqual(['chat'])
   })
 
   it('refuses an AI story that is cut, empty, too long or invents a figure', async () => {
@@ -197,6 +218,7 @@ describe('monthly recap', () => {
       .enqueue(reply('a'.repeat(701)))
       .enqueue(reply('Sobraram R$ 9.999,99 em setembro.'))
     for (let call = 0; call < 4; call += 1) {
+      deps.clock.set(new Date(NOW.getTime() + call * 2 * 60 * 60 * 1000))
       const view = await recap.get(TENANT, '2026-09', { entity: 'PF' })
       expect(view.story.source).toBe('TEMPLATE')
     }
@@ -292,8 +314,16 @@ describe('monthly recap', () => {
   it('pushes the personal recap once per month', async () => {
     const { deps, recap } = await seeded()
     deps.llm.enqueue(reply(AI_TEXT))
-    expect(await recap.run(TENANT)).toEqual({ month: '2026-09', sent: true })
-    expect(await recap.run(TENANT)).toEqual({ month: '2026-09', sent: false })
+    expect(await recap.run(TENANT)).toEqual({
+      month: '2026-09',
+      sent: true,
+      entities: ['PF'],
+    })
+    expect(await recap.run(TENANT)).toEqual({
+      month: '2026-09',
+      sent: false,
+      entities: [],
+    })
     expect(deps.alerts.emitted).toEqual([
       {
         tenantId: TENANT,
@@ -310,9 +340,52 @@ describe('monthly recap', () => {
     ])
   })
 
+  it('pushes the company recap too when the company moved money', async () => {
+    const { deps, recap } = await seeded()
+    await deps.accounts.save(
+      account({ id: 'business', entityId: 'pj', balance: Money.of(500_000) }),
+    )
+    await deps.transactions.save(
+      transaction({
+        id: 'client-09',
+        accountId: 'business',
+        amount: Money.of(900_000),
+        bookedOn: '2026-09-15',
+        description: 'Client payment',
+      }),
+    )
+    expect(await recap.run(TENANT)).toEqual({
+      month: '2026-09',
+      sent: true,
+      entities: ['PF', 'PJ'],
+    })
+    expect(await recap.run(TENANT)).toMatchObject({ entities: [] })
+    expect(deps.alerts.emitted.slice(1)).toEqual([
+      {
+        tenantId: TENANT,
+        type: 'MONTHLY_RECAP',
+        entityId: 'pj',
+        data: {
+          month: '2026-09',
+          entity: 'PJ',
+          income: brl('R$ 9.000,00'),
+          expenses: brl('R$ 0,00'),
+        },
+        dedupeKey: 'MONTHLY_RECAP:PJ:2026-09',
+      },
+    ])
+    expect(
+      (await deps.documents.list(TENANT, MONTHLY_RECAP_COLLECTION)).length,
+    ).toBe(2)
+  })
+
   it('stays quiet for a month without money in or out', async () => {
     const { deps, recap } = await seeded([])
-    expect(await recap.run(TENANT)).toEqual({ month: '2026-09', sent: false })
+    expect(await recap.run(TENANT)).toEqual({
+      month: '2026-09',
+      sent: false,
+      entities: [],
+    })
     expect(deps.alerts.emitted).toEqual([])
   })
 
@@ -321,6 +394,7 @@ describe('monthly recap', () => {
     expect(await recap.run('other-tenant')).toEqual({
       month: '2026-09',
       sent: false,
+      entities: [],
     })
   })
 })

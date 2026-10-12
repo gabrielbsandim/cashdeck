@@ -4,6 +4,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/recap/data/api_recap_repository.dart';
 import 'package:cashdeck/features/recap/data/fake_recap_repository.dart';
 import 'package:cashdeck/features/recap/data/recap_dtos.dart';
@@ -49,15 +50,28 @@ void main() {
     expect(recap.pages, [RecapPage.flow, RecapPage.story]);
   });
 
-  test('the api asks for the personal recap in the given language', () async {
+  test('the api asks for the entity recap in the given language', () async {
     final dio = stubDio((_) => StubResponse(200, {'data': recapJson()}));
+    final repository = ApiRecapRepository(dio);
     final recap = _ok(
-      await ApiRecapRepository(dio).get(const YearMonth(2026, 9), locale: 'en'),
+      await repository.get(
+        const YearMonth(2026, 9),
+        locale: 'en',
+        entity: EntityKind.personal,
+      ),
     );
     expect(recap.month, const YearMonth(2026, 9));
-    final request = adapterOf(dio).requests.single;
-    expect(request.path, '/api/v1/recaps/2026-09');
-    expect(request.queryParameters, {'entity': 'PF', 'locale': 'en'});
+    await repository.get(
+      const YearMonth(2026, 9),
+      locale: 'pt',
+      entity: EntityKind.company,
+    );
+    final requests = adapterOf(dio).requests;
+    expect(requests.first.path, '/api/v1/recaps/2026-09');
+    expect(requests.map((request) => request.queryParameters), [
+      {'entity': 'PF', 'locale': 'en'},
+      {'entity': 'PJ', 'locale': 'pt'},
+    ]);
   });
 
   test('the api turns a refused month into a failure', () async {
@@ -67,8 +81,11 @@ void main() {
       }),
     );
     expect(
-      await ApiRecapRepository(dio)
-          .get(const YearMonth(2026, 10), locale: 'pt'),
+      await ApiRecapRepository(dio).get(
+        const YearMonth(2026, 10),
+        locale: 'pt',
+        entity: EntityKind.personal,
+      ),
       isA<Err<MonthlyRecap>>().having(
         (result) => result.failure,
         'failure',
@@ -80,9 +97,12 @@ void main() {
   test('the fake tells the same month in each language', () async {
     const repository = FakeRecapRepository(latency: Duration.zero);
     const month = YearMonth(2026, 9);
-    final pt = _ok(await repository.get(month, locale: 'pt'));
-    final en = _ok(await repository.get(month, locale: 'en'));
-    final other = _ok(await repository.get(month, locale: 'es'));
+    const personal = EntityKind.personal;
+    final pt = _ok(await repository.get(month, locale: 'pt', entity: personal));
+    final en = _ok(await repository.get(month, locale: 'en', entity: personal));
+    final other = _ok(
+      await repository.get(month, locale: 'es', entity: EntityKind.company),
+    );
     expect(pt.month, month);
     expect(pt.pages, RecapPage.values);
     expect(en.story, isNot(pt.story));

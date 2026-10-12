@@ -45,9 +45,16 @@ import 'package:material_symbols_icons/symbols.dart';
 /// One subscription, confirmed or suggested: what it costs, when it comes
 /// next, how its charges went and where it lands.
 class SubscriptionDetailScreen extends ConsumerWidget {
-  const new({required this.subscriptionKey, super.key});
+  const new({
+    required this.subscriptionKey,
+    this.fromSuggestion = false,
+    super.key,
+  });
 
   final String subscriptionKey;
+
+  /// Opened from a suggestion card, which it grows out of.
+  final bool fromSuggestion;
 
   static const confirmKey = Key('subscription-detail-confirm');
   static const dismissKey = Key('subscription-detail-dismiss');
@@ -66,7 +73,7 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(),
       body: CdExpandHero(
-        tag: subscriptionHeroTag(subscriptionKey),
+        tag: subscriptionHeroTag(subscriptionKey, suggestion: fromSuggestion),
         child: switch (state) {
           AsyncValue(:final value?) => switch (_find(value)) {
             final subscription? => _Detail(subscription: subscription),

@@ -60,6 +60,7 @@ const Map<String, PaidBy> _paidBy = {
 /// Not in the v1 contract yet; an unknown or missing value reads as null, so
 /// the sheet falls back to a generic reason instead of failing the bill.
 const Map<String, ConfirmationReason> _confirmationReasons = {
+  'UNVERIFIED_SENDER': ConfirmationReason.unverifiedSender,
   'NEW_PAYEE': ConfirmationReason.newPayee,
   'ABOVE_THRESHOLD': ConfirmationReason.aboveThreshold,
   'AMOUNT_DEVIATION': ConfirmationReason.amountDeviation,

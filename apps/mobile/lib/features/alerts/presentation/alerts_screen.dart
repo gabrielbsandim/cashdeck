@@ -3,6 +3,7 @@ import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
@@ -125,8 +126,10 @@ class AlertRow extends StatelessWidget {
       Localizations.localeOf(context).toLanguageTag(),
     ).format(alert.createdAt.toLocal());
     final text = alertText(AppLocalizations.of(context), alert);
+    final tone = alertKindTone(alert.kind);
     return CdListRow(
       icon: alertKindIcon(alert.kind),
+      iconColor: tone == null ? null : context.tone(tone).foreground,
       title: text.title,
       subtitle: '${text.body}\n$when',
       onTap: onTap,

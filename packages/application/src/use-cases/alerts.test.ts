@@ -27,6 +27,7 @@ import {
   invoiceAlert,
   jobFailedAlert,
   makeReportJobFailure,
+  makeReportJobPartialFailure,
   manualMethod,
 } from '@/use-cases/alert-events'
 import {
@@ -236,6 +237,53 @@ describe('alert text', () => {
     expect(
       jobFailedAlert(TENANT, 'invoices', new Error('down'), '2026-10-08').type,
     ).toBe('JOB_FAILED')
+  })
+
+  it('raises a job alert with the count when a run leaves items behind', async () => {
+    const recorder = new RecordingAlertEmitter()
+    const clock = new FixedClock(NOW)
+    const report = makeReportJobPartialFailure({ alerts: recorder, clock })
+    const failed = makeReportJobFailure({ alerts: recorder, clock })
+    await report(TENANT, 'capture', 0)
+    await report(TENANT, 'capture', 2)
+    await report(TENANT, 'capture', 3)
+    await failed(TENANT, 'capture', new Error('boom'))
+    await report(TENANT, 'invoices', 1)
+    expect(recorder.emitted.map(row => [row.dedupeKey, row.data])).toEqual([
+      ['JOB_FAILED:capture:2026-10-08', { job: 'capture', failures: '2' }],
+      ['JOB_FAILED:invoices:2026-10-08', { job: 'invoices', failures: '1' }],
+    ])
+    expect(
+      alertText('JOB_FAILED', { job: 'capture', failures: '2' }, 'pt'),
+    ).toEqual({
+      title: 'Rotina automática com falhas',
+      body: 'capture terminou, mas 2 itens falharam.',
+    })
+    expect(
+      alertText('JOB_FAILED', { job: 'invoices', failures: '1' }, 'pt').body,
+    ).toBe('invoices terminou, mas 1 item falhou.')
+    expect(
+      alertText('JOB_FAILED', { job: 'capture', failures: '2' }, 'en'),
+    ).toEqual({
+      title: 'Scheduled job partly failed',
+      body: 'capture finished, but 2 items failed.',
+    })
+    expect(
+      alertText('JOB_FAILED', { job: 'invoices', failures: '1' }, 'en').body,
+    ).toBe('invoices finished, but 1 item failed.')
+  })
+
+  it('names the company in its monthly recap', () => {
+    const data = { month: '2026-09', income: 'R$ 1,00', expenses: 'R$ 2,00' }
+    expect(alertText('MONTHLY_RECAP', data, 'pt').title).toBe(
+      'Retrospectiva de setembro',
+    )
+    expect(
+      alertText('MONTHLY_RECAP', { ...data, entity: 'PJ' }, 'pt').title,
+    ).toBe('Retrospectiva da empresa em setembro')
+    expect(
+      alertText('MONTHLY_RECAP', { ...data, entity: 'PJ' }, 'en').title,
+    ).toBe("Your company's September recap")
   })
 
   it('emits through the hook only when wired', async () => {

@@ -2,6 +2,7 @@ import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
 
 /// An amount against the month before; [percent] is null without a base.
@@ -163,5 +164,9 @@ YearMonth lastClosedMonth(CalendarDate today) => YearMonth.of(today).add(-1);
 
 abstract interface class RecapRepository {
   /// [locale] is `pt` or `en`, the language of the closing words.
-  Future<Result<MonthlyRecap>> get(YearMonth month, {required String locale});
+  Future<Result<MonthlyRecap>> get(
+    YearMonth month, {
+    required String locale,
+    required EntityKind entity,
+  });
 }

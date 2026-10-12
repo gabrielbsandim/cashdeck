@@ -14,7 +14,7 @@ import {
   resetContainer,
 } from '@/server/container'
 import { readEnv } from '@/server/env'
-import { runCronJob } from '@/server/api/cron'
+import { failuresIn, runCronJob } from '@/server/api/cron'
 import { buildOpenApiDocument } from '@/server/api/openapi'
 import { resolveTenant } from '@/server/api/tenant'
 
@@ -129,6 +129,36 @@ describe('runCronJob', () => {
         data: { job: 'capture', error: 'Error: boom' },
       }),
     ])
+  })
+
+  it('raises the job alert with the count when a run leaves failures', async () => {
+    vi.stubEnv('CRON_SECRET', 'secret')
+    const partial = async () => ({
+      drafts: [],
+      poll: { checked: 3, failures: [{ id: 'i1' }, { id: 'i2' }] },
+      failures: [{ id: 'm1' }],
+    })
+    const done = await runCronJob(request('Bearer secret'), 'invoices', partial)
+    expect(done.status).toBe(200)
+    await runCronJob(request('Bearer secret'), 'invoices', partial)
+    await runCronJob(request('Bearer secret'), 'capture', async () => ({
+      failures: [],
+    }))
+    const { alertStore } = getContainer().deps
+    const { items } = await alertStore.list('local', {}, { limit: 10 })
+    expect(items).toEqual([
+      expect.objectContaining({
+        type: 'JOB_FAILED',
+        data: { job: 'invoices', failures: '3' },
+      }),
+    ])
+  })
+
+  it('counts failures only where a job lists them', () => {
+    expect(failuresIn(null)).toBe(0)
+    expect(failuresIn([{ failures: [1] }])).toBe(0)
+    expect(failuresIn({ failures: 'none', sent: 2 })).toBe(0)
+    expect(failuresIn({ a: { b: { failures: [1, 2] } } })).toBe(2)
   })
 
   it('still answers when the alert cannot be raised', async () => {

@@ -1076,7 +1076,9 @@ and a short text.
   must have closed; an open or malformed month answers 422 `VALIDATION`.
 
 Without `entity` the recap covers every entity. Without `locale` the text
-follows the device seen last, else `pt`.
+follows the device seen last, else `pt`. A recap is kept per entity, month
+and locale: for good once the AI wrote its text, for an hour when the
+template stood in, so the model is asked again later but not on every read.
 
 ```json
 {
@@ -1133,7 +1135,8 @@ and `invoiceId` when set, so a tap opens the screen the alert is about.
 | `SUBSCRIPTION_CHANGED` | daily cron: a confirmed or detected subscription (not dismissed) charged in the last 7 days costs over 5% more than the charge before (`change: PRICE_UP`, `previous`, `percent`), or was charged twice in the same month (`change: DUPLICATE`, `count`, `month`); `key`, `name`, `amount`, `transactionId`. Once per charge |
 | `CARD_BILL_ABOVE_AVERAGE` | daily cron: a card bill closed in the last 10 days is over 30% and R$ 100 above the average of the up to 6 bills before it (3 or more); `accountId`, `card`, `amount`, `average`, `percent`, `dueDate`. Once per bill |
 | `BANK_SYNC_STALE` | daily cron: a connection last synced over 48 hours ago, never synced, or in `LOGIN_ERROR`, `WAITING_USER_INPUT` or `OUTDATED`; `connectionId`, `institution`, `status`, `hours`, `lastSyncAt`. Once per last sync time |
-| `MONTHLY_RECAP` | monthly cron on day 1: the personal recap of the month that closed, when anything came in or went out; `month`, `entity` (`PF`), `income`, `expenses`. Once per month |
+| `MONTHLY_RECAP` | monthly cron on day 1: the recap of the month that closed, one per entity (personal and company) that had anything come in or go out; `entityId`, `month`, `entity` (`PF` or `PJ`), `income`, `expenses`. Once per entity and month |
+| `JOB_FAILED` | a cron throws (`job`, `error`) or finishes with a non-empty `failures` list, at the top of its answer or inside a part of it (`job`, `failures`, the count). Once per job and day |
 | `INVOICE_NOT_ISSUED` | daily cron: an active invoice template is past its day of the month and the month has no invoice of it issued or processing; `invoiceId` is the draft when one exists; `templateId`, `client`, `amount`, `day`, `competence`. Once per template and month |
 
 Each alert has a dedupe key, so a retried job or a second cron run on the
@@ -1240,7 +1243,8 @@ try to override the instructions are flagged and recorded on the reply.
 ## Crons
 
 Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
-[deploy.md](deploy.md)). Each returns `{ data: <counts> }`.
+[deploy.md](deploy.md)). Each returns `{ data: <counts> }`. A run that throws,
+or that answers a non-empty `failures` list, raises a `JOB_FAILED` alert.
 
 | Path | When (UTC) | What |
 |---|---|---|
@@ -1250,7 +1254,7 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | `/api/cron/payment-ladder` | weekdays 11:00 | checks that the Asaas balance covers the personal bills it is about to pay (no provider tops it up, so a shortfall sends them to assisted), then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
-| `/api/cron/monthly-recap` | day 1, 15:30 | after the sync, sends the `MONTHLY_RECAP` push for the personal month that closed; answers `{ month, sent }` |
+| `/api/cron/monthly-recap` | day 1, 15:30 | after the sync, sends the `MONTHLY_RECAP` push of the month that closed for the personal entity and for the company, each when it moved money; answers `{ month, sent, entities }` with the entities pushed |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
 
 ## Webhooks

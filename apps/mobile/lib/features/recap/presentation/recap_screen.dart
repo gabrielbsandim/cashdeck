@@ -11,6 +11,7 @@ import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/features/recap/domain/monthly_recap.dart';
 import 'package:cashdeck/features/recap/presentation/recap_controller.dart';
@@ -32,25 +33,33 @@ void _close(BuildContext context) {
 }
 
 /// The month that closed as a story: one page per figure, tap right to go
-/// on, left to go back, swipe down to close.
+/// on, left to go back, hold to pause, swipe down to close. Each page moves
+/// on by itself after [pageDuration], unless the device asks for reduced
+/// motion.
 class RecapScreen extends ConsumerWidget {
-  const new({required this.month, super.key});
+  const new({
+    required this.month,
+    this.entity = EntityKind.personal,
+    super.key,
+  });
 
   static const closeKey = Key('recap-close');
   static const storyKey = Key('recap-story');
+  static const pageDuration = Duration(milliseconds: 6500);
   static Key pageKey(RecapPage page) => Key('recap-page-${page.name}');
   static Key barKey(int index) => Key('recap-bar-$index');
 
   final String month;
+  final EntityKind entity;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final request = (month: month, locale: recapLocaleOf(l10n));
+    final request = (month: month, entity: entity, locale: recapLocaleOf(l10n));
     return Scaffold(
       body: SafeArea(
         child: switch (ref.watch(monthlyRecapProvider(request))) {
-          AsyncData(:final value) => _Story(recap: value),
+          AsyncData(:final value) => _Story(recap: value, entity: entity),
           AsyncError(:final error) => Column(
             children: [
               const Align(
@@ -87,34 +96,78 @@ class _CloseButton extends StatelessWidget {
 }
 
 class _Story extends StatefulWidget {
-  const new({required this.recap});
+  const new({required this.recap, required this.entity});
 
   final MonthlyRecap recap;
+  final EntityKind entity;
 
   @override
   State<_Story> createState() => _StoryState();
 }
 
-class _StoryState extends State<_Story> {
+class _StoryState extends State<_Story> with SingleTickerProviderStateMixin {
   static const _dismissDistance = 120.0;
   static const _dismissVelocity = 700.0;
 
+  late final AnimationController _timer = AnimationController(
+    vsync: this,
+    duration: RecapScreen.pageDuration,
+  )..addStatusListener(_timerEnded);
+
   var _index = 0;
   var _dragged = 0.0;
+  var _held = false;
 
   List<RecapPage> get _pages => widget.recap.pages;
+
+  bool get _still => AppMotion.reduced(context);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _play();
+  }
+
+  @override
+  void dispose() {
+    _timer.dispose();
+    super.dispose();
+  }
+
+  /// Runs the bar of the current page from where it is, unless the story is
+  /// held or the device asks for reduced motion.
+  void _play() {
+    if (_still || _held) {
+      _timer.stop();
+      return;
+    }
+    _timer.forward();
+  }
+
+  void _show(int index) {
+    setState(() => _index = index);
+    _timer.value = 0;
+    _play();
+  }
+
+  // The last page stays once its bar is full, so the closing words are read.
+  void _timerEnded(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    if (_index == _pages.length - 1) return;
+    _show(_index + 1);
+  }
 
   void _next() {
     if (_index == _pages.length - 1) {
       _close(context);
       return;
     }
-    setState(() => _index++);
+    _show(_index + 1);
   }
 
   void _previous() {
     if (_index == 0) return;
-    setState(() => _index--);
+    _show(_index - 1);
   }
 
   void _tapped(TapUpDetails details, double width) {
@@ -125,12 +178,23 @@ class _StoryState extends State<_Story> {
     _next();
   }
 
+  void _hold(bool held) {
+    _held = held;
+    _play();
+  }
+
   void _dragEnded(DragEndDetails details) {
     final down =
         _dragged > _dismissDistance ||
         (details.primaryVelocity ?? 0) > _dismissVelocity;
     _dragged = 0;
     if (down) _close(context);
+  }
+
+  double _fillOf(int index) {
+    if (index < _index) return 1;
+    if (index > _index) return 0;
+    return _still ? 1 : _timer.value;
   }
 
   @override
@@ -143,6 +207,8 @@ class _StoryState extends State<_Story> {
         key: RecapScreen.storyKey,
         behavior: HitTestBehavior.opaque,
         onTapUp: (details) => _tapped(details, constraints.maxWidth),
+        onLongPressStart: (_) => _hold(true),
+        onLongPressEnd: (_) => _hold(false),
         onVerticalDragUpdate: (details) => _dragged += details.delta.dy,
         onVerticalDragEnd: _dragEnded,
         child: Padding(
@@ -157,32 +223,32 @@ class _StoryState extends State<_Story> {
             children: [
               Semantics(
                 label: l10n.recapPageLabel(_index + 1, _pages.length),
-                child: Row(
-                  children: [
-                    for (var index = 0; index < _pages.length; index++) ...[
-                      if (index > 0) const SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: AnimatedContainer(
-                          key: RecapScreen.barKey(index),
-                          duration: const Duration(milliseconds: 200),
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: index <= _index
-                                ? palette.primary
-                                : palette.outlineVariant,
-                            borderRadius: BorderRadius.circular(AppRadius.full),
+                child: AnimatedBuilder(
+                  animation: _timer,
+                  builder: (context, _) => Row(
+                    children: [
+                      for (var index = 0; index < _pages.length; index++) ...[
+                        if (index > 0) const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: _ProgressBar(
+                            key: RecapScreen.barKey(index),
+                            fill: _fillOf(index),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      recapTitleOf(l10n, widget.recap.month),
+                      recapTitleOf(
+                        l10n,
+                        widget.recap.month,
+                        entity: widget.entity,
+                      ),
                       style: AppTextStyles.labelLg.copyWith(
                         color: palette.onSurfaceVariant,
                       ),
@@ -208,6 +274,32 @@ class _StoryState extends State<_Story> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One page of the story: full once seen, filling while it plays.
+class _ProgressBar extends StatelessWidget {
+  const new({required this.fill, super.key});
+
+  final double fill;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: SizedBox(
+        height: 3,
+        child: ColoredBox(
+          color: palette.outlineVariant,
+          child: FractionallySizedBox(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: fill,
+            child: ColoredBox(color: palette.primary),
           ),
         ),
       ),

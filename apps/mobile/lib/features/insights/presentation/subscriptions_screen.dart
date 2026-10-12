@@ -113,8 +113,8 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
     );
   }
 
-  void _open(Subscription subscription) =>
-      context.push(AppRoutes.subscription(subscription.key));
+  void _open(Subscription subscription, {bool suggestion = false}) => context
+      .push(AppRoutes.subscription(subscription.key, suggestion: suggestion));
 
   @override
   Widget build(BuildContext context) {
@@ -245,10 +245,10 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
   }) {
     final pending = _pending[suggestion.key];
     final busy = pending != null;
-    return CdInsightCard(
+    final card = CdInsightCard(
       key: SubscriptionsScreen.suggestionKey(suggestion.key),
       title: l10n.subscriptionsSuggestionTitle,
-      onTap: () => _open(suggestion),
+      onTap: () => _open(suggestion, suggestion: true),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -301,6 +301,10 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
         ],
       ),
     );
+    return CdExpandHero(
+      tag: subscriptionHeroTag(suggestion.key, suggestion: true),
+      child: card,
+    );
   }
 
   Widget _row(AppLocalizations l10n, Subscription item, {required bool hide}) =>
@@ -319,6 +323,10 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
       );
 }
 
-/// The list row that grows into the subscription screen.
-String subscriptionHeroTag(String key) =>
-    CdExpandHero.tagOf('subscription', key);
+/// The list row, or the suggestion card, that grows into the subscription
+/// screen; a suggestion can share its key with a row, so it has its own tag.
+String subscriptionHeroTag(String key, {bool suggestion = false}) =>
+    CdExpandHero.tagOf(
+      suggestion ? 'subscription-suggestion' : 'subscription',
+      key,
+    );

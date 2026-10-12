@@ -819,6 +819,56 @@ void main() {
       expect(find.text(l10n.errorNetwork), findsOneWidget);
     });
 
+    testWidgets('an unverified sender warns on the bill and the sheet', (
+      tester,
+    ) async {
+      final bill = testBill(
+        status: BillStatus.needsConfirmation,
+        confirmationReason: ConfirmationReason.unverifiedSender,
+      );
+      when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+
+      await tester.pumpApp(
+        const BillDetailScreen(billId: 'bill-1'),
+        overrides: overrides(),
+      );
+      await tester.pump();
+      expect(find.byKey(BillDetailScreen.unverifiedBadgeKey), findsOneWidget);
+      expect(find.text(l10n.billUnverifiedSenderBadge), findsOneWidget);
+      expect(find.byKey(BillDetailScreen.unverifiedBannerKey), findsOneWidget);
+      expect(find.text(l10n.billUnverifiedSenderTitle), findsOneWidget);
+      expect(
+        find.text(l10n.ladderConfirmBody(l10n.confirmReasonUnverifiedSender)),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(PaymentLadderView.confirmKey));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.confirmReasonUnverifiedSender), findsOneWidget);
+      expect(find.byKey(CdConfirmSheet.warningKey), findsOneWidget);
+      expect(find.text(l10n.billUnverifiedSenderBody), findsNWidgets(2));
+    });
+
+    testWidgets('a paid bill from an unverified sender no longer warns', (
+      tester,
+    ) async {
+      final bill = testBill(
+        status: BillStatus.paid,
+        confirmationReason: ConfirmationReason.unverifiedSender,
+      );
+      when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
+      when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+
+      await tester.pumpApp(
+        const BillDetailScreen(billId: 'bill-1'),
+        overrides: overrides(),
+      );
+      await tester.pump();
+      expect(find.byKey(BillDetailScreen.unverifiedBadgeKey), findsNothing);
+      expect(find.byKey(BillDetailScreen.unverifiedBannerKey), findsNothing);
+    });
+
     testWidgets('a failed load offers a retry', (tester) async {
       when(() => repository.get('bill-1'))
           .thenAnswer((_) async => const Err(NotFoundFailure()));

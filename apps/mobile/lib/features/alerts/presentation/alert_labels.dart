@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
@@ -20,6 +21,7 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => l10n.alertKindInvoiceIssued,
   AlertKind.invoiceFailed => l10n.alertKindInvoiceFailed,
   AlertKind.cardBillClosed => l10n.alertKindCardBillClosed,
+  AlertKind.jobFailed => l10n.alertKindJobFailed,
   AlertKind.unusualPurchase => l10n.alertKindUnusualPurchase,
   AlertKind.subscriptionChanged => l10n.alertKindSubscriptionChanged,
   AlertKind.cardBillAboveAverage => l10n.alertKindCardBillAboveAverage,
@@ -44,6 +46,7 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => Symbols.receipt_rounded,
   AlertKind.invoiceFailed => Symbols.error_rounded,
   AlertKind.cardBillClosed => Symbols.credit_card_rounded,
+  AlertKind.jobFailed => Symbols.running_with_errors_rounded,
   AlertKind.unusualPurchase => Symbols.troubleshoot_rounded,
   AlertKind.subscriptionChanged => Symbols.autorenew_rounded,
   AlertKind.cardBillAboveAverage => Symbols.trending_up_rounded,
@@ -53,6 +56,13 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.budgetLimitReached => Symbols.donut_large_rounded,
   AlertKind.monthlyRecap => Symbols.auto_stories_rounded,
   AlertKind.other => Symbols.notifications_rounded,
+};
+
+/// The warning tone of the kinds that report something went wrong on the
+/// server side; null keeps the row neutral.
+MoneyTone? alertKindTone(AlertKind kind) => switch (kind) {
+  AlertKind.jobFailed => MoneyTone.overdue,
+  _ => null,
 };
 
 typedef AlertText = ({String title, String body});
@@ -135,6 +145,7 @@ final Map<AlertKind, _Builder> _builders = {
     title: l10n.alertTextCardClosedTitle,
     body: l10n.alertTextCardClosedBody(d['card'], d['closing'], d['dueDate']),
   ),
+  AlertKind.jobFailed: _jobFailed,
   AlertKind.unusualPurchase: (l10n, d) => (
     title: l10n.alertTextUnusualTitle,
     body: l10n.alertTextUnusualBody(
@@ -185,10 +196,29 @@ final Map<AlertKind, _Builder> _builders = {
     ),
   ),
   AlertKind.monthlyRecap: (l10n, d) => (
-    title: l10n.alertTextRecapTitle(_month(l10n, d)),
+    title: d.fields['entity'] == 'PJ'
+        ? l10n.alertTextRecapCompanyTitle(_month(l10n, d))
+        : l10n.alertTextRecapTitle(_month(l10n, d)),
     body: l10n.alertTextRecapBody(d['income'], d['expenses']),
   ),
 };
+
+/// A run that threw names its error; one that finished with items left
+/// behind counts them.
+AlertText _jobFailed(AppLocalizations l10n, _AlertData d) {
+  final failures = d.fields['failures'];
+  if (failures == null) {
+    return (
+      title: l10n.alertTextJobFailedTitle,
+      body: l10n.alertTextJobFailedBody(d['job'], d['error']),
+    );
+  }
+  final count = int.tryParse(failures) ?? (throw _MissingField());
+  return (
+    title: l10n.alertTextJobPartialTitle,
+    body: l10n.alertTextJobPartialBody(d['job'], count),
+  );
+}
 
 /// The month the alert is about, as sentences name it.
 String _month(AppLocalizations l10n, _AlertData d) {

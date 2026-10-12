@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/recap/domain/monthly_recap.dart';
 
 /// A fictional month, the same every time it is asked for, so the story
@@ -24,6 +25,7 @@ final class FakeRecapRepository implements RecapRepository {
   Future<Result<MonthlyRecap>> get(
     YearMonth month, {
     required String locale,
+    required EntityKind entity,
   }) async {
     await Future<void>.delayed(latency);
     return Ok(

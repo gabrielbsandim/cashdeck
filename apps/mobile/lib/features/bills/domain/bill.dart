@@ -34,7 +34,9 @@ enum PaymentMethod { pix, boleto }
 enum PaidBy { rail, user, statement }
 
 /// Why step 1 waits for the user before it pays (plan 5.3).
+/// [unverifiedSender] is an email capture whose sender failed its check.
 enum ConfirmationReason {
+  unverifiedSender,
   newPayee,
   aboveThreshold,
   amountDeviation,

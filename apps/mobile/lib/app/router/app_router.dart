@@ -309,6 +309,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: ':key',
             builder: (_, state) => SubscriptionDetailScreen(
               subscriptionKey: state.pathParameters['key']!,
+              fromSuggestion: state.uri.queryParameters['from'] == 'suggestion',
             ),
           ),
         ],

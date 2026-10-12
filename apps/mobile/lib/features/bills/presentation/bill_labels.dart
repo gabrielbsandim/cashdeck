@@ -191,9 +191,26 @@ String confirmationReasonLabel(
   AppLocalizations l10n,
   ConfirmationReason? reason,
 ) => switch (reason) {
+  ConfirmationReason.unverifiedSender => l10n.confirmReasonUnverifiedSender,
   ConfirmationReason.newPayee => l10n.confirmReasonNewPayee,
   ConfirmationReason.aboveThreshold => l10n.confirmReasonAboveThreshold,
   ConfirmationReason.amountDeviation => l10n.confirmReasonAmountDeviation,
   ConfirmationReason.capExceeded => l10n.confirmReasonCap,
   null => l10n.confirmReasonGeneric,
 };
+
+/// A sender that failed its check puts the bill itself in doubt, so it warns
+/// louder than a payment rule.
+bool warnsAboutSender(Bill bill) =>
+    bill.confirmationReason == ConfirmationReason.unverifiedSender &&
+    !bill.isSettled;
+
+MoneyTone confirmationReasonTone(ConfirmationReason? reason) =>
+    reason == ConfirmationReason.unverifiedSender
+    ? MoneyTone.overdue
+    : MoneyTone.pending;
+
+IconData confirmationReasonIcon(ConfirmationReason? reason) =>
+    reason == ConfirmationReason.unverifiedSender
+    ? Symbols.gpp_maybe_rounded
+    : Symbols.shield_rounded;

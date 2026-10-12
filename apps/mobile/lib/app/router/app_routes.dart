@@ -64,8 +64,11 @@ abstract final class AppRoutes {
   static String cardBills(String accountId) =>
       '$cards/${Uri.encodeComponent(accountId)}';
 
-  static String subscription(String key) =>
-      '$subscriptions/${Uri.encodeComponent(key)}';
+  /// [suggestion] marks a subscription opened from its suggestion card.
+  static String subscription(String key, {bool suggestion = false}) {
+    final path = '$subscriptions/${Uri.encodeComponent(key)}';
+    return suggestion ? '$path?from=suggestion' : path;
+  }
 
   static String investment(String positionId) =>
       '$investments/${Uri.encodeComponent(positionId)}';
@@ -77,6 +80,11 @@ abstract final class AppRoutes {
 
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
 
-  /// The story of a month that closed, `2026-09`.
-  static String recap(String month) => '$recaps/${Uri.encodeComponent(month)}';
+  /// The story of a month that closed, `2026-09`; [entity] is `PF` (the
+  /// default) or `PJ`, as the server names it.
+  static String recap(String month, {String? entity}) {
+    final path = '$recaps/${Uri.encodeComponent(month)}';
+    if (entity == null || entity == 'PF') return path;
+    return '$path?entity=${Uri.encodeQueryComponent(entity)}';
+  }
 }
