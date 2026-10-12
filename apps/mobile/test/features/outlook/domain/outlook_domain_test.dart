@@ -110,7 +110,7 @@ void main() {
     ]);
     expect(point.props, [_day, const Money(3), const Money(1), const Money(2)]);
     expect(change.props, [const Money(5), 1.5]);
-    expect(_zero.props, List.filled(6, const Money(0)));
+    expect(_zero.props, List.filled(10, const Money(0)));
   });
 }
 

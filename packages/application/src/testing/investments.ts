@@ -6,7 +6,10 @@ import {
   type InvestmentPosition,
   type InvestmentRepository,
   type InvestmentSnapshot,
+  type FipeVehicle,
   type MarketData,
+  type VehiclePriceHistory,
+  type VehiclePrices,
 } from '@/ports/investments'
 
 const keyOf = (position: InvestmentPosition) =>
@@ -178,4 +181,21 @@ function within(values: DailyValue[] | Error, from: LocalDate, to: LocalDate) {
     throw values
   }
   return values.filter(value => value.day >= from && value.day <= to)
+}
+
+// Serves a scripted history per FIPE code; an unknown code is not in the table.
+export class FakeVehiclePrices implements VehiclePrices {
+  histories = new Map<string, VehiclePriceHistory | Error>()
+  readonly requests: string[] = []
+
+  async history(vehicle: FipeVehicle): Promise<VehiclePriceHistory> {
+    this.requests.push(`${vehicle.type}:${vehicle.code}:${vehicle.modelYear}`)
+    const found =
+      this.histories.get(vehicle.code) ??
+      new Error(`FIPE ${vehicle.code} not found`)
+    if (found instanceof Error) {
+      throw found
+    }
+    return found
+  }
 }

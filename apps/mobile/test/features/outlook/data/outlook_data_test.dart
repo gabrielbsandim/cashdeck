@@ -287,6 +287,34 @@ void main() {
       expect(free.income, isNull);
     });
 
+    test('reads goods and loans when the server sends them', () async {
+      final json = _netWorthJson();
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {
+            ...json,
+            'current': {
+              ..._composition(900_000),
+              'realEstate': _money(50_000_000),
+              'vehicles': _money(9_000_000),
+              'otherAssets': _money(100_000),
+              'loanDebt': _money(19_000_000),
+            },
+          },
+        }),
+      );
+      final worth = _valueOf(
+        await ApiOutlookRepository(dio)
+            .netWorth(EntityScope.personal, NetWorthPeriod.sixMonths),
+      );
+
+      expect(worth.current.realEstate, const Money(50_000_000));
+      expect(worth.current.vehicles, const Money(9_000_000));
+      expect(worth.current.otherAssets, const Money(100_000));
+      expect(worth.current.loanDebt, const Money(19_000_000));
+      expect(worth.entities.single.current.loanDebt, const Money(0));
+    });
+
     test('reads net worth and sends the window and the entity', () async {
       final dio = stubDio((_) => StubResponse(200, {'data': _netWorthJson()}));
       final worth = _valueOf(

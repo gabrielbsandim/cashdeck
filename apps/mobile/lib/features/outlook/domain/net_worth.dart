@@ -13,8 +13,8 @@ enum NetWorthPeriod {
   final int months;
 }
 
-/// What the entity has and owes: cash and investments are assets, what the
-/// cards owe is the liability.
+/// What the entity has and owes: cash, investments and goods are assets,
+/// what the cards and loans owe are the liabilities.
 final class NetWorthComposition extends Equatable {
   const new({
     required this.cash,
@@ -23,11 +23,19 @@ final class NetWorthComposition extends Equatable {
     required this.assets,
     required this.liabilities,
     required this.total,
+    this.realEstate = const Money(0),
+    this.vehicles = const Money(0),
+    this.otherAssets = const Money(0),
+    this.loanDebt = const Money(0),
   });
 
   final Money cash;
   final Money investments;
+  final Money realEstate;
+  final Money vehicles;
+  final Money otherAssets;
   final Money cardDebt;
+  final Money loanDebt;
   final Money assets;
   final Money liabilities;
   final Money total;
@@ -38,7 +46,11 @@ final class NetWorthComposition extends Equatable {
   List<Object?> get props => [
     cash,
     investments,
+    realEstate,
+    vehicles,
+    otherAssets,
     cardDebt,
+    loanDebt,
     assets,
     liabilities,
     total,

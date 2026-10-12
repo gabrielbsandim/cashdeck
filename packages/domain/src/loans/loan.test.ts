@@ -4,6 +4,7 @@ import {
   chargesInstallment,
   installmentIn,
   type LoanInstallment,
+  loanBalanceOn,
   type LoanStatement,
   loanStanding,
   prepayment,
@@ -168,6 +169,19 @@ describe('loanStanding', () => {
 
     expect(standing.balance).toBe(0)
     expect(standing.lastDueOn).toBeNull()
+  })
+})
+
+describe('loanBalanceOn', () => {
+  it('drops by each installment once debited, the carnival one a day later, and nothing is owed after the last', () => {
+    const unrecorded = loan([
+      installment(1, { balance: 2000 }),
+      installment(2, { balance: 1000 }),
+      installment(3),
+    ])
+    expect(loanBalanceOn(unrecorded, '2026-02-18')).toBe(3000)
+    expect(loanBalanceOn(unrecorded, '2026-02-19')).toBe(2000)
+    expect(loanBalanceOn(unrecorded, '2026-05-01')).toBe(0)
   })
 })
 

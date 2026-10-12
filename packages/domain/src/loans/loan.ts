@@ -92,6 +92,23 @@ export function isOpen(installment: LoanInstallment, today: LocalDate) {
   return installment.paidOn === null && debitOn(installment) >= today
 }
 
+// Still owed at the end of a day: paid after it, or with no payment recorded
+// and not yet debited before it.
+const owedAfter = (installment: LoanInstallment, day: LocalDate) =>
+  installment.paidOn === null
+    ? debitOn(installment) >= day
+    : installment.paidOn > day
+
+export function loanBalanceOn(loan: LoanStatement, day: LocalDate): number {
+  if (day < loan.signedOn) {
+    return 0
+  }
+  const next = loan.installments.find(installment =>
+    owedAfter(installment, day),
+  )
+  return next ? owedBefore(next) : 0
+}
+
 export function loanStanding(
   loan: LoanStatement,
   today: LocalDate,

@@ -1,0 +1,218 @@
+import { describe, expect, it } from 'vitest'
+import { ValidationError } from '@cashdeck/domain'
+import { createAssetSchema, updateAssetSchema } from '@/dtos/assets'
+import { NotFoundError } from '@/errors/errors'
+import { fullDeps } from '@/testing/deps.test-helpers'
+import { FakeVehiclePrices } from '@/testing/investments'
+import { importLoan } from '@/testing/loans.test-helpers'
+import { TENANT } from '@/testing/scenario.test-helpers'
+import { makeAssets } from '@/use-cases/assets'
+
+const pickup = { type: 'CAR' as const, code: '005340-6', modelYear: 2020 }
+
+const setup = () => {
+  const vehiclePrices = new FakeVehiclePrices()
+  vehiclePrices.histories.set(pickup.code, {
+    model: 'Picape Exemplo 2.0 Diesel',
+    prices: [
+      { month: '2026-10', cents: 13961800 },
+      { month: '2026-09', cents: 13919100 },
+    ],
+  })
+  const deps = fullDeps({ vehiclePrices })
+  return { deps, vehiclePrices, assets: makeAssets(deps) }
+}
+
+const home = {
+  entity: 'PF' as const,
+  kind: 'PROPERTY' as const,
+  name: 'Apartamento',
+  acquiredOn: '2026-08-10',
+  value: 900000,
+  loanId: null,
+}
+
+describe('assets', () => {
+  it('prices a vehicle from the FIPE table and names it after the model', async () => {
+    const { assets } = setup()
+
+    const view = await assets.create(TENANT, {
+      entity: 'PF',
+      kind: 'VEHICLE',
+      acquiredOn: '2022-03-01',
+      fipe: pickup,
+      loanId: null,
+    })
+
+    expect(view).toMatchObject({
+      kind: 'VEHICLE',
+      name: 'Picape Exemplo 2.0 Diesel',
+      value: { cents: 13961800 },
+      valuedOn: '2026-10-01',
+      change: { amount: { cents: 42700 }, percent: 0.3 },
+      fipe: pickup,
+      loan: null,
+      equity: { cents: 13961800 },
+    })
+  })
+
+  it('takes a value by hand over the table and lists by kind with totals', async () => {
+    const { deps, assets } = setup()
+    const loanId = await importLoan(deps)
+    await assets.create(TENANT, {
+      entity: 'PF',
+      kind: 'VEHICLE',
+      name: 'Picape',
+      acquiredOn: '2022-03-01',
+      value: 13000000,
+      fipe: pickup,
+      loanId: null,
+    })
+    await assets.create(TENANT, { ...home, loanId })
+
+    const list = await assets.list(TENANT)
+
+    expect(list.items.map(item => [item.name, item.value.cents])).toEqual([
+      ['Apartamento', 900000],
+      ['Picape', 13000000],
+    ])
+    expect(list.items[0]?.loan).toEqual({
+      id: loanId,
+      name: 'Bradesco 1234567',
+      balance: { cents: 200000, currency: 'BRL' },
+    })
+    expect(list).toMatchObject({
+      value: { cents: 13900000 },
+      loanDebt: { cents: 200000 },
+      equity: { cents: 13700000 },
+    })
+  })
+
+  it('revalues, renames, links, marks sold and removes an asset', async () => {
+    const { deps, assets } = setup()
+    const loanId = await importLoan(deps)
+    const { id } = await assets.create(TENANT, home)
+
+    const revalued = await assets.update(TENANT, id, {
+      name: 'Apartamento alugado',
+      value: 950000,
+      valuedOn: '2026-09-01',
+      loanId,
+    })
+    expect(revalued).toMatchObject({
+      name: 'Apartamento alugado',
+      value: { cents: 900000 },
+      change: { amount: { cents: -50000 } },
+      loan: { id: loanId },
+      equity: { cents: 700000 },
+    })
+
+    const today = await assets.update(TENANT, id, { value: 1000000 })
+    expect(today.value.cents).toBe(1000000)
+    expect(today.loan?.id).toBe(loanId)
+
+    const sold = await assets.update(TENANT, id, {
+      loanId: null,
+      soldOn: '2026-10-01',
+    })
+    expect(sold).toMatchObject({
+      soldOn: '2026-10-01',
+      value: { cents: 0 },
+      loan: null,
+      name: 'Apartamento alugado',
+    })
+
+    expect(await assets.remove(TENANT, id)).toEqual({ id })
+    await expect(assets.remove(TENANT, id)).rejects.toThrow(NotFoundError)
+  })
+
+  it('refuses a model year with no price and a value from a future day', async () => {
+    const { assets, vehiclePrices } = setup()
+    vehiclePrices.histories.set('009999-9', { model: 'Novo', prices: [] })
+    await expect(
+      assets.create(TENANT, {
+        entity: 'PF',
+        kind: 'VEHICLE',
+        acquiredOn: '2026-10-01',
+        fipe: { ...pickup, code: '009999-9' },
+        loanId: null,
+      }),
+    ).rejects.toThrow(ValidationError)
+    const { id } = await assets.create(TENANT, home)
+    await expect(
+      assets.update(TENANT, id, { value: 1, valuedOn: '2026-10-09' }),
+    ).rejects.toThrow(ValidationError)
+  })
+
+  it('refuses a loan that does not exist', async () => {
+    const { assets } = setup()
+    await expect(
+      assets.create(TENANT, { ...home, loanId: 'nowhere' }),
+    ).rejects.toThrow(NotFoundError)
+    const { id } = await assets.create(TENANT, home)
+    await expect(
+      assets.update(TENANT, id, { loanId: 'nowhere' }),
+    ).rejects.toThrow(NotFoundError)
+  })
+
+  it('refreshes the vehicles still owned and keeps the last price of one the table lost', async () => {
+    const { assets, vehiclePrices } = setup()
+    const retired = { ...pickup, code: '001001-1' }
+    vehiclePrices.histories.set(retired.code, {
+      model: 'Sedan Exemplo',
+      prices: [{ month: '2026-10', cents: 5000000 }],
+    })
+    const vehicle = (fipe: typeof pickup) =>
+      assets.create(TENANT, {
+        entity: 'PF',
+        kind: 'VEHICLE',
+        acquiredOn: '2022-03-01',
+        fipe,
+        loanId: null,
+      })
+    const tracked = await vehicle(pickup)
+    const lost = await vehicle(retired)
+    const sold = await vehicle(pickup)
+    await assets.update(TENANT, sold.id, { soldOn: '2026-10-02' })
+    await assets.create(TENANT, home)
+    vehiclePrices.histories.set(pickup.code, {
+      model: 'Picape Exemplo 2.0 Diesel',
+      prices: [{ month: '2026-10', cents: 13800000 }],
+    })
+    vehiclePrices.histories.delete(retired.code)
+
+    expect(await assets.refreshPrices(TENANT)).toEqual({
+      refreshed: 1,
+      failed: 1,
+    })
+
+    const { items } = await assets.list(TENANT)
+    const valueOf = (id: string) =>
+      items.find(item => item.id === id)?.value.cents
+    expect(valueOf(tracked.id)).toBe(13800000)
+    expect(valueOf(lost.id)).toBe(5000000)
+    expect(valueOf(sold.id)).toBe(0)
+  })
+})
+
+describe('asset input', () => {
+  it('asks for a value or a FIPE code, a FIPE code only on a vehicle, and a name', () => {
+    const base = { kind: 'OTHER', name: 'Relógio', acquiredOn: '2026-01-01' }
+    expect(createAssetSchema.safeParse(base).error?.issues[0]?.path).toEqual([
+      'value',
+    ])
+    expect(
+      createAssetSchema.safeParse({ ...base, fipe: pickup }).error?.issues[0]
+        ?.path,
+    ).toEqual(['fipe'])
+    expect(
+      createAssetSchema.safeParse({ ...base, name: undefined, value: 100 })
+        .error?.issues[0]?.path,
+    ).toEqual(['name'])
+    expect(createAssetSchema.parse({ ...base, value: 100 })).toMatchObject({
+      entity: 'PF',
+      loanId: null,
+    })
+    expect(updateAssetSchema.parse({ soldOn: null })).toEqual({ soldOn: null })
+  })
+})

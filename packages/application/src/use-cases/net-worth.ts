@@ -2,6 +2,7 @@ import {
   type Account,
   type AccountType,
   addDays,
+  type Belongings,
   type FinancialEntity,
   type LocalDate,
   monthEnds,
@@ -16,12 +17,19 @@ import {
 import { money } from '@/dtos/common'
 import { type NetWorthQuery, type NetWorthView } from '@/dtos/net-worth'
 import { type InvestmentPosition } from '@/ports/investments'
+import { loadAssets } from '@/use-cases/assets'
 import { type Deps } from '@/use-cases/deps'
+import { loadLoans } from '@/use-cases/loans'
 import { requireEntity, today } from '@/use-cases/shared'
 
 type NetWorthDeps = Pick<
   Deps,
-  'entities' | 'accounts' | 'transactions' | 'investments' | 'clock'
+  | 'entities'
+  | 'accounts'
+  | 'transactions'
+  | 'investments'
+  | 'documents'
+  | 'clock'
 >
 
 const KIND_OF: Record<AccountType, NetWorthAccountKind> = {
@@ -39,12 +47,17 @@ type EntityHoldings = {
   kind: FinancialEntity['kind']
   accounts: RolledBackAccount[]
   positions: SnapshottedPosition[]
+  belongings: Belongings
 }
 
 const compositionView = (point: NetWorthPoint) => ({
   cash: money(point.cash),
   investments: money(point.investments),
+  realEstate: money(point.realEstate),
+  vehicles: money(point.vehicles),
+  otherAssets: money(point.otherAssets),
   cardDebt: money(point.cardDebt),
+  loanDebt: money(point.loanDebt),
   assets: money(point.assets),
   liabilities: money(point.liabilities),
   total: money(point.total),
@@ -122,6 +135,8 @@ export function makeNetWorthFromBalancesAndSnapshots(deps: NetWorthDeps) {
       position => position.balance.currency === CURRENCY,
     )
     const valued = await valuation(tenantId, first, day)
+    const owned = await loadAssets(deps, tenantId)
+    const owed = await loadLoans(deps, tenantId)
     const holdings: EntityHoldings[] = []
     for (const entity of entities) {
       holdings.push({
@@ -130,12 +145,20 @@ export function makeNetWorthFromBalancesAndSnapshots(deps: NetWorthDeps) {
         positions: held
           .filter(position => position.entityId === entity.id)
           .map(valued),
+        belongings: {
+          assets: owned.filter(asset => asset.entityId === entity.id),
+          loans: owed.filter(loan => loan.entityId === entity.id),
+        },
       })
     }
     const accounts = holdings.flatMap(entity => entity.accounts)
     const positions = holdings.flatMap(entity => entity.positions)
+    const belongings = {
+      assets: holdings.flatMap(entity => entity.belongings.assets),
+      loans: holdings.flatMap(entity => entity.belongings.loans),
+    }
     const points = [...ends, day].map(on =>
-      netWorthOn(on, day, accounts, positions),
+      netWorthOn(on, day, accounts, positions, belongings),
     )
     const current = points.at(-1) as NetWorthPoint
     return {
@@ -149,7 +172,13 @@ export function makeNetWorthFromBalancesAndSnapshots(deps: NetWorthDeps) {
       entities: holdings.map(entity => ({
         kind: entity.kind,
         current: compositionView(
-          netWorthOn(day, day, entity.accounts, entity.positions),
+          netWorthOn(
+            day,
+            day,
+            entity.accounts,
+            entity.positions,
+            entity.belongings,
+          ),
         ),
       })),
       series: points.slice(-1 - query.months).map(point => ({

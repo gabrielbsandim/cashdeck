@@ -11,7 +11,12 @@ export type NetWorthQuery = z.infer<typeof netWorthQuerySchema>
 const compositionSchema = z.object({
   cash: moneyViewSchema,
   investments: moneyViewSchema,
+  realEstate: moneyViewSchema,
+  vehicles: moneyViewSchema,
+  otherAssets: moneyViewSchema,
   cardDebt: moneyViewSchema,
+  // What loans still owe, read from their schedules.
+  loanDebt: moneyViewSchema,
   assets: moneyViewSchema,
   liabilities: moneyViewSchema,
   total: moneyViewSchema,

@@ -1,0 +1,51 @@
+import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/network/guard_request.dart';
+import 'package:cashdeck/core/network/json_reader.dart';
+import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/features/assets/data/asset_dtos.dart';
+import 'package:cashdeck/features/assets/domain/asset.dart';
+import 'package:dio/dio.dart';
+
+final class ApiAssetsRepository implements AssetsRepository {
+  const new(this._dio);
+
+  final Dio _dio;
+
+  static const path = '/api/v1/assets';
+
+  String _asset(String id) => '$path/${Uri.encodeComponent(id)}';
+
+  Future<Result<Asset>> _patch(String id, JsonMap body) =>
+      guardRequest(() async {
+        final response = await _dio.patch<Object?>(_asset(id), data: body);
+        return assetFromJson(asJsonMap(unwrapData(response.data)));
+      });
+
+  @override
+  Future<Result<AssetsSummary>> list() => guardRequest(() async {
+    final response = await _dio.get<Object?>(path);
+    return assetsFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
+  Future<Result<Asset>> create(AssetDraft draft) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      path,
+      data: assetDraftToJson(draft),
+    );
+    return assetFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
+  Future<Result<Asset>> revalue(String id, Money value) =>
+      _patch(id, {'value': value.cents});
+
+  @override
+  Future<Result<Asset>> markSold(String id, CalendarDate on) =>
+      _patch(id, {'soldOn': on.iso});
+
+  @override
+  Future<Result<void>> delete(String id) =>
+      guardRequest(() => _dio.delete<Object?>(_asset(id)));
+}

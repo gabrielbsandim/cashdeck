@@ -47,4 +47,13 @@ describe('cron schedule', () => {
       Number(syncHour) * 60 + Number(syncMinute),
     )
   })
+
+  // The FIPE table publishes the month's prices in its first business days.
+  it('refreshes vehicle prices once a month, after the table is out', () => {
+    const [, , day, ...rest] = (
+      scheduleOf('/api/cron/vehicle-prices') ?? ''
+    ).split(' ')
+    expect(Number(day)).toBeGreaterThanOrEqual(5)
+    expect(rest).toEqual(['*', '*'])
+  })
 })

@@ -431,6 +431,22 @@ snapshot replaces an estimated one, never the other way round. The daily CDI
 (Banco Central SGS series 12) is fetched from the day after the last one
 stored, or 400 days back. None of this fails a sync.
 
+## Goods
+
+`GET`, `POST /assets` and `PATCH`, `DELETE /assets/{id}` keep properties,
+vehicles and other goods, each with its own value history. A value holds
+from its day; before the first one the good is worth that first value, and
+nothing before `acquiredOn` or from `soldOn`. A vehicle created with a `fipe`
+code (`type`, `code`, `modelYear`) is priced by the FIPE table through the
+keyless Parallelum mirror, which gives the last three months; the
+`vehicle-prices` cron adds each new month on day 5 and keeps the last price
+of a code the table stops answering for. A `loanId` links the loan that
+financed the good, and `equity` is the value less what that loan owes.
+
+Net worth adds the goods by kind (`realEstate`, `vehicles`, `otherAssets`)
+and takes off `loanDebt`, every stored loan's balance at the end of each day
+read from its schedule.
+
 ## Transactions
 
 ### GET /transactions?entity=&accountId=&categoryId=&uncategorized=&search=&from=&to=&cursor=&limit=

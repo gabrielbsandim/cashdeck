@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
@@ -15,6 +16,7 @@ import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
+import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
@@ -28,6 +30,7 @@ import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Net worth over time: the total and how it moved, the curve over the
@@ -38,6 +41,7 @@ class NetWorthScreen extends ConsumerWidget {
 
   static const totalKey = Key('net-worth-total');
   static const periodKey = Key('net-worth-period');
+  static const assetsKey = Key('net-worth-assets');
   static Key entityKey(EntityKind kind) => Key('net-worth-entity-${kind.name}');
 
   @override
@@ -139,6 +143,18 @@ class _History extends ConsumerWidget {
             child: _Composition(composition: entity.current),
           ),
         ],
+        const SizedBox(height: AppSpacing.md),
+        CdInsightCard(
+          child: CdListRow(
+            key: NetWorthScreen.assetsKey,
+            title: l10n.assetsTitle,
+            subtitle: l10n.netWorthAssetsLink,
+            icon: Symbols.real_estate_agent_rounded,
+            chevron: true,
+            padding: EdgeInsets.zero,
+            onTap: () => context.push(AppRoutes.assets).ignore(),
+          ),
+        ),
       ],
     );
   }
@@ -234,7 +250,13 @@ class _Composition extends ConsumerWidget {
     final parts = [
       (l10n.netWorthCash, composition.cash, charts.at(0).fill),
       (l10n.netWorthInvestments, composition.investments, charts.at(1).fill),
+      (l10n.netWorthRealEstate, composition.realEstate, charts.at(2).fill),
+      (l10n.netWorthVehicles, composition.vehicles, charts.at(3).fill),
+      (l10n.netWorthOtherAssets, composition.otherAssets, charts.at(4).fill),
+    ];
+    final debts = [
       (l10n.netWorthCardDebt, composition.cardDebt, context.money.expense),
+      (l10n.netWorthLoanDebt, composition.loanDebt, context.money.overdue),
     ];
     final whole = composition.assets.cents + composition.liabilities.cents;
     return Column(
@@ -244,7 +266,7 @@ class _Composition extends ConsumerWidget {
           Center(
             child: CdDonut(
               slices: [
-                for (final (label, amount, color) in parts)
+                for (final (label, amount, color) in [...parts, ...debts])
                   if (amount.cents > 0)
                     CdDonutSlice(label, amount.cents / whole, color),
               ],
@@ -254,12 +276,16 @@ class _Composition extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        for (final (label, amount, _) in parts.take(2))
-          CdKeyValueRow(label: label, value: CdAmount(amount)),
-        CdKeyValueRow(
-          label: l10n.netWorthCardDebt,
-          value: CdAmount(composition.cardDebt, kind: CdAmountKind.expense),
-        ),
+        // Cash and investments always show; a kind of good only once owned.
+        for (final (index, (label, amount, _)) in parts.indexed)
+          if (index < 2 || amount.cents != 0)
+            CdKeyValueRow(label: label, value: CdAmount(amount)),
+        for (final (index, (label, amount, _)) in debts.indexed)
+          if (index == 0 || amount.cents != 0)
+            CdKeyValueRow(
+              label: label,
+              value: CdAmount(amount, kind: CdAmountKind.expense),
+            ),
         CdKeyValueRow(
           label: l10n.netWorthTitle,
           strong: true,

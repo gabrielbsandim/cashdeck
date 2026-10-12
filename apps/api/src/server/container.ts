@@ -65,6 +65,7 @@ import {
   makeSafeToSpend,
   makeSetSpendingPlan,
   makeLoans,
+  makeAssets,
   makeIncomeSources,
   makeListInstallments,
   makeReportJobFailure,
@@ -321,6 +322,7 @@ export function buildContainer(
     openFinance: providers.openFinance,
     preview: providers.preview,
     marketData: providers.marketData,
+    vehiclePrices: providers.vehiclePrices,
     issuer: providers.invoiceIssuer,
     billSources: new Map<string, BillSource>(
       providers.billSources.map(billSource => [billSource.source, billSource]),
@@ -391,6 +393,7 @@ export function buildContainer(
     setSpendingPlan: makeSetSpendingPlan(deps),
     incomeSources: makeIncomeSources(deps),
     loans: makeLoans(deps),
+    assets: makeAssets(deps),
     netWorth: makeNetWorthFromBalancesAndSnapshots(deps),
     fundingItems: makeFundingItems(deps),
     setDebitAccount: makeSetDebitAccount(deps),

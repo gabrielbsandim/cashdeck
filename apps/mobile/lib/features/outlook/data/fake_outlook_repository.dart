@@ -250,7 +250,11 @@ final class FakeOutlookRepository implements OutlookRepository {
   ) => NetWorthComposition(
     cash: a.cash + b.cash,
     investments: a.investments + b.investments,
+    realEstate: a.realEstate + b.realEstate,
+    vehicles: a.vehicles + b.vehicles,
+    otherAssets: a.otherAssets + b.otherAssets,
     cardDebt: a.cardDebt + b.cardDebt,
+    loanDebt: a.loanDebt + b.loanDebt,
     assets: a.assets + b.assets,
     liabilities: a.liabilities + b.liabilities,
     total: a.total + b.total,

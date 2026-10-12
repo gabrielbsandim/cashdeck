@@ -1,5 +1,11 @@
 import { addDays, type LocalDate, shiftMonth } from '@/calendar/local-date'
+import { type LoanStatement, loanBalanceOn } from '@/loans/loan'
 import { Money } from '@/money/money'
+import {
+  type AssetKind,
+  assetValueOn,
+  type ValuedAsset,
+} from '@/net-worth/assets'
 
 export const NET_WORTH_ACCOUNT_KINDS = ['CASH', 'INVESTMENT', 'CARD'] as const
 export type NetWorthAccountKind = (typeof NET_WORTH_ACCOUNT_KINDS)[number]
@@ -26,7 +32,17 @@ export type SnapshottedPosition = {
 export type NetWorthComposition = {
   readonly cash: Money
   readonly investments: Money
+  readonly realEstate: Money
+  readonly vehicles: Money
+  readonly otherAssets: Money
   readonly cardDebt: Money
+  readonly loanDebt: Money
+}
+
+// What an entity owns and owes beyond its accounts and investments.
+export type Belongings = {
+  readonly assets: readonly ValuedAsset[]
+  readonly loans: readonly LoanStatement[]
 }
 
 export type NetWorthPoint = NetWorthComposition & {
@@ -71,13 +87,20 @@ export function netWorthPoint(
   on: LocalDate,
   composition: NetWorthComposition,
 ): NetWorthPoint {
-  const assets = composition.cash.add(composition.investments)
+  const assets = sum([
+    composition.cash,
+    composition.investments,
+    composition.realEstate,
+    composition.vehicles,
+    composition.otherAssets,
+  ])
+  const liabilities = composition.cardDebt.add(composition.loanDebt)
   return {
     on,
     ...composition,
     assets,
-    liabilities: composition.cardDebt,
-    total: assets.subtract(composition.cardDebt),
+    liabilities,
+    total: assets.subtract(liabilities),
   }
 }
 
@@ -86,6 +109,7 @@ export function netWorthOn(
   today: LocalDate,
   accounts: readonly RolledBackAccount[],
   positions: readonly SnapshottedPosition[],
+  belongings: Belongings = { assets: [], loans: [] },
 ): NetWorthPoint {
   const balances = (kind: NetWorthAccountKind) =>
     accounts
@@ -94,13 +118,25 @@ export function netWorthOn(
   const owed = balances('CARD').map(balance =>
     Money.of(Math.max(0, -balance.cents)),
   )
+  const worth = (kind: AssetKind) =>
+    sum(
+      belongings.assets
+        .filter(asset => asset.kind === kind)
+        .map(asset => assetValueOn(asset, day)),
+    )
   return netWorthPoint(day, {
     cash: sum(balances('CASH')),
     investments: sum([
       ...balances('INVESTMENT'),
       ...positions.map(position => positionValueOn(position, day, today)),
     ]),
+    realEstate: worth('PROPERTY'),
+    vehicles: worth('VEHICLE'),
+    otherAssets: worth('OTHER'),
     cardDebt: sum(owed),
+    loanDebt: sum(
+      belongings.loans.map(loan => Money.of(loanBalanceOn(loan, day))),
+    ),
   })
 }
 

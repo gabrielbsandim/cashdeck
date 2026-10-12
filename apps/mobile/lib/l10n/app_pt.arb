@@ -3762,5 +3762,110 @@
     }
   },
   "loanDeleteMessage": "O financiamento sai do app; o contrato no banco não muda. Importe o extrato de novo quando quiser.",
-  "loanDeleted": "Financiamento excluído"
+  "loanDeleted": "Financiamento excluído",
+  "netWorthRealEstate": "Imóveis",
+  "netWorthVehicles": "Veículos",
+  "netWorthOtherAssets": "Outros bens",
+  "netWorthLoanDebt": "Financiamentos",
+  "netWorthAssetsLink": "Imóveis, veículos e o que os financiamentos ainda devem",
+  "assetsTitle": "Bens",
+  "assetAdd": "Adicionar bem",
+  "assetAdded": "Bem adicionado",
+  "assetsEmptyTitle": "Nenhum bem ainda",
+  "assetsEmptyMessage": "Cadastre imóveis, veículos e outros bens para o patrimônio mostrar tudo o que a família tem. Um veículo com código FIPE se atualiza sozinho todo mês.",
+  "assetsValue": "Valor dos bens",
+  "assetsLoanDebt": "Ainda devido nos financiamentos",
+  "assetsEquity": "Já é de vocês",
+  "assetEquity": "Já é de vocês",
+  "assetValuedOn": "Valor de {date}",
+  "@assetValuedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "assetFipeOn": "Tabela FIPE de {date}",
+  "@assetFipeOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "assetSoldOn": "Vendido em {date}",
+  "@assetSoldOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChange": "{amount} desde o primeiro valor",
+  "@assetChange": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChangePercent": "{amount} ({percent}%) desde o primeiro valor",
+  "@assetChangePercent": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "assetRevalue": "Atualizar valor",
+  "assetRevalueTitle": "Novo valor de {name}",
+  "@assetRevalueTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assetRevalueHelp": "Vale a partir de hoje; o histórico continua com os valores anteriores.",
+  "assetRevalueSave": "Salvar valor",
+  "assetRevalued": "Valor atualizado",
+  "assetSold": "Marcar como vendido",
+  "assetSoldMessage": "O bem deixa de contar no patrimônio a partir de hoje. O histórico dos meses anteriores continua.",
+  "assetMarkedSold": "Bem marcado como vendido",
+  "assetDelete": "Excluir bem",
+  "assetDeleteMessage": "O bem sai do app e do histórico do patrimônio. Para registrar uma venda, use Marcar como vendido.",
+  "assetDeleted": "Bem excluído",
+  "assetKindProperty": "Imóvel",
+  "assetKindVehicle": "Veículo",
+  "assetKindOther": "Outro",
+  "assetByFipe": "Usar a tabela FIPE",
+  "assetByFipeHelp": "O valor se atualiza todo mês",
+  "vehicleCar": "Carro",
+  "vehicleMotorcycle": "Moto",
+  "vehicleTruck": "Caminhão",
+  "assetFipeCode": "Código FIPE",
+  "assetModelYear": "Ano modelo",
+  "assetFipeHelp": "O código está no documento do veículo ou no site da tabela FIPE.",
+  "assetName": "Nome",
+  "assetNameOptional": "Nome (opcional)",
+  "assetValue": "Valor de mercado",
+  "assetAcquiredOn": "Comprado em {date}",
+  "@assetAcquiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "assetLoan": "Financiamento",
+  "assetLoanNone": "Sem financiamento",
+  "assetSave": "Adicionar",
+  "assetNameMissing": "Dê um nome ao bem.",
+  "assetValueMissing": "Informe o valor de mercado.",
+  "assetFipeCodeInvalid": "O código FIPE tem o formato 000000-0.",
+  "assetModelYearInvalid": "Informe o ano modelo com 4 dígitos.",
+  "assetFutureDate": "A data de compra não pode ser no futuro."
 }

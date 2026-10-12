@@ -72,7 +72,11 @@ describe('netWorthOn', () => {
       on: '2026-10-08',
       cash: Money.of(300000),
       investments: Money.of(610000),
+      realEstate: Money.zero(),
+      vehicles: Money.zero(),
+      otherAssets: Money.zero(),
       cardDebt: Money.of(120000),
+      loanDebt: Money.zero(),
       assets: Money.of(910000),
       liabilities: Money.of(120000),
       total: Money.of(790000),
@@ -97,6 +101,81 @@ describe('netWorthOn', () => {
     expect(
       netWorthOn('2026-10-08', '2026-10-08', [paidAhead], []).cardDebt.cents,
     ).toBe(0)
+  })
+
+  it('adds what is owned by kind and takes off what loans still owe', () => {
+    const home = {
+      kind: 'PROPERTY' as const,
+      acquiredOn: '2025-03-10',
+      soldOn: null,
+      valuations: [{ day: '2026-10-01', cents: 60000000 }],
+    }
+    const car = {
+      kind: 'VEHICLE' as const,
+      acquiredOn: '2024-01-15',
+      soldOn: null,
+      valuations: [
+        { day: '2026-09-01', cents: 9000000 },
+        { day: '2026-10-01', cents: 8900000 },
+      ],
+    }
+    const bike = { ...car, kind: 'OTHER' as const, valuations: [] }
+    const loan = {
+      lender: 'Banco Exemplo',
+      contract: '1',
+      system: 'SAC' as const,
+      indexer: 'TR',
+      effectiveRate: 10,
+      cet: 11,
+      principal: 40000000,
+      propertyValue: null,
+      signedOn: '2025-03-10',
+      termMonths: 2,
+      installments: [
+        {
+          number: 1,
+          dueOn: '2026-09-10',
+          total: 20300000,
+          principal: 20000000,
+          interest: 300000,
+          fees: 0,
+          lateFees: 0,
+          balance: 20000000,
+          paidOn: '2026-09-10',
+          paid: 20300000,
+        },
+        {
+          number: 2,
+          dueOn: '2026-10-13',
+          total: 20150000,
+          principal: 20000000,
+          interest: 150000,
+          fees: 0,
+          lateFees: 0,
+          balance: 0,
+          paidOn: null,
+          paid: null,
+        },
+      ],
+    }
+    const belongings = { assets: [home, car, bike], loans: [loan] }
+    const today = netWorthOn('2026-10-08', '2026-10-08', [], [], belongings)
+    expect(today).toMatchObject({
+      realEstate: Money.of(60000000),
+      vehicles: Money.of(8900000),
+      otherAssets: Money.zero(),
+      loanDebt: Money.of(20000000),
+      assets: Money.of(68900000),
+      liabilities: Money.of(20000000),
+      total: Money.of(48900000),
+    })
+    const august = netWorthOn('2026-08-31', '2026-10-08', [], [], belongings)
+    expect(august.realEstate.cents).toBe(60000000)
+    expect(august.vehicles.cents).toBe(9000000)
+    expect(august.loanDebt.cents).toBe(40000000)
+    const before = netWorthOn('2025-01-31', '2026-10-08', [], [], belongings)
+    expect(before.realEstate.cents).toBe(0)
+    expect(before.loanDebt.cents).toBe(0)
   })
 })
 

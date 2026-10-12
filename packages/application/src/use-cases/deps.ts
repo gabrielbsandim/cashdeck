@@ -8,6 +8,7 @@ import {
   type IndexRateRepository,
   type InvestmentRepository,
   type MarketData,
+  type VehiclePrices,
 } from '@/ports/investments'
 import { type LlmProvider } from '@/ports/llm-provider'
 import { type GoalRepository } from '@/ports/planning'
@@ -74,6 +75,7 @@ export type Deps = {
   investments: InvestmentRepository
   indexRates: IndexRateRepository
   marketData: MarketData
+  vehiclePrices: VehiclePrices
   recurrences: RecurrenceRepository
   connections: ConnectionRepository
   transfers: TransferRepository

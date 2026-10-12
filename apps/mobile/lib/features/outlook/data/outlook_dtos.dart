@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/features/entities/data/entity_dtos.dart';
 import 'package:cashdeck/features/outlook/domain/net_worth.dart';
@@ -89,10 +90,18 @@ List<IncomeSourceCandidate> incomeSourcesFromJson(JsonMap json) => [
     ),
 ];
 
+/// Goods and loans came later; a server without them owns none.
+Money _readMoneyOrZero(JsonMap json, String key) =>
+    json[key] == null ? const Money(0) : readMoney(json, key);
+
 NetWorthComposition _composition(JsonMap json) => NetWorthComposition(
   cash: readMoney(json, 'cash'),
   investments: readMoney(json, 'investments'),
+  realEstate: _readMoneyOrZero(json, 'realEstate'),
+  vehicles: _readMoneyOrZero(json, 'vehicles'),
+  otherAssets: _readMoneyOrZero(json, 'otherAssets'),
   cardDebt: readMoney(json, 'cardDebt'),
+  loanDebt: _readMoneyOrZero(json, 'loanDebt'),
   assets: readMoney(json, 'assets'),
   liabilities: readMoney(json, 'liabilities'),
   total: readMoney(json, 'total'),

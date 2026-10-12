@@ -54,6 +54,7 @@ import { type WebhookProvider, type WebhookReader } from '@/ports/webhooks'
 import { InMemoryChatRepository } from '@/testing/chat'
 import {
   FakeMarketData,
+  FakeVehiclePrices,
   InMemoryIndexRateRepository,
   InMemoryInvestmentRepository,
 } from '@/testing/investments'
@@ -74,6 +75,7 @@ type Options = {
   railStatus?: RailStatusReader[]
   billSources?: BillSource[]
   marketData?: FakeMarketData
+  vehiclePrices?: FakeVehiclePrices
   openFinance?: OpenFinanceProvider
   preview?: PreviewProvider
   pixLocations?: FakePixLocationResolver
@@ -92,6 +94,7 @@ export function fullDeps(options: Options = {}) {
     investments: new InMemoryInvestmentRepository(),
     indexRates: new InMemoryIndexRateRepository(),
     marketData: options.marketData ?? new FakeMarketData(),
+    vehiclePrices: options.vehiclePrices ?? new FakeVehiclePrices(),
     recurrences: new InMemoryRecurrenceRepository(),
     connections: new InMemoryConnectionRepository(),
     transfers: new InMemoryTransferRepository(),

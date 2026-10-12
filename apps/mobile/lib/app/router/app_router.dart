@@ -7,6 +7,7 @@ import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/accountant_export/presentation/accountant_export_screen.dart';
 import 'package:cashdeck/features/alerts/presentation/alert_settings_screen.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_screen.dart';
+import 'package:cashdeck/features/assets/presentation/assets_screen.dart';
 import 'package:cashdeck/features/auth/presentation/device_sessions_screen.dart';
 import 'package:cashdeck/features/auth/presentation/server_sign_in_screen.dart';
 import 'package:cashdeck/features/auth/presentation/unlock_screen.dart';
@@ -288,6 +289,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       _page(AppRoutes.installments, const InstallmentsScreen()),
       _page(AppRoutes.categoryReview, const CategoryReviewScreen()),
       _page(AppRoutes.loans, const LoansScreen()),
+      _page(AppRoutes.assets, const AssetsScreen()),
       ...goalRoutes,
       ...budgetRoutes,
       ...recapRoutes,

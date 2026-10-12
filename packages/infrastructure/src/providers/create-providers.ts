@@ -4,6 +4,7 @@ import {
   type InvoiceIssuer,
   type LlmProvider,
   type MarketData,
+  type VehiclePrices,
   type Notifier,
   type OpenFinanceProvider,
   type PaymentRail,
@@ -25,6 +26,7 @@ import { CredentialResolver } from '@/credentials/credential-resolver'
 import { type MtlsFactory, BankClients } from '@/rails/bank-client'
 import { fetchTransport, type Transport } from '@/http/transport'
 import { NotaasIssuer } from '@/invoices/notaas-issuer'
+import { FipeVehiclePrices } from '@/market/fipe-vehicle-prices'
 import { PublicMarketData } from '@/market/public-market-data'
 import { type DeviceTokens, FcmNotifier } from '@/notify/fcm-notifier'
 import { PierreProvider } from '@/openfinance/pierre-provider'
@@ -65,6 +67,7 @@ export type Providers = {
   openFinance: OpenFinanceProvider
   preview: PreviewProvider
   marketData: MarketData
+  vehiclePrices: VehiclePrices
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
   pixLocations: PixLocationResolver
@@ -111,6 +114,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
     ),
     preview: new PierreProvider({ credentials, transport }),
     marketData: new PublicMarketData({ transport }),
+    vehiclePrices: new FipeVehiclePrices({ transport }),
     invoiceIssuer: new NotaasIssuer({ credentials, transport, now }),
     billSources: [
       new GmailBillSource({

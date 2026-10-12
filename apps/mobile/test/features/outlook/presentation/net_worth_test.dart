@@ -231,4 +231,49 @@ void main() {
     expect(flat.shouldRepaint(single), isTrue);
     expect(flat.shouldRepaint(flat), isFalse);
   });
+
+  testWidgets('shows goods and loans and opens the goods', (tester) async {
+    const owner = NetWorthComposition(
+      cash: Money(100_000),
+      investments: Money(0),
+      realEstate: Money(50_000_000),
+      vehicles: Money(9_000_000),
+      cardDebt: Money(0),
+      loanDebt: Money(19_000_000),
+      assets: Money(59_100_000),
+      liabilities: Money(19_000_000),
+      total: Money(40_100_000),
+    );
+    final repository = _repository(
+      () async => Ok<NetWorth>(
+        netWorthOf(
+          current: owner,
+          entities: const [
+            EntityNetWorth(kind: EntityKind.personal, current: owner),
+          ],
+          series: [
+            _point(const CalendarDate(2026, 9, 30), 40_000_000),
+            _point(const CalendarDate(2026, 10, 8), 40_100_000),
+          ],
+        ),
+      ),
+    );
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.netWorth,
+      screenHeight: _height,
+      overrides: [outlookRepositoryProvider.overrideWithValue(repository)],
+    );
+
+    expect(find.text(l10n.netWorthRealEstate), findsWidgets);
+    expect(find.text(l10n.netWorthVehicles), findsWidgets);
+    expect(find.text(l10n.netWorthOtherAssets), findsNothing);
+    expect(find.text(l10n.netWorthLoanDebt), findsWidgets);
+    expect(find.textContaining('190.000,00'), findsWidgets);
+
+    await tester.ensureVisible(find.byKey(NetWorthScreen.assetsKey));
+    await tester.tap(find.byKey(NetWorthScreen.assetsKey));
+    await settle(tester);
+    expect(app.location, AppRoutes.assets);
+  });
 }

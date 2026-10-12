@@ -6,6 +6,8 @@ import { account, fullDeps, transaction } from '@/testing/deps.test-helpers'
 import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import { makeNetWorthFromBalancesAndSnapshots } from '@/use-cases/net-worth'
 import { InMemoryEntityRepository } from '@/testing/repositories'
+import { importLoan } from '@/testing/loans.test-helpers'
+import { makeAssets } from '@/use-cases/assets'
 
 function position(
   overrides: Partial<InvestmentPosition> & Pick<InvestmentPosition, 'id'>,
@@ -129,7 +131,11 @@ describe('net worth', () => {
     expect(view.current).toEqual({
       cash: { cents: 500000, currency: 'BRL' },
       investments: { cents: 560000, currency: 'BRL' },
+      realEstate: { cents: 0, currency: 'BRL' },
+      vehicles: { cents: 0, currency: 'BRL' },
+      otherAssets: { cents: 0, currency: 'BRL' },
       cardDebt: { cents: 120000, currency: 'BRL' },
+      loanDebt: { cents: 0, currency: 'BRL' },
       assets: { cents: 1060000, currency: 'BRL' },
       liabilities: { cents: 120000, currency: 'BRL' },
       total: { cents: 940000, currency: 'BRL' },
@@ -187,5 +193,52 @@ describe('net worth', () => {
         entities: new InMemoryEntityRepository([]),
       })(TENANT, { entity: 'PF', months: 12 }),
     ).rejects.toThrow(NotFoundError)
+  })
+
+  it('adds what each entity owns and takes off what its loans still owe', async () => {
+    const deps = fullDeps()
+    const loanId = await importLoan(deps)
+    const assets = makeAssets(deps)
+    await assets.create(TENANT, {
+      entity: 'PF',
+      kind: 'PROPERTY',
+      name: 'Apartamento',
+      acquiredOn: '2026-08-10',
+      value: 900000,
+      loanId,
+    })
+    await assets.create(TENANT, {
+      entity: 'PJ',
+      kind: 'VEHICLE',
+      name: 'Utilitário',
+      acquiredOn: '2020-01-10',
+      value: 300000,
+      loanId: null,
+    })
+
+    const view = await makeNetWorthFromBalancesAndSnapshots(deps)(TENANT, {
+      months: 6,
+    })
+
+    expect(view.current).toMatchObject({
+      realEstate: { cents: 900000 },
+      vehicles: { cents: 300000 },
+      loanDebt: { cents: 200000 },
+      total: { cents: 1000000 },
+    })
+    expect(
+      view.series.map(point => [point.on, point.total.cents]).slice(-4),
+    ).toEqual([
+      ['2026-07-31', 300000],
+      ['2026-08-31', 900000],
+      ['2026-09-30', 1000000],
+      ['2026-10-08', 1000000],
+    ])
+    expect(
+      view.entities.map(entity => [entity.kind, entity.current.total.cents]),
+    ).toEqual([
+      ['PF', 700000],
+      ['PJ', 300000],
+    ])
   })
 })

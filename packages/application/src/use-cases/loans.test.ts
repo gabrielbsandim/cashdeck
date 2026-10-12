@@ -1,22 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { fullDeps } from '@/testing/deps.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
+import { loanStatement as statement } from '@/testing/loans.test-helpers'
 import { FakeDocumentTextReader } from '@/testing/services'
 import { makeLoans } from '@/use-cases/loans'
-
-const statement = (contract: string, signedOn: string) =>
-  [
-    `CONTRATO ${contract} Data do contrato ${signedOn} Extrato Financeiro`,
-    'DADOS FINANCEIROS 3.000,00 Valor Financiamento TAXAS Efetiva(a.a)',
-    'CET(a.a) 12,00% 12,50% Valor Imóvel 9.000,00',
-    'Sistema Amortização SAC 1/3 Prazo TR Indexador ENCARGOS',
-    '1 17/09/2026 1.100,00 1.000,00 1,001719 30,00 10,00 25,00 20,00 5,00',
-    '0,00 1,001719 2.000,00 Paga 29/09/2026 1.125,00 15,00',
-    '2 17/10/2026 1.085,00 1.000,00 1,000000 30,00 10,00 25,00 0,00 0,00',
-    '0,00 1,000000 1.000,00 A Vencer - 0,00 20,00',
-    '3 17/11/2026 1.075,00 1.000,00 1,000000 30,00 10,00 25,00 0,00 0,00',
-    '0,00 1,000000 0,00 A Vencer - 0,00 10,00',
-  ].join('\n')
 
 const upload = {
   entity: 'PF' as const,

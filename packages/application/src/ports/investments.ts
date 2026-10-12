@@ -148,3 +148,23 @@ export interface MarketData {
   ): Promise<DailyValue[]>
   cdiRates(from: LocalDate, to: LocalDate): Promise<DailyValue[]>
 }
+
+export const VEHICLE_TYPES = ['CAR', 'MOTORCYCLE', 'TRUCK'] as const
+export type VehicleType = (typeof VEHICLE_TYPES)[number]
+
+// A model year in the FIPE table, the market reference for used vehicles.
+export type FipeVehicle = {
+  readonly type: VehicleType
+  readonly code: string
+  readonly modelYear: number
+}
+
+export type VehiclePriceHistory = {
+  readonly model: string
+  // One price a month, keyed by the table's reference month.
+  readonly prices: readonly { month: string; cents: number }[]
+}
+
+export interface VehiclePrices {
+  history(vehicle: FipeVehicle): Promise<VehiclePriceHistory>
+}
