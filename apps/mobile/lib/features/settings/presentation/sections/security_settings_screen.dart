@@ -3,6 +3,8 @@ import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/security/app_lock.dart';
 import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
+import 'package:cashdeck/features/home_widget/home_widget_providers.dart';
+import 'package:cashdeck/features/home_widget/presentation/widget_values_controller.dart';
 import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_screen.dart';
 import 'package:cashdeck/features/settings/presentation/settings_section.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -10,12 +12,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// What protects the data on the phone: the safe zones, the amount mask and
-/// the lock. It stays open away from a safe zone.
+/// What protects the data on the phone: the safe zones, the amount mask, the
+/// home screen widget's amounts and the lock. It stays open away from a safe
+/// zone.
 class SecuritySettingsScreen extends ConsumerWidget {
   const new({super.key});
 
   static const hideAmountsKey = Key('settings-hide-amounts');
+  static const widgetValuesKey = Key('settings-widget-values');
   static const lockKey = Key('settings-lock-now');
 
   @override
@@ -47,6 +51,8 @@ class SecuritySettingsScreen extends ConsumerWidget {
           ),
           onTap: limited ? null : controller.toggleHideAmounts,
         ),
+        if (ref.watch(homeWidgetAvailableProvider))
+          _WidgetValuesRow(locked: limited || prefs.hideAmounts),
         if (!limited)
           SettingsLink(
             icon: Symbols.devices_rounded,
@@ -62,6 +68,31 @@ class SecuritySettingsScreen extends ConsumerWidget {
           onTap: () => ref.read(appLockProvider.notifier).lock(),
         ),
       ],
+    );
+  }
+}
+
+/// Privacy mode always masks the widget, and away from a safe zone the
+/// choice stays as it is, so the switch is [locked] then.
+class _WidgetValuesRow extends ConsumerWidget {
+  const new({required this.locked});
+
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final toggle = ref.read(widgetValuesProvider.notifier).toggle;
+    return CdListRow(
+      key: SecuritySettingsScreen.widgetValuesKey,
+      icon: Symbols.widgets_rounded,
+      title: l10n.widgetValuesSetting,
+      subtitle: l10n.widgetValuesHint,
+      trailing: Switch(
+        value: ref.watch(widgetShowsAmountsProvider),
+        onChanged: locked ? null : (_) => toggle(),
+      ),
+      onTap: locked ? null : toggle,
     );
   }
 }

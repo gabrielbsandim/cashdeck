@@ -3521,5 +3521,7 @@
   },
   "approvalPaidToast": "O banco confirmou e a conta está paga.",
   "approvalPendingToast": "O banco ainda não confirmou. A conta se atualiza sozinha quando ele confirmar.",
-  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco."
+  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco.",
+  "widgetValuesSetting": "Mostrar valores no widget",
+  "widgetValuesHint": "Fica na tela inicial, visível sem desbloquear o app."
 }

@@ -2,6 +2,7 @@ package io.cashdeck.app.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.widget.RemoteViews
@@ -14,8 +15,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Draws what the app last saved: the amount free to spend today, the next bill and the open card
- * bill. Keys mirror `WidgetKeys` in `features/home_widget/domain/widget_snapshot.dart`.
+ * Draws what the app or the background refresh last saved: the amount free to spend today, the
+ * next bill and the open card bill. Keys mirror `WidgetKeys` in
+ * `features/home_widget/domain/widget_snapshot.dart`.
  */
 class CashdeckWidgetProvider : HomeWidgetProvider() {
     override fun onUpdate(
@@ -27,6 +29,28 @@ class CashdeckWidgetProvider : HomeWidgetProvider() {
         for (id in appWidgetIds) {
             appWidgetManager.updateAppWidget(id, render(context, widgetData))
         }
+        // A widget added before the refresh existed never saw onEnabled.
+        WidgetRefreshWorker.schedule(context)
+    }
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        WidgetRefreshWorker.schedule(context)
+        WidgetRefreshWorker.refreshNow(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WidgetRefreshWorker.cancel(context)
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        val restarted = intent.action == Intent.ACTION_BOOT_COMPLETED ||
+            intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
+        if (!restarted || !WidgetRefreshWorker.hasWidget(context)) return
+        WidgetRefreshWorker.schedule(context)
+        WidgetRefreshWorker.refreshNow(context)
     }
 
     private fun render(context: Context, data: SharedPreferences): RemoteViews {
@@ -35,8 +59,9 @@ class CashdeckWidgetProvider : HomeWidgetProvider() {
         val masked = context.getString(R.string.widget_masked)
         fun amount(key: String): String? = if (hidden) masked else data.getString(key, null)
 
-        views.setTextViewText(R.id.widget_updated, updatedLine(context, data))
-        renderSafe(context, views, data, amount(SAFE_AMOUNT))
+        val updated = updatedLine(context, data)
+        views.setTextViewText(R.id.widget_updated, updated.orEmpty())
+        renderSafe(context, views, data, amount(SAFE_AMOUNT), opened = updated != null)
         renderBill(context, views, data, amount(BILL_AMOUNT))
         renderCard(context, views, data, amount(CARD_AMOUNT))
 
@@ -47,10 +72,11 @@ class CashdeckWidgetProvider : HomeWidgetProvider() {
         return views
     }
 
-    private fun updatedLine(context: Context, data: SharedPreferences): String {
+    /** Null until something was saved, or after the session ended. */
+    private fun updatedLine(context: Context, data: SharedPreferences): String? {
         val time = data.getString(UPDATED_TIME, null)
         val on = data.getString(UPDATED_ON, null)
-        if (time == null || on == null) return context.getString(R.string.widget_open_app)
+        if (time == null || on == null) return null
         if (on == today()) return context.getString(R.string.widget_updated_at, time)
         return context.getString(R.string.widget_updated_on, dayMonth(on), time)
     }
@@ -60,10 +86,12 @@ class CashdeckWidgetProvider : HomeWidgetProvider() {
         views: RemoteViews,
         data: SharedPreferences,
         amount: String?,
+        opened: Boolean,
     ) {
         views.setTextViewText(R.id.widget_safe_amount, amount ?: context.getString(R.string.widget_unknown))
         val until = data.getString(SAFE_UNTIL, null)
         val caption = when {
+            !opened -> context.getString(R.string.widget_open_app)
             until == null -> ""
             data.getBoolean(SAFE_SHORT, false) -> context.getString(R.string.widget_safe_short, until)
             else -> context.getString(R.string.widget_safe_per_day, until)

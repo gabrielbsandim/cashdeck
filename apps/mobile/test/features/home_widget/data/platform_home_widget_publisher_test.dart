@@ -67,11 +67,27 @@ void main() {
       expect(calls.last.method, 'updateWidget');
     });
 
+    test('registers the background refresh it was given', () async {
+      answer((_) => true);
+
+      await const PlatformHomeWidgetPublisher(_background)
+          .enableBackgroundRefresh();
+      await publisher.enableBackgroundRefresh();
+
+      expect(calls.map((call) => call.method), ['registerBackgroundCallback']);
+      expect(calls.single.arguments, hasLength(2));
+    });
+
     test('swallows a platform failure', () async {
       answer((_) => throw PlatformException(code: 'boom'));
 
       await expectLater(publisher.publish(snapshot), completes);
       await expectLater(publisher.clear(), completes);
+      await expectLater(
+        const PlatformHomeWidgetPublisher(_background)
+            .enableBackgroundRefresh(),
+        completes,
+      );
     });
 
     test('swallows a missing plugin', () async {
@@ -86,7 +102,10 @@ void main() {
 
     await publisher.publish(snapshot);
     await publisher.clear();
+    await publisher.enableBackgroundRefresh();
 
     expect(calls, isEmpty);
   });
 }
+
+Future<void> _background(Uri? uri) async {}

@@ -5,8 +5,7 @@
     <string name="widget_bill_title">Next bill</string>
     <string name="widget_card_title">Current bill</string>
     <string name="widget_open_app">Open the app to update</string>
-    <string name="widget_updated_at">updated at %1$s</string>
-    <string name="widget_updated_on">updated %1$s at %2$s</string>
+    <string name="widget_updated_at">at %1$s</string>
     <string name="widget_safe_per_day">a day until %1$s</string>
     <string name="widget_safe_short">short until %1$s</string>
     <string name="widget_bill_due">%1$s · due %2$s</string>

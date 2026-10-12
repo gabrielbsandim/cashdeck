@@ -23,4 +23,12 @@ void main() {
     expect(publisher.cleared, 1);
     expect(publisher.published, isEmpty);
   });
+
+  test('EnableHomeWidgetRefresh lets the platform wake the app', () async {
+    final publisher = FakeHomeWidgetPublisher();
+
+    await EnableHomeWidgetRefresh(publisher)();
+
+    expect(publisher.enabled, 1);
+  });
 }

@@ -1,24 +1,21 @@
 import 'package:cashdeck/core/di/core_providers.dart';
-import 'package:cashdeck/core/preferences/display_preferences.dart';
-import 'package:cashdeck/core/security/safe_mode.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/home_widget/domain/widget_snapshot.dart';
 import 'package:cashdeck/features/home_widget/home_widget_providers.dart';
+import 'package:cashdeck/features/home_widget/presentation/widget_values_controller.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The widget's numbers from what Início already loads. A saved safe zone
-/// masks them too: the home screen cannot tell where the phone is.
+/// The widget's numbers from what Início already loads, masked unless
+/// [widgetShowsAmountsProvider] allows them.
 final Provider<WidgetSnapshot> homeWidgetSnapshotProvider =
     Provider.autoDispose<WidgetSnapshot>(
       (ref) => WidgetSnapshot.from(
         now: ref.watch(clockProvider).now(),
-        hide:
-            ref.watch(hideAmountsProvider) ||
-            ref.watch(safeModeProvider.select((mode) => mode.enabled)),
+        hide: !ref.watch(widgetShowsAmountsProvider),
         safeToSpend: ref.watch(
           safeToSpendProvider.select((free) => free.value),
         ),
@@ -63,3 +60,7 @@ void clearHomeWidgetOnSignOut(WidgetRef ref) => ref.listenManual(
     ref.read(clearHomeWidgetProvider)().ignore();
   },
 );
+
+/// Lets Android wake the app to refresh the widget while it is closed.
+void enableHomeWidgetRefresh(WidgetRef ref) =>
+    ref.read(enableHomeWidgetRefreshProvider)().ignore();

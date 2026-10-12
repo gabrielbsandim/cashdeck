@@ -6,6 +6,8 @@ import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/features/automation/automation_providers.dart';
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
+import 'package:cashdeck/features/home_widget/home_widget_providers.dart';
+import 'package:cashdeck/features/home_widget/presentation/widget_values_controller.dart';
 import 'package:cashdeck/features/settings/presentation/sections/payments_settings_screen.dart';
 import 'package:cashdeck/features/settings/presentation/sections/security_settings_screen.dart';
 import 'package:cashdeck/features/settings/presentation/settings_screen.dart';
@@ -110,6 +112,47 @@ void main() {
     );
     await settle(tester);
     expect(app.read(displayPreferencesProvider).hideAmounts, isFalse);
+  });
+
+  testWidgets('the widget amounts show only where the widget exists', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.settingsSecurity);
+
+    expect(find.byKey(SecuritySettingsScreen.widgetValuesKey), findsNothing);
+  });
+
+  testWidgets('decides whether the widget shows amounts, locked under '
+      'privacy mode', (tester) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.settingsSecurity,
+      overrides: [homeWidgetAvailableProvider.overrideWithValue(true)],
+    );
+    final row = find.byKey(SecuritySettingsScreen.widgetValuesKey);
+    Switch toggle() => tester.widget<Switch>(
+      find.descendant(of: row, matching: find.byType(Switch)),
+    );
+    expect(find.text(l10n.widgetValuesSetting), findsOneWidget);
+    expect(find.text(l10n.widgetValuesHint), findsOneWidget);
+    expect(toggle().value, isTrue);
+
+    await tester.tap(row);
+    await settle(tester);
+    expect(app.read(widgetValuesProvider), isFalse);
+    expect(toggle().value, isFalse);
+
+    await tester.tap(find.descendant(of: row, matching: find.byType(Switch)));
+    await settle(tester);
+    expect(app.read(widgetValuesProvider), isTrue);
+
+    await tester.tap(find.byKey(SecuritySettingsScreen.hideAmountsKey));
+    await settle(tester);
+    expect(toggle().value, isFalse);
+    expect(toggle().onChanged, isNull);
+    await tester.tap(row);
+    await settle(tester);
+    expect(app.read(widgetValuesProvider), isTrue);
   });
 
   testWidgets('the kill switch pauses at once and resumes after the check', (

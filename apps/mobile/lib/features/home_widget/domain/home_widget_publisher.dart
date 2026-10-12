@@ -8,4 +8,8 @@ abstract interface class HomeWidgetPublisher {
 
   /// Forgets every value, so a signed-out phone shows no numbers.
   Future<void> clear();
+
+  /// Lets the platform wake the app to refresh the widget while it is
+  /// closed.
+  Future<void> enableBackgroundRefresh();
 }

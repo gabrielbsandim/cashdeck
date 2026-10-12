@@ -9,8 +9,8 @@
     <string name="widget_masked">R$ ••••</string>
     <string name="widget_unknown">--</string>
     <string name="widget_open_app">Abra o app para atualizar</string>
-    <string name="widget_updated_at">atualizado às %1$s</string>
-    <string name="widget_updated_on">atualizado em %1$s às %2$s</string>
+    <string name="widget_updated_at">às %1$s</string>
+    <string name="widget_updated_on">%1$s, %2$s</string>
     <string name="widget_safe_per_day">por dia até %1$s</string>
     <string name="widget_safe_short">falta até %1$s</string>
     <string name="widget_bill_due">%1$s · vence %2$s</string>

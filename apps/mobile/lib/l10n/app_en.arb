@@ -1420,5 +1420,7 @@
   "alertTextRecapBody": "{income} came in and {expenses} went out. Tap to see how the month went.",
   "approvalPaidToast": "The bank confirmed and the bill is paid.",
   "approvalPendingToast": "The bank has not confirmed yet. The bill updates on its own once it does.",
-  "approvalUpdatedToast": "The bill was updated with the bank answer."
+  "approvalUpdatedToast": "The bill was updated with the bank answer.",
+  "widgetValuesSetting": "Show amounts on the widget",
+  "widgetValuesHint": "It sits on the home screen, visible without unlocking the app."
 }

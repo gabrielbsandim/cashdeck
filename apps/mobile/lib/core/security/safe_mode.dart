@@ -97,19 +97,7 @@ class SafeModeController extends Notifier<SafeModeState> {
   @override
   SafeModeState build() {
     ref.onDispose(() => _expiry?.cancel());
-    return SafeModeState(zones: _readZones());
-  }
-
-  List<SafeZone> _readZones() {
-    final raw = _store.getString(zonesKey);
-    if (raw == null) return const [];
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return const [];
-      return decoded.map(SafeZone.fromJson).nonNulls.toList();
-    } on FormatException {
-      return const [];
-    }
+    return SafeModeState(zones: savedSafeZones(_store));
   }
 
   /// Runs at launch and every time the app comes back to the screen.
@@ -187,6 +175,20 @@ class SafeModeController extends Notifier<SafeModeState> {
       zonesKey,
       jsonEncode([for (final zone in zones) zone.toJson()]),
     );
+  }
+}
+
+/// The zones [SafeModeController] saved in [store]; the widget's background
+/// refresh reads them without a provider.
+List<SafeZone> savedSafeZones(KeyValueStore store) {
+  final raw = store.getString(SafeModeController.zonesKey);
+  if (raw == null) return const [];
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const [];
+    return decoded.map(SafeZone.fromJson).nonNulls.toList();
+  } on FormatException {
+    return const [];
   }
 }
 
