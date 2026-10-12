@@ -293,6 +293,7 @@ class _Composition extends ConsumerWidget {
               ],
               centerValue: MoneyFormat.format(composition.total, hide: hide),
               centerCaption: l10n.netWorthNet,
+              size: 168,
             ),
           ),
           const SizedBox(height: AppSpacing.md),

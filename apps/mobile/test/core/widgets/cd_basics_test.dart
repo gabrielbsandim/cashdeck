@@ -79,6 +79,24 @@ void main() {
     expect(painter.shouldRepaint(painter), isFalse);
   });
 
+  testWidgets('a long amount stays inside the donut ring', (tester) async {
+    const amount = r'R$ 1.277.863,13';
+    await tester.pumpApp(
+      const Center(
+        child: CdDonut(
+          slices: [CdDonutSlice('Imóveis', 1, Colors.green)],
+          centerValue: amount,
+          centerCaption: 'líquido',
+        ),
+      ),
+    );
+
+    final ring = tester.getRect(find.byType(CustomPaint).last);
+    final text = tester.getRect(find.text(amount));
+    expect(text.width, lessThan(ring.width - 28));
+    expect(text.center.dx, closeTo(ring.center.dx, 1));
+  });
+
   testWidgets('charts draw their labels and legends', (tester) async {
     await tester.pumpApp(
       ListView(

@@ -5,6 +5,8 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
+const _stroke = 14.0;
+
 final class CdDonutSlice {
   const new(this.label, this.fraction, this.color);
 
@@ -45,25 +47,32 @@ class CdDonut extends StatelessWidget {
             dimension: size,
             child: CustomPaint(
               painter: _DonutPainter(slices),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      centerValue,
-                      style: AppTextStyles.titleMd.copyWith(
-                        color: palette.onSurface,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+              // A long amount shrinks to stay inside the ring.
+              child: Padding(
+                padding: const EdgeInsets.all(_stroke + AppSpacing.sm),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          centerValue,
+                          style: AppTextStyles.titleMd.copyWith(
+                            color: palette.onSurface,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                        Text(
+                          centerCaption,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            fontSize: 12,
+                            color: palette.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      centerCaption,
-                      style: AppTextStyles.bodyMd.copyWith(
-                        fontSize: 12,
-                        color: palette.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -111,11 +120,10 @@ class _DonutPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 14.0;
     const gap = 0.03;
     final rect = Rect.fromCircle(
       center: size.center(Offset.zero),
-      radius: size.shortestSide / 2 - stroke / 2,
+      radius: size.shortestSide / 2 - _stroke / 2,
     );
     var start = -math.pi / 2;
     for (final slice in slices) {
@@ -128,7 +136,7 @@ class _DonutPainter extends CustomPainter {
         Paint()
           ..color = slice.color
           ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke,
+          ..strokeWidth = _stroke,
       );
       start += sweep;
     }
