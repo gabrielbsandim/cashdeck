@@ -4,6 +4,7 @@ import 'package:cashdeck/core/session/credential_store.dart';
 import 'package:cashdeck/core/session/server_credentials.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home_widget/domain/home_widget_publisher.dart';
 import 'package:cashdeck/features/home_widget/domain/widget_settings.dart';
 import 'package:cashdeck/features/home_widget/domain/widget_snapshot.dart';
@@ -69,7 +70,7 @@ final class RefreshHomeWidget {
     WidgetSettings settings,
   ) async {
     final (free, bills, overview) = await (
-      LoadSafeToSpend(sources.outlook)(),
+      LoadSafeToSpend(sources.outlook)(EntityKind.personal),
       ListBills(sources.bills)(settings.scope),
       LoadInsightsOverview(sources.insights)(
         settings.scope,
