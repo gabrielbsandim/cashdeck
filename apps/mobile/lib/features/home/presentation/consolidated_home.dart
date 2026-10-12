@@ -15,6 +15,7 @@ import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_investments_card.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,6 +75,7 @@ class ConsolidatedHome extends ConsumerWidget {
           ],
         ),
         const HomeInvestmentsCard(),
+        const NetWorthCard(),
         _MonthCard(summary: summary, month: monthName(context, today)),
         if (summary.transfers.isNotEmpty)
           Column(

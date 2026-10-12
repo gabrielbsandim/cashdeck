@@ -35,7 +35,7 @@ import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
 /// Início stacks the insight cards above the bills, budgets and alerts.
-const double _homeHeight = 4600;
+const double _homeHeight = 5400;
 
 void main() {
   testWidgets('Início Pessoal shows balance, reserve, forecast and alerts', (
