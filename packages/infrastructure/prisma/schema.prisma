@@ -194,6 +194,8 @@ model Institution {
   connectorId  Int?    @map("connector_id")
   imageUrl     String? @map("image_url")
   primaryColor String? @map("primary_color")
+  // Deep link or URL scheme that opens the bank's app, set per tenant.
+  appLink      String? @map("app_link")
 
   @@unique([tenantId, name])
   @@map("institutions")

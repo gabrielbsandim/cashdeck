@@ -72,6 +72,7 @@ PaymentAttempt attemptFromJson(JsonMap json) => PaymentAttempt(
   at: readDateTime(json, 'at'),
   outcome: lookupValue(_outcomes, readString(json, 'outcome')),
   reason: readOptionalString(json, 'reason'),
+  appLink: readOptionalString(json, 'appLink'),
   method: switch (readOptionalString(json, 'method')) {
     null => null,
     final raw => lookupValue(_methods, raw),

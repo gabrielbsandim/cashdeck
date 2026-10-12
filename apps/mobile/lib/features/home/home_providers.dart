@@ -28,3 +28,11 @@ final approveInvoiceDraftProvider = Provider<ApproveInvoiceDraft>(
 final issueInvoiceForReceiptProvider = Provider<IssueInvoiceForReceipt>(
   (ref) => IssueInvoiceForReceipt(ref.watch(homeRepositoryProvider)),
 );
+
+final loadInvoiceDraftProvider = Provider<LoadInvoiceDraft>(
+  (ref) => LoadInvoiceDraft(ref.watch(homeRepositoryProvider)),
+);
+
+final updateInvoiceDraftProvider = Provider<UpdateInvoiceDraft>(
+  (ref) => UpdateInvoiceDraft(ref.watch(homeRepositoryProvider)),
+);

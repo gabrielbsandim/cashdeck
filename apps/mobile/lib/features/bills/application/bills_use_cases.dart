@@ -90,6 +90,15 @@ final class SetAutoDebit {
       _repository.setAutoDebit(id, enabled: enabled);
 }
 
+/// Checks a waiting payment with its rail now.
+final class ReconcileBill {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<Result<Bill>> call(String id) => _repository.reconcile(id);
+}
+
 /// The open bills that wait on the user: overdue, waiting for a confirmation
 /// or a bank approval, or ready on step 3. The Contas a pagar badge counts
 /// these.

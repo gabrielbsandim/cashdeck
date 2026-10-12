@@ -4,6 +4,7 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/home/data/home_dtos.dart';
 import 'package:cashdeck/features/home/domain/home_repository.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 import 'package:dio/dio.dart';
 
 final class ApiHomeRepository implements HomeRepository {
@@ -12,6 +13,8 @@ final class ApiHomeRepository implements HomeRepository {
   final Dio _dio;
 
   static const path = '/api/v1/home';
+
+  static const invoicesPath = '/api/v1/invoices';
 
   Future<JsonMap> _get(String section) async {
     final response = await _dio.get<Object?>('$path/$section');
@@ -57,4 +60,25 @@ final class ApiHomeRepository implements HomeRepository {
           await _post('unbilled/${Uri.encodeComponent(receiptId)}/invoice'),
         ),
       );
+
+  @override
+  Future<Result<InvoiceDraftDetail>> invoiceDraft(String id) =>
+      guardRequest(() async {
+        final response = await _dio.get<Object?>(
+          '$invoicesPath/${Uri.encodeComponent(id)}',
+        );
+        return invoiceDraftFromJson(asJsonMap(unwrapData(response.data)));
+      });
+
+  @override
+  Future<Result<CompanySummary>> updateDraft(
+    String id,
+    InvoiceDraftEdit edit,
+  ) => guardRequest(() async {
+    await _dio.patch<Object?>(
+      '$invoicesPath/${Uri.encodeComponent(id)}',
+      data: invoiceDraftEditToJson(edit),
+    );
+    return companyFromJson(await _get('company'));
+  });
 }

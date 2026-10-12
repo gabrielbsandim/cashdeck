@@ -28,6 +28,7 @@ import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home/data/api_home_repository.dart';
 import 'package:cashdeck/features/home/data/home_dtos.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
 import 'package:cashdeck/features/invoices/data/api_issuer_repository.dart';
 import 'package:cashdeck/features/invoices/domain/issuer_setup.dart';
@@ -387,6 +388,64 @@ void main() {
       );
       expect(await repository.approveDraft('d 1'), isA<Ok<CompanySummary>>());
       expect(await repository.issueInvoiceFor('t1'), isA<Ok<CompanySummary>>());
+    });
+
+    test('reads a draft and patches only what changed', () async {
+      final dio = _api({
+        'GET /api/v1/invoices/d%201': {
+          'id': 'd 1',
+          'client': 'Cliente Exemplo',
+          'clientTaxId': null,
+          'clientCountry': 'BR',
+          'description': 'Consultoria',
+          'serviceCode': '01.06',
+          'amount': _money(5000),
+          'status': 'DRAFT',
+          'number': null,
+          'competence': '2026-10',
+          'issueOn': '2026-10-10',
+          'recurring': true,
+          'isExport': false,
+          'pdfUrl': null,
+        },
+        'PATCH /api/v1/invoices/d%201': <String, Object?>{},
+        'GET /api/v1/home/company': _company,
+      });
+      final repository = ApiHomeRepository(dio);
+
+      expect(
+        _ok(await repository.invoiceDraft('d 1')),
+        const InvoiceDraftDetail(
+          id: 'd 1',
+          customer: 'Cliente Exemplo',
+          description: 'Consultoria',
+          amount: Money(5000),
+          issueOn: CalendarDate(2026, 10, 10),
+        ),
+      );
+      final summary = await repository.updateDraft(
+        'd 1',
+        const InvoiceDraftEdit(
+          customer: 'Outro Cliente',
+          amount: Money(6000),
+          issueOn: CalendarDate(2026, 10, 12),
+        ),
+      );
+      expect(summary, isA<Ok<CompanySummary>>());
+      expect(_sent(dio, 1), {
+        'client': {'name': 'Outro Cliente'},
+        'amountCents': 6000,
+        'issueOn': '2026-10-12',
+      });
+      expect(
+        invoiceDraftEditToJson(const InvoiceDraftEdit(description: 'Nova')),
+        {'description': 'Nova'},
+      );
+      expect(_calls(dio), [
+        'GET /api/v1/invoices/d%201',
+        'PATCH /api/v1/invoices/d%201',
+        'GET /api/v1/home/company',
+      ]);
     });
 
     test('a reserve without a CDI rate keeps it null', () {

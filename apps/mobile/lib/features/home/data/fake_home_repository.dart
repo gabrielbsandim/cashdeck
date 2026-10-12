@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/home/domain/home_repository.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 
 /// Fictional balances around today. Approved drafts and issued invoices
 /// live in memory for the session.
@@ -14,6 +15,7 @@ final class FakeHomeRepository implements HomeRepository {
   final Clock _clock;
   final Duration latency;
   final Set<String> _done = {};
+  final Map<String, InvoiceDraftDetail> _saved = {};
 
   static const _personalBalance = Money(1_874_230);
   static const _companyCash = Money(4_618_000);
@@ -106,14 +108,15 @@ final class FakeHomeRepository implements HomeRepository {
       dasDue: today.addDays(43),
       inss: TaxEstimate(amount: const Money(93_231), due: today.addDays(11)),
       drafts: [
-        if (!_done.contains('draft-pomar'))
-          InvoiceDraft(
-            id: 'draft-pomar',
-            customer: 'Pomar Digital',
-            amount: const Money(800_000),
-            recurring: true,
-            issueOn: today.addDays(2),
-          ),
+        for (final draft in _drafts())
+          if (!_done.contains(draft.id))
+            InvoiceDraft(
+              id: draft.id,
+              customer: draft.customer,
+              amount: draft.amount,
+              recurring: true,
+              issueOn: draft.issueOn,
+            ),
       ],
       unbilled: [
         if (!_done.contains('receipt-pix-lia'))
@@ -197,4 +200,41 @@ final class FakeHomeRepository implements HomeRepository {
   @override
   Future<Result<CompanySummary>> issueInvoiceFor(String receiptId) =>
       _settle(receiptId, [for (final r in _company().unbilled) r.id]);
+
+  List<InvoiceDraftDetail> _drafts() => [
+    for (final draft in [
+      InvoiceDraftDetail(
+        id: 'draft-pomar',
+        customer: 'Pomar Digital',
+        description: 'Desenvolvimento de software',
+        amount: const Money(800_000),
+        issueOn: _today.addDays(2),
+      ),
+    ])
+      _saved[draft.id] ?? draft,
+  ];
+
+  @override
+  Future<Result<InvoiceDraftDetail>> invoiceDraft(String id) async {
+    await _wait();
+    final draft = _drafts().where((draft) => draft.id == id).firstOrNull;
+    if (draft == null || _done.contains(id)) {
+      return const Err(NotFoundFailure());
+    }
+    return Ok(draft);
+  }
+
+  @override
+  Future<Result<CompanySummary>> updateDraft(
+    String id,
+    InvoiceDraftEdit edit,
+  ) async {
+    switch (await invoiceDraft(id)) {
+      case Ok(:final value):
+        _saved[id] = edit.applyTo(value);
+        return Ok(_company());
+      case Err(:final failure):
+        return Err(failure);
+    }
+  }
 }

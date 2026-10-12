@@ -183,6 +183,7 @@ final class FakeBillsRepository implements BillsRepository {
             rail: 'Banco Atlântico',
             at: _morning(today, minutes: 31),
             outcome: AttemptOutcome.waiting,
+            appLink: 'atlantico://aprovacoes',
           ),
         ],
       ),
@@ -326,4 +327,8 @@ final class FakeBillsRepository implements BillsRepository {
     }
     return found;
   }
+
+  /// No bank answers here, so a waiting bill keeps waiting.
+  @override
+  Future<Result<Bill>> reconcile(String id) => get(id);
 }

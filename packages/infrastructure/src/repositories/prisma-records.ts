@@ -73,6 +73,7 @@ type InstitutionRow = {
   connectorId: number | null
   imageUrl: string | null
   primaryColor: string | null
+  appLink: string | null
 }
 
 const institutionFromRow = (row: InstitutionRow): Institution => ({
@@ -83,6 +84,7 @@ const institutionFromRow = (row: InstitutionRow): Institution => ({
   connectorId: row.connectorId,
   imageUrl: row.imageUrl,
   primaryColor: row.primaryColor,
+  appLink: row.appLink,
 })
 
 export class PrismaInstitutionRepository implements InstitutionRepository {
@@ -91,6 +93,11 @@ export class PrismaInstitutionRepository implements InstitutionRepository {
   async findById(tenantId: string, id: string): Promise<Institution | null> {
     const row = await this.db.institution.findFirst({ where: { tenantId, id } })
     return row && institutionFromRow(row)
+  }
+
+  async list(tenantId: string): Promise<Institution[]> {
+    const rows = await this.db.institution.findMany({ where: { tenantId } })
+    return rows.map(institutionFromRow)
   }
 
   async ensure(candidate: Institution): Promise<Institution> {

@@ -8,6 +8,7 @@ import {
 import { NotFoundError } from '@/errors/errors'
 import { FakePaymentRail } from '@/testing/providers'
 import { alert } from '@/testing/deps.test-helpers'
+import { RAIL_NAMES } from '@/use-cases/alert-events'
 import { NOW, scenario, TENANT, trust } from '@/testing/scenario.test-helpers'
 import {
   makeDescribeBill,
@@ -53,6 +54,66 @@ describe('bill queries and manual payment', () => {
       amount: { cents: 100 },
     })
     await expect(getBill(TENANT, 'nope')).rejects.toThrow(NotFoundError)
+  })
+
+  it('names the bank app of an attempt that waits on an approval', async () => {
+    const deps = scenario()
+    await deps.bills.save({
+      ...seed('approval', '2026-10-20'),
+      status: 'AWAITING_BANK_APPROVAL',
+    })
+    const pending = {
+      billId: 'approval',
+      stepIndex: 0,
+      amount: Money.of(100),
+      outcome: 'PENDING_APPROVAL' as const,
+      reason: null,
+      externalId: 'pix:approval',
+      at: NOW,
+      method: 'PIX' as const,
+    }
+    await deps.payments.addAttempt(TENANT, {
+      ...pending,
+      id: 'api',
+      rail: 'ASAAS',
+      mode: 'AUTOMATIC',
+      outcome: 'FAILED',
+      idempotencyKey: 'approval:0:PIX',
+    })
+    await deps.payments.addAttempt(TENANT, {
+      ...pending,
+      id: 'bank',
+      stepIndex: 1,
+      rail: 'C6_EMPRESAS',
+      mode: 'BANK_APPROVAL',
+      idempotencyKey: 'approval:1:PIX',
+    })
+    const getBill = makeGetBill(deps)
+    const unlinked = await getBill(TENANT, 'approval')
+    expect(unlinked.attempts.map(attempt => attempt.appLink)).toEqual([
+      null,
+      null,
+    ])
+
+    await deps.institutions.ensure({
+      id: 'bank',
+      tenantId: TENANT,
+      name: RAIL_NAMES.C6_EMPRESAS,
+      manual: false,
+      appLink: 'bankapp://approvals',
+    })
+    await deps.institutions.ensure({
+      id: 'pay',
+      tenantId: TENANT,
+      name: RAIL_NAMES.ASAAS,
+      manual: false,
+      appLink: 'payapp://',
+    })
+    const linked = await getBill(TENANT, 'approval')
+    expect(linked.attempts.map(attempt => attempt.appLink)).toEqual([
+      null,
+      'bankapp://approvals',
+    ])
   })
 
   it('says why a bill waits for confirmation', async () => {

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { createPaymentPlan, Money, type PaymentAttempt } from '@cashdeck/domain'
+import { NotFoundError } from '@/errors/errors'
 import { type RailStatusScope } from '@/ports/rail-status'
 import { bill, fullDeps } from '@/testing/deps.test-helpers'
 import { FakeRailStatusReader } from '@/testing/rail-status'
 import { NOW, TENANT } from '@/testing/scenario.test-helpers'
 import {
   IN_FLIGHT_GRACE_MS,
+  makeReconcileBill,
   makeReconcilePayments,
   referenceMatches,
 } from '@/use-cases/reconcile-payments'
@@ -281,5 +283,66 @@ describe('reconcilePayments', () => {
     expect(referenceMatches('pay-1/tx-2', 'pay-1')).toBe(true)
     expect(referenceMatches('plain', 'plain')).toBe(true)
     expect(referenceMatches('pix:abcd', 'abc')).toBe(false)
+  })
+})
+
+describe('reconcileBill', () => {
+  it('settles one approved payment the way the cron does', async () => {
+    const c6 = new FakeRailStatusReader('C6_EMPRESAS')
+      .willReport('pix:approved', reported('PAID'))
+      .willReport('pix:other', reported('PAID'))
+    const deps = fullDeps({ railStatus: [c6] })
+    for (const id of ['approved', 'other']) {
+      await deps.bills.save(
+        bill({ id, entityId: 'pj', status: 'AWAITING_BANK_APPROVAL' }),
+      )
+      await deps.payments.addAttempt(
+        TENANT,
+        attempt({
+          billId: id,
+          rail: 'C6_EMPRESAS',
+          mode: 'BANK_APPROVAL',
+          outcome: 'PENDING_APPROVAL',
+        }),
+      )
+    }
+    const reconcile = makeReconcileBill(deps)
+    const paid = await reconcile(TENANT, 'approved')
+    expect(paid).toMatchObject({ status: 'PAID', paidBy: 'RAIL' })
+    expect(c6.asked).toEqual(['pix:approved'])
+    expect((await deps.bills.findById(TENANT, 'other'))?.status).toBe(
+      'AWAITING_BANK_APPROVAL',
+    )
+
+    expect((await reconcile(TENANT, 'approved')).status).toBe('PAID')
+    expect(c6.asked).toHaveLength(1)
+  })
+
+  it('leaves a payment the bank still holds waiting', async () => {
+    const c6 = new FakeRailStatusReader('C6_EMPRESAS').willReport(
+      'pix:held',
+      reported('SUBMITTED'),
+    )
+    const deps = fullDeps({ railStatus: [c6] })
+    await deps.bills.save(
+      bill({ id: 'held', entityId: 'pj', status: 'AWAITING_BANK_APPROVAL' }),
+    )
+    await deps.payments.addAttempt(
+      TENANT,
+      attempt({
+        billId: 'held',
+        rail: 'C6_EMPRESAS',
+        mode: 'BANK_APPROVAL',
+        outcome: 'PENDING_APPROVAL',
+      }),
+    )
+    const held = await makeReconcileBill(deps)(TENANT, 'held')
+    expect(held.status).toBe('AWAITING_BANK_APPROVAL')
+  })
+
+  it('reports a bill that does not exist', async () => {
+    await expect(
+      makeReconcileBill(fullDeps())(TENANT, 'missing'),
+    ).rejects.toBeInstanceOf(NotFoundError)
   })
 })

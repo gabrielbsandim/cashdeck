@@ -34,4 +34,8 @@ abstract interface class BillsRepository {
 
   /// Marks the bill as debited by the bank on its own, or undoes it.
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled});
+
+  /// Has the server ask the rail about a waiting payment now, instead of on
+  /// its next round; a bill that waits on nothing comes back as it is.
+  Future<Result<Bill>> reconcile(String id);
 }

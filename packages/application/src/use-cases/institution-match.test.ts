@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type ProviderConnector } from '@/ports/providers'
 import {
+  appLinkFor,
   institutionKey,
   isAggregator,
   matchConnector,
@@ -58,5 +59,26 @@ describe('institution match', () => {
     expect(matchConnector('MeuPluggy', CONNECTORS)).toBeNull()
     expect(matchConnector('PRODUTO SEM BANCO', CONNECTORS)).toBeNull()
     expect(matchConnector('S.A.', [connector(6, 'S.A.')])).toBeNull()
+  })
+})
+
+describe('app link', () => {
+  const institution = (name: string, appLink?: string | null) => ({
+    id: name,
+    tenantId: 't1',
+    name,
+    manual: false,
+    appLink,
+  })
+
+  it('reads the link of the institution a rail is named after', () => {
+    const institutions = [
+      institution('Banco Exemplo', 'exemplo://pay'),
+      institution('Banco do Norte'),
+      institution('Norte Empresas', null),
+    ]
+    expect(appLinkFor('Exemplo Empresas', institutions)).toBe('exemplo://pay')
+    expect(appLinkFor('Norte Empresas', institutions)).toBeNull()
+    expect(appLinkFor('Exemplo', [])).toBeNull()
   })
 })

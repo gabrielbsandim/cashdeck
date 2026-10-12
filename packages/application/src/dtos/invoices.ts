@@ -101,6 +101,30 @@ export const createInvoiceTemplateSchema = z.object({
 
 export const updateInvoiceTemplateSchema = z.object(templateFields).partial()
 
+export const updateInvoiceDraftSchema = z
+  .object({
+    client: templateClientSchema,
+    description: templateFields.description,
+    serviceCode: templateFields.serviceCode,
+    amountCents: templateFields.amountCents,
+    currency: templateFields.currency,
+    issueOn: isoDate,
+    competence: isoMonth,
+  })
+  .partial()
+  .refine(input => Object.values(input).some(value => value !== undefined), {
+    message: 'Send at least one field to change.',
+  })
+
+export const invoiceDetailViewSchema = invoiceViewSchema.extend({
+  clientTaxId: z.string().nullable(),
+  clientCountry: z.string(),
+  description: z.string(),
+  serviceCode: z.string(),
+})
+
+export type InvoiceDetailView = z.infer<typeof invoiceDetailViewSchema>
+
 export const invoiceTemplateViewSchema = z.object({
   id: z.string(),
   client: z.object({

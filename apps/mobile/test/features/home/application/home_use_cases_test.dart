@@ -8,6 +8,7 @@ import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home/application/home_use_cases.dart';
 import 'package:cashdeck/features/home/data/fake_home_repository.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +67,42 @@ void main() {
     );
   });
 
+  test('a draft opens, saves what changed and skips an empty edit', () async {
+    final load = LoadInvoiceDraft(repository);
+    final update = UpdateInvoiceDraft(repository);
+    final draft = valueOf(await load('draft-pomar'));
+
+    expect(draft.customer, 'Pomar Digital');
+    final unchanged = valueOf(
+      await update('missing', const InvoiceDraftEdit()),
+    );
+    expect(unchanged.drafts.single.customer, 'Pomar Digital');
+
+    final saved = valueOf(
+      await update(
+        'draft-pomar',
+        const InvoiceDraftEdit(customer: 'Pomar Studio', amount: Money(900)),
+      ),
+    );
+    expect(saved.drafts.single.customer, 'Pomar Studio');
+    expect(saved.drafts.single.amount, const Money(900));
+    expect(valueOf(await load('draft-pomar')).description, draft.description);
+    expect(
+      await update('missing', const InvoiceDraftEdit(customer: 'X')),
+      const Err<CompanySummary>(NotFoundFailure()),
+    );
+    expect(
+      await load('missing'),
+      const Err<InvoiceDraftDetail>(NotFoundFailure()),
+    );
+
+    await ApproveInvoiceDraft(repository)('draft-pomar');
+    expect(
+      await load('draft-pomar'),
+      const Err<InvoiceDraftDetail>(NotFoundFailure()),
+    );
+  });
+
   test('both backends read the fake summary', () {
     final container = ProviderContainer(
       overrides: [clockProvider.overrideWithValue(FixedClock(testNow))],
@@ -81,6 +118,11 @@ void main() {
     expect(
       container.read(issueInvoiceForReceiptProvider),
       isA<IssueInvoiceForReceipt>(),
+    );
+    expect(container.read(loadInvoiceDraftProvider), isA<LoadInvoiceDraft>());
+    expect(
+      container.read(updateInvoiceDraftProvider),
+      isA<UpdateInvoiceDraft>(),
     );
   });
 }

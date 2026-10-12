@@ -39,12 +39,4 @@ final class PlatformLinkOpener implements LinkOpener {
   }
 }
 
-/// Opens the first of [links] the phone can handle; false when none could.
-Future<bool> openFirst(LinkOpener opener, Iterable<Uri> links) async {
-  for (final link in links) {
-    if (await opener.open(link)) return true;
-  }
-  return false;
-}
-
 final linkOpenerProvider = Provider<LinkOpener>((ref) => FakeLinkOpener());

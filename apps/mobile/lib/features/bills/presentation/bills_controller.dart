@@ -148,6 +148,15 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
+  /// The server checks the approval with the bank now; the caller reads the
+  /// result to say whether it was paid, still waits or moved on.
+  Future<Result<Bill>> reconcile() async {
+    final result = await ref.read(reconcileBillProvider).call(billId);
+    ref.invalidate(billsControllerProvider);
+    _apply(result);
+    return result;
+  }
+
   AppFailure? _apply(Result<Bill> result) {
     switch (result) {
       case Ok(:final value):

@@ -71,6 +71,10 @@ export class InMemoryInstitutionRepository
   extends TenantMap<Institution>
   implements InstitutionRepository
 {
+  async list(tenantId: string): Promise<Institution[]> {
+    return this.of(tenantId)
+  }
+
   async ensure(candidate: Institution): Promise<Institution> {
     const existing = this.of(candidate.tenantId).find(
       row => row.name === candidate.name,

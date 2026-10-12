@@ -96,6 +96,14 @@ final class ApiBillsRepository implements BillsRepository {
         );
         return billFromJson(asJsonMap(unwrapData(response.data)));
       });
+
+  @override
+  Future<Result<Bill>> reconcile(String id) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      '$path/${Uri.encodeComponent(id)}/reconcile',
+    );
+    return billFromJson(asJsonMap(unwrapData(response.data)));
+  });
 }
 
 /// Where the walk over [ApiBillsRepository.statusOrder] stopped: the status
