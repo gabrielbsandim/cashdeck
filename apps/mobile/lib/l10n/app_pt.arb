@@ -326,7 +326,6 @@
   },
   "billConfirmedToast": "Confirmado. O pagamento sai no passo 1.",
   "openBankToast": "Abra o app do banco para aprovar o pagamento.",
-  "approvalCheckToast": "Vamos conferir com o banco e atualizar a conta.",
   "pixCopyPasteLabel": "Pix copia e cola",
   "confirmBillTitle": "Confirmar {payee}?",
   "@confirmBillTitle": {
@@ -669,7 +668,6 @@
     }
   },
   "approveAndIssueButton": "Aprovar e emitir",
-  "draftEditSoon": "A edição de rascunhos chega com o emissor de notas.",
   "invoiceIssuedToast": "Nota emitida para {customer}",
   "@invoiceIssuedToast": {
     "placeholders": {
@@ -3584,5 +3582,22 @@
     }
   },
   "widgetValuesSetting": "Mostrar valores no widget",
-  "widgetValuesHint": "Fica na tela inicial, visível sem desbloquear o app."
+  "widgetValuesHint": "Fica na tela inicial, visível sem desbloquear o app.",
+  "draftEditTitle": "Editar rascunho",
+  "draftCustomer": "Cliente",
+  "draftDescription": "Descrição do serviço",
+  "draftAmount": "Valor",
+  "draftIssueOn": "Emissão em {date}",
+  "@draftIssueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "draftSave": "Salvar rascunho",
+  "draftSavedToast": "Rascunho salvo.",
+  "draftCustomerMissing": "Informe o cliente.",
+  "draftDescriptionMissing": "Descreva o serviço.",
+  "draftAmountMissing": "Informe um valor maior que zero."
 }

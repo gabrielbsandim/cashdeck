@@ -687,6 +687,13 @@ when a bill is captured, so `plan` is never null.
   `paidBy: "USER"` can be undone; one paid by a rail or settled from the
   statement answers `409 INVALID_TRANSITION`. A bill that is not `PAID` comes
   back unchanged. Returns `BillView`.
+- `POST /bills/{id}/reconcile`: no body. The "I already approved" check for
+  one bill: asks the rail for the status of its submitted Pix, boleto or
+  in-flight attempt, the same way the `reconcile-payments` cron does, and
+  returns the updated `BillDetailView` (`PAID`, still
+  `AWAITING_BANK_APPROVAL`, or moved to the assisted step). A bill that is not
+  `PROCESSING` or `AWAITING_BANK_APPROVAL` comes back unchanged without a rail
+  call, so repeating it is safe. 404 for a bill of another tenant.
 - `PUT /bills/{id}/auto-debit`: body `{ enabled: bool }`. Marks every
   recipient of the bill, for its entity, as debited by the bank by itself, so
   this bill and the next ones from that payee carry `autoDebit: true`. The
@@ -712,7 +719,14 @@ when a bill is captured, so `plan` is never null.
 
 `BillDetailView` adds
 `plan: { steps: [{ mode: "AUTOMATIC"|"BANK_APPROVAL"|"ASSISTED", rail: RailId, method: "PIX"|"BOLETO" }], currentStep: int }`
-and `attempts: [{ id, stepIndex, rail, mode, method: "PIX"|"BOLETO", amount, outcome: "PAID"|"SUBMITTED"|"PENDING_APPROVAL"|"ASSISTED"|"FAILED"|"IN_FLIGHT", reason, externalId, at }]`.
+and `attempts: [{ id, stepIndex, rail, mode, method: "PIX"|"BOLETO", amount, outcome: "PAID"|"SUBMITTED"|"PENDING_APPROVAL"|"ASSISTED"|"FAILED"|"IN_FLIGHT", reason, externalId, appLink, at }]`.
+
+`appLink` (string or null) is set only on a `BANK_APPROVAL` attempt: the deep
+link that opens the bank app where the batch is approved. It comes from the
+`app_link` column of the tenant's `institutions` row whose name matches the
+rail, so it is configuration, not code; there is no endpoint to set it yet. Null
+when no institution matches or the column is empty, and the app then explains
+where to approve instead.
 
 `IN_FLIGHT` is a rail call whose answer was lost (a crash, a timeout, a 5xx).
 The bill shows as `PROCESSING` and is never sent again: the ladder and the
@@ -930,6 +944,15 @@ as an authorized redirect URI of the Google OAuth client.
 - `POST /invoices/issuer/test`: `{ protocol: string, elapsedMs: int }`, or 502
   `PROVIDER_ERROR` with the issuer's message.
 - `GET /invoices?status=&month=&cursor=&limit=`: `[{ id, client: string, amount: Money, status: "DRAFT"|"PROCESSING"|"ISSUED"|"REJECTED"|"CANCELLED", number: string | null, competence: month, issueOn: date, recurring: bool, isExport: bool, pdfUrl: string | null }]`.
+- `GET /invoices/{id}`: the invoice view plus `clientTaxId`, `clientCountry`,
+  `description` and `serviceCode`, for the draft editor. 404 for an invoice of
+  another entity.
+- `PATCH /invoices/{id}`: body, any non-empty subset of
+  `{ client: { name, taxId?, country? }, description, serviceCode, amountCents, currency, issueOn: date, competence: month }`.
+  Only a `DRAFT` can be edited (any other status answers 422). The client is
+  matched or created as on a template, `isExport` follows the client's
+  country, and an FX rate is kept only while the currency stays the same.
+  Writes an `invoice.update` audit event. Returns the detail view.
 - `POST /invoices/{id}/cancel`: body `{ reason: string }` (15 to 255
   characters). A `DRAFT` is cancelled locally; an `ISSUED` invoice is cancelled
   at the issuer and takes the status it reports. Any other status answers 422.

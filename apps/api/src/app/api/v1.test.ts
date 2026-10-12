@@ -35,6 +35,11 @@ import { POST as markPaid } from '@/app/api/v1/bills/[id]/mark-paid/route'
 import { GET as receipt } from '@/app/api/v1/bills/[id]/receipt/route'
 import { GET as receiptPdf } from '@/app/api/v1/bills/[id]/receipt/pdf/route'
 import { POST as attach } from '@/app/api/v1/bills/[id]/attachments/route'
+import { POST as reconcileBill } from '@/app/api/v1/bills/[id]/reconcile/route'
+import {
+  GET as getInvoice,
+  PATCH as updateInvoice,
+} from '@/app/api/v1/invoices/[id]/route'
 import { GET as attachment } from '@/app/api/v1/bills/[id]/attachments/[attachmentId]/route'
 import { POST as lookup } from '@/app/api/v1/open-finance/lookup/route'
 import {
@@ -285,6 +290,40 @@ describe('bills, receipts and attachments', () => {
   })
 })
 
+describe('reconciling one bill', () => {
+  it('returns a bill that is not waiting as it is, and a missing one as 404', async () => {
+    const created = await call(h(captureBill), 'POST', {
+      body: { entityId: 'company', paymentCode: BOLETO_LINE },
+    })
+    const id = created.body.data.id
+    const reconciled = await call(h(reconcileBill), 'POST', { params: { id } })
+    expect(reconciled.status).toBe(200)
+    expect(reconciled.body.data).toMatchObject({ id, status: 'OPEN' })
+    expect(reconciled.body.data.attempts).toEqual([])
+    const missing = await call(h(reconcileBill), 'POST', {
+      params: { id: 'missing' },
+    })
+    expect(missing.status).toBe(404)
+  })
+
+  it('checks a bill waiting on the bank and answers its detail', async () => {
+    const created = await call(h(captureBill), 'POST', {
+      body: { entityId: 'company', paymentCode: BOLETO_LINE },
+    })
+    const id = created.body.data.id
+    const deps = getContainer().deps
+    const stored = await deps.bills.findById('local', id)
+    await deps.bills.save({
+      ...stored!,
+      status: 'AWAITING_BANK_APPROVAL',
+      dueDate: '2099-12-31',
+    })
+    const reconciled = await call(h(reconcileBill), 'POST', { params: { id } })
+    expect(reconciled.status).toBe(200)
+    expect(reconciled.body.data.status).toBe('AWAITING_BANK_APPROVAL')
+  })
+})
+
 describe('open finance', () => {
   it('answers not configured without the aggregator', async () => {
     const found = await call(h(lookup), 'POST', { body: { itemId: ITEM } })
@@ -500,10 +539,66 @@ describe('invoices and payroll', () => {
       xmlUrl: null,
       createdAt: new Date(),
     } as never)
+    const read = await call(h(getInvoice), 'GET', { params: { id: 'draft' } })
+    expect(read.body.data).toMatchObject({
+      client: 'Client',
+      description: 'Work',
+      serviceCode: '01.01',
+    })
+    const edited = await call(h(updateInvoice), 'PATCH', {
+      params: { id: 'draft' },
+      body: { amountCents: 2500, description: 'Maintenance' },
+    })
+    expect(edited.status).toBe(200)
+    expect(edited.body.data).toMatchObject({
+      amount: { cents: 2500, currency: 'BRL' },
+      description: 'Maintenance',
+      status: 'DRAFT',
+    })
+    const empty = await call(h(updateInvoice), 'PATCH', {
+      params: { id: 'draft' },
+      body: {},
+    })
+    expect(empty.status).toBe(422)
     const approved = await call(h(approveDraft), 'POST', {
       params: { invoiceId: 'draft' },
     })
     expect(approved.status).toBeGreaterThanOrEqual(200)
+    const missing = await call(h(updateInvoice), 'PATCH', {
+      params: { id: 'missing' },
+      body: { amountCents: 1 },
+    })
+    expect(missing.status).toBe(404)
+  })
+
+  it('refuses to edit an invoice that is not a draft', async () => {
+    const deps = getContainer().deps
+    await deps.invoices.save({
+      id: 'issued',
+      tenantId: 'local',
+      entityId: 'company',
+      clientId: 'client',
+      templateId: null,
+      issuer: 'notaas',
+      externalId: 'external',
+      number: '7',
+      status: 'ISSUED',
+      amount: Money.of(1000),
+      fxRate: null,
+      isExport: false,
+      competence: '2026-10',
+      issueOn: '2026-10-08',
+      description: 'Work',
+      serviceCode: '01.01',
+      pdfUrl: null,
+      xmlUrl: null,
+      createdAt: new Date(),
+    })
+    const refused = await call(h(updateInvoice), 'PATCH', {
+      params: { id: 'issued' },
+      body: { amountCents: 1 },
+    })
+    expect(refused.status).toBe(422)
   })
 })
 

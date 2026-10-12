@@ -156,7 +156,16 @@ void main() {
           'outcome': entry.key,
         });
         expect(attempt.outcome, entry.value);
+        expect(attempt.appLink, isNull);
       }
+      final linked = attemptFromJson({
+        'mode': 'BANK_APPROVAL',
+        'rail': 'C6_EMPRESAS',
+        'at': '2026-10-08T15:00:00Z',
+        'outcome': 'PENDING_APPROVAL',
+        'appLink': 'bankapp://approvals',
+      });
+      expect(linked.appLink, 'bankapp://approvals');
     });
 
     test('an unknown enum value is a format error', () {
@@ -333,6 +342,20 @@ void main() {
       expect(billFromJson(billJson()).autoDebit, isFalse);
     });
 
+    test('asks the server to reconcile one bill now', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {'data': billJson(status: 'PAID')}),
+      );
+
+      final bill =
+          (await ApiBillsRepository(dio).reconcile('bill-1') as Ok<Bill>).value;
+
+      expect(bill.status, BillStatus.paid);
+      final request = adapterOf(dio).requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/api/v1/bills/bill-1/reconcile');
+    });
+
     test('maps a 404 and a malformed body', () async {
       final missing = stubDio((_) => const StubResponse(404));
       final malformed = stubDio((_) => const StubResponse(200, {'data': 1}));
@@ -453,6 +476,23 @@ void main() {
       expect(paid.debitsItself, isFalse);
       expect(
         await local.setAutoDebit('missing', enabled: true),
+        const Err<Bill>(NotFoundFailure()),
+      );
+    });
+
+    test('a reconcile keeps a waiting bill waiting', () async {
+      final local = FakeBillsRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+
+      final waiting =
+          (await local.reconcile('bill-coworking') as Ok<Bill>).value;
+
+      expect(waiting.status, BillStatus.awaitingApproval);
+      expect(waiting.attempts.last.appLink, isNotNull);
+      expect(
+        await local.reconcile('missing'),
         const Err<Bill>(NotFoundFailure()),
       );
     });

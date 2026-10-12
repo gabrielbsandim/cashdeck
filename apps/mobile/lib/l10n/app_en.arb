@@ -145,7 +145,6 @@
   "billMarkedUnpaidToast": "{payee} is back in the bills to pay",
   "billConfirmedToast": "Confirmed. The payment goes out on step 1.",
   "openBankToast": "Open the bank app to approve the payment.",
-  "approvalCheckToast": "We will check with the bank and update the bill.",
   "pixCopyPasteLabel": "Pix copy and paste",
   "confirmBillTitle": "Confirm {payee}?",
   "confirmReasonNewPayee": "New payee",
@@ -233,7 +232,6 @@
   "draftRecurring": "Recurring · issued {date}",
   "draftSingle": "One-off · issued {date}",
   "approveAndIssueButton": "Approve and issue",
-  "draftEditSoon": "Editing drafts arrives with the invoice issuer.",
   "invoiceIssuedToast": "Invoice issued to {customer}",
   "receivedWithoutInvoice": "Received without an invoice",
   "pixFrom": "Pix from {payer}",
@@ -1439,5 +1437,15 @@
   "alertTextRecapCompanyTitle": "Your company's {month} recap",
   "recapTitleCompany": "Company {month} recap",
   "widgetValuesSetting": "Show amounts on the widget",
-  "widgetValuesHint": "It sits on the home screen, visible without unlocking the app."
+  "widgetValuesHint": "It sits on the home screen, visible without unlocking the app.",
+  "draftEditTitle": "Edit draft",
+  "draftCustomer": "Customer",
+  "draftDescription": "Service description",
+  "draftAmount": "Amount",
+  "draftIssueOn": "Issued on {date}",
+  "draftSave": "Save draft",
+  "draftSavedToast": "Draft saved.",
+  "draftCustomerMissing": "Enter the customer.",
+  "draftDescriptionMissing": "Describe the service.",
+  "draftAmountMissing": "Enter an amount above zero."
 }

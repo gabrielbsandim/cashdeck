@@ -792,6 +792,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bills/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the rail for the final state of a waiting payment now; a bill not waiting comes back as is */
+        post: operations["reconcileBill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bills/{id}/auto-debit": {
         parameters: {
             query?: never;
@@ -1303,6 +1320,24 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One invoice with its client and service */
+        get: operations["getInvoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a draft invoice; any other status is refused */
+        patch: operations["updateInvoiceDraft"];
         trace?: never;
     };
     "/invoices/{id}/cancel": {
@@ -5528,6 +5563,7 @@ export interface operations {
                                 outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
                                 reason: string | null;
                                 externalId: string | null;
+                                appLink: string | null;
                                 at: string;
                             }[];
                         };
@@ -5624,6 +5660,7 @@ export interface operations {
                                 outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
                                 reason: string | null;
                                 externalId: string | null;
+                                appLink: string | null;
                                 at: string;
                             }[];
                             instructions: {
@@ -5771,6 +5808,97 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    reconcileBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ask the rail for the final state of a waiting payment now; a bill not waiting comes back as is */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            entityId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            /** @enum {string} */
+                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
+                            /** @enum {string} */
+                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
+                            /** @enum {string} */
+                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
+                            payee: string | null;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dueDate: string;
+                            code: string | null;
+                            pixCode: string | null;
+                            createdAt: string;
+                            paidAt: string | null;
+                            /** @enum {string|null} */
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
+                            autoDebit: boolean;
+                            unverifiedSender: boolean;
+                            /** @enum {string|null} */
+                            confirmationReason: "UNVERIFIED_SENDER" | "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            plan: {
+                                steps: {
+                                    /** @enum {string} */
+                                    mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                    /** @enum {string} */
+                                    rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                    /** @enum {string} */
+                                    method: "PIX" | "BOLETO";
+                                }[];
+                                currentStep: number;
+                            } | null;
+                            attempts: {
+                                id: string;
+                                stepIndex: number;
+                                /** @enum {string} */
+                                rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                /** @enum {string} */
+                                mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                /** @enum {string} */
+                                method: "PIX" | "BOLETO";
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                /** @enum {string} */
+                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
+                                reason: string | null;
+                                externalId: string | null;
+                                appLink: string | null;
+                                at: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     setBillAutoDebit: {
         parameters: {
             query?: never;
@@ -5850,6 +5978,7 @@ export interface operations {
                                 outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
                                 reason: string | null;
                                 externalId: string | null;
+                                appLink: string | null;
                                 at: string;
                             }[];
                         };
@@ -7307,6 +7436,126 @@ export interface operations {
                             code: string;
                             description: string;
                         }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One invoice with its client and service */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            status: "DRAFT" | "PROCESSING" | "ISSUED" | "REJECTED" | "CANCELLED";
+                            number: string | null;
+                            competence: string;
+                            issueOn: string;
+                            recurring: boolean;
+                            isExport: boolean;
+                            pdfUrl: string | null;
+                            clientTaxId: string | null;
+                            clientCountry: string;
+                            description: string;
+                            serviceCode: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateInvoiceDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    client?: {
+                        name: string;
+                        taxId?: string | null;
+                        country?: string;
+                    };
+                    description?: string;
+                    serviceCode?: string;
+                    amountCents?: number;
+                    currency?: string;
+                    issueOn?: string;
+                    competence?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Change a draft invoice; any other status is refused */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            client: string;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            /** @enum {string} */
+                            status: "DRAFT" | "PROCESSING" | "ISSUED" | "REJECTED" | "CANCELLED";
+                            number: string | null;
+                            competence: string;
+                            issueOn: string;
+                            recurring: boolean;
+                            isExport: boolean;
+                            pdfUrl: string | null;
+                            clientTaxId: string | null;
+                            clientCountry: string;
+                            description: string;
+                            serviceCode: string;
+                        };
                     };
                 };
             };

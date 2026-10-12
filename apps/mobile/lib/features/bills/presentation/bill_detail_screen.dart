@@ -2,7 +2,6 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
-import 'package:cashdeck/core/links/bank_app_links.dart';
 import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
@@ -256,16 +255,16 @@ class _BillDetail extends ConsumerWidget {
     );
   }
 
-  /// The app of the bank that asked for the approval, named by the rail it
-  /// tried; the hint toast when no app answers.
+  /// The bank app the server linked to the approval; the hint toast when it
+  /// sent none or the phone cannot open it.
   Future<void> _openBank(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
-    final rail = bill.attempts
+    final link = bill.attempts
         .where((attempt) => attempt.step == LadderStep.bankApproval)
         .lastOrNull
-        ?.rail;
-    final links = rail == null ? const <Uri>[] : bankAppLinks(rail);
-    final opened = await openFirst(ref.read(linkOpenerProvider), links);
+        ?.appLink;
+    final uri = link == null ? null : Uri.tryParse(link);
+    final opened = uri != null && await ref.read(linkOpenerProvider).open(uri);
     if (opened || !context.mounted) return;
     await showCdToast(
       context,
@@ -274,29 +273,27 @@ class _BillDetail extends ConsumerWidget {
     );
   }
 
-  /// Reloads the bill so an approval the server already heard about shows
-  /// at once; the server keeps checking with the bank on its own.
+  /// Has the server ask the bank about the approval now, then says whether
+  /// it was paid, still waits or moved on.
   Future<void> _checkApproval(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
     CdHaptics.confirm();
-    ref.invalidate(billsControllerProvider);
-    final Bill fresh;
-    try {
-      fresh = await ref.refresh(billDetailControllerProvider(bill.id).future);
-    } on LoadFailure catch (error) {
-      if (!context.mounted) return;
-      await showOutcomeToast(context, error.failure, success: '');
-      return;
-    }
+    final result = await ref
+        .read(billDetailControllerProvider(bill.id).notifier)
+        .reconcile();
     if (!context.mounted) return;
     await showOutcomeToast(
       context,
-      null,
-      success: switch (fresh) {
-        _ when fresh.isSettled => l10n.approvalPaidToast,
-        _ when currentStepOf(fresh) == LadderStep.bankApproval =>
+      switch (result) {
+        Err(:final failure) => failure,
+        Ok() => null,
+      },
+      success: switch (result) {
+        Ok(:final value) when value.isSettled => l10n.approvalPaidToast,
+        Ok(:final value) when currentStepOf(value) == LadderStep.bankApproval =>
           l10n.approvalPendingToast,
-        _ => l10n.approvalUpdatedToast,
+        Ok() => l10n.approvalUpdatedToast,
+        Err() => '',
       },
     );
   }

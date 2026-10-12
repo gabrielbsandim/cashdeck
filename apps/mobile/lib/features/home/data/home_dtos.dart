@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 
 const Map<String, BudgetCategory> _categories = {
   'transport': BudgetCategory.transport,
@@ -144,3 +145,20 @@ FundingPlan fundingFromJson(JsonMap json) {
           ),
   );
 }
+
+InvoiceDraftDetail invoiceDraftFromJson(JsonMap json) => InvoiceDraftDetail(
+  id: readString(json, 'id'),
+  customer: readString(json, 'client'),
+  description: readString(json, 'description'),
+  amount: readMoney(json, 'amount'),
+  issueOn: readDate(json, 'issueOn'),
+);
+
+/// Only what changed travels; a new customer name is matched to a client by
+/// the server.
+Map<String, Object?> invoiceDraftEditToJson(InvoiceDraftEdit edit) => {
+  if (edit.customer case final name?) 'client': {'name': name},
+  'description': ?edit.description,
+  if (edit.amount case final amount?) 'amountCents': amount.cents,
+  if (edit.issueOn case final day?) 'issueOn': day.iso,
+};

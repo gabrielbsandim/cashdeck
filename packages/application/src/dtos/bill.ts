@@ -12,6 +12,7 @@ import {
   type EntityKind,
   type PaymentAttempt,
   type PaymentPlan,
+  type RailId,
 } from '@cashdeck/domain'
 
 import { isoDate, moneyViewSchema } from '@/dtos/common'
@@ -94,6 +95,8 @@ export const paymentAttemptViewSchema = z.object({
   ]),
   reason: z.string().nullable(),
   externalId: z.string().nullable(),
+  // The bank app to open for an attempt that waits on a bank approval.
+  appLink: z.string().nullable(),
   at: z.string(),
 })
 
@@ -141,12 +144,26 @@ export function toBillView(
   }
 }
 
+function approvalLink(
+  attempt: PaymentAttempt,
+  links: Partial<Record<RailId, string>>,
+): string | null {
+  if (attempt.mode !== 'BANK_APPROVAL') {
+    return null
+  }
+  return links[attempt.rail] ?? null
+}
+
 export function toBillDetailView(
   bill: Bill,
   entityKind: EntityKind,
   plan: PaymentPlan | null,
   attempts: PaymentAttempt[],
-  extra: { autoDebit: boolean; confirmationReason: ConfirmationReason | null },
+  extra: {
+    autoDebit: boolean
+    confirmationReason: ConfirmationReason | null
+    appLinks: Partial<Record<RailId, string>>
+  },
 ): BillDetailView {
   return {
     ...toBillView(bill, entityKind, extra.autoDebit),
@@ -162,6 +179,7 @@ export function toBillDetailView(
       outcome: attempt.outcome,
       reason: attempt.reason,
       externalId: attempt.externalId,
+      appLink: approvalLink(attempt, extra.appLinks),
       at: attempt.at.toISOString(),
     })),
   }

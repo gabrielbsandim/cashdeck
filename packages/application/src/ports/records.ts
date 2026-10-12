@@ -20,10 +20,13 @@ export type Institution = {
   tenantId: string
   name: string
   manual: boolean
+  // The link that opens this bank's app, set by configuration per tenant.
+  appLink?: string | null
 } & Partial<InstitutionBranding>
 
 export interface InstitutionRepository {
   findById(tenantId: string, id: string): Promise<Institution | null>
+  list(tenantId: string): Promise<Institution[]>
   // Returns the stored institution with that name, or saves the candidate;
   // a candidate with a logo refreshes the stored branding.
   ensure(candidate: Institution): Promise<Institution>

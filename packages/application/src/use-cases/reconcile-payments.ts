@@ -16,7 +16,7 @@ import {
   makeResolveInFlight,
   type ResolvedPayment,
 } from '@/use-cases/payment-guards'
-import { allPages } from '@/use-cases/shared'
+import { allPages, required } from '@/use-cases/shared'
 import { assistedAlert, billAlert, emitAlert } from '@/use-cases/alert-events'
 
 type ReconcileDeps = Pick<
@@ -65,22 +65,10 @@ const isOpenAttempt = (attempt: PaymentAttempt) =>
   (attempt.outcome === 'SUBMITTED' || attempt.outcome === 'PENDING_APPROVAL') &&
   attempt.externalId !== null
 
-// Asks the rail that took each waiting payment for its final state. A payment
+// Asks the rail that took a waiting payment for its final state. A payment
 // the rail reports as failed goes to assisted, never to another rail.
-export function makeReconcilePayments(deps: ReconcileDeps) {
+function makeBillReconciler(deps: ReconcileDeps) {
   const resolveInFlight = makeResolveInFlight(deps)
-
-  async function waitingBills(tenantId: string): Promise<Bill[]> {
-    const bills: Bill[] = []
-    for (const status of WAITING) {
-      bills.push(
-        ...(await allPages(page =>
-          deps.bills.list(tenantId, { status }, page),
-        )),
-      )
-    }
-    return bills
-  }
 
   async function record(
     tenantId: string,
@@ -251,6 +239,24 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
     return settled ?? expireApproval(tenantId, bill, open)
   }
 
+  return reconcileBill
+}
+
+export function makeReconcilePayments(deps: ReconcileDeps) {
+  const reconcileBill = makeBillReconciler(deps)
+
+  async function waitingBills(tenantId: string): Promise<Bill[]> {
+    const bills: Bill[] = []
+    for (const status of WAITING) {
+      bills.push(
+        ...(await allPages(page =>
+          deps.bills.list(tenantId, { status }, page),
+        )),
+      )
+    }
+    return bills
+  }
+
   async function targeted(
     tenantId: string,
     bills: Bill[],
@@ -293,5 +299,23 @@ export function makeReconcilePayments(deps: ReconcileDeps) {
       }
     }
     return result
+  }
+}
+
+// The same check the cron runs, for one bill the user says was approved. A
+// bill that is not waiting is returned as it is, so a repeat costs no call.
+export function makeReconcileBill(deps: ReconcileDeps) {
+  const reconcileBill = makeBillReconciler(deps)
+
+  return async function reconcileOne(
+    tenantId: string,
+    billId: string,
+  ): Promise<Bill> {
+    const bill = required(await deps.bills.findById(tenantId, billId), 'Bill')
+    if (!WAITING.includes(bill.status)) {
+      return bill
+    }
+    await reconcileBill(tenantId, bill)
+    return required(await deps.bills.findById(tenantId, billId), 'Bill')
   }
 }

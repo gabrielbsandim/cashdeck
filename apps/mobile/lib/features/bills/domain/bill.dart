@@ -51,6 +51,7 @@ final class PaymentAttempt extends Equatable {
     required this.outcome,
     this.reason,
     this.method,
+    this.appLink,
   });
 
   final LadderStep step;
@@ -60,8 +61,11 @@ final class PaymentAttempt extends Equatable {
   final String? reason;
   final PaymentMethod? method;
 
+  /// The bank app the server names for an approval; null when it knows none.
+  final String? appLink;
+
   @override
-  List<Object?> get props => [step, rail, at, outcome, reason, method];
+  List<Object?> get props => [step, rail, at, outcome, reason, method, appLink];
 }
 
 final class Bill extends Equatable {

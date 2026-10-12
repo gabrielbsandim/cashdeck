@@ -135,6 +135,16 @@ records it in the audit log, so the sheet shows a generic reason. The app
 already reads an optional `confirmationReason` on the bill for when the view
 exposes it.
 
+"Já aprovei" sends `POST /api/v1/bills/{id}/reconcile`, which asks the rail
+right away and answers the updated `BillDetail`. The app then says the bill
+was paid, is still waiting for the approval, or moved on; a bill that was not
+waiting comes back unchanged, so a second tap is harmless.
+
+"Abrir banco" opens the `appLink` of the latest `BANK_APPROVAL` attempt with
+`url_launcher`. The server fills it from the tenant's institution
+configuration; when it is null or no app answers the link, a toast explains
+where to approve.
+
 ```json
 {
   "id": "bill-1",
@@ -166,6 +176,7 @@ exposes it.
       "outcome": "PAID | SUBMITTED | PENDING_APPROVAL | ASSISTED | FAILED",
       "reason": "optional, a machine code such as NOT_CONFIGURED",
       "externalId": "optional",
+      "appLink": "deep link on a BANK_APPROVAL attempt, or null",
       "at": "2026-10-08T15:00:00.000Z"
     }
   ]
@@ -187,6 +198,16 @@ How the app reads it (`lib/features/bills/data/bill_dtos.dart`):
 
 An unknown enum value is a format error (`UnexpectedFailure`), so a new value
 on the server needs the app updated first.
+
+## Invoice drafts
+
+Início Empresa edits a draft invoice in a sheet. It reads
+`GET /api/v1/invoices/{id}` (`client`, `description`, `amount`, `issueOn` are
+what the form shows) and saves with `PATCH /api/v1/invoices/{id}`, sending only
+the fields that changed: `client: { name }`, `description`, `amountCents`,
+`issueOn`. Blank text or a zero amount is refused before sending. After the
+save the app reloads `GET /api/v1/home/company`. Only a `DRAFT` can be edited;
+the server answers 422 otherwise, and the message is shown as is.
 
 ## Transactions and categories
 

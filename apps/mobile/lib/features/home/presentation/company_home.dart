@@ -9,6 +9,7 @@ import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
+import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
@@ -19,6 +20,7 @@ import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/home/presentation/invoice_draft_editor.dart';
 import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
 import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -47,6 +49,21 @@ class CompanyHome extends ConsumerWidget {
     final failure = await action();
     if (!context.mounted) return;
     await showOutcomeToast(context, failure, success: success);
+  }
+
+  Future<void> _edit(BuildContext context, InvoiceDraft draft) async {
+    final l10n = AppLocalizations.of(context);
+    final saved = await showCdBottomSheet<bool>(
+      context,
+      title: l10n.draftEditTitle,
+      builder: (_) => InvoiceDraftEditor(draftId: draft.id),
+    );
+    if (saved != true || !context.mounted) return;
+    await showCdToast(
+      context,
+      icon: Symbols.check_circle_rounded,
+      message: l10n.draftSavedToast,
+    );
   }
 
   @override
@@ -115,11 +132,7 @@ class CompanyHome extends ConsumerWidget {
                     () => controller.approveDraft(draft.id),
                     l10n.invoiceIssuedToast(draft.customer),
                   ),
-                  onEdit: () => showCdToast(
-                    context,
-                    icon: Symbols.edit_rounded,
-                    message: l10n.draftEditSoon,
-                  ),
+                  onEdit: () => _edit(context, draft),
                 ),
             ],
           ),

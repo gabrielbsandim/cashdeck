@@ -246,7 +246,7 @@ void main() {
       await tester.tap(find.byKey(PaymentLadderView.openBankKey));
       await settle(tester);
       final opener = app.read(linkOpenerProvider) as FakeLinkOpener;
-      expect(opener.opened.map((uri) => '$uri'), ['bancoatlantico://']);
+      expect(opener.opened.map((uri) => '$uri'), ['atlantico://aprovacoes']);
       expect(find.text(l10n.openBankToast), findsNothing);
 
       await tester.tap(find.byKey(PaymentLadderView.approvedKey));
@@ -473,9 +473,10 @@ void main() {
       );
 
       Future<void> recheck(WidgetTester tester, Result<Bill> next) async {
-        var calls = 0;
         when(() => repository.get('bill-1'))
-            .thenAnswer((_) async => calls++ == 0 ? Ok(waiting) : next);
+            .thenAnswer((_) async => Ok(waiting));
+        when(() => repository.reconcile('bill-1'))
+            .thenAnswer((_) async => next);
         when(listCall()).thenAnswer((_) async => const Ok(BillPage(bills: [])));
         await tester.pumpApp(
           const BillDetailScreen(billId: 'bill-1'),
@@ -524,6 +525,33 @@ void main() {
         await recheck(tester, const Err(NetworkFailure()));
         expect(find.text(l10n.errorNetwork), findsOneWidget);
         expect(find.text(waiting.payee), findsOneWidget);
+      });
+
+      testWidgets('says when the bank still holds it', (tester) async {
+        await recheck(tester, Ok(waiting));
+        expect(find.text(l10n.approvalPendingToast), findsOneWidget);
+        verify(() => repository.reconcile('bill-1')).called(1);
+      });
+
+      testWidgets('without a link from the server the hint shows', (
+        tester,
+      ) async {
+        final opener = FakeLinkOpener();
+        when(() => repository.get('bill-1'))
+            .thenAnswer((_) async => Ok(waiting));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1'),
+          overrides: [
+            ...overrides(),
+            linkOpenerProvider.overrideWithValue(opener),
+          ],
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(PaymentLadderView.openBankKey));
+        await tester.pump();
+
+        expect(opener.opened, isEmpty);
+        expect(find.text(l10n.openBankToast), findsOneWidget);
       });
     });
 
@@ -917,4 +945,7 @@ final class _Single implements BillsRepository {
   @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
       inner.setAutoDebit(id, enabled: enabled);
+
+  @override
+  Future<Result<Bill>> reconcile(String id) => inner.reconcile(id);
 }

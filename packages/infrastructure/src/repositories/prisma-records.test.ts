@@ -103,6 +103,7 @@ describe('institutions', () => {
       connectorId: null,
       imageUrl: null,
       primaryColor: null,
+      appLink: 'bankapp://',
     }
     db.institution.findFirst
       .mockResolvedValueOnce(row)
@@ -115,8 +116,16 @@ describe('institutions', () => {
       connectorId: null,
       imageUrl: null,
       primaryColor: null,
+      appLink: 'bankapp://',
     })
     expect(await repos.institutions.findById(TENANT, 'x')).toBeNull()
+    db.institution.findMany.mockResolvedValueOnce([row])
+    expect(
+      (await repos.institutions.list(TENANT)).map(found => found.appLink),
+    ).toEqual(['bankapp://'])
+    expect(db.institution.findMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT },
+    })
     db.institution.upsert.mockResolvedValueOnce(row)
     const ensured = await repos.institutions.ensure({
       id: 'n',

@@ -56,6 +56,7 @@ import {
   exportRecordViewSchema,
   generateExportSchema,
   importStatementSchema,
+  invoiceDetailViewSchema,
   invoiceTemplateViewSchema,
   invoiceViewSchema,
   issuerCertificateSchema,
@@ -123,6 +124,7 @@ import {
   updateEntitySchema,
   updateAlertSettingsSchema,
   updateAutomationSchema,
+  updateInvoiceDraftSchema,
   updateInvoiceTemplateSchema,
   updateTransactionResultSchema,
   updateTransactionSchema,
@@ -578,6 +580,14 @@ const OPERATIONS: Operation[] = [
     response: billViewSchema,
   },
   {
+    method: 'post',
+    path: '/bills/{id}/reconcile',
+    id: 'reconcileBill',
+    summary:
+      'Ask the rail for the final state of a waiting payment now; a bill not waiting comes back as is',
+    response: billDetailViewSchema,
+  },
+  {
     method: 'put',
     path: '/bills/{id}/auto-debit',
     id: 'setBillAutoDebit',
@@ -831,6 +841,21 @@ const OPERATIONS: Operation[] = [
     id: 'listServiceCodes',
     summary: 'Service codes the issuer accepts',
     response: z.array(serviceCodeSchema),
+  },
+  {
+    method: 'get',
+    path: '/invoices/{id}',
+    id: 'getInvoice',
+    summary: 'One invoice with its client and service',
+    response: invoiceDetailViewSchema,
+  },
+  {
+    method: 'patch',
+    path: '/invoices/{id}',
+    id: 'updateInvoiceDraft',
+    summary: 'Change a draft invoice; any other status is refused',
+    body: updateInvoiceDraftSchema,
+    response: invoiceDetailViewSchema,
   },
   {
     method: 'post',

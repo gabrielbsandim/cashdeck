@@ -62,32 +62,40 @@ async function templateAudit(
   })
 }
 
+// A client is found by its name, so renaming one creates another; a field the
+// input leaves out keeps the stored value.
+export async function saveClientFor(
+  deps: Pick<Deps, 'invoices' | 'ids'>,
+  entity: FinancialEntity,
+  input: ClientInput,
+): Promise<InvoiceClient> {
+  const existing = await deps.invoices.findClientByName(
+    entity.tenantId,
+    entity.id,
+    input.name,
+  )
+  const client: InvoiceClient = {
+    id: existing?.id ?? deps.ids.next(),
+    tenantId: entity.tenantId,
+    entityId: entity.id,
+    name: input.name,
+    taxId: input.taxId === undefined ? (existing?.taxId ?? null) : input.taxId,
+    country: input.country ?? existing?.country ?? 'BR',
+  }
+  await deps.invoices.saveClient(client)
+  return client
+}
+
+export const isExportFor = (client: InvoiceClient | null): boolean =>
+  (client?.country ?? 'BR') !== 'BR'
+
 export function makeInvoiceTemplates(deps: TemplateDeps) {
   async function company(tenantId: string): Promise<FinancialEntity> {
     return requireEntity(deps.entities, tenantId, 'PJ')
   }
 
-  async function clientFor(
-    entity: FinancialEntity,
-    input: ClientInput,
-  ): Promise<InvoiceClient> {
-    const existing = await deps.invoices.findClientByName(
-      entity.tenantId,
-      entity.id,
-      input.name,
-    )
-    const client: InvoiceClient = {
-      id: existing?.id ?? deps.ids.next(),
-      tenantId: entity.tenantId,
-      entityId: entity.id,
-      name: input.name,
-      taxId:
-        input.taxId === undefined ? (existing?.taxId ?? null) : input.taxId,
-      country: input.country ?? existing?.country ?? 'BR',
-    }
-    await deps.invoices.saveClient(client)
-    return client
-  }
+  const clientFor = (entity: FinancialEntity, input: ClientInput) =>
+    saveClientFor(deps, entity, input)
 
   async function view(template: InvoiceTemplate): Promise<InvoiceTemplateView> {
     const client = await deps.invoices.findClient(
@@ -263,7 +271,7 @@ export function makeRecurringInvoices(
         status: 'DRAFT',
         amount: cycleAmount(template),
         fxRate: null,
-        isExport: (client?.country ?? 'BR') !== 'BR',
+        isExport: isExportFor(client),
         competence: month,
         issueOn: day,
         description: template.description,

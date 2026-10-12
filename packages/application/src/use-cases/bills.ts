@@ -4,6 +4,8 @@ import {
   type EntityKind,
   markBillPaid,
   markBillUnpaid,
+  type PaymentAttempt,
+  type RailId,
   recipientKeys,
 } from '@cashdeck/domain'
 import {
@@ -25,9 +27,11 @@ import {
   type PaymentRepository,
   type PaymentSettingsProvider,
 } from '@/ports/repositories'
-import { type DocumentStore } from '@/ports/records'
+import { type DocumentStore, type InstitutionRepository } from '@/ports/records'
 import { type Clock, type IdGenerator } from '@/ports/system'
+import { RAIL_NAMES } from '@/use-cases/alert-events'
 import { loadAutoDebit } from '@/use-cases/auto-debit'
+import { appLinkFor } from '@/use-cases/institution-match'
 import {
   type ConfirmationDeps,
   makeConfirmationCheck,
@@ -68,9 +72,32 @@ export function makeGetBill(
     entities: FinancialEntityRepository
     settings: PaymentSettingsProvider
     documents: DocumentStore
+    institutions: InstitutionRepository
   },
 ) {
   const confirmationReasons = makeConfirmationCheck(deps)
+
+  // Only a rail that asked for a bank approval needs the app link, so the
+  // institutions are read only then.
+  async function appLinksOf(tenantId: string, attempts: PaymentAttempt[]) {
+    const rails = new Set(
+      attempts
+        .filter(attempt => attempt.mode === 'BANK_APPROVAL')
+        .map(attempt => attempt.rail),
+    )
+    if (rails.size === 0) {
+      return {}
+    }
+    const institutions = await deps.institutions.list(tenantId)
+    const links: Partial<Record<RailId, string>> = {}
+    for (const rail of rails) {
+      const link = appLinkFor(RAIL_NAMES[rail], institutions)
+      if (link) {
+        links[rail] = link
+      }
+    }
+    return links
+  }
 
   async function reasonOf(tenantId: string, bill: Bill) {
     if (bill.status !== 'NEEDS_CONFIRMATION') {
@@ -101,6 +128,7 @@ export function makeGetBill(
     return toBillDetailView(bill, entityKind, plan, attempts, {
       autoDebit: isAutoDebit(bill),
       confirmationReason: reason,
+      appLinks: await appLinksOf(tenantId, attempts),
     })
   }
 }

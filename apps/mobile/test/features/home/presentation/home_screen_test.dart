@@ -13,6 +13,7 @@ import 'package:cashdeck/features/automation/presentation/automation_controller.
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home/data/fake_home_repository.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
+import 'package:cashdeck/features/home/domain/invoice_draft_edit.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
 import 'package:cashdeck/features/home/presentation/company_home.dart';
 import 'package:cashdeck/features/home/presentation/consolidated_home.dart';
@@ -20,6 +21,7 @@ import 'package:cashdeck/features/home/presentation/home_insights.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/home/presentation/invoice_draft_editor.dart';
 import 'package:cashdeck/features/home/presentation/personal_home.dart';
 import 'package:cashdeck/features/insights/data/fake_insights_repository.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
@@ -122,11 +124,22 @@ void main() {
     expect(find.byType(CompanyHome), findsOneWidget);
     await tester.tap(find.byKey(CompanyHome.editKey('draft-pomar')));
     await settle(tester);
-    expect(find.text(l10n.draftEditSoon), findsOneWidget);
+    expect(find.byType(InvoiceDraftEditor), findsOneWidget);
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(InvoiceDraftEditor.customerKey),
+        matching: find.byType(EditableText),
+      ),
+      'Pomar Studio',
+    );
+    await tester.tap(find.byKey(InvoiceDraftEditor.saveKey));
+    await settle(tester);
+    expect(find.text(l10n.draftSavedToast), findsOneWidget);
+    expect(find.text(l10n.draftTitle('Pomar Studio')), findsOneWidget);
 
     await tester.tap(find.byKey(CompanyHome.approveKey('draft-pomar')));
     await settle(tester);
-    expect(find.text(l10n.invoiceIssuedToast('Pomar Digital')), findsOneWidget);
+    expect(find.text(l10n.invoiceIssuedToast('Pomar Studio')), findsOneWidget);
     expect(find.byKey(CompanyHome.approveKey('draft-pomar')), findsNothing);
 
     await tester.tap(find.byKey(CompanyHome.issueKey('receipt-pix-lia')));
@@ -270,6 +283,98 @@ void main() {
     await settle(tester);
 
     expect(find.text(l10n.errorNetwork), findsOneWidget);
+  });
+
+  testWidgets('the draft editor retries, checks the form and says why', (
+    tester,
+  ) async {
+    final home = MockHomeRepository();
+    const detail = InvoiceDraftDetail(
+      id: 'draft-pomar',
+      customer: 'Cliente Exemplo',
+      description: 'Consultoria',
+      amount: Money(50_000),
+      issueOn: testToday,
+    );
+    final company = CompanySummary(
+      cash: const Money(100_000),
+      sync: SyncInfo(accountCount: 1, syncedAt: testNow),
+      billed: const Money(0),
+      invoiceCount: 0,
+      dasEstimate: const Money(0),
+      dasDue: testToday.addDays(10),
+      inss: TaxEstimate(amount: const Money(55_000), due: testToday.addDays(5)),
+      drafts: const [
+        InvoiceDraft(
+          id: 'draft-pomar',
+          customer: 'Cliente Exemplo',
+          amount: Money(50_000),
+          recurring: false,
+          issueOn: testToday,
+        ),
+      ],
+      unbilled: const [],
+    );
+    var loads = 0;
+    when(home.company).thenAnswer((_) async => Ok(company));
+    when(() => home.invoiceDraft('draft-pomar')).thenAnswer(
+      (_) async =>
+          loads++ == 0 ? const Err(NetworkFailure()) : const Ok(detail),
+    );
+    when(
+      () => home.updateDraft(
+        'draft-pomar',
+        const InvoiceDraftEdit(customer: 'Outro Cliente'),
+      ),
+    ).thenAnswer((_) async => const Err(ServerFailure()));
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: _homeHeight,
+      overrides: [homeRepositoryProvider.overrideWithValue(home)],
+    );
+    await pickScope(tester, EntityScope.company);
+
+    await tester.tap(find.byKey(CompanyHome.editKey('draft-pomar')));
+    await settle(tester);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
+    await tester.tap(find.byKey(CdErrorState.retryKey).last);
+    await settle(tester);
+
+    final customer = find.descendant(
+      of: find.byKey(InvoiceDraftEditor.customerKey),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(customer, '  ');
+    await tester.tap(find.byKey(InvoiceDraftEditor.saveKey));
+    await settle(tester);
+    expect(find.text(l10n.draftCustomerMissing), findsOneWidget);
+
+    await tester.tap(find.byKey(InvoiceDraftEditor.issueOnKey));
+    await settle(tester);
+    final labels = MaterialLocalizations.of(
+      tester.element(find.byType(DatePickerDialog)),
+    );
+    await tester.tap(find.text(labels.cancelButtonLabel));
+    await settle(tester);
+    await tester.tap(find.byKey(InvoiceDraftEditor.issueOnKey));
+    await settle(tester);
+    await tester.tap(find.text(labels.okButtonLabel));
+    await settle(tester);
+
+    await tester.enterText(customer, 'Outro Cliente');
+    await tester.tap(find.byKey(InvoiceDraftEditor.saveKey));
+    await settle(tester);
+    expect(find.byKey(InvoiceDraftEditor.errorKey), findsOneWidget);
+    expect(find.text(l10n.errorServer), findsOneWidget);
+    expect(
+      draftProblemMessage(l10n, InvoiceDraftProblem.descriptionMissing),
+      l10n.draftDescriptionMissing,
+    );
+    expect(
+      draftProblemMessage(l10n, InvoiceDraftProblem.amountMissing),
+      l10n.draftAmountMissing,
+    );
   });
 
   testWidgets('pulling Início refetches every card and waits for them', (

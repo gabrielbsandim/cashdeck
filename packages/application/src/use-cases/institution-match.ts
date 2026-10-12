@@ -1,4 +1,4 @@
-import { type ProviderConnector } from '@/ports/providers'
+import { type Institution } from '@/ports/records'
 
 // Connectors that mirror accounts of other banks, so the bank behind each
 // account has to be read from the account itself.
@@ -57,7 +57,9 @@ export function isAggregator(name: string): boolean {
   return AGGREGATORS.has(institutionKey(name))
 }
 
-function score(accountName: string, connector: ProviderConnector): number {
+type Named = { name: string }
+
+function score(accountName: string, connector: Named): number {
   const accountKey = institutionKey(accountName)
   const key = institutionKey(connector.name)
   if (key.length < MIN_KEY_LENGTH || isAggregator(connector.name)) {
@@ -74,11 +76,11 @@ function score(accountName: string, connector: ProviderConnector): number {
 
 // The connector whose name the account name carries, preferring an exact
 // name and then the longest one, so "C6 BANK" picks C6 Bank over C6.
-export function matchConnector(
+export function matchConnector<T extends Named>(
   accountName: string,
-  connectors: readonly ProviderConnector[],
-): ProviderConnector | null {
-  let best: ProviderConnector | null = null
+  connectors: readonly T[],
+): T | null {
+  let best: T | null = null
   let bestScore = 0
   for (const connector of connectors) {
     const current = score(accountName, connector)
@@ -89,4 +91,14 @@ export function matchConnector(
     bestScore = current
   }
   return best
+}
+
+// The app link of the institution a rail is named after, among the ones the
+// tenant configured a link for.
+export function appLinkFor(
+  railName: string,
+  institutions: readonly Institution[],
+): string | null {
+  const linked = institutions.filter(institution => institution.appLink)
+  return matchConnector(railName, linked)?.appLink ?? null
 }

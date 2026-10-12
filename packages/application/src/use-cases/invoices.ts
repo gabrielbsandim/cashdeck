@@ -14,7 +14,7 @@ import {
   type saveIssuerSchema,
 } from '@/dtos/invoices'
 import { ProviderError } from '@/errors/errors'
-import { type Invoice } from '@/ports/records'
+import { type Invoice, type InvoiceClient } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
 import { emitAlert, invoiceAlert } from '@/use-cases/alert-events'
 import { credentialName, putCredential } from '@/use-cases/credentials'
@@ -197,6 +197,24 @@ export function makeTestIssuer(deps: Pick<Deps, 'issuer' | 'clock'>) {
   }
 }
 
+export function toInvoiceView(
+  invoice: Invoice,
+  client: InvoiceClient | null,
+): InvoiceView {
+  return {
+    id: invoice.id,
+    client: client?.name ?? '',
+    amount: money(invoice.amount),
+    status: invoice.status,
+    number: invoice.number,
+    competence: invoice.competence,
+    issueOn: invoice.issueOn,
+    recurring: invoice.templateId !== null,
+    isExport: invoice.isExport,
+    pdfUrl: invoice.pdfUrl,
+  }
+}
+
 export function makeInvoiceViews(deps: Pick<Deps, 'invoices'>) {
   return async function invoiceViews(
     tenantId: string,
@@ -205,18 +223,7 @@ export function makeInvoiceViews(deps: Pick<Deps, 'invoices'>) {
     const views: InvoiceView[] = []
     for (const invoice of invoices) {
       const client = await deps.invoices.findClient(tenantId, invoice.clientId)
-      views.push({
-        id: invoice.id,
-        client: client?.name ?? '',
-        amount: money(invoice.amount),
-        status: invoice.status,
-        number: invoice.number,
-        competence: invoice.competence,
-        issueOn: invoice.issueOn,
-        recurring: invoice.templateId !== null,
-        isExport: invoice.isExport,
-        pdfUrl: invoice.pdfUrl,
-      })
+      views.push(toInvoiceView(invoice, client))
     }
     return views
   }
