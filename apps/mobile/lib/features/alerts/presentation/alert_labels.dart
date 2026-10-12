@@ -1,4 +1,6 @@
+import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
+import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -25,6 +27,7 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.invoiceNotIssued => l10n.alertKindInvoiceNotIssued,
   AlertKind.budgetNearLimit => l10n.alertKindBudgetNearLimit,
   AlertKind.budgetLimitReached => l10n.alertKindBudgetLimitReached,
+  AlertKind.monthlyRecap => l10n.alertKindMonthlyRecap,
   AlertKind.other => l10n.alertKindOther,
 };
 
@@ -48,6 +51,7 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.invoiceNotIssued => Symbols.pending_actions_rounded,
   AlertKind.budgetNearLimit => Symbols.donut_small_rounded,
   AlertKind.budgetLimitReached => Symbols.donut_large_rounded,
+  AlertKind.monthlyRecap => Symbols.auto_stories_rounded,
   AlertKind.other => Symbols.notifications_rounded,
 };
 
@@ -180,7 +184,20 @@ final Map<AlertKind, _Builder> _builders = {
       d['limit'],
     ),
   ),
+  AlertKind.monthlyRecap: (l10n, d) => (
+    title: l10n.alertTextRecapTitle(_month(l10n, d)),
+    body: l10n.alertTextRecapBody(d['income'], d['expenses']),
+  ),
 };
+
+/// The month the alert is about, as sentences name it.
+String _month(AppLocalizations l10n, _AlertData d) {
+  try {
+    return monthName(l10n, YearMonth.parse(d['month']));
+  } on FormatException {
+    throw _MissingField();
+  }
+}
 
 AlertText _subscriptionChanged(AppLocalizations l10n, _AlertData d) {
   if (d['change'] == 'DUPLICATE') {

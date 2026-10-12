@@ -19,6 +19,7 @@ export const ALERT_TYPES = [
   'INVOICE_NOT_ISSUED',
   'BUDGET_NEAR_LIMIT',
   'BUDGET_LIMIT_REACHED',
+  'MONTHLY_RECAP',
 ] as const
 export type AlertType = (typeof ALERT_TYPES)[number]
 

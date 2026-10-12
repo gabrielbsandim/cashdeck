@@ -8,6 +8,7 @@ const Map<AlertKind, (String, _Route)> _records = {
   AlertKind.unusualPurchase: ('transactionId', AppRoutes.transaction),
   AlertKind.subscriptionChanged: ('key', AppRoutes.subscription),
   AlertKind.cardBillAboveAverage: ('accountId', AppRoutes.cardBills),
+  AlertKind.monthlyRecap: ('month', AppRoutes.recap),
 };
 
 const Map<AlertKind, String> _screens = {

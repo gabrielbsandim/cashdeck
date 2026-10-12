@@ -135,6 +135,7 @@ import {
 } from '@/server/api/schemas'
 import { type Operation } from '@/server/api/openapi-operation'
 import { PLANNING_OPERATIONS } from '@/server/api/openapi-planning'
+import { RECAP_OPERATIONS } from '@/server/api/openapi-recaps'
 
 export const API_VERSION = 'v1'
 
@@ -1284,7 +1285,11 @@ function describe(operation: Operation) {
 
 export function buildOpenApiDocument() {
   const paths: Record<string, Record<string, unknown>> = {}
-  for (const operation of [...OPERATIONS, ...PLANNING_OPERATIONS]) {
+  for (const operation of [
+    ...OPERATIONS,
+    ...PLANNING_OPERATIONS,
+    ...RECAP_OPERATIONS,
+  ]) {
     paths[operation.path] = {
       ...paths[operation.path],
       [operation.method]: describe(operation),

@@ -3423,5 +3423,100 @@
         "type": "String"
       }
     }
+  },
+  "recapTitle": "Retrospectiva de {month}",
+  "@recapTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recapEntrySubtitle": "Como foi o mês que fechou, em poucos toques",
+  "recapClose": "Fechar",
+  "recapPageLabel": "Página {current} de {total}",
+  "@recapPageLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "recapFlowTitle": "{month} em números",
+  "@recapFlowTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recapIncome": "Entrou",
+  "recapExpenses": "Saiu",
+  "recapNetKept": "Sobrou",
+  "recapNetShort": "Faltou",
+  "recapTopTitle": "Onde mais foi dinheiro",
+  "recapTopShare": "{percent}% de tudo que saiu no mês",
+  "@recapTopShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "recapChangesTitle": "O que mudou",
+  "recapExpensesVsPrevious": "nos gastos frente a {month}",
+  "@recapExpensesVsPrevious": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recapRose": "Subiu",
+  "recapFell": "Caiu",
+  "recapStarted": "Assinaturas novas",
+  "recapStopped": "Assinaturas que pararam",
+  "recapSavingsTitle": "Taxa de poupança",
+  "recapSavingsKept": "da renda ficou com você.",
+  "recapSavingsShort": "Os gastos passaram a renda do mês.",
+  "recapSavingsPrevious": "Em {month} foi {percent}%.",
+  "@recapSavingsPrevious": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "recapNetWorthTitle": "Patrimônio no fim do mês",
+  "recapNetWorthChange": "no mês",
+  "recapStoryTitle": "Em poucas palavras",
+  "recapStoryAi": "Escrito pela IA a partir dos seus números.",
+  "recapStoryTemplate": "Resumo automático dos seus números.",
+  "recapHint": "Toque à direita para seguir, à esquerda para voltar, deslize para baixo para fechar.",
+  "alertKindMonthlyRecap": "Retrospectiva do mês",
+  "alertTextRecapTitle": "Retrospectiva de {month}",
+  "@alertTextRecapTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextRecapBody": "Entraram {income} e saíram {expenses}. Toque para ver como foi o mês.",
+  "@alertTextRecapBody": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "expenses": {
+        "type": "String"
+      }
+    }
   }
 }

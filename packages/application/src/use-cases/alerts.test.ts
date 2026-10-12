@@ -104,6 +104,9 @@ describe('alert text', () => {
       category: 'Groceries',
       spent: 'R$ 400,00',
       limit: 'R$ 500,00',
+      month: '2026-09',
+      income: 'R$ 8.000,00',
+      expenses: 'R$ 6.000,00',
     }
     for (const type of ALERT_TYPES) {
       for (const text of [

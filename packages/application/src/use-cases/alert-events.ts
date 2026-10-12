@@ -42,7 +42,7 @@ const SOURCE_NAMES_EN: Record<string, string> = { GMAIL: 'email', DDA: 'DDA' }
 const due = (d: AlertData) => `${d.payee} · ${d.amount}`
 
 // Built-in categories are stored with their English name.
-const CATEGORY_NAMES_PT: Record<string, string> = {
+export const CATEGORY_NAMES_PT: Record<string, string> = {
   groceries: 'Mercado',
   restaurants: 'Restaurantes',
   transport: 'Transporte',
@@ -157,6 +157,10 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Orçamento no limite',
     body: `${categoryPt(d)}: ${d.spent} de ${d.limit} neste mês.`,
   }),
+  MONTHLY_RECAP: d => ({
+    title: `Retrospectiva de ${monthName(`${d.month}`, 'pt')}`,
+    body: `Entraram ${d.income} e saíram ${d.expenses}. Toque para ver como foi o mês.`,
+  }),
 }
 
 export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
@@ -248,6 +252,10 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Budget limit reached',
     body: `${d.category}: ${d.spent} of ${d.limit} this month.`,
   }),
+  MONTHLY_RECAP: d => ({
+    title: `Your ${monthName(`${d.month}`, 'en')} recap`,
+    body: `${d.income} came in and ${d.expenses} went out. Tap to see how the month went.`,
+  }),
 }
 
 const TEXTS_BY_LOCALE: Record<
@@ -273,6 +281,21 @@ export function formatMoney(money: Money): string {
 export function formatDay(day: LocalDate): string {
   const [, month, date] = day.split('-')
   return `${date}/${month}`
+}
+
+const INTL_LOCALES: Record<DeviceLocale, string> = { pt: 'pt-BR', en: 'en-US' }
+
+// "setembro" or "September", from a YYYY-MM month.
+export function monthName(
+  month: string,
+  locale: DeviceLocale,
+  withYear = false,
+): string {
+  return new Intl.DateTimeFormat(INTL_LOCALES[locale], {
+    month: 'long',
+    year: withYear ? 'numeric' : undefined,
+    timeZone: 'UTC',
+  }).format(new Date(`${month}-15T12:00:00Z`))
 }
 
 export function manualMethod(bill: Bill): string {
