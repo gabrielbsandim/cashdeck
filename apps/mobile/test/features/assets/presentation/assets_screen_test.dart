@@ -140,6 +140,39 @@ void main() {
     expect(find.text('Moto antiga'), findsOneWidget);
   });
 
+  testWidgets('edits a car to another model and renames the home', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.assets, screenHeight: _height);
+
+    await _act(tester, 'asset-car', AssetsScreen.editKey);
+    expect(find.byKey(AssetEditor.kindKey), findsNothing);
+    expect(find.text('Modelo atual: FIPE 001234-5'), findsOneWidget);
+    await _tap(tester, find.byKey(AssetEditor.brandKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('1')));
+    await _tap(tester, find.byKey(AssetEditor.modelYearKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('2026')));
+    await _tap(tester, find.byKey(AssetEditor.modelKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('11')));
+    expect(find.byKey(AssetEditor.currentKey), findsNothing);
+    expect(find.text('Sedan Exemplo 2.0 Turbo'), findsWidgets);
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.text(l10n.assetEdited), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(AssetsScreen.cardKey('asset-car')),
+        matching: find.text('Sedan Exemplo 2.0 Turbo'),
+      ),
+      findsOneWidget,
+    );
+
+    await _act(tester, 'asset-home', AssetsScreen.editKey);
+    await _type(tester, AssetEditor.nameKey, 'Casa');
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.text('Casa'), findsOneWidget);
+    expect(find.text('Banco Exemplo 1001'), findsOneWidget);
+  });
+
   testWidgets('revalues, marks sold and deletes', (tester) async {
     await pumpRoute(tester, AppRoutes.assets, screenHeight: _height);
 

@@ -35,6 +35,9 @@ export const createAssetSchema = z
 
 export const updateAssetSchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
+  acquiredOn: isoDate.optional(),
+  // Another model reprices the vehicle from the table; null stops the table.
+  fipe: fipeSchema.nullable().optional(),
   value: z.int().positive().optional(),
   // The day the new value holds from; today when left out.
   valuedOn: isoDate.optional(),

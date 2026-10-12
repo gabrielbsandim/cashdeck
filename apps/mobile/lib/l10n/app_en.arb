@@ -1567,5 +1567,16 @@
         "type": "String"
       }
     }
+  },
+  "assetEdit": "Edit",
+  "assetEditTitle": "Edit good",
+  "assetEdited": "Good updated",
+  "assetFipeCurrent": "Current model: FIPE {code}",
+  "@assetFipeCurrent": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   }
 }

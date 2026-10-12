@@ -310,7 +310,8 @@ const OPERATIONS: Operation[] = [
     method: 'patch',
     path: '/assets/{id}',
     id: 'updateAsset',
-    summary: 'Rename, revalue, link a loan or mark a good sold',
+    summary:
+      'Rename, redate, revalue, link a loan, move a vehicle to another FIPE model or to a value by hand, or mark a good sold',
     body: updateAssetSchema,
     response: assetViewSchema,
   },

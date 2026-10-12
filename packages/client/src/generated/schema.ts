@@ -257,7 +257,7 @@ export interface paths {
         delete: operations["removeAsset"];
         options?: never;
         head?: never;
-        /** Rename, revalue, link a loan or mark a good sold */
+        /** Rename, redate, revalue, link a loan, move a vehicle to another FIPE model or to a value by hand, or mark a good sold */
         patch: operations["updateAsset"];
         trace?: never;
     };
@@ -3556,6 +3556,13 @@ export interface operations {
             content: {
                 "application/json": {
                     name?: string;
+                    acquiredOn?: string;
+                    fipe?: {
+                        /** @enum {string} */
+                        type: "CAR" | "MOTORCYCLE" | "TRUCK";
+                        code: string;
+                        modelYear: number;
+                    } | null;
                     value?: number;
                     valuedOn?: string;
                     loanId?: string | null;
@@ -3564,7 +3571,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Rename, revalue, link a loan or mark a good sold */
+            /** @description Rename, redate, revalue, link a loan, move a vehicle to another FIPE model or to a value by hand, or mark a good sold */
             200: {
                 headers: {
                     [name: string]: unknown;

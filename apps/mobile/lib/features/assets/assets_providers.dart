@@ -24,6 +24,11 @@ final createAssetProvider = Provider<CreateAsset>(
   ),
 );
 
+final editAssetProvider = Provider<EditAsset>(
+  (ref) =>
+      EditAsset(ref.watch(assetsRepositoryProvider), ref.watch(clockProvider)),
+);
+
 final revalueAssetProvider = Provider<RevalueAsset>(
   (ref) => RevalueAsset(ref.watch(assetsRepositoryProvider)),
 );

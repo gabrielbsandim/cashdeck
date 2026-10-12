@@ -144,6 +144,65 @@ describe('assets', () => {
     ).rejects.toThrow(ValidationError)
   })
 
+  it('moves a vehicle to another model, then to a value by hand', async () => {
+    const { assets, vehiclePrices } = setup()
+    const sedan = { ...pickup, code: '007777-7' }
+    vehiclePrices.histories.set(sedan.code, {
+      model: 'Sedan Exemplo 1.6 Flex',
+      prices: [{ month: '2026-10', cents: 5_000_000 }],
+    })
+    const { id } = await assets.create(TENANT, {
+      entity: 'PF',
+      kind: 'VEHICLE',
+      acquiredOn: '2022-03-01',
+      fipe: pickup,
+      loanId: null,
+    })
+
+    const moved = await assets.update(TENANT, id, {
+      fipe: sedan,
+      acquiredOn: '2021-01-10',
+    })
+    expect(moved).toMatchObject({
+      name: 'Sedan Exemplo 1.6 Flex',
+      acquiredOn: '2021-01-10',
+      value: { cents: 5_000_000 },
+      change: { percent: 0 },
+      fipe: sedan,
+    })
+
+    const byHand = await assets.update(TENANT, id, {
+      fipe: null,
+      name: 'Carro da casa',
+      value: 4_800_000,
+    })
+    expect(byHand).toMatchObject({
+      name: 'Carro da casa',
+      acquiredOn: '2021-01-10',
+      value: { cents: 4_800_000 },
+      fipe: null,
+    })
+  })
+
+  it('refuses a FIPE model on a property or without prices', async () => {
+    const { assets, vehiclePrices } = setup()
+    vehiclePrices.histories.set('009999-9', { model: 'Novo', prices: [] })
+    const { id } = await assets.create(TENANT, home)
+    await expect(assets.update(TENANT, id, { fipe: pickup })).rejects.toThrow(
+      ValidationError,
+    )
+    const car = await assets.create(TENANT, {
+      entity: 'PF',
+      kind: 'VEHICLE',
+      acquiredOn: '2022-03-01',
+      fipe: pickup,
+      loanId: null,
+    })
+    await expect(
+      assets.update(TENANT, car.id, { fipe: { ...pickup, code: '009999-9' } }),
+    ).rejects.toThrow(ValidationError)
+  })
+
   it('refuses a loan that does not exist', async () => {
     const { assets } = setup()
     await expect(

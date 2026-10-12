@@ -83,6 +83,23 @@ CatalogVehicle catalogVehicleFromJson(JsonMap json) => CatalogVehicle(
 
 String vehicleTypeToJson(VehicleType type) => _keyOf(vehicleTypes, type);
 
+/// What [draft] changes from [before]. Another FIPE model reprices the
+/// vehicle; leaving the table sends `fipe: null` and the value by hand.
+JsonMap assetEditToJson(Asset before, AssetDraft draft) {
+  final priced = draft.kind == AssetKind.vehicle && draft.byFipe;
+  final fipe = priced ? draft.fipe : null;
+  final name = draft.name.trim();
+  return {
+    if (name.isNotEmpty && name != before.name) 'name': name,
+    if (draft.acquiredOn != before.acquiredOn)
+      'acquiredOn': draft.acquiredOn.iso,
+    if (draft.loanId != before.loan?.id) 'loanId': draft.loanId,
+    if (fipe != null && fipe != before.fipe) 'fipe': fipeToJson(fipe),
+    if (!priced && before.fipe != null) 'fipe': null,
+    if (!priced && draft.value != before.value) 'value': draft.value.cents,
+  };
+}
+
 /// The table names and prices a vehicle with a FIPE code, so neither is sent.
 JsonMap assetDraftToJson(AssetDraft draft) {
   final fipe = draft.kind == AssetKind.vehicle && draft.byFipe

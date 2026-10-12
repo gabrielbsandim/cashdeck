@@ -25,6 +25,9 @@ class AssetsController extends AsyncNotifier<AssetsSummary> {
   Future<AppFailure?> create(AssetDraft draft) async =>
       await _after(await ref.read(createAssetProvider).call(draft));
 
+  Future<AppFailure?> edit(Asset before, AssetDraft draft) async =>
+      await _after(await ref.read(editAssetProvider).call(before, draft));
+
   Future<AppFailure?> revalue(String id, Money value) async =>
       await _after(await ref.read(revalueAssetProvider).call(id, value));
 

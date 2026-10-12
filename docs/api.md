@@ -450,6 +450,11 @@ without the brand-new listing), then `/vehicles/models?type=&brand=&modelYear=`
 `/vehicles/price?type=&brand=&year=&model=`, which answers the `fipe` object
 to create the vehicle with and the current price.
 
+`PATCH /assets/{id}` takes any of `name`, `acquiredOn`, `value` (with
+`valuedOn`), `loanId`, `soldOn` and `fipe`. Another `fipe` reprices the vehicle
+from the table and drops the old model's prices, taking the model name unless
+`name` comes too; `fipe: null` stops the table and keeps the prices known.
+
 Net worth adds the goods by kind (`realEstate`, `vehicles`, `otherAssets`)
 and takes off `loanDebt`, every stored loan's balance at the end of each day
 read from its schedule.

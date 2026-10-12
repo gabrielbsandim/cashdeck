@@ -43,6 +43,55 @@ void main() {
       );
     });
 
+    test('an edit sends only what changed', () {
+      AssetDraft draft({
+        String name = 'Hatch Exemplo',
+        bool byFipe = true,
+        FipeVehicle? fipe = testFipe,
+        Money value = const Money(9_000_000),
+        String? loanId = 'loan-1',
+      }) => AssetDraft(
+        kind: AssetKind.vehicle,
+        name: name,
+        acquiredOn: testAsset.acquiredOn,
+        value: value,
+        byFipe: byFipe,
+        fipe: fipe,
+        loanId: loanId,
+      );
+      expect(assetEditToJson(testAsset, draft()), isEmpty);
+      const sedan = FipeVehicle(
+        type: VehicleType.car,
+        code: '007777-7',
+        modelYear: 2021,
+      );
+      expect(
+        assetEditToJson(
+          testAsset,
+          const AssetDraft(
+            kind: AssetKind.vehicle,
+            name: ' Sedan ',
+            acquiredOn: CalendarDate(2024, 1, 2),
+            byFipe: true,
+            fipe: sedan,
+          ),
+        ),
+        {
+          'name': 'Sedan',
+          'acquiredOn': '2024-01-02',
+          'loanId': null,
+          'fipe': {'type': 'CAR', 'code': '007777-7', 'modelYear': 2021},
+        },
+      );
+      expect(
+        assetEditToJson(
+          testAsset,
+          draft(byFipe: false, fipe: null, value: const Money(8_000_000)),
+        ),
+        {'fipe': null, 'value': 8_000_000},
+      );
+    });
+
     test('send a value by hand, or only the FIPE code for a vehicle', () {
       const day = CalendarDate(2025, 6, 10);
       expect(
@@ -154,6 +203,23 @@ void main() {
       });
       expect(requests[2].data, {'value': 8_000_000});
       expect(requests[3].data, {'soldOn': '2026-10-12'});
+      expect(
+        _ok(
+          await repository.edit(
+            testAsset,
+            AssetDraft(
+              kind: AssetKind.vehicle,
+              name: 'Carro',
+              acquiredOn: testAsset.acquiredOn,
+              byFipe: true,
+              fipe: testFipe,
+              loanId: 'loan-1',
+            ),
+          ),
+        ),
+        testAsset,
+      );
+      expect(adapterOf(dio).requests.last.data, {'name': 'Carro'});
     });
 
     test('walks the FIPE table from brand to a priced model', () async {
@@ -316,6 +382,60 @@ void main() {
       );
     });
 
+    test(
+      'edits a good: another model, a value by hand, a loan dropped',
+      () async {
+        final repository = fake();
+        final car = _ok(await repository.list()).items.last;
+        const sedan = FipeVehicle(
+          type: VehicleType.car,
+          code: '007777-7',
+          modelYear: 2021,
+        );
+        final moved = _ok(
+          await repository.edit(
+            car,
+            AssetDraft(
+              kind: AssetKind.vehicle,
+              acquiredOn: car.acquiredOn,
+              byFipe: true,
+              fipe: sedan,
+            ),
+          ),
+        );
+        expect(moved.fipe, sedan);
+        expect(moved.name, car.name);
+        final kept = _ok(
+          await repository.edit(
+            moved,
+            AssetDraft(
+              kind: AssetKind.vehicle,
+              name: 'Sedan da casa',
+              acquiredOn: car.acquiredOn,
+              byFipe: true,
+              fipe: sedan,
+            ),
+          ),
+        );
+        expect(kept.value, moved.value);
+        expect(kept.name, 'Sedan da casa');
+        final home = _ok(await repository.list()).items.first;
+        final unlinked = _ok(
+          await repository.edit(
+            home,
+            AssetDraft(
+              kind: AssetKind.property,
+              name: home.name,
+              acquiredOn: home.acquiredOn,
+              value: const Money(70_000_000),
+            ),
+          ),
+        );
+        expect(unlinked.loan, isNull);
+        expect(unlinked.equity, const Money(70_000_000));
+      },
+    );
+
     test('revalues, marks sold and deletes', () async {
       final repository = fake();
       final home = _ok(
@@ -367,6 +487,7 @@ void main() {
       expect(container.read(markAssetSoldProvider), isNotNull);
       expect(container.read(deleteAssetProvider), isNotNull);
       expect(container.read(browseVehiclesProvider), isNotNull);
+      expect(container.read(editAssetProvider), isNotNull);
     }
   });
 }

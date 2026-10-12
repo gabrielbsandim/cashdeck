@@ -29,6 +29,22 @@ final class CreateAsset {
   }
 }
 
+/// Like [CreateAsset], a draft with a problem never reaches the server.
+final class EditAsset {
+  const new(this._repository, this._clock);
+
+  final AssetsRepository _repository;
+  final Clock _clock;
+
+  Future<Result<Asset>> call(Asset before, AssetDraft draft) {
+    final today = CalendarDate.brazilToday(_clock.now());
+    if (draft.problemOn(today) != null) {
+      return Future.value(const Err(UnexpectedFailure()));
+    }
+    return _repository.edit(before, draft);
+  }
+}
+
 final class RevalueAsset {
   const new(this._repository);
 

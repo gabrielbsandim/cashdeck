@@ -183,6 +183,9 @@ abstract interface class AssetsRepository {
 
   Future<Result<Asset>> create(AssetDraft draft);
 
+  /// Sends only what the draft changes from [before].
+  Future<Result<Asset>> edit(Asset before, AssetDraft draft);
+
   /// A new value holding from today.
   Future<Result<Asset>> revalue(String id, Money value);
 

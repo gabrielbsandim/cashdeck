@@ -177,6 +177,34 @@ final class FakeAssetsRepository implements AssetsRepository {
   }
 
   @override
+  Future<Result<Asset>> edit(Asset before, AssetDraft draft) {
+    final priced = draft.kind == AssetKind.vehicle && draft.byFipe;
+    final fipe = priced ? draft.fipe : null;
+    final value = switch ((priced, fipe != null && fipe != before.fipe)) {
+      (_, true) => fakeFipePrice,
+      (true, false) => before.value,
+      (false, _) => draft.value,
+    };
+    return _replace(before.id, (asset) {
+      final loan = draft.loanId == asset.loan?.id ? asset.loan : null;
+      final name = draft.name.trim();
+      return Asset(
+        id: asset.id,
+        entity: asset.entity,
+        kind: asset.kind,
+        name: name.isEmpty ? asset.name : name,
+        acquiredOn: draft.acquiredOn,
+        value: value,
+        valuedOn: _today,
+        change: asset.change + value - asset.value,
+        fipe: fipe,
+        loan: loan,
+        equity: value - (loan?.balance ?? const Money(0)),
+      );
+    });
+  }
+
+  @override
   Future<Result<Asset>> revalue(String id, Money value) => _replace(
     id,
     (asset) => Asset(

@@ -54,6 +54,21 @@ void main() {
       const Ok(testAsset),
     );
     expect(await DeleteAsset(repository)('asset-1'), isA<Ok<void>>());
+    when(() => repository.edit(testAsset, _home))
+        .thenAnswer((_) async => const Ok(testAsset));
+    expect(
+      await EditAsset(repository, clock)(testAsset, _home),
+      const Ok(testAsset),
+    );
+    final unnamed = await EditAsset(repository, clock)(
+      testAsset,
+      const AssetDraft(
+        kind: AssetKind.property,
+        acquiredOn: CalendarDate(2025, 6, 10),
+        value: Money(1),
+      ),
+    );
+    expect((unnamed as Err).failure, const UnexpectedFailure());
   });
 
   test(

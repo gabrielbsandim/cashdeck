@@ -44,6 +44,7 @@ class AssetsScreen extends ConsumerWidget {
 
   static Key menuKey(String id) => Key('asset-menu-$id');
 
+  static const editKey = Key('asset-edit');
   static const revalueKey = Key('asset-revalue');
   static const soldKey = Key('asset-sold');
   static const deleteKey = Key('asset-delete');
@@ -147,7 +148,7 @@ class _Totals extends StatelessWidget {
   }
 }
 
-enum _AssetAction { revalue, sold, delete }
+enum _AssetAction { edit, revalue, sold, delete }
 
 class _AssetCard extends ConsumerWidget {
   const new({required this.asset, super.key});
@@ -162,6 +163,8 @@ class _AssetCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(assetsControllerProvider.notifier);
     switch (action) {
+      case _AssetAction.edit:
+        await showAssetEditor(context, asset: asset);
       case _AssetAction.revalue:
         final value = await showCdBottomSheet<Money>(
           context,
@@ -242,6 +245,12 @@ class _AssetCard extends ConsumerWidget {
                 key: AssetsScreen.menuKey(asset.id),
                 onSelected: (action) => _act(context, ref, action),
                 itemBuilder: (_) => [
+                  if (!asset.sold)
+                    PopupMenuItem(
+                      key: AssetsScreen.editKey,
+                      value: _AssetAction.edit,
+                      child: Text(l10n.assetEdit),
+                    ),
                   if (!asset.sold)
                     PopupMenuItem(
                       key: AssetsScreen.revalueKey,

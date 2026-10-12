@@ -25,19 +25,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Adds a property, vehicle or other good.
-Future<void> showAssetEditor(BuildContext context) async {
+/// Adds a property, vehicle or other good, or edits [asset].
+Future<void> showAssetEditor(BuildContext context, {Asset? asset}) async {
   final l10n = AppLocalizations.of(context);
   final saved = await showCdBottomSheet<bool>(
     context,
-    title: l10n.assetAdd,
-    builder: (_) => const AssetEditor(),
+    title: asset == null ? l10n.assetAdd : l10n.assetEditTitle,
+    builder: (_) => AssetEditor(asset: asset),
   );
   if (saved != true || !context.mounted) return;
   await showCdToast(
     context,
     icon: Symbols.task_alt_rounded,
-    message: l10n.assetAdded,
+    message: asset == null ? l10n.assetAdded : l10n.assetEdited,
   );
 }
 
@@ -50,7 +50,9 @@ String assetProblemMessage(AppLocalizations l10n, AssetProblem problem) =>
     };
 
 class AssetEditor extends ConsumerStatefulWidget {
-  const new({super.key});
+  const new({this.asset, super.key});
+
+  final Asset? asset;
 
   static const kindKey = Key('asset-kind');
   static const nameKey = Key('asset-name');
@@ -61,6 +63,7 @@ class AssetEditor extends ConsumerStatefulWidget {
   static const modelYearKey = Key('asset-model-year');
   static const modelKey = Key('asset-model');
   static const previewKey = Key('asset-fipe-preview');
+  static const currentKey = Key('asset-fipe-current');
   static const loanKey = Key('asset-loan');
   static const errorKey = Key('asset-error');
   static const saveKey = Key('asset-save');
@@ -79,6 +82,9 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
   VehicleOption? _modelYear;
   VehicleOption? _model;
   CatalogVehicle? _vehicle;
+  FipeVehicle? _fipe;
+  // The model name the table gave, which a new model replaces.
+  String? _modelName;
   var _pricing = false;
   late CalendarDate _acquiredOn = _today;
   String? _loanId;
@@ -96,9 +102,25 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     acquiredOn: _acquiredOn,
     value: _priced ? const Money(0) : _value,
     byFipe: _byFipe,
-    fipe: _priced ? _vehicle?.fipe : null,
+    fipe: _priced ? _fipe : null,
     loanId: _loanId,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    final asset = widget.asset;
+    if (asset == null) return;
+    _kind = asset.kind;
+    _name.text = asset.name;
+    _value = asset.value;
+    _byFipe = asset.kind != AssetKind.vehicle || asset.fipe != null;
+    _vehicleType = asset.fipe?.type ?? VehicleType.car;
+    _acquiredOn = asset.acquiredOn;
+    _loanId = asset.loan?.id;
+    _fipe = asset.fipe;
+    _modelName = asset.fipe == null ? null : asset.name;
+  }
 
   @override
   void dispose() {
@@ -125,6 +147,7 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
   void _pickType(VehicleType type) => setState(() {
     _vehicleType = type;
     _brand = null;
+    _fipe = null;
     _modelYear = null;
     _model = null;
     _vehicle = null;
@@ -141,6 +164,7 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     setState(() {
       _brand = brand;
       _modelYear = null;
+      _fipe = null;
       _model = null;
       _vehicle = null;
     });
@@ -157,6 +181,7 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     setState(() {
       _modelYear = year;
       _model = null;
+      _fipe = null;
       _vehicle = null;
     });
   }
@@ -173,6 +198,7 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     setState(() {
       _model = model;
       _vehicle = null;
+      _fipe = null;
       _pricing = true;
       _error = null;
     });
@@ -183,6 +209,11 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
       switch (priced) {
         case Ok(:final value):
           _vehicle = value;
+          _fipe = value.fipe;
+          if (_modelName case final previous? when _name.text == previous) {
+            _name.text = value.model;
+          }
+          _modelName = value.model;
         case Err(:final failure):
           _error = failure.userMessage(l10n);
       }
@@ -198,9 +229,11 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     if (problem != null) return;
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
-    final failure = await ref
-        .read(assetsControllerProvider.notifier)
-        .create(_draft);
+    final controller = ref.read(assetsControllerProvider.notifier);
+    final asset = widget.asset;
+    final failure = asset == null
+        ? await controller.create(_draft)
+        : await controller.edit(asset, _draft);
     if (!mounted) return;
     if (failure == null) {
       navigator.pop(true);
@@ -225,16 +258,17 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        CdSegmented<AssetKind>(
-          key: AssetEditor.kindKey,
-          segments: [
-            CdSegment(AssetKind.property, l10n.assetKindProperty),
-            CdSegment(AssetKind.vehicle, l10n.assetKindVehicle),
-            CdSegment(AssetKind.other, l10n.assetKindOther),
-          ],
-          selected: _kind,
-          onChanged: (kind) => setState(() => _kind = kind),
-        ),
+        if (widget.asset == null)
+          CdSegmented<AssetKind>(
+            key: AssetEditor.kindKey,
+            segments: [
+              CdSegment(AssetKind.property, l10n.assetKindProperty),
+              CdSegment(AssetKind.vehicle, l10n.assetKindVehicle),
+              CdSegment(AssetKind.other, l10n.assetKindOther),
+            ],
+            selected: _kind,
+            onChanged: (kind) => setState(() => _kind = kind),
+          ),
         if (_kind == AssetKind.vehicle) ...[
           SwitchListTile(
             key: AssetEditor.fipeKey,
@@ -278,6 +312,14 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
                 : () => _pickModel(brand, modelYear),
           ),
           if (_pricing) const LinearProgressIndicator(),
+          if (_fipe case final fipe? when vehicle == null)
+            Text(
+              l10n.assetFipeCurrent(fipe.code),
+              key: AssetEditor.currentKey,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: palette.onSurfaceVariant,
+              ),
+            ),
           if (vehicle != null)
             Text(
               l10n.assetFipePreview(
@@ -302,6 +344,7 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
           CdCurrencyInput(
             key: AssetEditor.valueKey,
             label: l10n.assetValue,
+            initial: _value,
             large: false,
             onChanged: (value) => setState(() => _value = value),
           ),
@@ -318,7 +361,10 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
           DropdownButtonFormField<String?>(
             key: AssetEditor.loanKey,
             isExpanded: true,
-            initialValue: _loanId,
+            // A loan removed since stays unlinked rather than break the list.
+            initialValue: loans.any((loan) => loan.id == _loanId)
+                ? _loanId
+                : null,
             decoration: InputDecoration(labelText: l10n.assetLoan),
             items: [
               DropdownMenuItem(child: Text(l10n.assetLoanNone)),

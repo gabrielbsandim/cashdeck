@@ -4087,7 +4087,7 @@
     "/assets/{id}": {
       "patch": {
         "operationId": "updateAsset",
-        "summary": "Rename, revalue, link a loan or mark a good sold",
+        "summary": "Rename, redate, revalue, link a loan, move a vehicle to another FIPE model or to a value by hand, or mark a good sold",
         "parameters": [
           {
             "name": "id",
@@ -4109,6 +4109,38 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 80
+                  },
+                  "acquiredOn": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "fipe": {
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "CAR",
+                          "MOTORCYCLE",
+                          "TRUCK"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "pattern": "^\\d{6}-\\d$"
+                      },
+                      "modelYear": {
+                        "type": "integer",
+                        "minimum": 1950,
+                        "maximum": 2100
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "code",
+                      "modelYear"
+                    ]
                   },
                   "value": {
                     "type": "integer",
@@ -4136,7 +4168,7 @@
         },
         "responses": {
           "200": {
-            "description": "Rename, revalue, link a loan or mark a good sold",
+            "description": "Rename, redate, revalue, link a loan, move a vehicle to another FIPE model or to a value by hand, or mark a good sold",
             "content": {
               "application/json": {
                 "schema": {

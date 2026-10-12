@@ -38,6 +38,10 @@ final class ApiAssetsRepository implements AssetsRepository {
   });
 
   @override
+  Future<Result<Asset>> edit(Asset before, AssetDraft draft) =>
+      _patch(before.id, assetEditToJson(before, draft));
+
+  @override
   Future<Result<Asset>> revalue(String id, Money value) =>
       _patch(id, {'value': value.cents});
 

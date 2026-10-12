@@ -181,16 +181,29 @@ export function makeAssets(deps: AssetDeps) {
     if (input.valuedOn && input.valuedOn > day()) {
       throw new ValidationError('A value cannot hold from a future day.')
     }
+    if (input.fipe && asset.kind !== 'VEHICLE') {
+      throw new ValidationError('Only a vehicle has a FIPE code.')
+    }
+    const table = input.fipe
+      ? await deps.vehiclePrices.history(input.fipe)
+      : null
+    // The old prices were another model's.
+    const base = table ? merged([], fromTable(table)) : asset.valuations
     const valuations =
       input.value === undefined
-        ? asset.valuations
-        : withValuation(asset.valuations, {
+        ? base
+        : withValuation(base, {
             day: input.valuedOn ?? day(),
             cents: input.value,
           })
+    if (valuations.length === 0) {
+      throw new ValidationError('The FIPE table has no price for that year.')
+    }
     const next: StoredAsset = {
       ...asset,
-      name: input.name ?? asset.name,
+      name: input.name ?? table?.model ?? asset.name,
+      acquiredOn: input.acquiredOn ?? asset.acquiredOn,
+      fipe: input.fipe === undefined ? asset.fipe : input.fipe,
       loanId: input.loanId === undefined ? asset.loanId : input.loanId,
       soldOn: input.soldOn === undefined ? asset.soldOn : input.soldOn,
       valuations,
