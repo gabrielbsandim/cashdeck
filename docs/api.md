@@ -1035,6 +1035,47 @@ The Android app forwards the notifications of the apps the user picked.
 - `GET /accountant-export/{id}/download`: the ZIP itself (`application/zip`),
   rebuilt from the stored period and items. Contains one CSV per item.
 
+## Monthly recap
+
+The month that closed, told as a story: money in and out, the biggest
+category, what changed against the month before, the savings rate, net worth
+and a short text.
+
+- `GET /recaps/latest?entity=PF|PJ&locale=pt|en`: the last closed month.
+- `GET /recaps/{month}?entity=PF|PJ&locale=pt|en`: `month` is `YYYY-MM` and
+  must have closed; an open or malformed month answers 422 `VALIDATION`.
+
+Without `entity` the recap covers every entity. Without `locale` the text
+follows the device seen last, else `pt`.
+
+```json
+{
+  "data": {
+    "month": "YYYY-MM", "entity": "PF" | "PJ" | null,
+    "flow": { "income": Money, "expenses": Money, "net": Money },
+    "previousFlow": { "income": Money, "expenses": Money, "net": Money },
+    "incomeChange": { "amount": Money, "percent": int | null },
+    "expensesChange": { "amount": Money, "percent": int | null },
+    "savings": { "percent": int | null, "previousPercent": int | null },
+    "topCategory": { "categoryId", "key", "name", "icon", "total": Money, "sharePercent": int } | null,
+    "changes": { "rose": [CategoryShift], "fell": [CategoryShift] },
+    "subscriptions": { "started": [{ "key", "name", "amount": Money }], "stopped": [...] },
+    "netWorth": { "total": Money, "change": { "amount": Money, "percent": int | null } } | null,
+    "story": { "text": string, "locale": "pt" | "en", "source": "AI" | "TEMPLATE" },
+    "generatedAt": datetime
+  }
+}
+```
+
+A `CategoryShift` is `{ categoryId, key, name, icon, total, previous, change }`,
+up to 3 each way and only when it moved at least R$ 50. A subscription started
+when its first confirmed charge falls in the month, and stopped when it was
+charged the month before and not since. `percent` is null when the base is
+zero. The model only phrases the figures in 2 or 3 sentences: a reply that
+quotes an amount not in the data, runs long or fails falls back to a fixed
+template (`source: TEMPLATE`). An AI text is cached per entity, month and
+locale; a template is not, so the model is tried again on the next read.
+
 ## Alerts
 
 Alerts land in an inbox and go out as push notifications through FCM. The
@@ -1062,6 +1103,7 @@ and `invoiceId` when set, so a tap opens the screen the alert is about.
 | `SUBSCRIPTION_CHANGED` | daily cron: a confirmed or detected subscription (not dismissed) charged in the last 7 days costs over 5% more than the charge before (`change: PRICE_UP`, `previous`, `percent`), or was charged twice in the same month (`change: DUPLICATE`, `count`, `month`); `key`, `name`, `amount`, `transactionId`. Once per charge |
 | `CARD_BILL_ABOVE_AVERAGE` | daily cron: a card bill closed in the last 10 days is over 30% and R$ 100 above the average of the up to 6 bills before it (3 or more); `accountId`, `card`, `amount`, `average`, `percent`, `dueDate`. Once per bill |
 | `BANK_SYNC_STALE` | daily cron: a connection last synced over 48 hours ago, never synced, or in `LOGIN_ERROR`, `WAITING_USER_INPUT` or `OUTDATED`; `connectionId`, `institution`, `status`, `hours`, `lastSyncAt`. Once per last sync time |
+| `MONTHLY_RECAP` | monthly cron on day 1: the personal recap of the month that closed, when anything came in or went out; `month`, `entity` (`PF`), `income`, `expenses`. Once per month |
 | `INVOICE_NOT_ISSUED` | daily cron: an active invoice template is past its day of the month and the month has no invoice of it issued or processing; `invoiceId` is the draft when one exists; `templateId`, `client`, `amount`, `day`, `competence`. Once per template and month |
 
 Each alert has a dedupe key, so a retried job or a second cron run on the
@@ -1178,6 +1220,7 @@ Vercel calls each with `Authorization: Bearer $CRON_SECRET` (see
 | `/api/cron/payment-ladder` | weekdays 11:00 | checks that the Asaas balance covers the personal bills it is about to pay (no provider tops it up, so a shortfall sends them to assisted), then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
 | `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
+| `/api/cron/monthly-recap` | day 1, 15:30 | after the sync, sends the `MONTHLY_RECAP` push for the personal month that closed; answers `{ month, sent }` |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
 
 ## Webhooks

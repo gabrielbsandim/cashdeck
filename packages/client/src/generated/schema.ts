@@ -2068,6 +2068,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/recaps/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The recap of the last month that closed, with its AI story */
+        get: operations["getLatestRecap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recaps/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A closed month (YYYY-MM) told in figures: money in and out, top category, changes, savings rate, net worth and a short story */
+        get: operations["getMonthlyRecap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -8470,7 +8504,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -8551,7 +8585,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -8629,7 +8663,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
                                 muted: boolean;
                             }[];
                         };
@@ -8674,7 +8708,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
                                 muted: boolean;
                             }[];
                         };
@@ -10855,6 +10889,366 @@ export interface operations {
                                     currency: string;
                                 };
                             }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getLatestRecap: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                locale?: "pt" | "en";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recap of the last month that closed, with its AI story */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string|null} */
+                            entity: "PF" | "PJ" | null;
+                            flow: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                net: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            previousFlow: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                net: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            incomeChange: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            expensesChange: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            savings: {
+                                percent: number | null;
+                                previousPercent: number | null;
+                            };
+                            topCategory: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                sharePercent: number;
+                            } | null;
+                            changes: {
+                                rose: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    previous: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    change: {
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        percent: number | null;
+                                    };
+                                }[];
+                                fell: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    previous: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    change: {
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        percent: number | null;
+                                    };
+                                }[];
+                            };
+                            subscriptions: {
+                                started: {
+                                    key: string;
+                                    name: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                stopped: {
+                                    key: string;
+                                    name: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                            };
+                            netWorth: {
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                change: {
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    percent: number | null;
+                                };
+                            } | null;
+                            story: {
+                                text: string;
+                                /** @enum {string} */
+                                locale: "pt" | "en";
+                                /** @enum {string} */
+                                source: "AI" | "TEMPLATE";
+                            };
+                            /** Format: date-time */
+                            generatedAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getMonthlyRecap: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                locale?: "pt" | "en";
+            };
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A closed month (YYYY-MM) told in figures: money in and out, top category, changes, savings rate, net worth and a short story */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            month: string;
+                            /** @enum {string|null} */
+                            entity: "PF" | "PJ" | null;
+                            flow: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                net: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            previousFlow: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                expenses: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                net: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            incomeChange: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            expensesChange: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            savings: {
+                                percent: number | null;
+                                previousPercent: number | null;
+                            };
+                            topCategory: {
+                                categoryId: string;
+                                key: string | null;
+                                name: string;
+                                icon: string | null;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                sharePercent: number;
+                            } | null;
+                            changes: {
+                                rose: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    previous: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    change: {
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        percent: number | null;
+                                    };
+                                }[];
+                                fell: {
+                                    categoryId: string;
+                                    key: string | null;
+                                    name: string;
+                                    icon: string | null;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    previous: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    change: {
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        percent: number | null;
+                                    };
+                                }[];
+                            };
+                            subscriptions: {
+                                started: {
+                                    key: string;
+                                    name: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                stopped: {
+                                    key: string;
+                                    name: string;
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                            };
+                            netWorth: {
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                change: {
+                                    amount: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    percent: number | null;
+                                };
+                            } | null;
+                            story: {
+                                text: string;
+                                /** @enum {string} */
+                                locale: "pt" | "en";
+                                /** @enum {string} */
+                                source: "AI" | "TEMPLATE";
+                            };
+                            /** Format: date-time */
+                            generatedAt: string;
                         };
                     };
                 };

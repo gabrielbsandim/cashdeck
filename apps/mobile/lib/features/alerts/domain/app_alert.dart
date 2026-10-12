@@ -23,6 +23,7 @@ enum AlertKind {
   invoiceNotIssued('INVOICE_NOT_ISSUED'),
   budgetNearLimit('BUDGET_NEAR_LIMIT'),
   budgetLimitReached('BUDGET_LIMIT_REACHED'),
+  monthlyRecap('MONTHLY_RECAP'),
   other('OTHER');
 
   new(this.wire);

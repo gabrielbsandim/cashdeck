@@ -30,6 +30,7 @@ import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
+import 'package:cashdeck/features/recap/presentation/recap_entry_card.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -123,6 +124,7 @@ class _Analysis extends ConsumerWidget {
     final left = insights.leftThisMonth;
     final company = insights.companyToPersonal;
     final cards = <Widget>[
+      const RecapEntryCard(),
       _FlowCard(insights: insights, count: count),
       _SavingsCard(savings: insights.savings),
       _ChangesCard(rose: insights.rose, fell: insights.fell),

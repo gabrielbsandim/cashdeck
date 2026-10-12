@@ -23,6 +23,7 @@ abstract final class AppRoutes {
   static const goals = '/goals';
   static const budgets = '/budgets';
   static const budgetSuggestions = '$budgets/suggestions';
+  static const recaps = '/recap';
 
   static const entityProfiles = '$settings/profiles';
   static const settingsConnections = '$settings/connections';
@@ -75,4 +76,7 @@ abstract final class AppRoutes {
       '$budgetSuggestions?month=${Uri.encodeQueryComponent(month)}';
 
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
+
+  /// The story of a month that closed, `2026-09`.
+  static String recap(String month) => '$recaps/${Uri.encodeComponent(month)}';
 }

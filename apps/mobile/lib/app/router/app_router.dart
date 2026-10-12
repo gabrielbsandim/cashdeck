@@ -43,6 +43,7 @@ import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_screen.
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
+import 'package:cashdeck/features/recap/presentation/recap_routes.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:cashdeck/features/settings/presentation/safe_zone/safe_zone_screen.dart';
 import 'package:cashdeck/features/settings/presentation/sections/company_settings_screen.dart';
@@ -287,6 +288,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       _page(AppRoutes.categoryReview, const CategoryReviewScreen()),
       ...goalRoutes,
       ...budgetRoutes,
+      ...recapRoutes,
       GoRoute(
         path: AppRoutes.investments,
         builder: (_, _) => const InvestmentsScreen(),

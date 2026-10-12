@@ -32,4 +32,19 @@ describe('cron schedule', () => {
     expect(range).toBe('11-23')
     expect(Number(step)).toBeGreaterThanOrEqual(3)
   })
+
+  // The recap closes the month only after the daily sync brought its last day.
+  it('sends the monthly recap on day 1, after the open finance backstop', () => {
+    const [minute, hour, day, ...rest] = (
+      scheduleOf('/api/cron/monthly-recap') ?? ''
+    ).split(' ')
+    const [syncMinute, syncHour] = (
+      scheduleOf('/api/cron/open-finance-sync') ?? ''
+    ).split(' ')
+    expect(day).toBe('1')
+    expect(rest).toEqual(['*', '*'])
+    expect(Number(hour) * 60 + Number(minute)).toBeGreaterThan(
+      Number(syncHour) * 60 + Number(syncMinute),
+    )
+  })
 })

@@ -85,11 +85,20 @@ while the credentials still authenticate it; a failed call never blocks it.
 Tapping an alert or a push opens what it is about: `UNUSUAL_PURCHASE` its
 `transactionId`, `SUBSCRIPTION_CHANGED` the subscription `key`,
 `CARD_BILL_ABOVE_AVERAGE` the card `accountId`, `BANK_SYNC_STALE` the
-connections and `INVOICE_NOT_ISSUED` the company settings; any other type opens
+connections and `INVOICE_NOT_ISSUED` the company settings, `MONTHLY_RECAP` the recap of its
+`month`; any other type opens
 its `billId`. A push names its type in `alertType`; without a target it opens
 the inbox. Push
 needs the Firebase config files (see `docs/deploy.md` at the repository root);
 without them `FirebasePushMessaging.start` returns false and the app runs as is.
+
+## Monthly recap
+
+`/recap/:month` plays `GET /api/v1/recaps/{month}?entity=PF&locale=pt|en` as a
+story: tap right to go on, left to go back, swipe down or the close button to
+leave. A page without its figure is skipped. Análises opens the last closed
+month; an open or malformed month fails locally without a call. With amounts
+hidden, every `R$` amount in the closing text is masked too.
 
 ## Bills
 

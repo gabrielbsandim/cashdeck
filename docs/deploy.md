@@ -19,6 +19,7 @@ The API runs on Vercel and the database on Neon Postgres.
   | `/api/cron/reconcile-payments` | `0 21 * * 1-5` |
   | `/api/cron/invoices` | `0 12 * * 1-5` |
   | `/api/cron/alerts` | `0 12 * * *` |
+  | `/api/cron/monthly-recap` | `30 15 1 * *` |
 
   Vercel sends `Authorization: Bearer $CRON_SECRET`; a cron without the secret
   answers 401. Cron routes allow 300 seconds each.
