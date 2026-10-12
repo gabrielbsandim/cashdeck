@@ -8,7 +8,6 @@ import {
   type EntityKind,
   expectedIncome,
   type FinancialEntity,
-  isCardBillPayment,
   isSettled,
   type LocalDate,
   Money,
@@ -43,7 +42,8 @@ type SafeToSpendDeps = BudgetDeps &
 const HISTORY_DAYS = 100
 // An unpaid bill older than this was paid outside the app or debited already.
 const OVERDUE_DAYS = 20
-// A card bill paid early leaves a payment of its amount within this window.
+// A card bill paid early leaves a debit of its exact amount within this
+// window; banks describe it as a plain boleto as often as a card payment.
 const EARLY_PAYMENT_DAYS = 40
 // A card bill also captured as a boleto falls due within days of the card's.
 const SAME_BILL_DAYS = 3
@@ -207,9 +207,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       tenantId,
       cards.map(card => card.id),
     )
-    const payments = context.recent.filter(
-      tx => tx.amount.isNegative() && isCardBillPayment(tx.description),
-    )
+    const payments = context.recent.filter(tx => tx.amount.isNegative())
     const captured = (cents: number, dueOn: LocalDate) =>
       context.open.some(
         bill =>

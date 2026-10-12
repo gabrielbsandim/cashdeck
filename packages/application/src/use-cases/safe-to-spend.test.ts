@@ -216,7 +216,7 @@ async function seed() {
       accountId: 'chk',
       bookedOn: '2026-10-06',
       amount: Money.of(-40000),
-      description: 'Pagamento fatura cartao',
+      description: 'Pagamento Boleto Banco Exemplo',
     }),
     transaction({
       id: 'old-payment',
