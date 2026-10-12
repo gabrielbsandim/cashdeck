@@ -156,6 +156,13 @@ describe('loanStanding', () => {
     expect(standing.balance).toBe(1000)
   })
 
+  it('keeps an installment due on a weekend open until the business day', () => {
+    const weekend = [installment(1, { dueOn: '2026-10-10', balance: 0 })]
+
+    expect(loanStanding(loan(weekend), '2026-10-13').open).toHaveLength(1)
+    expect(loanStanding(loan(weekend), '2026-10-14').open).toHaveLength(0)
+  })
+
   it('owes nothing once every installment is behind', () => {
     const standing = loanStanding(loan([]), '2026-05-01')
 
@@ -190,10 +197,7 @@ describe('prepayment', () => {
     })
   })
 
-  it('simulates SAC loans with a positive amount only', () => {
-    const price = { ...loan(schedule), system: 'PRICE' as const }
-
-    expect(() => prepayment(price, '2026-01-20', 100)).toThrow('SAC')
+  it('simulates a positive amount only', () => {
     expect(() => prepayment(loan(schedule), '2026-01-20', 0)).toThrow(
       'positive',
     )

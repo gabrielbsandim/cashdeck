@@ -455,7 +455,7 @@ describe('safe to spend', () => {
       installment('2026-10-17', 98000),
     ])
     const lines = rows(await makeSafeToSpend(deps)(TENANT))
-    expect(lines).toContainEqual(['LOAN', 'Bank 77', -98000, '2026-10-17'])
+    expect(lines).toContainEqual(['LOAN', 'Bank 77', -98000, '2026-10-19'])
     expect(lines).not.toContainEqual([
       'FIXED',
       'Mortgage Bank',

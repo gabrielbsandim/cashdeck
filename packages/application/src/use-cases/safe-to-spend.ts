@@ -6,6 +6,7 @@ import {
   type BudgetLeft,
   cashShortfall,
   chargesInstallment,
+  debitOn,
   daysBetween,
   type EntityKind,
   expectedIncome,
@@ -203,12 +204,13 @@ function loanObligations(
   if (!due) {
     return []
   }
+  const debit = debitOn(due)
   return [
     {
       kind: 'LOAN',
       label: `${loan.lender} ${loan.contract}`,
       amount: Money.of(due.total),
-      on: due.dueOn >= day ? due.dueOn : on,
+      on: debit >= day ? debit : on,
       fromReserve: false,
     },
   ]

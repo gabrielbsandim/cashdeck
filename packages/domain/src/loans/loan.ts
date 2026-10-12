@@ -1,3 +1,4 @@
+import { nextBusinessDay } from '@/calendar/business-days'
 import { type LocalDate } from '@/calendar/local-date'
 import { ValidationError } from '@/shared/domain-error'
 
@@ -81,10 +82,14 @@ const totalsOf = (
 const owedBefore = (installment: LoanInstallment) =>
   installment.balance + installment.principal
 
-// A past due installment the statement still shows open was debited after it
-// was issued; the bank debits it by itself.
+// A due date on a weekend or holiday is debited on the next business day; one
+// left open past that was debited after the statement was issued.
+export function debitOn(installment: LoanInstallment): LocalDate {
+  return nextBusinessDay(installment.dueOn)
+}
+
 export function isOpen(installment: LoanInstallment, today: LocalDate) {
-  return installment.paidOn === null && installment.dueOn >= today
+  return installment.paidOn === null && debitOn(installment) >= today
 }
 
 export function loanStanding(
@@ -110,36 +115,73 @@ export function loanStanding(
   }
 }
 
+// The monthly rate whose yearly compounding is the effective rate.
+export function monthlyRate(effectiveRate: number) {
+  return (1 + effectiveRate / 100) ** (1 / 12) - 1
+}
+
+const sum = (
+  installments: readonly LoanInstallment[],
+  pick: (installment: LoanInstallment) => number,
+) => installments.reduce((total, installment) => total + pick(installment), 0)
+
+type Kept = { readonly count: number; readonly interestSaved: number }
+
 // SAC keeps the amortization fixed, so paying `amount` now lowers every later
 // balance by it and drops the installments it covers from the end.
+function sacKept(open: readonly LoanInstallment[], amount: number): Kept {
+  const kept = open.filter(installment => owedBefore(installment) > amount)
+  const cut = open.slice(kept.length)
+  const keptSaving = sum(kept, installment =>
+    Math.round((installment.interest * amount) / owedBefore(installment)),
+  )
+  return {
+    count: kept.length,
+    interestSaved: keptSaving + sum(cut, installment => installment.interest),
+  }
+}
+
+// Price keeps the installment, so the smaller balance is paid off sooner.
+function priceKept(
+  open: readonly LoanInstallment[],
+  owed: number,
+  rate: number,
+): Kept {
+  const installment = (open[0]?.principal ?? 0) + (open[0]?.interest ?? 0)
+  let left = owed
+  let interest = 0
+  let count = 0
+  while (left > 0 && count < open.length) {
+    const due = Math.round(left * rate)
+    interest += due
+    left -= installment - due
+    count += 1
+  }
+  return {
+    count,
+    interestSaved: sum(open, installment => installment.interest) - interest,
+  }
+}
+
 export function prepayment(
   loan: LoanStatement,
   today: LocalDate,
   amount: number,
 ): Prepayment {
-  if (loan.system !== 'SAC') {
-    throw new ValidationError('Only SAC loans can be simulated.')
-  }
   if (amount <= 0) {
     throw new ValidationError('The amount must be positive.')
   }
   const { open, balance } = loanStanding(loan, today)
-  const cut = open.filter(installment => owedBefore(installment) <= amount)
-  const kept = open.filter(installment => owedBefore(installment) > amount)
-  const keptSaving = kept.reduce(
-    (sum, installment) =>
-      sum +
-      Math.round((installment.interest * amount) / owedBefore(installment)),
-    0,
-  )
+  const kept =
+    loan.system === 'SAC'
+      ? sacKept(open, amount)
+      : priceKept(open, balance - amount, monthlyRate(loan.effectiveRate))
   return {
     amount,
-    interestSaved:
-      keptSaving +
-      cut.reduce((sum, installment) => sum + installment.interest, 0),
-    feesSaved: cut.reduce((sum, installment) => sum + installment.fees, 0),
-    monthsCut: cut.length,
-    lastDueOn: kept.at(-1)?.dueOn ?? null,
+    interestSaved: kept.interestSaved,
+    feesSaved: sum(open.slice(kept.count), installment => installment.fees),
+    monthsCut: open.length - kept.count,
+    lastDueOn: open[kept.count - 1]?.dueOn ?? null,
     balanceAfter: Math.max(0, balance - amount),
   }
 }

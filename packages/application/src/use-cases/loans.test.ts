@@ -125,4 +125,36 @@ describe('loans', () => {
     expect((await loans.list(TENANT)).items).toEqual([])
     await expect(loans.remove(TENANT, id)).rejects.toThrow('Loan')
   })
+
+  it('registers a loan from the terms a bank app shows', async () => {
+    const { loans } = setup(null)
+
+    const view = await loans.register(TENANT, {
+      lender: 'Caixa',
+      contract: '42',
+      system: 'PRICE',
+      indexer: 'TR',
+      effectiveRate: (1.01 ** 12 - 1) * 100,
+      cet: 12.7,
+      principal: 4000,
+      propertyValue: null,
+      signedOn: '2026-08-10',
+      termMonths: 4,
+      paid: [{ number: 1, dueOn: '2026-09-10', total: 1100, paid: null }],
+      reference: { number: 1, principal: 990, interest: 100, fees: 10 },
+      balance: 3000,
+    })
+
+    expect(view).toMatchObject({
+      id: 'caixa-42',
+      entity: 'PF',
+      system: 'PRICE',
+      paidCount: 1,
+      balance: { cents: 3000 },
+      next: { number: 2, dueOn: '2026-10-10', total: { cents: 1030 } },
+    })
+    expect(
+      await loans.simulatePrepayment(TENANT, 'caixa-42', 1000),
+    ).toMatchObject({ monthsCut: 1, interestSaved: { cents: 30 } })
+  })
 })

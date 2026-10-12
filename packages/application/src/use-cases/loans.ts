@@ -2,6 +2,8 @@ import {
   type EntityKind,
   type LoanInstallment,
   type LoanStatement,
+  type LoanTerms,
+  loanFromTerms,
   loanStanding,
   Money,
   prepayment,
@@ -102,19 +104,12 @@ export function makeLoans(deps: LoanDeps) {
   }
 
   // A new statement of the same contract replaces the stored one.
-  async function importStatement(
+  async function store(
     tenantId: string,
-    input: ImportLoanInput,
+    kind: EntityKind,
+    statement: LoanStatement,
   ): Promise<LoanView> {
-    const entity = await requireEntity(deps.entities, tenantId, input.entity)
-    const text = await deps.documentText.read({
-      mimeType: input.mimeType,
-      bytes: decodeUpload(input.base64),
-    })
-    const statement = readBradescoLoanStatement(text ?? '')
-    if (!statement) {
-      throw new ValidationError('The file is not a loan statement we can read.')
-    }
+    const entity = await requireEntity(deps.entities, tenantId, kind)
     const loan: StoredLoan = {
       ...statement,
       id: `${statement.lender}-${statement.contract}`.toLowerCase(),
@@ -124,6 +119,30 @@ export function makeLoans(deps: LoanDeps) {
     }
     await deps.documents.put(tenantId, LOANS_COLLECTION, loan.id, loan)
     return loanView(loan, day())
+  }
+
+  async function importStatement(
+    tenantId: string,
+    input: ImportLoanInput,
+  ): Promise<LoanView> {
+    const text = await deps.documentText.read({
+      mimeType: input.mimeType,
+      bytes: decodeUpload(input.base64),
+    })
+    const statement = readBradescoLoanStatement(text ?? '')
+    if (!statement) {
+      throw new ValidationError('The file is not a loan statement we can read.')
+    }
+    return store(tenantId, input.entity, statement)
+  }
+
+  // For a bank that offers no statement file, from what its app shows.
+  async function register(
+    tenantId: string,
+    terms: LoanTerms,
+    entity: EntityKind = 'PF',
+  ): Promise<LoanView> {
+    return store(tenantId, entity, loanFromTerms(terms))
   }
 
   async function list(tenantId: string): Promise<LoansView> {
@@ -157,5 +176,5 @@ export function makeLoans(deps: LoanDeps) {
     return { id }
   }
 
-  return { importStatement, list, simulatePrepayment, remove }
+  return { importStatement, register, list, simulatePrepayment, remove }
 }
