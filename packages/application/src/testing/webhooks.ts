@@ -39,6 +39,30 @@ export class InMemoryWebhookEventStore implements WebhookEventStore {
     return true
   }
 
+  async reclaim(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    receivedAt: Date,
+    staleBefore: Date,
+  ): Promise<boolean> {
+    const id = keyOf(tenantId, provider, eventId)
+    const stored = this.seen.get(id)
+    const abandoned =
+      stored?.outcome === null && stored.receivedAt < staleBefore
+    if (stored?.outcome !== 'FAILED' && !abandoned) {
+      return false
+    }
+    this.seen.set(id, {
+      ...(stored as StoredWebhookEvent),
+      receivedAt,
+      outcome: null,
+      reason: null,
+      processedAt: null,
+    })
+    return true
+  }
+
   async settle(
     tenantId: string,
     provider: WebhookProvider,

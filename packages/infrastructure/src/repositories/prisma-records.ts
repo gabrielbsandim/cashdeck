@@ -659,6 +659,29 @@ export class PrismaWebhookEventStore implements WebhookEventStore {
     return result.count === 1
   }
 
+  // One conditional update, so two redeliveries never both take it back.
+  async reclaim(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    receivedAt: Date,
+    staleBefore: Date,
+  ): Promise<boolean> {
+    const result = await this.db.webhookEvent.updateMany({
+      where: {
+        tenantId,
+        provider,
+        eventId,
+        OR: [
+          { outcome: 'FAILED' },
+          { outcome: null, receivedAt: { lt: staleBefore } },
+        ],
+      },
+      data: { receivedAt, outcome: null, reason: null, processedAt: null },
+    })
+    return result.count === 1
+  }
+
   async settle(
     tenantId: string,
     provider: WebhookProvider,

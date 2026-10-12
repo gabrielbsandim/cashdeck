@@ -125,6 +125,31 @@ describe('capture sources', () => {
     expect((await of(personal.id)).sort()).toEqual(['BOLETO', 'PIX_QR'])
   })
 
+  it('flags every e-mailed bill whose sender was not verified', async () => {
+    const deps = fullDeps({
+      billSources: [
+        source('GMAIL', [
+          found({ paymentCode: BOLETO_LINE, senderVerified: true }),
+          found({ externalId: 'm2', paymentCode: TAX_BARCODE }),
+          found({
+            externalId: 'm3',
+            pixCode: PIX_NO_AMOUNT,
+            amountCents: 900,
+            senderVerified: false,
+          }),
+        ]),
+      ],
+    })
+    const capture = makeCaptureSources(deps)
+    const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
+    await capture.readMailbox(TENANT, mailbox.id)
+    const { items } = await deps.bills.list(TENANT, {}, { limit: 10 })
+    const flags = Object.fromEntries(
+      items.map(bill => [bill.kind, bill.unverifiedSender]),
+    )
+    expect(flags).toEqual({ BOLETO: false, TAX_BARCODE: true, PIX_QR: true })
+  })
+
   it('starts the next read window when the previous run started', async () => {
     const windows: Date[] = []
     const owners: Array<string | undefined> = []

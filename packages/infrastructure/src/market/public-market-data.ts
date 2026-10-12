@@ -1,6 +1,7 @@
 import { type DailyValue, type MarketData } from '@cashdeck/application'
 import { addDays, type LocalDate, toLocalDate } from '@cashdeck/domain'
 import {
+  bodySummary,
   type HttpResponse,
   isSuccess,
   ProviderHttpError,
@@ -96,7 +97,11 @@ export class PublicMarketData implements MarketData {
 
 function parse<T>(provider: string, response: HttpResponse): T {
   if (!isSuccess(response)) {
-    throw new ProviderHttpError(provider, response.status, response.text)
+    throw new ProviderHttpError(
+      provider,
+      response.status,
+      bodySummary(response.text),
+    )
   }
   return readJson<T>(response)
 }

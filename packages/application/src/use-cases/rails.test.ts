@@ -199,4 +199,49 @@ describe('automation', () => {
       paymentCapCents: null,
     })
   })
+
+  it('audits every pause, resume and change of limits with its actor', async () => {
+    const deps = fullDeps()
+    const automation = makeAutomation(deps)
+    const actor = { kind: 'USER' as const, id: 'token:abc', requestId: 'r1' }
+    await automation.pause(TENANT, actor)
+    await automation.resume(TENANT)
+    await automation.update(
+      TENANT,
+      { entity: 'PJ', paymentCapCents: 1000, approvalCutoff: '16:00' },
+      actor,
+    )
+    expect(
+      deps.audit.events.map(event => [
+        event.action,
+        event.result,
+        event.actorId,
+        event.details,
+      ]),
+    ).toEqual([
+      [
+        'automation.paused',
+        'PAUSED',
+        'token:abc',
+        { entities: expect.arrayContaining(['pf', 'pj']) },
+      ],
+      [
+        'automation.resumed',
+        'RESUMED',
+        null,
+        { entities: expect.arrayContaining(['pf', 'pj']) },
+      ],
+      [
+        'automation.limits_updated',
+        'UPDATED',
+        'token:abc',
+        { changes: { paymentCapCents: { from: null, to: 1000 } } },
+      ],
+    ])
+    expect(deps.audit.events[2]).toMatchObject({
+      actor: 'USER',
+      requestId: 'r1',
+      subjectId: 'pj',
+    })
+  })
 })

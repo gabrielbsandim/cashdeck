@@ -7,7 +7,11 @@ import {
 } from '@cashdeck/application'
 import { findPaymentCodes as findCodesInText } from '@cashdeck/domain'
 import { BillExtractor, toExtracted } from '@/capture/bill-extractor'
-import { documentPasswords, GmailBillSource } from '@/capture/gmail-source'
+import {
+  documentPasswords,
+  GmailBillSource,
+  isSenderVerified,
+} from '@/capture/gmail-source'
 import {
   BOLETO_LINE,
   credentials,
@@ -177,6 +181,63 @@ function gmailEnv() {
   })
 }
 
+describe('isSenderVerified', () => {
+  const from = { name: 'From', value: 'Energia <conta@energia.test>' }
+  const results = (value: string) => [
+    from,
+    { name: 'Authentication-Results', value },
+  ]
+
+  it('trusts an aligned DKIM and DMARC pass, or an aligned SPF pass', () => {
+    expect(
+      isSenderVerified(
+        results(
+          'mx.google.com; dkim=pass header.d=mail.energia.test; dmarc=pass header.from=energia.test',
+        ),
+      ),
+    ).toBe(true)
+    expect(
+      isSenderVerified(
+        results(
+          'mx.google.com; spf=pass (a; b) smtp.mailfrom=bounce@energia.test',
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('refuses a missing, failed, misaligned or foreign result', () => {
+    const refused = [
+      [from],
+      [
+        { name: 'From', value: 'Energia' },
+        ...results('mx.google.com; spf=pass smtp.mailfrom=energia.test').slice(
+          1,
+        ),
+      ],
+      results(
+        'mx.google.com; dkim=pass header.i=@energia.test; dmarc=fail header.from=energia.test',
+      ),
+      results(
+        'mx.google.com; dkim=pass header.i=@other.test; dmarc=pass header.from=energia.test',
+      ),
+      results('mx.google.com; dkim=pass header.i=@energia.test'),
+      results('mx.google.com; spf=softfail smtp.mailfrom=bounce@energia.test'),
+      results('relay.other.test; spf=pass smtp.mailfrom=bounce@energia.test'),
+      [
+        ...results('mx.google.com; spf=fail smtp.mailfrom=bounce@energia.test'),
+        {
+          name: 'Authentication-Results',
+          value: 'mx.google.com; spf=pass smtp.mailfrom=bounce@energia.test',
+        },
+      ],
+      results(''),
+    ]
+    for (const headers of refused) {
+      expect(isSenderVerified(headers)).toBe(false)
+    }
+  })
+})
+
 describe('GmailBillSource', () => {
   const since = new Date('2026-10-01T00:00:00Z')
   const now = () => new Date('2026-10-08T12:00:00Z')
@@ -200,6 +261,11 @@ describe('GmailBillSource', () => {
             mimeType: 'multipart/mixed',
             headers: [
               { name: 'From', value: '"Energia Exemplo" <conta@energia.test>' },
+              {
+                name: 'Authentication-Results',
+                value:
+                  'mx.google.com; dkim=pass header.i=@energia.test header.s=s1; spf=pass (google.com: domain of bounce@energia.test) smtp.mailfrom=bounce@energia.test; dmarc=pass (p=REJECT) header.from=energia.test',
+              },
             ],
             parts: [
               {
@@ -255,6 +321,7 @@ describe('GmailBillSource', () => {
         dueDate: '2026-10-20',
         kind: 'BOLETO',
         taxIds: [],
+        senderVerified: true,
       },
       {
         externalId: 'm2:0',
@@ -265,6 +332,7 @@ describe('GmailBillSource', () => {
         dueDate: null,
         kind: 'PIX_QR',
         taxIds: [],
+        senderVerified: false,
       },
     ])
     const list = scripted.requests.find(r =>

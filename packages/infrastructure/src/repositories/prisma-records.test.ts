@@ -697,6 +697,30 @@ describe('webhook events', () => {
       data: settlement,
     })
   })
+
+  it('takes back a failed or abandoned event in one update', async () => {
+    const { db, repos } = mockClient()
+    db.webhookEvent.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+    const stale = new Date(NOW.getTime() - 1000)
+    const reclaim = () =>
+      repos.webhookEvents.reclaim(TENANT, 'pluggy', 'e1', NOW, stale)
+    expect(await reclaim()).toBe(true)
+    expect(await reclaim()).toBe(false)
+    expect(db.webhookEvent.updateMany.mock.calls[0]?.[0]).toEqual({
+      where: {
+        tenantId: TENANT,
+        provider: 'pluggy',
+        eventId: 'e1',
+        OR: [
+          { outcome: 'FAILED' },
+          { outcome: null, receivedAt: { lt: stale } },
+        ],
+      },
+      data: { receivedAt: NOW, outcome: null, reason: null, processedAt: null },
+    })
+  })
 })
 
 describe('card bills', () => {

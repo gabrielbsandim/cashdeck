@@ -10,6 +10,7 @@ import { FakeWebhookReader } from '@/testing/webhooks'
 import {
   makeProcessWebhookEvents,
   makeReceiveWebhook,
+  WEBHOOK_STALE_MS,
 } from '@/use-cases/webhooks'
 
 const delivery = (token = 'test-token'): WebhookDelivery => ({
@@ -65,6 +66,35 @@ describe('receiveWebhook', () => {
     await expect(
       receive(TENANT, { ...delivery(), provider: 'pluggy' }),
     ).rejects.toThrow(NotFoundError)
+  })
+
+  it('runs a failed or abandoned event again when it is delivered again', async () => {
+    const events: WebhookEvent[] = [
+      { eventId: 'e1', type: 'T', kind: 'IGNORED' },
+      { eventId: 'e2', type: 'T', kind: 'IGNORED' },
+    ]
+    const deps = fullDeps({
+      webhooks: [new FakeWebhookReader('asaas', events)],
+    })
+    const receive = makeReceiveWebhook(deps)
+    const ids = async () =>
+      (await receive(TENANT, delivery())).events.map(event => event.eventId)
+    expect(await ids()).toEqual(['e1', 'e2'])
+    const settled = (outcome: 'FAILED' | 'DONE') => ({
+      outcome,
+      reason: null,
+      processedAt: NOW,
+    })
+    await deps.webhookEvents.settle(TENANT, 'asaas', 'e1', settled('FAILED'))
+    await deps.webhookEvents.settle(TENANT, 'asaas', 'e2', settled('DONE'))
+    expect(await ids()).toEqual(['e1'])
+    expect(await ids()).toEqual([])
+    deps.clock.set(new Date(NOW.getTime() + WEBHOOK_STALE_MS + 1))
+    expect(await ids()).toEqual(['e1'])
+    expect(deps.webhookEvents.find(TENANT, 'asaas', 'e1')).toMatchObject({
+      outcome: null,
+      receivedAt: deps.clock.now(),
+    })
   })
 
   it('stores the type and what each event names', async () => {

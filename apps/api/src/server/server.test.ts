@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { FakeSecretVault } from '@cashdeck/application'
 import {
   EnvelopeSecretVault,
   PrismaBillRepository,
@@ -50,8 +51,25 @@ describe('container', () => {
   })
 
   it('refuses to keep data in memory on a deployed server', () => {
-    expect(() => buildContainer(readEnv({ VERCEL_ENV: 'production' }))).toThrow(
-      'DATABASE_URL is required',
+    const key = randomBytes(32).toString('base64')
+    expect(() =>
+      buildContainer(
+        readEnv({ VERCEL_ENV: 'production', CASHDECK_MASTER_KEY: key }),
+      ),
+    ).toThrow('DATABASE_URL is required')
+  })
+
+  it('refuses the fake vault in production', () => {
+    for (const env of [
+      { NODE_ENV: 'production' },
+      { VERCEL_ENV: 'production' },
+    ]) {
+      expect(() => buildContainer(readEnv(env))).toThrow(
+        'CASHDECK_MASTER_KEY is required in production.',
+      )
+    }
+    expect(buildContainer(readEnv({ NODE_ENV: 'test' })).vault).toBeInstanceOf(
+      FakeSecretVault,
     )
   })
 })
@@ -93,6 +111,43 @@ describe('runCronJob', () => {
       },
     )
     expect(failed.status).toBe(500)
+  })
+
+  it('raises one in-app alert per failing job and day', async () => {
+    vi.stubEnv('CRON_SECRET', 'secret')
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const boom = async () => {
+      throw new Error('boom')
+    }
+    await runCronJob(request('Bearer secret'), 'capture', boom)
+    await runCronJob(request('Bearer secret'), 'capture', boom)
+    const { alertStore } = getContainer().deps
+    const { items } = await alertStore.list('local', {}, { limit: 10 })
+    expect(items).toEqual([
+      expect.objectContaining({
+        type: 'JOB_FAILED',
+        data: { job: 'capture', error: 'Error: boom' },
+      }),
+    ])
+  })
+
+  it('still answers when the alert cannot be raised', async () => {
+    vi.stubEnv('CRON_SECRET', 'secret')
+    vi.stubEnv('NODE_ENV', 'production')
+    const logged = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    const failed = await runCronJob(
+      request('Bearer secret'),
+      'job',
+      async () => {
+        throw new Error('boom')
+      },
+    )
+    expect(failed.status).toBe(500)
+    expect(logged.mock.calls.map(call => String(call[0]))).toContain(
+      '[cron:job:alert] Error: CASHDECK_MASTER_KEY is required in production.',
+    )
   })
 })
 

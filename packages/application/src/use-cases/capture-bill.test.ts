@@ -411,3 +411,44 @@ describe('captureBill pairing the halves of a bolepix', () => {
     expect(again).toEqual({ bill: pix.bill, duplicate: true })
   })
 })
+
+describe('captureBill from an unverified e-mail', () => {
+  const unverified = (capture: ReturnType<typeof setup>, input: object) =>
+    makeCaptureBill(capture.deps)(
+      TENANT,
+      captureBillSchema.parse({ entityId: 'pf', source: 'GMAIL', ...input }),
+      { unverifiedSender: true },
+    )
+
+  it('flags and audits the bill', async () => {
+    const context = setup()
+    const { bill, duplicate } = await unverified(context, {
+      paymentCode: BOLETO_LINE,
+    })
+    expect(duplicate).toBe(false)
+    expect(bill.unverifiedSender).toBe(true)
+    expect(context.deps.audit.events.at(-1)).toMatchObject({
+      action: 'bill.unverified_sender',
+      subjectId: bill.id,
+    })
+  })
+
+  it('never completes or rewrites a stored bill', async () => {
+    const context = setup()
+    const stored = await context.run({ paymentCode: BOLETO_LINE })
+    const same = await unverified(context, {
+      paymentCode: BOLETO_LINE,
+      pixCode: PIX_OF_BOLETO,
+    })
+    expect(same).toEqual({ bill: stored.bill, duplicate: true })
+    const half = await unverified(context, { pixCode: PIX_OF_BOLETO })
+    expect(half.duplicate).toBe(false)
+    expect(half.bill.id).not.toBe(stored.bill.id)
+    expect(
+      await context.deps.bills.findById(TENANT, stored.bill.id),
+    ).toMatchObject({ pixCode: null, unverifiedSender: false })
+    expect(context.deps.audit.events.map(event => event.action)).toEqual([
+      'bill.unverified_sender',
+    ])
+  })
+})

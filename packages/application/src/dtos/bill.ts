@@ -66,6 +66,7 @@ export const billViewSchema = z.object({
   paidAt: z.string().nullable(),
   paidBy: z.enum(['RAIL', 'USER', 'STATEMENT']).nullable(),
   autoDebit: z.boolean(),
+  unverifiedSender: z.boolean(),
 })
 
 export type BillView = z.infer<typeof billViewSchema>
@@ -97,6 +98,7 @@ export const paymentAttemptViewSchema = z.object({
 })
 
 export const CONFIRMATION_REASONS = [
+  'UNVERIFIED_SENDER',
   'NEW_PAYEE',
   'ABOVE_THRESHOLD',
   'AMOUNT_DEVIATION',
@@ -135,6 +137,7 @@ export function toBillView(
     paidAt: bill.paidAt?.toISOString() ?? null,
     paidBy: bill.paidBy,
     autoDebit,
+    unverifiedSender: bill.unverifiedSender,
   }
 }
 

@@ -5,6 +5,7 @@ import {
   requireCredentials,
 } from '@/credentials/credential-resolver'
 import {
+  bodySummary,
   type Call,
   isClientError,
   isSuccess,
@@ -101,5 +102,9 @@ export async function c6Call<T>(
         `C6 refused the request (${response.status}).`,
     }
   }
-  throw new ProviderHttpError(C6_PROVIDER, response.status, response.text)
+  throw new ProviderHttpError(
+    C6_PROVIDER,
+    response.status,
+    bodySummary(response.text),
+  )
 }

@@ -25,6 +25,8 @@ import {
   formatDay,
   formatMoney,
   invoiceAlert,
+  jobFailedAlert,
+  makeReportJobFailure,
   manualMethod,
 } from '@/use-cases/alert-events'
 import {
@@ -87,6 +89,8 @@ describe('alert text', () => {
       card: 'Card Bank Visa',
       closing: '01/10',
       source: 'DDA',
+      job: 'capture',
+      error: 'Error: boom',
     }
     for (const type of ALERT_TYPES) {
       for (const text of [
@@ -188,6 +192,34 @@ describe('alert text', () => {
       type: 'CARD_BILL_CLOSED',
       data: { card: 'Card Bank Visa 1234', closing: '01/10' },
     })
+  })
+
+  it('raises one job failure alert per job and day', async () => {
+    const recorder = new RecordingAlertEmitter()
+    const clock = new FixedClock(NOW)
+    const report = makeReportJobFailure({ alerts: recorder, clock })
+    await report(TENANT, 'capture', new Error('x'.repeat(200)))
+    await report(TENANT, 'capture', new Error('again'))
+    await report(TENANT, 'alerts', 'not an error')
+    clock.set(new Date(NOW.getTime() + 86_400_000))
+    await report(TENANT, 'capture', new TypeError('next day'))
+    expect(recorder.emitted.map(row => [row.dedupeKey, row.data])).toEqual([
+      [
+        'JOB_FAILED:capture:2026-10-08',
+        { job: 'capture', error: `Error: ${'x'.repeat(133)}` },
+      ],
+      [
+        'JOB_FAILED:alerts:2026-10-08',
+        { job: 'alerts', error: 'Unknown error' },
+      ],
+      [
+        'JOB_FAILED:capture:2026-10-09',
+        { job: 'capture', error: 'TypeError: next day' },
+      ],
+    ])
+    expect(
+      jobFailedAlert(TENANT, 'invoices', new Error('down'), '2026-10-08').type,
+    ).toBe('JOB_FAILED')
   })
 
   it('emits through the hook only when wired', async () => {

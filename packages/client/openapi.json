@@ -9395,6 +9395,9 @@
                           },
                           "autoDebit": {
                             "type": "boolean"
+                          },
+                          "unverifiedSender": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -9412,7 +9415,8 @@
                           "createdAt",
                           "paidAt",
                           "paidBy",
-                          "autoDebit"
+                          "autoDebit",
+                          "unverifiedSender"
                         ],
                         "additionalProperties": false
                       }
@@ -9634,6 +9638,9 @@
                         },
                         "autoDebit": {
                           "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -9651,7 +9658,8 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
-                        "autoDebit"
+                        "autoDebit",
+                        "unverifiedSender"
                       ],
                       "additionalProperties": false
                     }
@@ -9820,10 +9828,14 @@
                         "autoDebit": {
                           "type": "boolean"
                         },
+                        "unverifiedSender": {
+                          "type": "boolean"
+                        },
                         "confirmationReason": {
                           "nullable": true,
                           "type": "string",
                           "enum": [
+                            "UNVERIFIED_SENDER",
                             "NEW_PAYEE",
                             "ABOVE_THRESHOLD",
                             "AMOUNT_DEVIATION",
@@ -9998,6 +10010,7 @@
                         "paidAt",
                         "paidBy",
                         "autoDebit",
+                        "unverifiedSender",
                         "confirmationReason",
                         "plan",
                         "attempts"
@@ -10184,10 +10197,14 @@
                         "autoDebit": {
                           "type": "boolean"
                         },
+                        "unverifiedSender": {
+                          "type": "boolean"
+                        },
                         "confirmationReason": {
                           "nullable": true,
                           "type": "string",
                           "enum": [
+                            "UNVERIFIED_SENDER",
                             "NEW_PAYEE",
                             "ABOVE_THRESHOLD",
                             "AMOUNT_DEVIATION",
@@ -10395,6 +10412,7 @@
                         "paidAt",
                         "paidBy",
                         "autoDebit",
+                        "unverifiedSender",
                         "confirmationReason",
                         "plan",
                         "attempts",
@@ -10586,6 +10604,9 @@
                         },
                         "autoDebit": {
                           "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -10603,7 +10624,8 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
-                        "autoDebit"
+                        "autoDebit",
+                        "unverifiedSender"
                       ],
                       "additionalProperties": false
                     }
@@ -10771,6 +10793,9 @@
                         },
                         "autoDebit": {
                           "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -10788,7 +10813,8 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
-                        "autoDebit"
+                        "autoDebit",
+                        "unverifiedSender"
                       ],
                       "additionalProperties": false
                     }
@@ -10975,10 +11001,14 @@
                         "autoDebit": {
                           "type": "boolean"
                         },
+                        "unverifiedSender": {
+                          "type": "boolean"
+                        },
                         "confirmationReason": {
                           "nullable": true,
                           "type": "string",
                           "enum": [
+                            "UNVERIFIED_SENDER",
                             "NEW_PAYEE",
                             "ABOVE_THRESHOLD",
                             "AMOUNT_DEVIATION",
@@ -11153,6 +11183,7 @@
                         "paidAt",
                         "paidBy",
                         "autoDebit",
+                        "unverifiedSender",
                         "confirmationReason",
                         "plan",
                         "attempts"
@@ -13863,6 +13894,9 @@
                         },
                         "autoDebit": {
                           "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -13880,7 +13914,8 @@
                         "createdAt",
                         "paidAt",
                         "paidBy",
-                        "autoDebit"
+                        "autoDebit",
+                        "unverifiedSender"
                       ],
                       "additionalProperties": false
                     }
@@ -19043,7 +19078,8 @@
                               "LOW_BALANCE",
                               "INVOICE_ISSUED",
                               "INVOICE_FAILED",
-                              "CARD_BILL_CLOSED"
+                              "CARD_BILL_CLOSED",
+                              "JOB_FAILED"
                             ]
                           },
                           "entityId": {
@@ -19245,7 +19281,8 @@
                             "LOW_BALANCE",
                             "INVOICE_ISSUED",
                             "INVOICE_FAILED",
-                            "CARD_BILL_CLOSED"
+                            "CARD_BILL_CLOSED",
+                            "JOB_FAILED"
                           ]
                         },
                         "entityId": {
@@ -19434,7 +19471,8 @@
                                   "LOW_BALANCE",
                                   "INVOICE_ISSUED",
                                   "INVOICE_FAILED",
-                                  "CARD_BILL_CLOSED"
+                                  "CARD_BILL_CLOSED",
+                                  "JOB_FAILED"
                                 ]
                               },
                               "muted": {
@@ -19547,7 +19585,8 @@
                                   "LOW_BALANCE",
                                   "INVOICE_ISSUED",
                                   "INVOICE_FAILED",
-                                  "CARD_BILL_CLOSED"
+                                  "CARD_BILL_CLOSED",
+                                  "JOB_FAILED"
                                 ]
                               },
                               "muted": {

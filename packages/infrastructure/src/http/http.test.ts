@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mtlsTransport } from '@/http/mtls-transport'
 import { TokenCache } from '@/http/token-cache'
 import {
+  bodySummary,
   fetchTransport,
   isAuthError,
   isClientError,
@@ -79,6 +80,24 @@ describe('transport helpers', () => {
     expect(new ProviderHttpError('X', 500, 'down').message).toBe(
       'X answered 500: down',
     )
+  })
+})
+
+describe('bodySummary', () => {
+  it('keeps only the error codes a provider body names', () => {
+    const body = JSON.stringify({
+      errors: [
+        { code: 'invalid_cpf', description: 'CPF 111.444.777-35 is invalid' },
+        { code: 'invalid_cpf', value: '11144477735' },
+      ],
+      error: { status: 'INVALID_ARGUMENT', code: 400, message: 'key abc' },
+      deep: { a: { b: { c: { d: { code: 'too_deep' } } } } },
+      status: '12345678909',
+      token: 'eyJhbGciOi.secret.token',
+    })
+    expect(bodySummary(body)).toBe('invalid_cpf, INVALID_ARGUMENT')
+    expect(bodySummary('{"message":"pix key a@b.test"}')).toBe('30-byte body')
+    expect(bodySummary('plain failure')).toBe('13-byte body')
   })
 })
 

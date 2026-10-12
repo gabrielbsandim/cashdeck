@@ -3,6 +3,7 @@ import {
   assertSchemaWithoutTools,
   type LlmProvider,
 } from '@cashdeck/application'
+import { bodySummary } from '@/http/transport'
 import { calculateCostMillicents } from '@/llm/pricing'
 import type {
   LlmChatParams,
@@ -113,7 +114,7 @@ export class GeminiProvider implements LlmProvider {
     if (!response.ok) {
       const text = await response.text().catch(() => '')
       throw new LlmProviderError(
-        `Gemini API rejected the request: ${response.status} ${text}`,
+        `Gemini API rejected the request: ${response.status} ${bodySummary(text)}`,
         response.status === 400 ? 'request_rejected' : 'chat_failed',
       )
     }

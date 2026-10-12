@@ -14,9 +14,9 @@ import {
 import {
   type Call,
   isSuccess,
+  bodySummary,
   ProviderHttpError,
   readJson,
-  safeJson,
   send,
   toDecimal,
   type Transport,
@@ -241,14 +241,10 @@ export class NotaasIssuer implements InvoiceIssuer {
       headers: await this.authHeaders(scope),
     })
     if (!isSuccess(response)) {
-      const body = safeJson(response.text) as {
-        message?: string
-        error?: string
-      } | null
       throw new ProviderHttpError(
         PROVIDER,
         response.status,
-        body?.message ?? body?.error ?? 'request refused',
+        bodySummary(response.text),
       )
     }
     return readJson<T>(response)

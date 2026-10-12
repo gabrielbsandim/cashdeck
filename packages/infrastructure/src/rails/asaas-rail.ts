@@ -20,6 +20,7 @@ import {
   requireCredentials,
 } from '@/credentials/credential-resolver'
 import {
+  bodySummary,
   type Call,
   isAuthError,
   isClientError,
@@ -369,7 +370,11 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     if (isClientError(response)) {
       return { ok: false, reason: errorDescription(response.text) }
     }
-    throw new ProviderHttpError(PROVIDER, response.status, response.text)
+    throw new ProviderHttpError(
+      PROVIDER,
+      response.status,
+      bodySummary(response.text),
+    )
   }
 }
 

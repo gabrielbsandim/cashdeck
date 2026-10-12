@@ -4,6 +4,7 @@ import {
   type LocalDate,
   type Money,
   type RailId,
+  toLocalDate,
 } from '@cashdeck/domain'
 import {
   type AlertEmitter,
@@ -11,6 +12,7 @@ import {
   type DeviceLocale,
 } from '@/ports/alerts'
 import { type Invoice, type InvoiceStatus } from '@/ports/records'
+import { type Clock } from '@/ports/system'
 
 type AlertData = Record<string, string>
 type AlertText = { title: string; body: string }
@@ -92,6 +94,10 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Fatura do cartão fechou',
     body: `${d.card}: fechou em ${d.closing}, vence em ${d.dueDate}.`,
   }),
+  JOB_FAILED: d => ({
+    title: 'Rotina automática falhou',
+    body: `${d.job} não terminou: ${d.error}`,
+  }),
 }
 
 export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
@@ -142,6 +148,10 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
   CARD_BILL_CLOSED: d => ({
     title: 'Card bill closed',
     body: `${d.card}: closed on ${d.closing}, due ${d.dueDate}.`,
+  }),
+  JOB_FAILED: d => ({
+    title: 'Scheduled job failed',
+    body: `${d.job} did not finish: ${d.error}`,
   }),
 }
 
@@ -278,6 +288,39 @@ export function cardClosedAlert(
       dueDate: formatDay(statement.due),
     },
     dedupeKey: `CARD_BILL_CLOSED:${statement.entityId}:${statement.issuer}:${statement.card}:${statement.closing}`,
+  }
+}
+
+const ERROR_SUMMARY_LENGTH = 140
+
+// One alert per job and day: a cron that keeps failing does not flood the inbox.
+export function jobFailedAlert(
+  tenantId: string,
+  job: string,
+  error: unknown,
+  day: LocalDate,
+): AlertInput {
+  const summary =
+    error instanceof Error ? `${error.name}: ${error.message}` : 'Unknown error'
+  return {
+    tenantId,
+    type: 'JOB_FAILED',
+    data: { job, error: summary.slice(0, ERROR_SUMMARY_LENGTH) },
+    dedupeKey: `JOB_FAILED:${job}:${day}`,
+  }
+}
+
+export function makeReportJobFailure(deps: {
+  alerts?: AlertEmitter
+  clock: Clock
+}) {
+  return async function reportJobFailure(
+    tenantId: string,
+    job: string,
+    error: unknown,
+  ): Promise<void> {
+    const day = toLocalDate(deps.clock.now())
+    await emitAlert(deps.alerts, jobFailedAlert(tenantId, job, error, day))
   }
 }
 

@@ -15,6 +15,10 @@ import { makeReconcilePayments } from '@/use-cases/reconcile-payments'
 
 export type WebhookReceipt = { events: WebhookEvent[]; duplicates: number }
 
+// Longer than any handling run, so a delivery that is still running is never
+// taken twice; a run that died without settling is retried after it.
+export const WEBHOOK_STALE_MS = 15 * 60_000
+
 function subjectOf(event: WebhookEvent): string | null {
   switch (event.kind) {
     case 'PAYMENT':
@@ -28,8 +32,8 @@ function subjectOf(event: WebhookEvent): string | null {
   }
 }
 
-// Authenticates the delivery and drops events already seen, so the route can
-// answer at once and leave the work for later.
+// Authenticates the delivery and drops events already handled, so the route
+// can answer at once and leave the work for later. A failed event runs again.
 export function makeReceiveWebhook(
   deps: Pick<Deps, 'webhooks' | 'webhookEvents' | 'clock'>,
 ) {
@@ -44,16 +48,25 @@ export function makeReceiveWebhook(
     const events = await reader.read(tenantId, delivery)
     const fresh: WebhookEvent[] = []
     for (const event of events) {
-      const first = await deps.webhookEvents.remember(
-        tenantId,
-        delivery.provider,
-        {
-          eventId: event.eventId,
-          type: event.type,
-          subjectId: subjectOf(event),
-        },
-        deps.clock.now(),
-      )
+      const now = deps.clock.now()
+      const first =
+        (await deps.webhookEvents.remember(
+          tenantId,
+          delivery.provider,
+          {
+            eventId: event.eventId,
+            type: event.type,
+            subjectId: subjectOf(event),
+          },
+          now,
+        )) ||
+        (await deps.webhookEvents.reclaim(
+          tenantId,
+          delivery.provider,
+          event.eventId,
+          now,
+          new Date(now.getTime() - WEBHOOK_STALE_MS),
+        ))
       fresh.push(...(first ? [event] : []))
     }
     return { events: fresh, duplicates: events.length - fresh.length }

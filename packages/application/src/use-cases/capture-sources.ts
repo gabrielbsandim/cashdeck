@@ -201,15 +201,21 @@ export function makeCaptureSources(deps: CaptureDeps) {
       return false
     }
     try {
-      const result = await capture(tenantId, {
-        entityId,
-        source,
-        paymentCode: found.paymentCode ?? undefined,
-        pixCode: found.pixCode ?? undefined,
-        amountCents: found.amountCents ?? undefined,
-        dueDate: found.dueDate ?? undefined,
-        payee: found.payee ?? undefined,
-      })
+      const result = await capture(
+        tenantId,
+        {
+          entityId,
+          source,
+          paymentCode: found.paymentCode ?? undefined,
+          pixCode: found.pixCode ?? undefined,
+          amountCents: found.amountCents ?? undefined,
+          dueDate: found.dueDate ?? undefined,
+          payee: found.payee ?? undefined,
+        },
+        {
+          unverifiedSender: source === 'GMAIL' && found.senderVerified !== true,
+        },
+      )
       return !result.duplicate
     } catch (error) {
       const skipped = error instanceof AmountRequiredError

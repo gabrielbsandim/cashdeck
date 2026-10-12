@@ -200,18 +200,20 @@ describe('NotaasIssuer', () => {
       'GET',
       `${NOTAAS_URL}/webhooks/endpoints`,
       { json: [] },
-      { status: 401, json: { error: 'invalid key' } },
-      { status: 500, json: { message: 'down' } },
+      { status: 401, json: { error: 'invalid_key', message: 'key nk' } },
+      { status: 500, json: { message: 'tax id 11144477735 is down' } },
       { status: 500, text: 'oops' },
     )
     const nfse = issuer(scripted)
     expect(await nfse.check()).toEqual({ ok: true, message: null })
     expect(await nfse.check()).toEqual({
       ok: false,
-      message: 'Notaas check failed: Notaas answered 401: invalid key',
+      message: 'Notaas check failed: Notaas answered 401: invalid_key',
     })
-    expect((await nfse.check()).message).toContain('down')
-    expect((await nfse.check()).message).toContain('request refused')
+    const down = (await nfse.check()).message
+    expect(down).toContain('Notaas answered 500: 40-byte body')
+    expect(down).not.toContain('11144477735')
+    expect((await nfse.check()).message).toContain('4-byte body')
   })
 })
 

@@ -39,6 +39,9 @@ export type CaptureBillDeps = BuildPaymentPlanDeps & {
 
 export type CaptureBillResult = { bill: Bill; duplicate: boolean }
 
+// Set by the e-mail reader when the sender failed authentication.
+export type CaptureOrigin = { unverifiedSender?: boolean }
+
 export type PixDropReason =
   | 'INVALID_PIX_CODE'
   | 'AMOUNT_MISMATCH'
@@ -256,9 +259,26 @@ export function makeCaptureBill(deps: CaptureBillDeps) {
     return { bill: merged, duplicate: true }
   }
 
+  // An unverified e-mail only dedupes against the very same code and never
+  // completes or rewrites a bill that is already stored.
+  async function findExisting(
+    tenantId: string,
+    entityId: string,
+    incoming: IncomingBill,
+    unverified: boolean,
+  ): Promise<CaptureBillResult | null> {
+    const exact = await findExact(tenantId, entityId, incoming)
+    if (unverified) {
+      return exact && { bill: exact, duplicate: true }
+    }
+    const existing = exact ?? (await findPair(tenantId, entityId, incoming))
+    return existing && merge(tenantId, existing, incoming)
+  }
+
   return async function captureBill(
     tenantId: string,
     input: CaptureBillInput,
+    origin: CaptureOrigin = {},
   ): Promise<CaptureBillResult> {
     const entity = await deps.entities.findById(tenantId, input.entityId)
     if (!entity) {
@@ -275,11 +295,15 @@ export function makeCaptureBill(deps: CaptureBillDeps) {
       dueDate: resolved.dueDate ?? charge?.dueDate ?? input.dueDate ?? null,
       payee: input.payee ?? charge?.payee ?? resolved.payee,
     }
-    const existing =
-      (await findExact(tenantId, entity.id, incoming)) ??
-      (await findPair(tenantId, entity.id, incoming))
+    const unverified = origin.unverifiedSender === true
+    const existing = await findExisting(
+      tenantId,
+      entity.id,
+      incoming,
+      unverified,
+    )
     if (existing) {
-      return merge(tenantId, existing, incoming)
+      return existing
     }
     if (!incoming.amount) {
       throw new AmountRequiredError({
@@ -300,11 +324,15 @@ export function makeCaptureBill(deps: CaptureBillDeps) {
       code: incoming.code,
       pixCode: incoming.pixCode,
       createdAt: now,
+      unverifiedSender: unverified,
     })
     await deps.bills.save(bill)
     await buildPlan(tenantId, bill)
     if (dropped) {
       await audit(tenantId, bill, 'bill.pix_code_dropped', dropped)
+    }
+    if (unverified) {
+      await audit(tenantId, bill, 'bill.unverified_sender', 'UNVERIFIED')
     }
     await emitAlert(deps.alerts, billAlert('BILL_CAPTURED', bill))
     return { bill, duplicate: false }

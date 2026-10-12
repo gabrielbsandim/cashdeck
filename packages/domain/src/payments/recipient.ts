@@ -1,4 +1,5 @@
 import { type Bill } from '@/bills/bill'
+import { boletoBeneficiary, type DecodedBoleto } from '@/codes/boleto'
 import { parseBrCode } from '@/codes/br-code'
 import { decodePaymentCode } from '@/codes/payment-code'
 
@@ -47,29 +48,44 @@ function pixRecipient(bill: Bill): string | null {
   return `pix-merchant:${merchant}:${normalizeName(code.merchantCity)}`
 }
 
-// A barcode carries no beneficiary document: a boleto is keyed by its bank and
-// payee name, or by the whole code when the payee is unknown, so it always asks.
-function barcodeRecipient(bill: Bill): string | null {
+// The beneficiary account in the barcode is what a forged e-mail cannot copy,
+// so it keys the boleto; the payee name stays beside it, as keys stored before.
+function boletoRecipients(bill: Bill, decoded: DecodedBoleto): string[] {
+  const { bankCode, barcode } = decoded
+  const payee = bill.payee ? normalizeName(bill.payee) : ''
+  const byCode = `boleto:${bankCode}:code:${barcode}`
+  const byName = payee === '' ? [] : [`boleto:${bankCode}:${payee}`]
+  const account = boletoBeneficiary(barcode)
+  if (account !== null) {
+    return [`boleto:${bankCode}:account:${account}`, ...byName]
+  }
+  if (byName.length === 0) {
+    return [byCode]
+  }
+  // An e-mail can print any name, and with no account to read its boleto asks.
+  return bill.source === 'GMAIL' ? [...byName, byCode] : byName
+}
+
+function barcodeRecipients(bill: Bill): string[] {
   if (!bill.code || bill.kind === 'PIX_KEY' || bill.kind === 'PIX_QR') {
-    return null
+    return []
   }
   const decoded = decodePaymentCode(bill.code, bill.dueDate)
   switch (decoded.type) {
     case 'ARRECADACAO':
-      return `collector:${decoded.barcode.charAt(1)}:${decoded.barcode.slice(15, 19)}`
-    case 'BOLETO': {
-      const payee = bill.payee ? normalizeName(bill.payee) : ''
-      const tail = payee === '' ? `code:${decoded.barcode}` : payee
-      return `boleto:${decoded.bankCode}:${tail}`
-    }
+      return [
+        `collector:${decoded.barcode.charAt(1)}:${decoded.barcode.slice(15, 19)}`,
+      ]
+    case 'BOLETO':
+      return boletoRecipients(bill, decoded)
     case 'PIX':
-      return null
+      return []
   }
 }
 
 function readableRecipients(bill: Bill): Array<string | null> {
   try {
-    return [pixRecipient(bill), barcodeRecipient(bill)]
+    return [pixRecipient(bill), ...barcodeRecipients(bill)]
   } catch {
     return [`unreadable:${bill.id}`]
   }
@@ -78,6 +94,9 @@ function readableRecipients(bill: Bill): Array<string | null> {
 // Every recipient the bill could pay: a bolepix names both its Pix key and its
 // beneficiary, and each one has to be known before paying without asking.
 export function recipientKeys(bill: Bill): string[] {
+  if (bill.unverifiedSender) {
+    return [`unverified:${bill.id}`]
+  }
   const keys = readableRecipients(bill).filter(
     (key): key is string => key !== null,
   )

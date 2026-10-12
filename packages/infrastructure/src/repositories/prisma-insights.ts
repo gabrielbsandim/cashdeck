@@ -22,6 +22,7 @@ import {
 import {
   type Category,
   type CategoryRule,
+  type EntityKind,
   type PixContact,
   type PixKeyType,
   RULE_DIRECTIONS,
@@ -288,6 +289,18 @@ export class PrismaChatRepository implements ChatRepository {
       create: data,
       update: data,
     })
+  }
+
+  async claimPending(
+    tenantId: string,
+    id: string,
+    entity: EntityKind | null,
+  ): Promise<boolean> {
+    const { count } = await this.db.chatAction.updateMany({
+      where: { tenantId, id, status: 'PENDING' },
+      data: { status: 'CONFIRMED', entity },
+    })
+    return count === 1
   }
 
   async findAction(tenantId: string, id: string): Promise<ChatAction | null> {

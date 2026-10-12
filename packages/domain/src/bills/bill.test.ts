@@ -34,6 +34,10 @@ describe('createBill', () => {
     expect(bill.code).toBe('123')
     expect(bill.payee).toBe('Utility')
     expect(createBill(input).payee).toBeNull()
+    expect(bill.unverifiedSender).toBe(false)
+    expect(
+      createBill({ ...input, unverifiedSender: true }).unverifiedSender,
+    ).toBe(true)
   })
 
   it('allows a DARF without a barcode only', () => {

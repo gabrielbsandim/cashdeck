@@ -451,21 +451,23 @@ model Goal {
 }
 
 model Bill {
-  id          String     @id
-  tenantId    String     @map("tenant_id")
-  entityId    String     @map("entity_id")
-  kind        BillKind
-  status      BillStatus
-  source      BillSource
-  payee       String?
-  amountCents BigInt     @map("amount_cents")
-  currency    String     @default("BRL") @db.Char(3)
-  dueDate     DateTime   @map("due_date") @db.Date
-  code        String?
-  pixCode     String?    @map("pix_code")
-  createdAt   DateTime   @map("created_at")
-  paidAt      DateTime?  @map("paid_at")
-  paidBy      PaidBy?    @map("paid_by")
+  id               String     @id
+  tenantId         String     @map("tenant_id")
+  entityId         String     @map("entity_id")
+  kind             BillKind
+  status           BillStatus
+  source           BillSource
+  payee            String?
+  amountCents      BigInt     @map("amount_cents")
+  currency         String     @default("BRL") @db.Char(3)
+  dueDate          DateTime   @map("due_date") @db.Date
+  code             String?
+  pixCode          String?    @map("pix_code")
+  createdAt        DateTime   @map("created_at")
+  paidAt           DateTime?  @map("paid_at")
+  paidBy           PaidBy?    @map("paid_by")
+  // Read from an e-mail whose sender failed DKIM, SPF and DMARC checks.
+  unverifiedSender Boolean    @default(false) @map("unverified_sender")
 
   entity   FinancialEntity  @relation(fields: [entityId], references: [id])
   plan     PaymentPlan?

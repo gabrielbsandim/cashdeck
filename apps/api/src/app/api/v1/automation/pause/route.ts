@@ -3,6 +3,8 @@ import { ok } from '@/server/api/respond'
 
 export const dynamic = 'force-dynamic'
 
-export const POST = route('automation:pause', async ({ tenantId, container }) =>
-  ok(await container.automation.pause(tenantId)),
+export const POST = route(
+  'automation:pause',
+  async ({ tenantId, container, actor }) =>
+    ok(await container.automation.pause(tenantId, actor)),
 )

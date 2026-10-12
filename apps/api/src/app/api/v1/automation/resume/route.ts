@@ -5,6 +5,6 @@ export const dynamic = 'force-dynamic'
 
 export const POST = route(
   'automation:resume',
-  async ({ tenantId, container }) =>
-    ok(await container.automation.resume(tenantId)),
+  async ({ tenantId, container, actor }) =>
+    ok(await container.automation.resume(tenantId, actor)),
 )

@@ -59,6 +59,7 @@ export function makeConfirmationCheck(deps: ConfirmationDeps) {
     const history = await paidHistory(tenantId, bill, keys)
     const threshold = settings.confirmAboveCents
     const checks: Array<[ConfirmationReason, boolean]> = [
+      ['UNVERIFIED_SENDER', bill.unverifiedSender],
       ['NEW_PAYEE', known.includes(false)],
       ['ABOVE_THRESHOLD', threshold !== null && bill.amount.cents > threshold],
       [

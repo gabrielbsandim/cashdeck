@@ -255,6 +255,11 @@ describe('pending actions', () => {
     expect((await deps.bills.findById(TENANT, 'b1'))?.status).not.toBe('OPEN')
     const again = await chat.confirmAction(TENANT, action?.id as string, {})
     expect(again.status).toBe('CONFIRMED')
+    expect(
+      (await deps.payments.listAttempts(TENANT, 'b1')).filter(
+        attempt => attempt.outcome !== 'IN_FLIGHT',
+      ),
+    ).toHaveLength(1)
     expect(deps.audit.events.map(event => event.action)).toContain(
       'chat.pay_bill',
     )

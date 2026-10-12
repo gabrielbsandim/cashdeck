@@ -157,6 +157,8 @@ export type CapturedBill = {
   kind: BillKind | null
   // CPFs and CNPJs printed on the bill, to file a company guide under it.
   taxIds?: string[]
+  // E-mail only: whether the sender passed DKIM, SPF and DMARC checks.
+  senderVerified?: boolean
 }
 
 // The charge behind a dynamic BR Code, read from its location (field 26.25).

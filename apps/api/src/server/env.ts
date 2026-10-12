@@ -47,6 +47,7 @@ const count = z.preprocess(
 const envSchema = z.object({
   CASHDECK_TENANT_ID: z.string().min(1).default('local'),
   DATABASE_URL: z.string().optional(),
+  NODE_ENV: z.string().optional(),
   VERCEL_ENV: z.string().optional(),
   CASHDECK_MASTER_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),

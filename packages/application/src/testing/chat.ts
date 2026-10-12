@@ -1,3 +1,4 @@
+import { type EntityKind } from '@cashdeck/domain'
 import {
   type ChatAction,
   type ChatAttachment,
@@ -123,6 +124,23 @@ export class InMemoryChatRepository implements ChatRepository {
 
   async saveAction(action: ChatAction): Promise<void> {
     this.actions.set(key(action.tenantId, action.id), action)
+  }
+
+  async claimPending(
+    tenantId: string,
+    id: string,
+    entity: EntityKind | null,
+  ): Promise<boolean> {
+    const action = this.actions.get(key(tenantId, id))
+    if (action?.status !== 'PENDING') {
+      return false
+    }
+    this.actions.set(key(tenantId, id), {
+      ...action,
+      status: 'CONFIRMED',
+      entity,
+    })
+    return true
   }
 
   async findAction(tenantId: string, id: string): Promise<ChatAction | null> {

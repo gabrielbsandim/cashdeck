@@ -15,6 +15,7 @@ import {
   requireCredentials,
 } from '@/credentials/credential-resolver'
 import {
+  bodySummary,
   type Call,
   type HttpResponse,
   isClientError,
@@ -401,7 +402,11 @@ async function call<T>(client: Client, request: Call): Promise<Answer<T>> {
   if (isClientError(response)) {
     return { ok: false, reason: refusal(response) }
   }
-  throw new ProviderHttpError(PROVIDER, response.status, response.text)
+  throw new ProviderHttpError(
+    PROVIDER,
+    response.status,
+    bodySummary(response.text),
+  )
 }
 
 type InterProblem = {

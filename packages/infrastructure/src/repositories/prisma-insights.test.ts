@@ -26,6 +26,7 @@ const METHODS = [
   'findMany',
   'create',
   'deleteMany',
+  'updateMany',
 ] as const
 
 type Delegate = Record<(typeof METHODS)[number], ReturnType<typeof vi.fn>>
@@ -261,6 +262,15 @@ describe('PrismaChatRepository', () => {
     expect(await chat.findAction(TENANT, 'x')).toBeNull()
     db.chatAction.findMany.mockResolvedValueOnce([done])
     expect(await chat.listActions(TENANT, 'th1')).toEqual([done])
+    db.chatAction.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+    expect(await chat.claimPending(TENANT, 'a1', 'PF')).toBe(true)
+    expect(await chat.claimPending(TENANT, 'a1', 'PF')).toBe(false)
+    expect(db.chatAction.updateMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, id: 'a1', status: 'PENDING' },
+      data: { status: 'CONFIRMED', entity: 'PF' },
+    })
   })
 })
 

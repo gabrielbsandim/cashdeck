@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { type Bill, createBill } from '@/bills/bill'
 import { crc16, encodeBrCode } from '@/codes/br-code'
+import { mod11Boleto } from '@/codes/check-digits'
 import { Money } from '@/money/money'
 import {
   attemptHistory,
@@ -29,6 +30,7 @@ import {
 } from '@/payments/safety'
 
 const BOLETO_BARCODE = '00199160500000123450000002800012345678901217'
+const BB_ACCOUNT = 'boleto:001:account:c7:2800012'
 const TAX_BARCODE = '85600000001500003282026102000000000000123000'
 const STATIC_PIX = encodeBrCode({
   key: 'Supplier@Example.com',
@@ -43,6 +45,12 @@ function dynamicPix(): string {
     `26${account.length}${account}` +
     '52040000530398654041.005802BR5912Loja Açaí  X6004City6304'
   return body + crc16(body)
+}
+
+function barcodeFor(bank: string, free: string): string {
+  const head = `${bank}9`
+  const tail = `16050000012345${free}`
+  return `${head}${mod11Boleto(head + tail)}${tail}`
 }
 
 function bill(overrides: Partial<Bill> = {}): Bill {
@@ -104,13 +112,50 @@ describe('recipientKeys', () => {
   it('names both recipients of a bolepix', () => {
     expect(recipientKeys(bill({ pixCode: STATIC_PIX }))).toEqual([
       'pix:supplier@example.com',
+      BB_ACCOUNT,
       'boleto:001:SUPPLIER',
     ])
   })
 
-  it('keys an unnamed boleto by its whole code', () => {
-    expect(recipientKeys(bill({ payee: null }))).toEqual([
-      `boleto:001:code:${BOLETO_BARCODE}`,
+  it('keys an unnamed boleto by the account its barcode names', () => {
+    expect(recipientKeys(bill({ payee: null }))).toEqual([BB_ACCOUNT])
+  })
+
+  it('reads the beneficiary account of each known bank layout', () => {
+    const free = '1234567890123456789012345'
+    const cases: Array<[string, string, string]> = [
+      ['033', free, '2345678'],
+      ['104', free, '1234567'],
+      ['237', free, '12348901234'],
+      ['341', free, '123345678901'],
+      ['748', free, '23456789012'],
+      ['756', free, '23458901234'],
+      ['001', '1234560000000000000000021', 'c6:123456'],
+      ['001', '1234567890112345678901217', 'ac:123456789012'],
+    ]
+    for (const [bank, field, account] of cases) {
+      const code = barcodeFor(bank, field)
+      expect(recipientKeys(bill({ code, payee: null }))).toEqual([
+        `boleto:${bank}:account:${account}`,
+      ])
+    }
+  })
+
+  it('makes an e-mailed boleto of an unknown layout ask every time', () => {
+    const code = barcodeFor('077', '1234567890123456789012345')
+    expect(recipientKeys(bill({ code }))).toEqual(['boleto:077:SUPPLIER'])
+    expect(recipientKeys(bill({ code, source: 'GMAIL' }))).toEqual([
+      'boleto:077:SUPPLIER',
+      `boleto:077:code:${code}`,
+    ])
+    expect(recipientKeys(bill({ code, payee: null }))).toEqual([
+      `boleto:077:code:${code}`,
+    ])
+  })
+
+  it('never lets an unverified e-mail share a known recipient', () => {
+    expect(recipientKeys(bill({ unverifiedSender: true }))).toEqual([
+      'unverified:b1',
     ])
   })
 

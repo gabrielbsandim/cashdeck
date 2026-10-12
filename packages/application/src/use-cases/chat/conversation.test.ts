@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '@cashdeck/domain'
 import { sendMessageSchema } from '@/dtos/chat'
-import { NotFoundError } from '@/errors/errors'
+import { ConflictError, NotFoundError } from '@/errors/errors'
 import { type LlmChatResult } from '@/ports/llm-provider'
 import { account, base64, fullDeps } from '@/testing/deps.test-helpers'
 import { FakePaymentRail } from '@/testing/providers'
@@ -342,6 +342,34 @@ describe('pix in the chat', () => {
       status: 'FAILED',
       error: 'Contact was not found.',
     })
+  })
+
+  it('sends one Pix when two confirmations race', async () => {
+    const { deps, chat, contacts } = await setup()
+    const ana = await contacts.create(TENANT, {
+      name: 'Ana',
+      pixKey: 'ana@example.com',
+    })
+    const thread = await chat.createThread(TENANT, { scope: 'PF' })
+    deps.llm
+      .enqueue(use('send_pix', { contactId: ana.id, amount: 10 }))
+      .enqueue(say('Confirme.'))
+    const turn = await chat.sendMessage(TENANT, thread.id, message('Pix'))
+    const id = turn.messages[1]?.actions[0]?.id as string
+    const [first, second] = await Promise.allSettled([
+      chat.confirmAction(TENANT, id, {}),
+      chat.confirmAction(TENANT, id, {}),
+    ])
+    expect(first).toMatchObject({
+      status: 'fulfilled',
+      value: { status: 'CONFIRMED' },
+    })
+    expect(second).toMatchObject({ status: 'rejected' })
+    expect((second as PromiseRejectedResult).reason).toBeInstanceOf(
+      ConflictError,
+    )
+    const bills = await deps.bills.list(TENANT, {}, { limit: 10 })
+    expect(bills.items.filter(bill => bill.source === 'CHAT')).toHaveLength(1)
   })
 
   it('reads an action stored before the Pix fields existed', async () => {

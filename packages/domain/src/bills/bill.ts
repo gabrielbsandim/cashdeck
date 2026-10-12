@@ -53,15 +53,25 @@ export type Bill = {
   readonly createdAt: Date
   readonly paidAt: Date | null
   readonly paidBy: PaidBy | null
+  // Read from an e-mail whose sender failed authentication: anyone could have
+  // sent it, so it never inherits trust from a known recipient.
+  readonly unverifiedSender: boolean
 }
 
 export type CreateBillInput = Omit<
   Bill,
-  'status' | 'paidAt' | 'paidBy' | 'payee' | 'code' | 'pixCode'
+  | 'status'
+  | 'paidAt'
+  | 'paidBy'
+  | 'payee'
+  | 'code'
+  | 'pixCode'
+  | 'unverifiedSender'
 > & {
   payee?: string | null
   code?: string | null
   pixCode?: string | null
+  unverifiedSender?: boolean
 }
 
 function resolvePixCode(input: CreateBillInput, code: string | null) {
@@ -86,6 +96,7 @@ export function createBill(input: CreateBillInput): Bill {
     status: 'OPEN',
     paidAt: null,
     paidBy: null,
+    unverifiedSender: input.unverifiedSender ?? false,
   }
 }
 

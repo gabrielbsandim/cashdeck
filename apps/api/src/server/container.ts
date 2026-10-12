@@ -57,6 +57,7 @@ import {
   makeListInvestments,
   makeInvestmentPerformance,
   makeListInstallments,
+  makeReportJobFailure,
   makeSubscriptions,
   makeCreateCategoryRule,
   makeCreateManualAccount,
@@ -154,10 +155,19 @@ function sampleEntities(tenantId: string) {
   ]
 }
 
+const isProduction = (env: ServerEnv) =>
+  env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production'
+
+// The fake vault keeps secrets readable, so production refuses to start
+// without the master key instead of storing provider credentials unsealed.
 function secretVault(env: ServerEnv): SecretVault {
-  return env.CASHDECK_MASTER_KEY
-    ? new EnvelopeSecretVault(env.CASHDECK_MASTER_KEY)
-    : new FakeSecretVault()
+  if (env.CASHDECK_MASTER_KEY) {
+    return new EnvelopeSecretVault(env.CASHDECK_MASTER_KEY)
+  }
+  if (isProduction(env)) {
+    throw new Error('CASHDECK_MASTER_KEY is required in production.')
+  }
+  return new FakeSecretVault()
 }
 
 function inMemoryStores(tenantId: string, settings: PaymentSettings) {
@@ -315,6 +325,7 @@ export function buildContainer(
     env,
     llm,
     vault,
+    reportJobFailure: makeReportJobFailure({ alerts, clock: systemClock }),
     captureBill: makeCaptureBill(deps),
     describeBill: makeDescribeBill(deps),
     getBill: makeGetBill(deps),

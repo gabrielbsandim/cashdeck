@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic'
 
 export const PATCH = route(
   'automation:update',
-  async ({ request, tenantId, container }) => {
+  async ({ request, tenantId, container, actor }) => {
     const input = updateAutomationSchema.parse(await readJson(request))
-    return ok(await container.automation.update(tenantId, input))
+    return ok(await container.automation.update(tenantId, input, actor))
   },
 )

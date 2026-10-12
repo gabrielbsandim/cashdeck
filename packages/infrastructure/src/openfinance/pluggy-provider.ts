@@ -22,6 +22,7 @@ import {
 } from '@/credentials/credential-resolver'
 import { TokenCache } from '@/http/token-cache'
 import {
+  bodySummary,
   type HttpResponse,
   isSuccess,
   ProviderHttpError,
@@ -321,7 +322,11 @@ export class PluggyProvider implements OpenFinanceProvider {
 
   private parse<T>(response: HttpResponse): T {
     if (!isSuccess(response)) {
-      throw new ProviderHttpError(PROVIDER, response.status, response.text)
+      throw new ProviderHttpError(
+        PROVIDER,
+        response.status,
+        bodySummary(response.text),
+      )
     }
     return readJson<T>(response)
   }

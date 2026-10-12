@@ -48,6 +48,15 @@ export interface WebhookEventStore {
     event: WebhookReceived,
     receivedAt: Date,
   ): Promise<boolean>
+  // Takes back an event whose handling failed, or that was never settled
+  // before `staleBefore`, so a redelivery runs it again; false otherwise.
+  reclaim(
+    tenantId: string,
+    provider: WebhookProvider,
+    eventId: string,
+    receivedAt: Date,
+    staleBefore: Date,
+  ): Promise<boolean>
   // Records what handling the event came to, for auditing.
   settle(
     tenantId: string,

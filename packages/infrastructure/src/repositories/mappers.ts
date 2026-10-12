@@ -99,6 +99,7 @@ export type BillRow = {
   createdAt: Date
   paidAt: Date | null
   paidBy: PaidBy | null
+  unverifiedSender: boolean
 }
 
 export type AttemptRow = {
@@ -302,6 +303,7 @@ export function billFromRow(row: BillRow): Bill {
     createdAt: row.createdAt,
     paidAt: row.paidAt,
     paidBy: row.paidBy,
+    unverifiedSender: row.unverifiedSender,
   }
 }
 
@@ -322,6 +324,7 @@ export function billToRow(bill: Bill): BillRow {
     createdAt: bill.createdAt,
     paidAt: bill.paidAt,
     paidBy: bill.paidBy,
+    unverifiedSender: bill.unverifiedSender,
   }
 }
 

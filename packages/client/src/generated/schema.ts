@@ -4382,6 +4382,7 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -4456,6 +4457,7 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                         };
                     };
                 };
@@ -4513,8 +4515,9 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                             /** @enum {string|null} */
-                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            confirmationReason: "UNVERIFIED_SENDER" | "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
                                 steps: {
                                     /** @enum {string} */
@@ -4608,8 +4611,9 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                             /** @enum {string|null} */
-                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            confirmationReason: "UNVERIFIED_SENDER" | "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
                                 steps: {
                                     /** @enum {string} */
@@ -4711,6 +4715,7 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                         };
                     };
                 };
@@ -4768,6 +4773,7 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                         };
                     };
                 };
@@ -4831,8 +4837,9 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                             /** @enum {string|null} */
-                            confirmationReason: "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            confirmationReason: "UNVERIFIED_SENDER" | "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
                             plan: {
                                 steps: {
                                     /** @enum {string} */
@@ -5885,6 +5892,7 @@ export interface operations {
                             /** @enum {string|null} */
                             paidBy: "RAIL" | "USER" | "STATEMENT" | null;
                             autoDebit: boolean;
+                            unverifiedSender: boolean;
                         };
                     };
                 };
@@ -7607,7 +7615,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7688,7 +7696,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7766,7 +7774,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED";
                                 muted: boolean;
                             }[];
                         };
@@ -7811,7 +7819,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED";
                                 muted: boolean;
                             }[];
                         };

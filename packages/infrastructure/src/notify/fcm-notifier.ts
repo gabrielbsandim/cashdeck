@@ -10,6 +10,7 @@ import {
 } from '@/credentials/credential-resolver'
 import { TokenCache } from '@/http/token-cache'
 import {
+  bodySummary,
   isSuccess,
   ProviderHttpError,
   readJson,
@@ -117,7 +118,11 @@ export class FcmNotifier implements Notifier {
         continue
       }
       if (!isStaleToken(response.status, response.text)) {
-        throw new ProviderHttpError(PROVIDER, response.status, response.text)
+        throw new ProviderHttpError(
+          PROVIDER,
+          response.status,
+          bodySummary(response.text),
+        )
       }
       await this.deps.onInvalidToken?.(notification.tenantId, device.token)
     }

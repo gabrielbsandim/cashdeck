@@ -47,6 +47,7 @@ export function bill(
     createdAt: new Date('2026-10-01T12:00:00Z'),
     paidAt: null,
     paidBy: null,
+    unverifiedSender: false,
     ...overrides,
   } as Bill
 }

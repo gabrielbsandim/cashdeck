@@ -4,6 +4,7 @@ import {
   createPaymentPlan,
   encodeBrCode,
   markBillPaid,
+  mod11Boleto,
   Money,
   type Bill,
   type PaymentAttempt,
@@ -434,7 +435,10 @@ describe('runPaymentLadder', () => {
       action: 'payment.confirmation_requested',
       details: {
         reasons: ['NEW_PAYEE'],
-        recipients: ['boleto:001:NEW SUPPLIER'],
+        recipients: [
+          'boleto:001:account:c7:2800012',
+          'boleto:001:NEW SUPPLIER',
+        ],
       },
     })
     expect((await run(TENANT, 'b2')).bill.status).toBe('NEEDS_CONFIRMATION')
@@ -453,6 +457,40 @@ describe('runPaymentLadder', () => {
       actorId: 'token:abc',
       requestId: 'req-1',
     })
+  })
+
+  it('asks when a known name arrives on another beneficiary account', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS')
+    const { deps, run } = await setup([inter])
+    const tail = '16050000012345' + '0000009999999012345678901'
+    const code = `0019${mod11Boleto(`0019${tail}`)}${tail}`
+    await deps.bills.save(bill({ id: 'b2', code }))
+    const pending = await run(TENANT, 'b2')
+    expect(pending.bill.status).toBe('NEEDS_CONFIRMATION')
+    expect(inter.requests).toEqual([])
+  })
+
+  it('never pays an unverified e-mail without asking, even a known payee', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS')
+    const { deps, run } = await setup([inter])
+    await deps.bills.save(
+      bill({ id: 'b2', source: 'GMAIL', unverifiedSender: true }),
+    )
+    const pending = await run(TENANT, 'b2')
+    expect(pending.bill.status).toBe('NEEDS_CONFIRMATION')
+    expect(deps.audit.events.at(-1)).toMatchObject({
+      details: {
+        reasons: ['UNVERIFIED_SENDER', 'NEW_PAYEE'],
+        recipients: ['unverified:b2'],
+      },
+    })
+    expect(inter.requests).toEqual([])
+    const confirmed = await run(TENANT, 'b2', { confirmed: true })
+    expect(confirmed.bill.status).toBe('PAID')
+    await deps.bills.save(
+      bill({ id: 'b3', source: 'GMAIL', unverifiedSender: true }),
+    )
+    expect((await run(TENANT, 'b3')).bill.status).toBe('NEEDS_CONFIRMATION')
   })
 
   it('keys the payee by the Pix key, not by the name on the bill', async () => {

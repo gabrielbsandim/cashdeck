@@ -15,6 +15,7 @@ import {
   requireCredentials,
 } from '@/credentials/credential-resolver'
 import {
+  bodySummary,
   isSuccess,
   ProviderHttpError,
   readJson,
@@ -46,10 +47,14 @@ type MessagePart = {
   parts?: MessagePart[]
 }
 
+type Header = { name: string; value: string }
+
 type Message = {
   id: string
-  payload?: MessagePart & { headers?: Array<{ name: string; value: string }> }
+  payload?: MessagePart & { headers?: Header[] }
 }
+
+const AUTH_SERVER = 'mx.google.com'
 
 type ListAnswer = {
   messages?: Array<{ id: string }>
@@ -123,7 +128,11 @@ export class GmailBillSource implements BillSource {
       headers: { authorization: `Bearer ${session.token}` },
     })
     if (!isSuccess(response)) {
-      throw new ProviderHttpError(PROVIDER, response.status, response.text)
+      throw new ProviderHttpError(
+        PROVIDER,
+        response.status,
+        bodySummary(response.text),
+      )
     }
     return readJson<T>(response)
   }
@@ -163,6 +172,7 @@ export class GmailBillSource implements BillSource {
     )
     const parts = flattenParts(message.payload)
     const payee = sender(message)
+    const verified = isSenderVerified(message.payload?.headers ?? [])
     const found: ExtractedBill[] = []
     for (const part of parts.filter(isReadableAttachment)) {
       const extracted = await this.readAttachment(session, id, part, {
@@ -179,7 +189,7 @@ export class GmailBillSource implements BillSource {
       taxIds: findTaxIds(text),
     })
     return withBody(found, fromText, today).map((bill, index) =>
-      toCaptured(`${id}:${index}`, bill, payee),
+      toCaptured(`${id}:${index}`, bill, payee, verified),
     )
   }
 
@@ -254,6 +264,70 @@ function decodeBody(part: MessagePart): string {
   return part.mimeType === 'text/html' ? text.replace(/<[^>]+>/g, ' ') : text
 }
 
+function headerValue(headers: readonly Header[], name: string) {
+  return headers.find(header => header.name.toLowerCase() === name)?.value
+}
+
+const domainOf = (value: string | undefined): string | null =>
+  value?.split('@').pop()?.trim().toLowerCase() || null
+
+function fromDomain(headers: readonly Header[]): string | null {
+  const from = headerValue(headers, 'from')
+  const address = from?.match(/<([^>]*)>/)?.[1] ?? from
+  return address?.includes('@') ? domainOf(address) : null
+}
+
+// Relaxed alignment: one domain equals the other or sits under it.
+function aligned(domain: string | null, from: string): boolean {
+  return (
+    domain !== null &&
+    (domain === from ||
+      domain.endsWith(`.${from}`) ||
+      from.endsWith(`.${domain}`))
+  )
+}
+
+type AuthResult = { method: string; result: string; props: Map<string, string> }
+
+function authResult(segment: string): AuthResult {
+  const [verdict = '', ...props] = segment.split(/\s+/)
+  const [method = '', result = ''] = verdict.toLowerCase().split('=')
+  const pairs = props.map(prop => {
+    const [key = '', ...value] = prop.split('=')
+    return [key.toLowerCase(), value.join('=')] as const
+  })
+  return { method, result, props: new Map(pairs) }
+}
+
+// Only the topmost Authentication-Results, written by Gmail itself, counts: a
+// copy further down could have come inside the forged message.
+export function isSenderVerified(headers: readonly Header[]): boolean {
+  const from = fromDomain(headers)
+  const value = headerValue(headers, 'authentication-results')
+  if (!from || !value) {
+    return false
+  }
+  const [server = '', ...segments] = value
+    .replace(/\([^)]*\)/g, ' ')
+    .split(';')
+    .map(segment => segment.trim())
+  if (server.split(/\s+/)[0]?.toLowerCase() !== AUTH_SERVER) {
+    return false
+  }
+  const passed = (method: string, ...props: string[]) =>
+    segments
+      .map(authResult)
+      .some(
+        auth =>
+          auth.method === method &&
+          auth.result === 'pass' &&
+          props.some(prop => aligned(domainOf(auth.props.get(prop)), from)),
+      )
+  const dkim = passed('dkim', 'header.d', 'header.i')
+  const dmarc = passed('dmarc', 'header.from')
+  return (dkim && dmarc) || passed('spf', 'smtp.mailfrom')
+}
+
 function sender(message: Message): string | null {
   const from = message.payload?.headers?.find(
     header => header.name.toLowerCase() === 'from',
@@ -317,6 +391,7 @@ function toCaptured(
   externalId: string,
   bill: ExtractedBill,
   payee: string | null,
+  senderVerified: boolean,
 ): CapturedBill {
   return {
     externalId,
@@ -327,5 +402,6 @@ function toCaptured(
     dueDate: bill.dueDate,
     kind: bill.kind,
     taxIds: bill.taxIds,
+    senderVerified,
   }
 }

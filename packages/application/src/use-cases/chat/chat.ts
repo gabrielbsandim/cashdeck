@@ -777,8 +777,8 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
     return { action, open: action.status === 'PENDING' }
   }
 
-  // The status flips before the side effect runs, so a second tap while it
-  // runs finds it settled instead of paying twice.
+  // The status flips in one conditional write before the side effect runs, so
+  // a second tap or a concurrent request loses the claim instead of paying twice.
   async function confirmAction(
     tenantId: string,
     id: string,
@@ -793,8 +793,10 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
     if (action.needsEntity && !entity) {
       throw new ValidationError('Choose the entity for this action.')
     }
+    if (!(await deps.chat.claimPending(tenantId, id, entity))) {
+      throw new ConflictError('This action is already being confirmed.')
+    }
     const claimed = { ...action, status: 'CONFIRMED' as const, entity }
-    await deps.chat.saveAction(claimed)
     try {
       const result = await execute(tenantId, claimed, entity, actor)
       return toActionView(

@@ -71,6 +71,11 @@ describe('bill queries and manual payment', () => {
 
     expect((await getBill(TENANT, 'new')).confirmationReason).toBe('NEW_PAYEE')
     expect((await getBill(TENANT, 'known')).confirmationReason).toBeNull()
+    await deps.bills.save({ ...known, unverifiedSender: true })
+    expect(await getBill(TENANT, 'known')).toMatchObject({
+      confirmationReason: 'UNVERIFIED_SENDER',
+      unverifiedSender: true,
+    })
   })
 
   it('lists bills by due date with a cursor', async () => {

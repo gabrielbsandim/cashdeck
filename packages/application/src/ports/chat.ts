@@ -145,6 +145,13 @@ export interface ChatRepository {
     threadId: string,
   ): Promise<ChatAttachmentMeta[]>
   saveAction(action: ChatAction): Promise<void>
+  // Flips a PENDING action to CONFIRMED in one conditional write; false means
+  // another request already took it, so the caller must not run it.
+  claimPending(
+    tenantId: string,
+    id: string,
+    entity: EntityKind | null,
+  ): Promise<boolean>
   findAction(tenantId: string, id: string): Promise<ChatAction | null>
   listActions(tenantId: string, threadId: string): Promise<ChatAction[]>
 }

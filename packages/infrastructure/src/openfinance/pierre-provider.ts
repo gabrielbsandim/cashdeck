@@ -10,6 +10,7 @@ import {
   requireCredentials,
 } from '@/credentials/credential-resolver'
 import {
+  bodySummary,
   type HttpMethod,
   isSuccess,
   ProviderHttpError,
@@ -112,7 +113,11 @@ export class PierreProvider implements PreviewProvider {
       headers: { authorization: `Bearer ${PIERRE_API_KEY}` },
     })
     if (!isSuccess(response)) {
-      throw new ProviderHttpError(PROVIDER, response.status, response.text)
+      throw new ProviderHttpError(
+        PROVIDER,
+        response.status,
+        bodySummary(response.text),
+      )
     }
     return readJson<T>(response)
   }

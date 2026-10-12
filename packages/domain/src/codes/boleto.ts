@@ -74,6 +74,35 @@ function barcodeFromLine(line: string): string {
   )
 }
 
+// Where each bank prints the beneficiary's account in the free field (barcode
+// positions 20 to 44); a bank missing here has a layout nobody checked yet.
+const BENEFICIARY_LAYOUTS: Record<string, (free: string) => string> = {
+  '001': bancoDoBrasilBeneficiary,
+  '033': free => free.slice(1, 8),
+  '104': free => free.slice(0, 7),
+  '237': free => free.slice(0, 4) + free.slice(17, 24),
+  '341': free => free.slice(0, 3) + free.slice(12, 21),
+  '748': free => free.slice(11, 22),
+  '756': free => free.slice(1, 5) + free.slice(7, 14),
+}
+
+function bancoDoBrasilBeneficiary(free: string): string {
+  if (free.startsWith('000000')) {
+    return `c7:${free.slice(6, 13)}`
+  }
+  if (free.endsWith('21')) {
+    return `c6:${free.slice(0, 6)}`
+  }
+  return `ac:${free.slice(11, 23)}`
+}
+
+// The account that receives the money, read from the barcode itself, or null
+// when the bank's layout is unknown.
+export function boletoBeneficiary(barcode: string): string | null {
+  const layout = BENEFICIARY_LAYOUTS[barcode.slice(0, 3)]
+  return layout ? layout(barcode.slice(19, 44)) : null
+}
+
 export function decodeBoleto(
   digits: string,
   reference: LocalDate,

@@ -109,6 +109,33 @@ export function safeJson(text: string): unknown {
   }
 }
 
+const CODE_KEYS = new Set([
+  'code',
+  'errorcode',
+  'error_code',
+  'error',
+  'status',
+])
+const CODE_VALUE = /^(?=.*[A-Za-z])[\w.-]{1,64}$/
+
+function errorCodes(value: unknown, depth = 0): string[] {
+  if (depth > 3 || value === null || typeof value !== 'object') {
+    return []
+  }
+  return Object.entries(value).flatMap(([key, inner]) =>
+    typeof inner === 'string' && CODE_KEYS.has(key.toLowerCase())
+      ? [inner].filter(code => CODE_VALUE.test(code))
+      : errorCodes(inner, depth + 1),
+  )
+}
+
+// A provider body can echo tax ids, keys, tokens and amounts, so what reaches
+// an error or a log is only the error codes it names, never the body itself.
+export function bodySummary(text: string): string {
+  const codes = [...new Set(errorCodes(safeJson(text)))].slice(0, 5)
+  return codes.length > 0 ? codes.join(', ') : `${text.length}-byte body`
+}
+
 export function toCents(value: number | string | null | undefined): number {
   if (value === null || value === undefined || value === '') {
     return 0
