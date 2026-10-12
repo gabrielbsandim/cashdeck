@@ -12,6 +12,7 @@ final class MockOutlookRepository extends Mock implements OutlookRepository;
 
 MockOutlookRepository outlookRepository() {
   registerFallbackValue(EntityScope.personal);
+  registerFallbackValue(EntityKind.personal);
   registerFallbackValue(NetWorthPeriod.twelveMonths);
   return MockOutlookRepository();
 }

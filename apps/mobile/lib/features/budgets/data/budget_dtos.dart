@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/budgets/domain/budget.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 const Map<String, BudgetLevel> _levels = {
   'OK': BudgetLevel.ok,
@@ -61,8 +62,18 @@ BudgetSuggestions budgetSuggestionsFromJson(JsonMap json) => BudgetSuggestions(
   ],
 );
 
-JsonMap acceptToJson(YearMonth month, List<BudgetLimit> limits) => {
-  'entity': 'PF',
+/// The entity as the API names it.
+String budgetEntityCode(EntityKind entity) => switch (entity) {
+  EntityKind.personal => 'PF',
+  EntityKind.company => 'PJ',
+};
+
+JsonMap acceptToJson(
+  EntityKind entity,
+  YearMonth month,
+  List<BudgetLimit> limits,
+) => {
+  'entity': budgetEntityCode(entity),
   'month': month.iso,
   'items': [
     for (final entry in limits)

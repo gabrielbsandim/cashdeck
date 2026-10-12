@@ -10,6 +10,7 @@ import 'package:cashdeck/features/budgets/data/api_budgets_repository.dart';
 import 'package:cashdeck/features/budgets/data/budget_dtos.dart';
 import 'package:cashdeck/features/budgets/data/fake_budgets_repository.dart';
 import 'package:cashdeck/features/budgets/domain/budget.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,6 +19,9 @@ import '../../../support/stub_http_adapter.dart';
 import '../budget_builders.dart';
 
 T _ok<T>(Result<T> result) => (result as Ok<T>).value;
+
+const EntityKind _pf = EntityKind.personal;
+const EntityKind _pj = EntityKind.company;
 
 Map<String, dynamic> _money(int cents) => {'cents': cents, 'currency': 'BRL'};
 
@@ -104,7 +108,7 @@ void main() {
       expect(suggestions.items.first.months, hasLength(3));
       expect(suggestions.items.last.current, isNull);
       expect(
-        acceptToJson(october, const [
+        acceptToJson(_pf, october, const [
           (categoryId: 'cat-pets', limit: Money(10_000)),
         ]),
         {
@@ -131,10 +135,11 @@ void main() {
     });
     final repository = ApiBudgetsRepository(dio);
 
-    expect(_ok(await repository.month(october)).month, october);
+    expect(_ok(await repository.month(_pf, october)).month, october);
     expect(
-      _ok(await repository.create(october, 'cat-pets', const Money(10_000)))
-          .items,
+      _ok(
+        await repository.create(_pj, october, 'cat-pets', const Money(10_000)),
+      ).items,
       hasLength(1),
     );
     expect(
@@ -148,11 +153,11 @@ void main() {
       october,
     );
     expect(_ok(await repository.delete('budget-1')).month, october);
-    expect(_ok(await repository.copyToNext(october)).month, october);
-    expect(_ok(await repository.suggestions(october)).items, hasLength(2));
+    expect(_ok(await repository.copyToNext(_pj, october)).month, october);
+    expect(_ok(await repository.suggestions(_pj, october)).items, hasLength(2));
     expect(
       _ok(
-        await repository.accept(october, const [
+        await repository.accept(_pj, october, const [
           (categoryId: 'cat-pets', limit: Money(10_000)),
         ]),
       ).month,
@@ -165,7 +170,7 @@ void main() {
       'month': '2026-10',
     });
     expect(requests[1].data, {
-      'entity': 'PF',
+      'entity': 'PJ',
       'month': '2026-10',
       'categoryId': 'cat-pets',
       'limitCents': 10_000,
@@ -175,7 +180,8 @@ void main() {
     expect(requests[2].data, {'limitCents': 80_000, 'rollover': true});
     expect(requests[3].method, 'DELETE');
     expect(requests[4].path, '/api/v1/budgets/copy');
-    expect(requests[4].data, {'entity': 'PF', 'month': '2026-10'});
+    expect(requests[4].data, {'entity': 'PJ', 'month': '2026-10'});
+    expect(requests[5].queryParameters, {'entity': 'PJ', 'month': '2026-10'});
     expect(requests.last.path, '/api/v1/budgets/suggestions');
     expect(requests.last.method, 'POST');
   });
@@ -191,7 +197,7 @@ void main() {
     );
 
     test('seeds a month with every level, fullest first', () async {
-      final month = _ok(await repository.month(october));
+      final month = _ok(await repository.month(_pf, october));
       expect(month.items.map((item) => item.id), [
         'budget-restaurants',
         'budget-groceries',
@@ -206,15 +212,32 @@ void main() {
       expect(month.unbudgeted.single.category.id, 'cat-leisure');
       expect(month.total.spent, const Money(140_500));
 
-      final past = _ok(await repository.month(const YearMonth(2026, 9)));
+      final past = _ok(await repository.month(_pf, const YearMonth(2026, 9)));
       expect(past.isEmpty, isTrue);
       expect(past.unbudgeted, hasLength(5));
       expect(past.total.percent, 0);
     });
 
+    test('keeps the company budgets apart from the person', () async {
+      final company = _ok(await repository.month(_pj, october));
+      expect(company.items.single.id, 'budget-software');
+      expect(company.unbudgeted.single.category.name, 'Escritório');
+      final created = _ok(
+        await repository.create(_pj, october, 'cat-office', const Money(9_000)),
+      );
+      expect(created.items, hasLength(2));
+      final personal = _ok(await repository.month(_pf, october));
+      expect(
+        personal.items.map((item) => item.category.id),
+        isNot(contains('cat-office')),
+      );
+      final suggestions = _ok(await repository.suggestions(_pj, october));
+      expect(suggestions.items, hasLength(2));
+    });
+
     test('creates, edits and deletes a limit', () async {
       expect(
-        await repository.create(october, 'cat-groceries', const Money(1)),
+        await repository.create(_pf, october, 'cat-groceries', const Money(1)),
         isA<Err<BudgetMonth>>().having(
           (err) => err.failure,
           'failure',
@@ -223,6 +246,7 @@ void main() {
       );
       final created = _ok(
         await repository.create(
+          _pf,
           october,
           'cat-leisure',
           const Money(20_000),
@@ -235,7 +259,7 @@ void main() {
       );
       expect(leisure.rollover, isTrue);
       final other = _ok(
-        await repository.create(october, 'cat-unknown', const Money(100)),
+        await repository.create(_pf, october, 'cat-unknown', const Money(100)),
       );
       expect(
         other.items.map((item) => item.category),
@@ -268,7 +292,7 @@ void main() {
     });
 
     test('copies to the next month carrying what rolls over', () async {
-      final next = _ok(await repository.copyToNext(october));
+      final next = _ok(await repository.copyToNext(_pf, october));
       expect(next.month, const YearMonth(2026, 11));
       expect(next.items, hasLength(3));
       final carried = {
@@ -277,12 +301,12 @@ void main() {
       expect(carried['cat-groceries'], const Money(8_600));
       expect(carried['cat-restaurants'], const Money(0));
       expect(next.total.spent, const Money(0));
-      final again = _ok(await repository.copyToNext(october));
+      final again = _ok(await repository.copyToNext(_pf, october));
       expect(again.items, hasLength(3));
     });
 
     test('suggests from the last three months and accepts them', () async {
-      final suggestions = _ok(await repository.suggestions(october));
+      final suggestions = _ok(await repository.suggestions(_pf, october));
       expect(suggestions.basedOn, const [
         YearMonth(2026, 7),
         YearMonth(2026, 8),
@@ -300,7 +324,7 @@ void main() {
       expect(groceries.months, hasLength(3));
 
       final accepted = _ok(
-        await repository.accept(october, const [
+        await repository.accept(_pf, october, const [
           (categoryId: 'cat-groceries', limit: Money(80_000)),
           (categoryId: 'cat-pets', limit: Money(10_000)),
         ]),

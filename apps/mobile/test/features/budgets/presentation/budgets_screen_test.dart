@@ -9,6 +9,7 @@ import 'package:cashdeck/features/budgets/presentation/budget_limit_sheet.dart';
 import 'package:cashdeck/features/budgets/presentation/budget_suggestions_screen.dart';
 import 'package:cashdeck/features/budgets/presentation/budgets_screen.dart';
 import 'package:cashdeck/features/budgets/presentation/home_budget_card.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -40,6 +41,7 @@ BudgetMonth _monthOf(List<BudgetItem> items) =>
 void main() {
   setUpAll(() {
     registerFallbackValue(october);
+    registerFallbackValue(EntityKind.personal);
     registerFallbackValue(const Money(0));
     registerFallbackValue(<BudgetLimit>[]);
   });
@@ -151,6 +153,25 @@ void main() {
     expect(find.byKey(BudgetSuggestionsKeys.rowKey('cat-groceries')), findsOne);
   });
 
+  testWidgets('switches to the company budgets', (tester) async {
+    await pumpRoute(tester, AppRoutes.budgets);
+    expect(find.byKey(BudgetsScreen.itemKey('budget-software')), findsNothing);
+
+    await _tap(tester, find.byKey(BudgetsScreen.entityKey(EntityKind.company)));
+    expect(find.byKey(BudgetsScreen.itemKey('budget-software')), findsOne);
+    expect(find.byKey(BudgetsScreen.unbudgetedKey('cat-office')), findsOne);
+    expect(
+      find.byKey(BudgetsScreen.itemKey('budget-restaurants')),
+      findsNothing,
+    );
+
+    await _tap(
+      tester,
+      find.byKey(BudgetsScreen.entityKey(EntityKind.personal)),
+    );
+    expect(find.byKey(BudgetsScreen.itemKey('budget-restaurants')), findsOne);
+  });
+
   testWidgets('a month link opens that month', (tester) async {
     await pumpRoute(tester, '${AppRoutes.budgets}?month=2026-09');
     expect(find.text(l10n.budgetsEmptyTitle), findsOneWidget);
@@ -161,7 +182,7 @@ void main() {
   testWidgets('failures stay on screen with a way out', (tester) async {
     final repository = MockBudgetsRepository();
     var loads = 0;
-    when(() => repository.month(any())).thenAnswer(
+    when(() => repository.month(any(), any())).thenAnswer(
       (_) async => loads++ == 0
           ? const Err(ServerFailure())
           : Ok(_monthOf([itemAt(85)])),
@@ -173,10 +194,10 @@ void main() {
         rollover: any(named: 'rollover'),
       ),
     ).thenAnswer((_) async => const Err(ValidationFailure('Limite recusado.')));
-    when(() => repository.copyToNext(any()))
+    when(() => repository.copyToNext(any(), any()))
         .thenAnswer((_) async => const Err(NetworkFailure()));
     var suggested = 0;
-    when(() => repository.suggestions(any())).thenAnswer(
+    when(() => repository.suggestions(any(), any())).thenAnswer(
       (_) async => suggested++ == 0
           ? const Err(ServerFailure())
           : Ok(
@@ -187,7 +208,7 @@ void main() {
               ),
             ),
     );
-    when(() => repository.accept(any(), any()))
+    when(() => repository.accept(any(), any(), any()))
         .thenAnswer((_) async => const Err(NetworkFailure()));
     final app = await pumpRoute(
       tester,
@@ -216,7 +237,7 @@ void main() {
       find.byKey(BudgetSuggestionsKeys.checkKey(groceries.id)),
     );
     await _tap(tester, find.byKey(BudgetSuggestionsKeys.acceptKey));
-    verifyNever(() => repository.accept(any(), any()));
+    verifyNever(() => repository.accept(any(), any(), any()));
     await _tap(
       tester,
       find.byKey(BudgetSuggestionsKeys.checkKey(groceries.id)),
@@ -228,7 +249,7 @@ void main() {
 
   testWidgets('no history means no suggestion', (tester) async {
     final repository = MockBudgetsRepository();
-    when(() => repository.suggestions(any())).thenAnswer(
+    when(() => repository.suggestions(any(), any())).thenAnswer(
       (_) async =>
           const Ok(BudgetSuggestions(month: october, basedOn: [], items: [])),
     );
@@ -254,7 +275,7 @@ void main() {
 
     testWidgets('says when every category is calm', (tester) async {
       final repository = MockBudgetsRepository();
-      when(() => repository.month(any()))
+      when(() => repository.month(any(), any()))
           .thenAnswer((_) async => Ok(_monthOf([itemAt(20)])));
       await pumpRoute(
         tester,
@@ -267,9 +288,9 @@ void main() {
 
     testWidgets('without budgets offers the suggestion', (tester) async {
       final repository = MockBudgetsRepository();
-      when(() => repository.month(any()))
+      when(() => repository.month(any(), any()))
           .thenAnswer((_) async => Ok(_monthOf(const [])));
-      when(() => repository.suggestions(any())).thenAnswer(
+      when(() => repository.suggestions(any(), any())).thenAnswer(
         (_) async =>
             const Ok(BudgetSuggestions(month: october, basedOn: [], items: [])),
       );

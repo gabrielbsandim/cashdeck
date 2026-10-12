@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/features/budgets/domain/budget.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 final class _Row {
   new({
@@ -12,11 +13,13 @@ final class _Row {
     required this.month,
     required this.categoryId,
     required this.limit,
+    this.entity = EntityKind.personal,
     this.carried = const Money(0),
     this.rollover = false,
   });
 
   final String id;
+  final EntityKind entity;
   final YearMonth month;
   final String categoryId;
   Money limit;
@@ -36,6 +39,16 @@ const _categories = [
   SpendCategory(id: 'cat-pets', name: 'Pet'),
 ];
 
+const _companyCategories = [
+  SpendCategory(id: 'cat-software', name: 'Software'),
+  SpendCategory(id: 'cat-office', name: 'Escritório'),
+];
+
+List<SpendCategory> _categoriesOf(EntityKind entity) => switch (entity) {
+  EntityKind.personal => _categories,
+  EntityKind.company => _companyCategories,
+};
+
 /// What each category spends in a typical month, before the month's swing.
 const Map<String, int> _baseSpend = {
   'cat-groceries': 64_000,
@@ -43,6 +56,8 @@ const Map<String, int> _baseSpend = {
   'cat-transport': 31_000,
   'cat-leisure': 18_000,
   'cat-pets': 9_500,
+  'cat-software': 42_000,
+  'cat-office': 15_000,
 };
 
 /// This month's spending so the screens show every level: one near, one
@@ -52,6 +67,8 @@ const Map<String, int> _thisMonth = {
   'cat-restaurants': 52_300,
   'cat-transport': 21_800,
   'cat-leisure': 18_000,
+  'cat-software': 31_000,
+  'cat-office': 6_000,
 };
 
 BudgetLevel _levelOf(int percent) => switch (percent) {
@@ -111,6 +128,13 @@ final class FakeBudgetsRepository implements BudgetsRepository {
       categoryId: 'cat-transport',
       limit: const Money(40_000),
     ),
+    _Row(
+      id: 'budget-software',
+      entity: EntityKind.company,
+      month: _current,
+      categoryId: 'cat-software',
+      limit: const Money(40_000),
+    ),
   ];
 
   Money _spent(String categoryId, YearMonth month) {
@@ -121,14 +145,20 @@ final class FakeBudgetsRepository implements BudgetsRepository {
   }
 
   SpendCategory _category(String id) =>
-      _categories.where((category) => category.id == id).firstOrNull ??
+      [
+        ..._categories,
+        ..._companyCategories,
+      ].where((category) => category.id == id).firstOrNull ??
       SpendCategory(id: id, name: id);
 
-  BudgetMonth _view(YearMonth month) {
+  bool _in(_Row row, EntityKind entity, YearMonth month) =>
+      row.entity == entity && row.month == month;
+
+  BudgetMonth _view(EntityKind entity, YearMonth month) {
     final items =
         [
           for (final row in _rows.values)
-            if (row.month == month)
+            if (_in(row, entity, month))
               BudgetItem(
                 id: row.id,
                 category: _category(row.categoryId),
@@ -147,7 +177,7 @@ final class FakeBudgetsRepository implements BudgetsRepository {
         );
     final budgeted = {for (final item in items) item.category.id};
     final unbudgeted = [
-      for (final category in _categories)
+      for (final category in _categoriesOf(entity))
         if (!budgeted.contains(category.id) &&
             _spent(category.id, month).cents > 0)
           UnbudgetedSpend(
@@ -169,13 +199,14 @@ final class FakeBudgetsRepository implements BudgetsRepository {
   }
 
   @override
-  Future<Result<BudgetMonth>> month(YearMonth month) async {
+  Future<Result<BudgetMonth>> month(EntityKind entity, YearMonth month) async {
     await Future<void>.delayed(latency);
-    return Ok(_view(month));
+    return Ok(_view(entity, month));
   }
 
   @override
   Future<Result<BudgetMonth>> create(
+    EntityKind entity,
     YearMonth month,
     String categoryId,
     Money limit, {
@@ -183,7 +214,7 @@ final class FakeBudgetsRepository implements BudgetsRepository {
   }) async {
     await Future<void>.delayed(latency);
     final taken = _rows.values.any(
-      (row) => row.month == month && row.categoryId == categoryId,
+      (row) => _in(row, entity, month) && row.categoryId == categoryId,
     );
     if (taken) {
       return const Err(ValidationFailure('Essa categoria já tem orçamento.'));
@@ -191,12 +222,13 @@ final class FakeBudgetsRepository implements BudgetsRepository {
     final id = 'budget-new-${++_counter}';
     _rows[id] = _Row(
       id: id,
+      entity: entity,
       month: month,
       categoryId: categoryId,
       limit: limit,
       rollover: rollover,
     );
-    return Ok(_view(month));
+    return Ok(_view(entity, month));
   }
 
   @override
@@ -211,7 +243,7 @@ final class FakeBudgetsRepository implements BudgetsRepository {
     row
       ..limit = limit
       ..rollover = rollover;
-    return Ok(_view(row.month));
+    return Ok(_view(row.entity, row.month));
   }
 
   @override
@@ -219,26 +251,30 @@ final class FakeBudgetsRepository implements BudgetsRepository {
     await Future<void>.delayed(latency);
     final row = _rows.remove(id);
     if (row == null) return const Err(NotFoundFailure());
-    return Ok(_view(row.month));
+    return Ok(_view(row.entity, row.month));
   }
 
   @override
-  Future<Result<BudgetMonth>> copyToNext(YearMonth from) async {
+  Future<Result<BudgetMonth>> copyToNext(
+    EntityKind entity,
+    YearMonth from,
+  ) async {
     await Future<void>.delayed(latency);
     final next = from.add(1);
     final taken = {
       for (final row in _rows.values)
-        if (row.month == next) row.categoryId,
+        if (_in(row, entity, next)) row.categoryId,
     };
     final copies = [
       for (final row in _rows.values)
-        if (row.month == from && !taken.contains(row.categoryId)) row,
+        if (_in(row, entity, from) && !taken.contains(row.categoryId)) row,
     ];
     for (final row in copies) {
       final left = row.limit + row.carried - _spent(row.categoryId, from);
       final id = 'budget-copy-${++_counter}';
       _rows[id] = _Row(
         id: id,
+        entity: entity,
         month: next,
         categoryId: row.categoryId,
         limit: row.limit,
@@ -246,19 +282,22 @@ final class FakeBudgetsRepository implements BudgetsRepository {
         rollover: row.rollover,
       );
     }
-    return Ok(_view(next));
+    return Ok(_view(entity, next));
   }
 
   @override
-  Future<Result<BudgetSuggestions>> suggestions(YearMonth month) async {
+  Future<Result<BudgetSuggestions>> suggestions(
+    EntityKind entity,
+    YearMonth month,
+  ) async {
     await Future<void>.delayed(latency);
     final basedOn = [for (var back = 3; back > 0; back--) _current.add(-back)];
     final current = {
       for (final row in _rows.values)
-        if (row.month == month) row.categoryId: row.limit,
+        if (_in(row, entity, month)) row.categoryId: row.limit,
     };
     final items = [
-      for (final category in _categories)
+      for (final category in _categoriesOf(entity))
         _suggestion(category, basedOn, current[category.id]),
     ]..sort((a, b) => b.suggested.compareTo(a.suggested));
     return Ok(BudgetSuggestions(month: month, basedOn: basedOn, items: items));
@@ -281,6 +320,7 @@ final class FakeBudgetsRepository implements BudgetsRepository {
 
   @override
   Future<Result<BudgetMonth>> accept(
+    EntityKind entity,
     YearMonth month,
     List<BudgetLimit> limits,
   ) async {
@@ -288,7 +328,8 @@ final class FakeBudgetsRepository implements BudgetsRepository {
     for (final entry in limits) {
       final existing = _rows.values
           .where(
-            (row) => row.month == month && row.categoryId == entry.categoryId,
+            (row) =>
+                _in(row, entity, month) && row.categoryId == entry.categoryId,
           )
           .firstOrNull;
       if (existing != null) {
@@ -298,11 +339,12 @@ final class FakeBudgetsRepository implements BudgetsRepository {
       final id = 'budget-new-${++_counter}';
       _rows[id] = _Row(
         id: id,
+        entity: entity,
         month: month,
         categoryId: entry.categoryId,
         limit: entry.limit,
       );
     }
-    return Ok(_view(month));
+    return Ok(_view(entity, month));
   }
 }

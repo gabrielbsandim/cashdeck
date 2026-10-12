@@ -6,6 +6,7 @@ import {
   monthlyDatesBetween,
   nextMonthlyDate,
   type Obligation,
+  proratedBudgetLeft,
   safeToSpend,
 } from '@/forecast/safe-to-spend'
 import { Money } from '@/money/money'
@@ -189,5 +190,57 @@ describe('safeToSpend', () => {
     expect(result.total.cents).toBe(-5000)
     expect(result.daily.cents).toBe(0)
     expect(result.shortBy.cents).toBe(5000)
+  })
+
+  it('reserves the budgets left for the part of the month the window covers', () => {
+    const result = safeToSpend({
+      today: '2026-10-22',
+      cash: Money.of(100000),
+      reserve: Money.zero(),
+      income: { on: '2026-10-27', amount: Money.of(800000) },
+      obligations: [],
+      budgets: [
+        { label: 'Groceries', left: Money.of(20000) },
+        { label: 'Bars', left: Money.of(20000) },
+        { label: 'Fuel', left: Money.of(-3000) },
+      ],
+    })
+    expect(result.days).toBe(5)
+    expect(
+      result.lines.map(line => [
+        line.kind,
+        line.label,
+        line.amount.cents,
+        line.on,
+      ]),
+    ).toEqual([
+      ['BUDGET', 'Bars', -10000, null],
+      ['BUDGET', 'Groceries', -10000, null],
+    ])
+    expect(result.total.cents).toBe(80000)
+  })
+})
+
+describe('proratedBudgetLeft', () => {
+  it('keeps the share of the days left in the month the window covers', () => {
+    expect(proratedBudgetLeft(Money.of(31000), '2026-10-01', 31).cents).toBe(
+      31000,
+    )
+    expect(proratedBudgetLeft(Money.of(31000), '2026-10-01', 10).cents).toBe(
+      10000,
+    )
+    expect(proratedBudgetLeft(Money.of(1000), '2026-10-30', 40).cents).toBe(
+      1000,
+    )
+    expect(proratedBudgetLeft(Money.of(1000), '2026-10-01', 1).cents).toBe(33)
+  })
+
+  it('keeps nothing of a budget already spent or overspent', () => {
+    expect(proratedBudgetLeft(Money.zero(), '2026-10-01', 10).isZero()).toBe(
+      true,
+    )
+    expect(proratedBudgetLeft(Money.of(-500), '2026-10-01', 10).isZero()).toBe(
+      true,
+    )
   })
 })

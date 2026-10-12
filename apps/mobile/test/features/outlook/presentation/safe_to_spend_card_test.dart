@@ -9,10 +9,13 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/money/cd_count_up.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/home/presentation/company_home.dart';
 import 'package:cashdeck/features/investments/presentation/investment_performance.dart';
 import 'package:cashdeck/features/outlook/data/fake_outlook_repository.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 import 'package:cashdeck/features/outlook/outlook_providers.dart';
+import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
 import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -46,6 +49,30 @@ void main() {
     );
     expect(
       _inCard(find.text(l10n.safeToSpendIncome(_brl(820_000), '20/10'))),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the company home shows its own figure and net worth', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.home, screenHeight: 5200);
+    await pickScope(tester, EntityScope.company);
+
+    expect(find.byType(CompanyHome), findsOneWidget);
+    expect(find.byKey(NetWorthCard.cardKey), findsOneWidget);
+    expect(_inCard(find.text(_brl(41_775))), findsOneWidget);
+    expect(_inCard(find.text(l10n.safeToSpendNoIncome)), findsOneWidget);
+
+    await tester.tap(_inCard(find.text(l10n.safeToSpendTitle)));
+    await settle(tester);
+    expect(find.text('Software'), findsOneWidget);
+    expect(find.text(l10n.safeToSpendLineBudgetReserved), findsNWidgets(2));
+    expect(
+      find.descendant(
+        of: find.byKey(SafeToSpendBreakdown.totalKey),
+        matching: find.text(l10n.safeToSpendFree('31/10')),
+      ),
       findsOneWidget,
     );
   });

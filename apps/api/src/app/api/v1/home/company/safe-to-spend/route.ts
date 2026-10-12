@@ -1,0 +1,10 @@
+import { route } from '@/server/api/handler'
+import { ok } from '@/server/api/respond'
+
+export const dynamic = 'force-dynamic'
+
+export const GET = route(
+  'home:company:safe-to-spend',
+  async ({ tenantId, container }) =>
+    ok(await container.safeToSpend(tenantId, 'PJ')),
+)

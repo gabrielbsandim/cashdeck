@@ -40,7 +40,13 @@ export type Obligation = {
   readonly fromReserve: boolean
 }
 
-export type SafeToSpendLineKind = ObligationKind | 'RESERVE'
+// What a budget of the current month still allows for its category.
+export type BudgetLeft = {
+  readonly label: string
+  readonly left: Money
+}
+
+export type SafeToSpendLineKind = ObligationKind | 'BUDGET' | 'RESERVE'
 
 // Signed: a deduction is negative, the share the reserve covers is positive.
 export type SafeToSpendLine = {
@@ -56,6 +62,7 @@ export type SafeToSpendInput = {
   readonly reserve: Money
   readonly income: ExpectedIncome | null
   readonly obligations: readonly Obligation[]
+  readonly budgets?: readonly BudgetLeft[]
 }
 
 export type SafeToSpend = {
@@ -189,11 +196,48 @@ export function spendingWindow(
   return { until, days: daysBetween(today, until) + 1 }
 }
 
+// The budget left spread evenly over the days left in the month, kept for
+// the window days inside the month; an overspent budget keeps nothing.
+export function proratedBudgetLeft(
+  left: Money,
+  today: LocalDate,
+  windowDays: number,
+): Money {
+  if (!left.isPositive()) {
+    return Money.zero(left.currency)
+  }
+  const monthDays = daysBetween(today, lastDayOfMonth(today)) + 1
+  const covered = Math.min(windowDays, monthDays)
+  return Money.of(Math.ceil((left.cents * covered) / monthDays), left.currency)
+}
+
+function budgetLines(
+  budgets: readonly BudgetLeft[],
+  today: LocalDate,
+  days: number,
+): SafeToSpendLine[] {
+  return budgets
+    .map(budget => ({
+      label: budget.label,
+      kept: proratedBudgetLeft(budget.left, today, days),
+    }))
+    .filter(budget => budget.kept.isPositive())
+    .sort(
+      (a, b) => b.kept.cents - a.kept.cents || a.label.localeCompare(b.label),
+    )
+    .map(budget => ({
+      kind: 'BUDGET',
+      label: budget.label,
+      amount: budget.kept.negate(),
+      on: null,
+    }))
+}
+
 const byDate = (a: Obligation, b: Obligation) =>
   a.on.localeCompare(b.on) || a.label.localeCompare(b.label)
 
-// Checking balance minus what is owed until the next income; obligations
-// paid from the reserve only count for what its balance does not cover.
+// Checking balance minus what is owed until the next income and what the
+// month's budgets still allow; the reserve covers the obligations paid from it.
 export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
   const { until, days } = spendingWindow(input.today, input.income)
   const due = input.obligations.filter(obligation => obligation.on <= until)
@@ -208,6 +252,7 @@ export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
     amount: item.amount.negate(),
     on: item.on,
   }))
+  lines.push(...budgetLines(input.budgets ?? [], input.today, days))
   if (covered.isPositive()) {
     lines.push({ kind: 'RESERVE', label: '', amount: covered, on: null })
   }

@@ -123,6 +123,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/company/safe-to-spend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the company can spend each day until the next income */
+        get: operations["getCompanySafeToSpend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/net-worth": {
         parameters: {
             query?: never;
@@ -2510,6 +2527,8 @@ export interface operations {
                     "application/json": {
                         data: {
                             asOf: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
                             cash: {
                                 cents: number;
                                 currency: string;
@@ -2541,7 +2560,81 @@ export interface operations {
                             };
                             lines: {
                                 /** @enum {string} */
-                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "RESERVE";
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "BUDGET" | "RESERVE";
+                                label: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCompanySafeToSpend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the company can spend each day until the next income */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            cash: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            total: {
+                                cents: number;
+                                currency: string;
+                            };
+                            daily: {
+                                cents: number;
+                                currency: string;
+                            };
+                            days: number;
+                            until: string;
+                            income: {
+                                on: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
+                            shortBy: {
+                                cents: number;
+                                currency: string;
+                            };
+                            lines: {
+                                /** @enum {string} */
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "BUDGET" | "RESERVE";
                                 label: string;
                                 amount: {
                                     cents: number;

@@ -104,6 +104,34 @@ void main() {
       );
     });
 
+    test('asks the company home for the company figure', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {
+            ..._safeToSpendJson(),
+            'lines': [
+              {
+                'kind': 'BUDGET',
+                'label': 'Software',
+                'amount': _money(-40_000),
+                'on': null,
+              },
+            ],
+          },
+        }),
+      );
+      final free = _valueOf(
+        await ApiOutlookRepository(dio).safeToSpend(entity: EntityKind.company),
+      );
+
+      expect(free.lines.single.kind, SafeToSpendLineKind.budget);
+      expect(free.lines.single.label, 'Software');
+      expect(
+        adapterOf(dio).requests.single.path,
+        '/api/v1/home/company/safe-to-spend',
+      );
+    });
+
     test('reads safe to spend without a known income', () async {
       final dio = stubDio(
         (_) => StubResponse(200, {'data': _safeToSpendJson(income: false)}),
@@ -181,6 +209,21 @@ void main() {
       expect(free.cash.cents + lines, free.total.cents);
       expect(free.until, testToday.addDays(12));
       expect(free.isShort, isFalse);
+    });
+
+    test('the company runs to the month end with budgets kept', () async {
+      final free = _valueOf(
+        await repository.safeToSpend(entity: EntityKind.company),
+      );
+
+      final lines = free.lines.fold(0, (sum, line) => sum + line.amount.cents);
+      expect(free.cash.cents + lines, free.total.cents);
+      expect(free.income, isNull);
+      expect(free.until, const CalendarDate(2026, 10, 31));
+      expect(
+        free.lines.where((line) => line.kind == SafeToSpendLineKind.budget),
+        hasLength(2),
+      );
     });
 
     test('sums the entities in scope and ends the series today', () async {

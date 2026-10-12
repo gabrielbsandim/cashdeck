@@ -12,6 +12,7 @@ import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/goals/domain/goal.dart';
+import 'package:cashdeck/features/goals/presentation/goal_appearance.dart';
 import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
 import 'package:cashdeck/features/goals/presentation/goal_labels.dart';
 import 'package:cashdeck/features/goals/presentation/goal_ring.dart';
@@ -104,11 +105,23 @@ class _GoalTile extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  goal.name,
-                  style: AppTextStyles.titleSm.copyWith(
-                    color: palette.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      goalIconOf(goal.icon),
+                      size: 18,
+                      color: goalRingColor(context, goal),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        goal.name,
+                        style: AppTextStyles.titleSm.copyWith(
+                          color: palette.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(

@@ -34,6 +34,13 @@ The profiles screen lists both entities with `GET /entities` and saves one
 with `PATCH /entities/{id}`: `name`, the unmasked `taxId` (checked locally
 first) and, for `PJ` only, `taxRegime`.
 
+Safe to spend reads `GET /home/personal/safe-to-spend` on Início Pessoal and
+`GET /home/company/safe-to-spend` on Início Empresa; a `BUDGET` line keeps
+what a budget of the month still allows. Budgets send `entity` (`PF` or `PJ`)
+on every call that does not name a budget. A goal sends `icon` and `color`
+from the app's own sets (`goal_appearance.dart`) and follows an account
+(`accountId`) or an investment (`investmentId`), never both.
+
 ## Capture
 
 - `POST /api/v1/capture/files` takes the upload body plus `entity` (`PF` or

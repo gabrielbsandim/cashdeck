@@ -15,9 +15,15 @@ final class ApiOutlookRepository implements OutlookRepository {
   final Dio _dio;
 
   @override
-  Future<Result<SafeToSpend>> safeToSpend() => guardRequest(() async {
+  Future<Result<SafeToSpend>> safeToSpend({
+    EntityKind entity = EntityKind.personal,
+  }) => guardRequest(() async {
+    final home = switch (entity) {
+      EntityKind.personal => 'personal',
+      EntityKind.company => 'company',
+    };
     final response = await _dio.get<Object?>(
-      '/api/v1/home/personal/safe-to-spend',
+      '/api/v1/home/$home/safe-to-spend',
     );
     return safeToSpendFromJson(asJsonMap(unwrapData(response.data)));
   });

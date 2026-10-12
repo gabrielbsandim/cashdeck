@@ -1593,7 +1593,7 @@
     }
   },
   "goalDeadlineClear": "Tirar o prazo",
-  "goalAccount": "Conta vinculada",
+  "goalAccount": "Conta ou investimento vinculado",
   "goalAccountNone": "Nenhuma, registro os aportes",
   "goalAccountManualHelp": "O progresso soma os aportes que você registrar.",
   "goalAccountHelp": "O progresso segue o saldo dessa conta.",
@@ -3521,5 +3521,21 @@
   },
   "approvalPaidToast": "O banco confirmou e a conta está paga.",
   "approvalPendingToast": "O banco ainda não confirmou. A conta se atualiza sozinha quando ele confirmar.",
-  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco."
+  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco.",
+  "safeToSpendLineBudget": "Orçamento",
+  "safeToSpendLineBudgetReserved": "Reservado para o orçamento do mês",
+  "goalIconLabel": "Ícone",
+  "goalColorLabel": "Cor",
+  "goalInvestmentHelp": "O progresso segue o saldo desse investimento.",
+  "goalInvestmentOption": "{name} · {institution}",
+  "@goalInvestmentOption": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "institution": {
+        "type": "String"
+      }
+    }
+  }
 }

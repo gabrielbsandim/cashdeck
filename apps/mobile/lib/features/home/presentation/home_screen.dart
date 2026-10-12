@@ -45,6 +45,7 @@ class HomeScreen extends ConsumerWidget {
     subscriptionsControllerProvider,
     automationControllerProvider,
     safeToSpendProvider,
+    companySafeToSpendProvider,
     netWorthProvider,
   ];
 

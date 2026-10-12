@@ -3,6 +3,7 @@ import { createAccount, Money } from '@cashdeck/domain'
 import { signInTestDevice, STATIC_TOKEN } from '@/app/api/sign-in.test-helpers'
 import { getContainer, resetContainer } from '@/server/container'
 import { GET as safeToSpend } from '@/app/api/v1/home/personal/safe-to-spend/route'
+import { GET as companySafeToSpend } from '@/app/api/v1/home/company/safe-to-spend/route'
 import { GET as netWorth } from '@/app/api/v1/net-worth/route'
 
 let session = ''
@@ -61,6 +62,19 @@ describe('safe to spend route', () => {
     expect(found.body.data.daily.cents).toBeGreaterThan(0)
   })
 
+  it('answers for the company on its own path', async () => {
+    await seeded()
+    const found = await json(
+      await companySafeToSpend(get('home/company/safe-to-spend')),
+    )
+    expect(found.status).toBe(200)
+    expect(found.body.data).toMatchObject({
+      entity: 'PJ',
+      cash: { cents: 0 },
+      lines: [],
+    })
+  })
+
   it('refuses a request without the token', async () => {
     const denied = await safeToSpend(
       new Request('http://localhost/api/v1/home/personal/safe-to-spend'),
@@ -84,6 +98,11 @@ describe('net worth route', () => {
     expect(personal.body.data.entities).toEqual([
       expect.objectContaining({ kind: 'PF' }),
     ])
+    const company = await json(await netWorth(get('net-worth', '?entity=PJ')))
+    expect(company.body.data.entities).toEqual([
+      expect.objectContaining({ kind: 'PJ' }),
+    ])
+    expect(company.body.data.current.cash.cents).toBe(0)
   })
 
   it('rejects a window out of range', async () => {

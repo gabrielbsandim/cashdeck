@@ -9,7 +9,8 @@ final class LoadSafeToSpend {
 
   final OutlookRepository _repository;
 
-  Future<Result<SafeToSpend>> call() => _repository.safeToSpend();
+  Future<Result<SafeToSpend>> call(EntityKind entity) =>
+      _repository.safeToSpend(entity: entity);
 }
 
 final class LoadNetWorth {

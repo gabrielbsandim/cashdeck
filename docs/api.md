@@ -191,6 +191,36 @@ summary (same shape as `GET /home/company`).
 Creates and issues an invoice for that receipt, linking the two. Returns the
 company summary.
 
+### GET /home/personal/safe-to-spend, GET /home/company/safe-to-spend
+
+```json
+{
+  "data": {
+    "asOf": date,
+    "entity": "PF" | "PJ",
+    "cash": Money,
+    "reserve": Money,
+    "total": Money,
+    "daily": Money,
+    "days": int,
+    "until": date,
+    "income": { "on": date, "amount": Money } | null,
+    "shortBy": Money,
+    "lines": [{ "kind": "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "BUDGET" | "RESERVE", "label": string, "amount": Money, "on": date | null }]
+  }
+}
+```
+
+What the entity can spend each day until its next income: the checking
+balance minus open bills, subscriptions and card bills due by `until`, the
+fixed Asaas items (person only) and the budgets left this month.
+
+- A `BUDGET` line per budget of the current month that still has room: what
+  is left, spread evenly over the days left in the month, kept for the days
+  of the window inside the month. An overspent budget reserves nothing.
+- `RESERVE` is the share of the bills paid from the reserve its balance
+  covers, as a positive line.
+
 ### GET /home/consolidated
 
 ```json

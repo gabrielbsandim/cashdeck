@@ -40,9 +40,12 @@ final class FakeOutlookRepository implements OutlookRepository {
   Future<void> _wait() => Future<void>.delayed(latency);
 
   @override
-  Future<Result<SafeToSpend>> safeToSpend() async {
+  Future<Result<SafeToSpend>> safeToSpend({
+    EntityKind entity = EntityKind.personal,
+  }) async {
     await _wait();
     final today = _today;
+    if (entity == EntityKind.company) return Ok(_companySafeToSpend(today));
     return Ok(
       SafeToSpend(
         asOf: today,
@@ -94,6 +97,42 @@ final class FakeOutlookRepository implements OutlookRepository {
           ),
         ],
       ),
+    );
+  }
+
+  /// No income in sight, so the month end closes the window; the DAS and
+  /// what the budgets still allow come off the company cash.
+  SafeToSpend _companySafeToSpend(CalendarDate today) {
+    final monthEnd = DateTime.utc(today.year, today.month + 1, 0);
+    final until = CalendarDate(monthEnd.year, monthEnd.month, monthEnd.day);
+    final days = today.daysUntil(until) + 1;
+    const total = Money(1_250_000 - 182_400 - 40_000 - 25_000);
+    return SafeToSpend(
+      asOf: today,
+      cash: const Money(1_250_000),
+      total: total,
+      daily: Money(total.cents ~/ days),
+      days: days,
+      until: until,
+      shortBy: const Money(0),
+      lines: [
+        SafeToSpendLine(
+          kind: SafeToSpendLineKind.bill,
+          label: 'DAS',
+          amount: const Money(-182_400),
+          on: today.addDays(5),
+        ),
+        const SafeToSpendLine(
+          kind: SafeToSpendLineKind.budget,
+          label: 'Software',
+          amount: Money(-40_000),
+        ),
+        const SafeToSpendLine(
+          kind: SafeToSpendLineKind.budget,
+          label: 'Escritório',
+          amount: Money(-25_000),
+        ),
+      ],
     );
   }
 

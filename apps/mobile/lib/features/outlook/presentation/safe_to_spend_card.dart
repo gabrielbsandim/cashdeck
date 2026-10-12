@@ -9,6 +9,7 @@ import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/investments/presentation/investment_performance.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
@@ -19,15 +20,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The one number up top: what can be spent each day until the next income
 /// without touching what is already owed. Tapping it explains the number.
 class SafeToSpendCard extends ConsumerWidget {
-  const new({super.key});
+  const new({this.entity = EntityKind.personal, super.key});
 
   static const cardKey = Key('home-safe-to-spend');
   static const retryKey = Key('home-safe-to-spend-retry');
 
+  final EntityKind entity;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final free = ref.watch(safeToSpendProvider);
+    final provider = safeToSpendOfProvider(entity);
+    final free = ref.watch(provider);
     return CdInsightCard(
       key: cardKey,
       title: l10n.safeToSpendTitle,
@@ -39,7 +43,7 @@ class SafeToSpendCard extends ConsumerWidget {
         AsyncData(:final value) => _Free(free: value),
         AsyncError() => PerformanceFailed(
           retryKey: retryKey,
-          onRetry: () => ref.invalidate(safeToSpendProvider),
+          onRetry: () => ref.invalidate(provider),
         ),
         _ => const PerformancePending(height: 112),
       },
@@ -125,6 +129,7 @@ String safeToSpendKindLabel(AppLocalizations l10n, SafeToSpendLineKind kind) =>
       SafeToSpendLineKind.fixed => l10n.safeToSpendLineFixed,
       SafeToSpendLineKind.subscription => l10n.safeToSpendLineSubscription,
       SafeToSpendLineKind.card => l10n.safeToSpendLineCard,
+      SafeToSpendLineKind.budget => l10n.safeToSpendLineBudget,
       SafeToSpendLineKind.reserve => l10n.safeToSpendLineReserve,
     };
 
@@ -151,12 +156,14 @@ class SafeToSpendBreakdown extends StatelessWidget {
             label: line.label.isEmpty
                 ? safeToSpendKindLabel(l10n, line.kind)
                 : line.label,
-            caption: switch (line.on) {
-              final on? => l10n.safeToSpendLineDue(
+            caption: switch ((line.on, line.kind)) {
+              (final on?, _) => l10n.safeToSpendLineDue(
                 safeToSpendKindLabel(l10n, line.kind),
                 on.dayMonth,
               ),
-              null => null,
+              (null, SafeToSpendLineKind.budget) =>
+                l10n.safeToSpendLineBudgetReserved,
+              _ => null,
             },
             amount: CdAmount(
               line.amount,

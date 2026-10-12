@@ -44,7 +44,10 @@ final class Goal extends Equatable {
     this.monthlyPace,
     this.projectedOn,
     this.accountId,
+    this.investmentId,
     this.linkedName,
+    this.icon,
+    this.color,
     this.archived = false,
     this.contributions = const [],
   });
@@ -70,9 +73,14 @@ final class Goal extends Equatable {
   /// When the target is reached at [monthlyPace].
   final CalendarDate? projectedOn;
   final String? accountId;
+  final String? investmentId;
 
   /// The account or investment the goal follows.
   final String? linkedName;
+
+  /// Names from the app's own icon and colour sets; null keeps the default.
+  final String? icon;
+  final String? color;
   final bool archived;
 
   /// Newest first; empty in a list.
@@ -99,7 +107,10 @@ final class Goal extends Equatable {
     monthlyPace,
     projectedOn,
     accountId,
+    investmentId,
     linkedName,
+    icon,
+    color,
     archived,
     contributions,
   ];
@@ -121,6 +132,9 @@ final class GoalDraft extends Equatable {
     required this.target,
     this.deadline,
     this.accountId,
+    this.investmentId,
+    this.icon,
+    this.color,
     this.initial = const Money(0),
   });
 
@@ -128,8 +142,14 @@ final class GoalDraft extends Equatable {
   final Money target;
   final CalendarDate? deadline;
 
-  /// Null for a goal that adds up contributions.
+  /// The account or the investment the goal follows, never both; neither
+  /// for a goal that adds up contributions.
   final String? accountId;
+  final String? investmentId;
+  final String? icon;
+  final String? color;
+
+  bool get isManual => accountId == null && investmentId == null;
 
   /// Already saved, the first contribution of a new manual goal.
   final Money initial;
@@ -144,7 +164,16 @@ final class GoalDraft extends Equatable {
   }
 
   @override
-  List<Object?> get props => [name, target, deadline, accountId, initial];
+  List<Object?> get props => [
+    name,
+    target,
+    deadline,
+    accountId,
+    investmentId,
+    icon,
+    color,
+    initial,
+  ];
 }
 
 abstract interface class GoalsRepository {

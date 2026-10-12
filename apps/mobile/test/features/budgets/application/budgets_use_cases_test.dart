@@ -3,6 +3,7 @@ import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/budgets/application/budgets_use_cases.dart';
 import 'package:cashdeck/features/budgets/domain/budget.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -32,9 +33,12 @@ void main() {
   setUp(() => repository = MockBudgetsRepository());
 
   test('each use case forwards to the repository', () async {
-    when(() => repository.month(october)).thenAnswer((_) async => Ok(_month));
+    const pj = EntityKind.company;
+    when(() => repository.month(pj, october))
+        .thenAnswer((_) async => Ok(_month));
     when(
       () => repository.create(
+        pj,
         october,
         'cat-groceries',
         const Money(500),
@@ -50,17 +54,18 @@ void main() {
     ).thenAnswer((_) async => Ok(_month));
     when(() => repository.delete('budget-1'))
         .thenAnswer((_) async => Ok(_month));
-    when(() => repository.copyToNext(october))
+    when(() => repository.copyToNext(pj, october))
         .thenAnswer((_) async => Ok(_month));
-    when(() => repository.suggestions(october))
+    when(() => repository.suggestions(pj, october))
         .thenAnswer((_) async => Ok(_suggestions));
-    when(() => repository.accept(october, _limits))
+    when(() => repository.accept(pj, october, _limits))
         .thenAnswer((_) async => Ok(_month));
 
-    expect(await LoadBudgetMonth(repository).call(october), Ok(_month));
+    expect(await LoadBudgetMonth(repository).call(pj, october), Ok(_month));
     final setLimit = SetBudgetLimit(repository);
     expect(
       await setLimit(
+        entity: pj,
         month: october,
         categoryId: 'cat-groceries',
         limit: const Money(500),
@@ -70,6 +75,7 @@ void main() {
     );
     expect(
       await setLimit(
+        entity: pj,
         month: october,
         categoryId: 'cat-groceries',
         limit: const Money(500),
@@ -79,10 +85,13 @@ void main() {
       Ok(_month),
     );
     expect(await DeleteBudget(repository).call('budget-1'), Ok(_month));
-    expect(await CopyBudgets(repository).call(october), Ok(_month));
-    expect(await SuggestBudgets(repository).call(october), Ok(_suggestions));
+    expect(await CopyBudgets(repository).call(pj, october), Ok(_month));
     expect(
-      await AcceptBudgetSuggestions(repository).call(october, _limits),
+      await SuggestBudgets(repository).call(pj, october),
+      Ok(_suggestions),
+    );
+    expect(
+      await AcceptBudgetSuggestions(repository).call(pj, october, _limits),
       Ok(_month),
     );
   });
@@ -90,6 +99,7 @@ void main() {
   test('a zero limit or nothing chosen never reaches the server', () async {
     expect(
       await SetBudgetLimit(repository).call(
+        entity: EntityKind.personal,
         month: october,
         categoryId: 'cat-groceries',
         limit: const Money(0),
@@ -98,7 +108,8 @@ void main() {
       const Err<BudgetMonth>(UnexpectedFailure()),
     );
     expect(
-      await AcceptBudgetSuggestions(repository).call(october, const []),
+      await AcceptBudgetSuggestions(repository)
+          .call(EntityKind.personal, october, const []),
       const Err<BudgetMonth>(UnexpectedFailure()),
     );
     verifyZeroInteractions(repository);

@@ -3,8 +3,9 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:equatable/equatable.dart';
 
 /// What a line of the breakdown is: something owed before the next income,
-/// or the share of the bills the reserve already covers.
-enum SafeToSpendLineKind { bill, fixed, subscription, card, reserve }
+/// what a budget of the month still allows, or the share of the bills the
+/// reserve already covers.
+enum SafeToSpendLineKind { bill, fixed, subscription, card, budget, reserve }
 
 /// One step from the checking balance to the free amount. A deduction is
 /// negative; the reserve line is positive.
@@ -18,7 +19,8 @@ final class SafeToSpendLine extends Equatable {
 
   final SafeToSpendLineKind kind;
 
-  /// The payee, card or fixed payment; blank when the server has no name.
+  /// The payee, card, fixed payment or budget category; blank when the
+  /// server has no name.
   final String label;
   final Money amount;
   final CalendarDate? on;
@@ -37,8 +39,9 @@ final class ExpectedIncome extends Equatable {
   List<Object?> get props => [on, amount];
 }
 
-/// How much the person can spend each day until the next income without
-/// touching what is already owed. The server decides every figure.
+/// How much the person or the company can spend each day until the next
+/// income without touching what is already owed. The server decides every
+/// figure.
 final class SafeToSpend extends Equatable {
   const new({
     required this.asOf,

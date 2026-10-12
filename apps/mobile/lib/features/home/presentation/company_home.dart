@@ -14,17 +14,21 @@ import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
+import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Início for the company: cash, what was billed, the DAS estimate, taxes
-/// due, drafts to approve and money received without an invoice.
+/// Início for the company: cash, what is free to spend, what was billed, the
+/// DAS estimate, net worth, taxes due, drafts to approve and money received
+/// without an invoice.
 class CompanyHome extends ConsumerWidget {
   const new({required this.summary, super.key});
 
@@ -63,6 +67,7 @@ class CompanyHome extends ConsumerWidget {
           balance: summary.cash,
           syncLine: syncLineOf(l10n, ref, summary.sync, company: true),
         ),
+        const SafeToSpendCard(entity: EntityKind.company),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -89,6 +94,7 @@ class CompanyHome extends ConsumerWidget {
             amount: inss.amount,
             caption: l10n.dasDueOn(inss.due.dayMonth),
           ),
+        const NetWorthCard(),
         DueSoonSection(
           bills: taxes,
           today: today,

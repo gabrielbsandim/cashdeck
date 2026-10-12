@@ -3,7 +3,9 @@ import {
   addDays,
   type Bill,
   CASH_ACCOUNT_TYPES,
+  type BudgetLeft,
   daysBetween,
+  type EntityKind,
   expectedIncome,
   type FinancialEntity,
   isCardBillPayment,
@@ -22,6 +24,7 @@ import { type FundingItemView } from '@/dtos/home'
 import { type SafeToSpendView } from '@/dtos/safe-to-spend'
 import { type TransferKind } from '@/ports/records'
 import { loadAutoDebit } from '@/use-cases/auto-debit'
+import { type BudgetDeps, makeBudgets } from '@/use-cases/budgets'
 import { cardBillsOf } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import { FUNDING_ITEMS_COLLECTION } from '@/use-cases/funding-plan'
@@ -33,18 +36,8 @@ import {
   today,
 } from '@/use-cases/shared'
 
-type SafeToSpendDeps = Pick<
-  Deps,
-  | 'entities'
-  | 'accounts'
-  | 'transactions'
-  | 'transfers'
-  | 'bills'
-  | 'documents'
-  | 'recurrences'
-  | 'cardBills'
-  | 'clock'
->
+type SafeToSpendDeps = BudgetDeps &
+  Pick<Deps, 'transfers' | 'bills' | 'documents' | 'recurrences' | 'cardBills'>
 
 // Three months show a monthly income or charge at least twice.
 const HISTORY_DAYS = 100
@@ -113,6 +106,34 @@ function fixedObligations(
 }
 
 export function makeSafeToSpend(deps: SafeToSpendDeps) {
+  const budgets = makeBudgets(deps)
+
+  // The Asaas balance pays the fixed items of the person only.
+  async function fixedItems(
+    kind: EntityKind,
+    tenantId: string,
+  ): Promise<readonly FundingItemView[]> {
+    if (kind !== 'PF') {
+      return []
+    }
+    return deps.documents.list<FundingItemView>(
+      tenantId,
+      FUNDING_ITEMS_COLLECTION,
+    )
+  }
+
+  async function budgetsLeft(
+    tenantId: string,
+    kind: EntityKind,
+    day: LocalDate,
+  ): Promise<BudgetLeft[]> {
+    const month = await budgets.monthView(tenantId, kind, monthOf(day))
+    return month.items.map(item => ({
+      label: item.name,
+      left: Money.of(item.remaining.cents),
+    }))
+  }
+
   async function incomeOf(
     tenantId: string,
     entity: FinancialEntity,
@@ -225,13 +246,15 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     )
   }
 
-  // How much the person can spend each day until the next income without
-  // touching what bills, fixed payments, subscriptions and cards will take.
+  // How much the entity can spend each day until the next income without
+  // touching what bills, fixed payments, subscriptions, cards and the
+  // month's budgets will take.
   return async function safeToSpendToday(
     tenantId: string,
+    kind: EntityKind = 'PF',
   ): Promise<SafeToSpendView> {
     const day = today(deps.clock.now())
-    const entity = await requireEntity(deps.entities, tenantId, 'PF')
+    const entity = await requireEntity(deps.entities, tenantId, kind)
     const accounts = await deps.accounts.listByEntity(tenantId, entity.id)
     const cash = accounts.filter(isCash)
     const spending = cash.filter(account => !account.isReserve)
@@ -257,10 +280,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
     )
     const context: Context = { day, until, entity, recent, open }
-    const items = await deps.documents.list<FundingItemView>(
-      tenantId,
-      FUNDING_ITEMS_COLLECTION,
-    )
+    const items = await fixedItems(kind, tenantId)
     const result = safeToSpend({
       today: day,
       cash: checking,
@@ -276,9 +296,11 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
           context,
         )),
       ],
+      budgets: await budgetsLeft(tenantId, kind, day),
     })
     return {
       asOf: day,
+      entity: kind,
       cash: money(checking),
       reserve: money(reserve),
       total: money(result.total),

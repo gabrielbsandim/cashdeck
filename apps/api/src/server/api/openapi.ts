@@ -222,6 +222,13 @@ const OPERATIONS: Operation[] = [
   },
   {
     method: 'get',
+    path: '/home/company/safe-to-spend',
+    id: 'getCompanySafeToSpend',
+    summary: 'What the company can spend each day until the next income',
+    response: safeToSpendViewSchema,
+  },
+  {
+    method: 'get',
     path: '/net-worth',
     id: 'getNetWorth',
     summary: 'Net worth now, its change and its month-end history',

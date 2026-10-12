@@ -87,6 +87,69 @@ void main() {
     expect(find.text('Casa'), findsOneWidget);
   });
 
+  testWidgets('a goal wears an icon and a colour and follows an investment', (
+    tester,
+  ) async {
+    final repository = MockGoalsRepository();
+    when(repository.list).thenAnswer((_) async => Ok([goalAt(40)]));
+    when(() => repository.create(any()))
+        .thenAnswer((_) async => Ok(goalAt(10)));
+    await pumpRoute(
+      tester,
+      AppRoutes.goals,
+      overrides: [goalsRepositoryProvider.overrideWithValue(repository)],
+    );
+    await _tap(tester, find.byKey(GoalsScreen.addKey));
+    await _type(tester, GoalEditor.nameKey, 'Aposentadoria');
+    await _type(tester, GoalEditor.targetKey, '100000');
+    await _tap(tester, find.byKey(GoalEditor.iconKey('flight')));
+    await _tap(tester, find.byKey(GoalEditor.iconKey('flight')));
+    await _tap(tester, find.byKey(GoalEditor.iconKey('savings')));
+    await _tap(tester, find.byKey(GoalEditor.colorKey('purple')));
+    await _tap(tester, find.byKey(GoalEditor.accountKey));
+    await _tap(
+      tester,
+      find
+          .text(l10n.goalInvestmentOption('CDB Banco Aurora', 'Banco Aurora'))
+          .last,
+    );
+    expect(find.text(l10n.goalInvestmentHelp), findsOneWidget);
+    expect(find.byKey(GoalEditor.initialKey), findsNothing);
+    await _tap(tester, find.byKey(GoalEditor.saveKey));
+
+    final draft =
+        verify(() => repository.create(captureAny())).captured.single
+            as GoalDraft;
+    expect(draft.investmentId, 'cdb-aurora');
+    expect(draft.accountId, isNull);
+    expect(draft.icon, 'savings');
+    expect(draft.color, 'purple');
+  });
+
+  testWidgets('an edited goal keeps its investment, icon and colour', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.goals);
+    await _tap(tester, find.byKey(GoalsScreen.addKey));
+    await _type(tester, GoalEditor.nameKey, 'Fundo');
+    await _type(tester, GoalEditor.targetKey, '100000');
+    await _tap(tester, find.byKey(GoalEditor.colorKey('teal')));
+    await _tap(tester, find.byKey(GoalEditor.iconKey('home')));
+    await _tap(tester, find.byKey(GoalEditor.accountKey));
+    await _tap(
+      tester,
+      find
+          .text(l10n.goalInvestmentOption('CDB Banco Aurora', 'Banco Aurora'))
+          .last,
+    );
+    await _tap(tester, find.byKey(GoalEditor.saveKey));
+    expect(find.text('Fundo'), findsOneWidget);
+
+    await _tap(tester, find.text('Fundo'));
+    await _menu(tester, 'edit');
+    expect(find.text(l10n.goalInvestmentHelp), findsOneWidget);
+  });
+
   testWidgets('reaching the target celebrates, then money moves both ways', (
     tester,
   ) async {

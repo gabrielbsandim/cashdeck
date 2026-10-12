@@ -45,6 +45,8 @@ final class FakeGoalsRepository implements GoalsRepository {
           name: 'Reserva de emergência',
           target: const Money(3_000_000),
           deadline: today.addDays(270),
+          icon: 'shield',
+          color: 'teal',
         ),
         pace: const Money(150_000),
         contributions: [
@@ -68,6 +70,8 @@ final class FakeGoalsRepository implements GoalsRepository {
           target: const Money(1_200_000),
           deadline: today.addDays(120),
           accountId: 'acc-pf-checking',
+          icon: 'flight',
+          color: 'blue',
         ),
         linked: ('Corrente Aurora ••4410', const Money(482_015)),
         pace: const Money(80_000),
@@ -85,6 +89,12 @@ final class FakeGoalsRepository implements GoalsRepository {
         ],
       ),
     ];
+  }
+
+  GoalSource _sourceOf(GoalDraft draft) {
+    if (draft.accountId != null) return GoalSource.account;
+    if (draft.investmentId != null) return GoalSource.investment;
+    return GoalSource.manual;
   }
 
   Goal _view(_Stored stored, {bool detail = true}) {
@@ -124,7 +134,7 @@ final class FakeGoalsRepository implements GoalsRepository {
       remaining: remaining,
       percent: percent,
       status: status,
-      source: stored.linked == null ? GoalSource.manual : GoalSource.account,
+      source: _sourceOf(draft),
       deadline: deadline,
       requiredMonthly: months == null
           ? null
@@ -132,7 +142,10 @@ final class FakeGoalsRepository implements GoalsRepository {
       monthlyPace: pace,
       projectedOn: projected,
       accountId: draft.accountId,
+      investmentId: draft.investmentId,
       linkedName: stored.linked?.$1,
+      icon: draft.icon,
+      color: draft.color,
       archived: stored.archived,
       contributions: detail ? sorted : const [],
     );
@@ -164,9 +177,7 @@ final class FakeGoalsRepository implements GoalsRepository {
   Future<Result<Goal>> create(GoalDraft draft) async {
     await Future<void>.delayed(latency);
     final id = 'goal-new-${++_counter}';
-    final linked = draft.accountId == null
-        ? null
-        : ('Conta vinculada', const Money(0));
+    final linked = draft.isManual ? null : ('Vinculada', const Money(0));
     final stored = _Stored(id: id, draft: draft, linked: linked);
     if (linked == null && draft.initial.cents > 0) {
       stored.contributions.add(

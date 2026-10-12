@@ -668,7 +668,7 @@
   "goalDeadlineNone": "No deadline",
   "goalDeadlineOn": "Deadline: {date}",
   "goalDeadlineClear": "Remove the deadline",
-  "goalAccount": "Linked account",
+  "goalAccount": "Linked account or investment",
   "goalAccountNone": "None, I log contributions",
   "goalAccountManualHelp": "Progress adds up the contributions you log.",
   "goalAccountHelp": "Progress follows the balance of this account.",
@@ -1420,5 +1420,11 @@
   "alertTextRecapBody": "{income} came in and {expenses} went out. Tap to see how the month went.",
   "approvalPaidToast": "The bank confirmed and the bill is paid.",
   "approvalPendingToast": "The bank has not confirmed yet. The bill updates on its own once it does.",
-  "approvalUpdatedToast": "The bill was updated with the bank answer."
+  "approvalUpdatedToast": "The bill was updated with the bank answer.",
+  "safeToSpendLineBudget": "Budget",
+  "safeToSpendLineBudgetReserved": "Kept for this month's budget",
+  "goalIconLabel": "Icon",
+  "goalColorLabel": "Color",
+  "goalInvestmentHelp": "Progress follows the balance of this investment.",
+  "goalInvestmentOption": "{name} · {institution}"
 }

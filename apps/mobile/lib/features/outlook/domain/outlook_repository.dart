@@ -4,7 +4,9 @@ import 'package:cashdeck/features/outlook/domain/net_worth.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 
 abstract interface class OutlookRepository {
-  Future<Result<SafeToSpend>> safeToSpend();
+  Future<Result<SafeToSpend>> safeToSpend({
+    EntityKind entity = EntityKind.personal,
+  });
 
   Future<Result<NetWorth>> netWorth(EntityScope scope, NetWorthPeriod period);
 }

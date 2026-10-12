@@ -83,6 +83,9 @@ test/                       mirrors lib/ one to one
 
 - `entityScopeProvider` (`features/entities`): Pessoal, Empresa or
   Consolidado. Every list controller watches it, so switching refetches.
+  Budgets follow it through `budgetEntityProvider`, with Consolidado keeping
+  the person's, since a budget belongs to one entity. Safe to spend is read
+  per entity (`safeToSpendOfProvider`); the widget keeps the person's.
 - `displayPreferencesProvider` (`core/preferences`): `hideAmounts`, saved on
   the device. `AmountText` and `PrivacyToggle` read it, so every amount
   follows the toggle without the screens passing a flag. The theme has no

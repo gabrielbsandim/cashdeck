@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createBudget,
   type CreditLine,
   Money,
   recipientKeys,
@@ -337,5 +338,52 @@ describe('safe to spend', () => {
       shortBy: { cents: 4000 },
     })
     expect(view.lines.map(line => line.kind)).toEqual(['BILL'])
+  })
+
+  it('serves the company and keeps what its budgets still allow', async () => {
+    const deps = await seed()
+    await deps.accounts.save(
+      account({ id: 'pj-chk', entityId: 'pj', balance: Money.of(300000) }),
+    )
+    await deps.categories.save({
+      id: 'office',
+      tenantId: TENANT,
+      key: null,
+      name: 'Office',
+      icon: null,
+      parentId: null,
+    })
+    await deps.budgets.save(
+      createBudget({
+        id: 'office-budget',
+        tenantId: TENANT,
+        entityId: 'pj',
+        categoryId: 'office',
+        month: '2026-10',
+        limit: Money.of(48000),
+        rollover: false,
+      }),
+    )
+    await deps.transactions.save(
+      transaction({
+        id: 'paper',
+        accountId: 'pj-chk',
+        bookedOn: '2026-10-02',
+        amount: Money.of(-24000),
+        categoryId: 'office',
+      }),
+    )
+    const view = await makeSafeToSpend(deps)(TENANT, 'PJ')
+    expect(view).toMatchObject({
+      entity: 'PJ',
+      cash: { cents: 300000 },
+      until: '2026-10-31',
+      days: 24,
+      income: null,
+      total: { cents: 276000 },
+    })
+    expect(
+      view.lines.map(line => [line.kind, line.label, line.amount.cents]),
+    ).toEqual([['BUDGET', 'Office', -24000]])
   })
 })

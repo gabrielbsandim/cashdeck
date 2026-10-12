@@ -94,6 +94,45 @@ void main() {
       );
     });
 
+    test('an investment link, icon and colour travel both ways', () {
+      final goal = goalFromJson({
+        ...goalJson(),
+        'source': 'INVESTMENT',
+        'investmentId': 'inv-1',
+        'icon': 'flight',
+        'color': 'teal',
+      });
+      expect(goal.investmentId, 'inv-1');
+      expect(goal.icon, 'flight');
+      expect(goal.color, 'teal');
+      const draft = GoalDraft(
+        name: 'Viagem',
+        target: Money(100),
+        investmentId: 'inv-1',
+        icon: 'flight',
+        color: 'teal',
+        initial: Money(10),
+      );
+      expect(draft.isManual, isFalse);
+      expect(goalCreateToJson(draft), {
+        'entity': 'PF',
+        'name': 'Viagem',
+        'targetCents': 100,
+        'investmentId': 'inv-1',
+        'icon': 'flight',
+        'color': 'teal',
+      });
+      expect(goalUpdateToJson(draft), {
+        'name': 'Viagem',
+        'targetCents': 100,
+        'deadline': null,
+        'accountId': null,
+        'investmentId': 'inv-1',
+        'icon': 'flight',
+        'color': 'teal',
+      });
+    });
+
     test('a draft travels trimmed; an update clears what was removed', () {
       const draft = GoalDraft(
         name: ' Reserva ',
@@ -131,6 +170,9 @@ void main() {
           'targetCents': 100,
           'deadline': null,
           'accountId': null,
+          'investmentId': null,
+          'icon': null,
+          'color': null,
         },
       );
     });
@@ -230,6 +272,21 @@ void main() {
         ),
       );
       expect(linked.source, GoalSource.account);
+      final invested = _ok(
+        await repository.create(
+          const GoalDraft(
+            name: 'Aposentadoria',
+            target: Money(1_000),
+            investmentId: 'cdb-aurora',
+            icon: 'savings',
+            color: 'purple',
+          ),
+        ),
+      );
+      expect(invested.source, GoalSource.investment);
+      expect(invested.investmentId, 'cdb-aurora');
+      expect(invested.icon, 'savings');
+      expect(invested.color, 'purple');
 
       final done = _ok(
         await repository.contribute(created.id, const Money(600), note: 'x'),

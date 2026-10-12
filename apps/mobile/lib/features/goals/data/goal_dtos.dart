@@ -41,7 +41,10 @@ Goal goalFromJson(JsonMap json) => Goal(
   monthlyPace: _optionalMoney(json, 'monthlyPace'),
   projectedOn: readOptionalDate(json, 'projectedOn'),
   accountId: readOptionalString(json, 'accountId'),
+  investmentId: readOptionalString(json, 'investmentId'),
   linkedName: readOptionalString(json, 'linkedName'),
+  icon: readOptionalString(json, 'icon'),
+  color: readOptionalString(json, 'color'),
   archived: json['archivedAt'] != null,
   contributions: readMapList(
     json,
@@ -57,7 +60,10 @@ JsonMap goalCreateToJson(GoalDraft draft) => {
   'targetCents': draft.target.cents,
   'deadline': ?draft.deadline?.iso,
   'accountId': ?draft.accountId,
-  if (draft.accountId == null && draft.initial.cents > 0)
+  'investmentId': ?draft.investmentId,
+  'icon': ?draft.icon,
+  'color': ?draft.color,
+  if (draft.isManual && draft.initial.cents > 0)
     'initialCents': draft.initial.cents,
 };
 
@@ -67,4 +73,7 @@ JsonMap goalUpdateToJson(GoalDraft draft) => {
   'targetCents': draft.target.cents,
   'deadline': draft.deadline?.iso,
   'accountId': draft.accountId,
+  'investmentId': draft.investmentId,
+  'icon': draft.icon,
+  'color': draft.color,
 };

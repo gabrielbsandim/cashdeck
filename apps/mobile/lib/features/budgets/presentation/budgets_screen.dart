@@ -9,6 +9,7 @@ import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
+import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
@@ -21,6 +22,8 @@ import 'package:cashdeck/features/budgets/domain/budget.dart';
 import 'package:cashdeck/features/budgets/presentation/budget_labels.dart';
 import 'package:cashdeck/features/budgets/presentation/budget_limit_sheet.dart';
 import 'package:cashdeck/features/budgets/presentation/budgets_controller.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +35,8 @@ import 'package:material_symbols_icons/symbols.dart';
 void openBudgetSuggestions(BuildContext context, YearMonth month) =>
     context.push(AppRoutes.budgetSuggestionsFor(month.iso));
 
-/// A month of budgets: the total, every category against its limit, and
-/// the categories spending without one.
+/// A month of budgets of the person or the company: the total, every
+/// category against its limit, and the categories spending without one.
 class BudgetsScreen extends ConsumerStatefulWidget {
   const new({this.initialMonth, super.key});
 
@@ -41,6 +44,8 @@ class BudgetsScreen extends ConsumerStatefulWidget {
   static const nextKey = Key('budgets-next');
   static const suggestKey = Key('budgets-suggest');
   static const copyKey = Key('budgets-copy');
+
+  static Key entityKey(EntityKind entity) => Key('budgets-${entity.name}');
 
   static Key itemKey(String id) => Key('budget-$id');
 
@@ -76,6 +81,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       appBar: AppBar(title: Text(l10n.budgetsTitle)),
       body: Column(
         children: [
+          const _EntityToggle(),
           _MonthSwitcher(
             month: _month,
             onChanged: (month) => setState(() => _month = month),
@@ -98,6 +104,45 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Switches the home scope between the person and the company, the two
+/// entities that keep budgets.
+class _EntityToggle extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.sm,
+        AppSpacing.screenGutter,
+        0,
+      ),
+      child: CdSegmented<EntityKind>(
+        segments: [
+          CdSegment(
+            EntityKind.personal,
+            l10n.entityPersonal,
+            key: BudgetsScreen.entityKey(EntityKind.personal),
+          ),
+          CdSegment(
+            EntityKind.company,
+            l10n.entityCompany,
+            key: BudgetsScreen.entityKey(EntityKind.company),
+          ),
+        ],
+        selected: ref.watch(budgetEntityProvider),
+        onChanged: (entity) =>
+            ref.read(entityScopeProvider.notifier).select(switch (entity) {
+              EntityKind.personal => EntityScope.personal,
+              EntityKind.company => EntityScope.company,
+            }),
       ),
     );
   }

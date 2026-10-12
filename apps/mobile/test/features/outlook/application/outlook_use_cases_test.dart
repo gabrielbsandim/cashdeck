@@ -15,7 +15,16 @@ void main() {
     final answer = Ok(shortSafeToSpend);
     when(repository.safeToSpend).thenAnswer((_) async => answer);
 
-    expect(await LoadSafeToSpend(repository)(), answer);
+    expect(await LoadSafeToSpend(repository)(EntityKind.personal), answer);
+  });
+
+  test('safe to spend names the company when asked for it', () async {
+    final repository = outlookRepository();
+    final answer = Ok(shortSafeToSpend);
+    when(() => repository.safeToSpend(entity: EntityKind.company))
+        .thenAnswer((_) async => answer);
+
+    expect(await LoadSafeToSpend(repository)(EntityKind.company), answer);
   });
 
   test('net worth forwards the scope and the window', () async {
@@ -39,6 +48,6 @@ void main() {
     const failure = Err<SafeToSpend>(NetworkFailure());
     when(repository.safeToSpend).thenAnswer((_) async => failure);
 
-    expect(await LoadSafeToSpend(repository)(), failure);
+    expect(await LoadSafeToSpend(repository)(EntityKind.personal), failure);
   });
 }

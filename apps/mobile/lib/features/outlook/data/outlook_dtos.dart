@@ -8,6 +8,7 @@ const Map<String, SafeToSpendLineKind> safeToSpendLineKinds = {
   'FIXED': SafeToSpendLineKind.fixed,
   'SUBSCRIPTION': SafeToSpendLineKind.subscription,
   'CARD': SafeToSpendLineKind.card,
+  'BUDGET': SafeToSpendLineKind.budget,
   'RESERVE': SafeToSpendLineKind.reserve,
 };
 

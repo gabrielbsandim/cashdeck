@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
 
 /// Below 80% of the limit, from 80%, and from 100%.
@@ -158,10 +159,13 @@ List<BudgetLimit> chosenLimits(
       ),
 ].where((entry) => entry.limit.cents > 0).toList();
 
+/// Budgets belong to one entity; the calls that do not name a budget say
+/// which one.
 abstract interface class BudgetsRepository {
-  Future<Result<BudgetMonth>> month(YearMonth month);
+  Future<Result<BudgetMonth>> month(EntityKind entity, YearMonth month);
 
   Future<Result<BudgetMonth>> create(
+    EntityKind entity,
     YearMonth month,
     String categoryId,
     Money limit, {
@@ -178,9 +182,16 @@ abstract interface class BudgetsRepository {
 
   /// Copies [from] into the month after, carrying the leftover of the
   /// budgets that roll over.
-  Future<Result<BudgetMonth>> copyToNext(YearMonth from);
+  Future<Result<BudgetMonth>> copyToNext(EntityKind entity, YearMonth from);
 
-  Future<Result<BudgetSuggestions>> suggestions(YearMonth month);
+  Future<Result<BudgetSuggestions>> suggestions(
+    EntityKind entity,
+    YearMonth month,
+  );
 
-  Future<Result<BudgetMonth>> accept(YearMonth month, List<BudgetLimit> limits);
+  Future<Result<BudgetMonth>> accept(
+    EntityKind entity,
+    YearMonth month,
+    List<BudgetLimit> limits,
+  );
 }
