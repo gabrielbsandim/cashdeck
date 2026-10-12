@@ -6,6 +6,8 @@ import 'package:cashdeck/core/push/push_messaging.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/session/server_credentials.dart';
 import 'package:cashdeck/core/session/server_session.dart';
+import 'package:cashdeck/core/theme/app_money_colors.dart';
+import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/alerts/alerts_providers.dart';
@@ -263,6 +265,55 @@ void main() {
       expect(alertKindLabel(l10n, kind), isNotEmpty);
       expect(alertKindIcon(kind), isNotNull);
     }
+  });
+
+  test('a failed job names its error or counts what it left behind', () {
+    AppAlert job(Map<String, String> data) => AppAlert(
+      id: 'j',
+      kind: AlertKind.fromWire('JOB_FAILED'),
+      title: 'Servidor',
+      body: 'Texto do servidor',
+      createdAt: testNow,
+      data: data,
+    );
+    expect(job(const {}).kind, AlertKind.jobFailed);
+    expect(alertText(l10n, job({'job': 'capture', 'error': 'Error: boom'})), (
+      title: l10n.alertTextJobFailedTitle,
+      body: l10n.alertTextJobFailedBody('capture', 'Error: boom'),
+    ));
+    expect(alertText(l10n, job({'job': 'invoices', 'failures': '3'})), (
+      title: l10n.alertTextJobPartialTitle,
+      body: l10n.alertTextJobPartialBody('invoices', 3),
+    ));
+    expect(l10n.alertTextJobPartialBody('capture', 1), contains('1 item'));
+    expect(
+      alertText(l10n, job({'job': 'capture', 'failures': 'many'})).title,
+      'Servidor',
+    );
+    expect(alertKindTone(AlertKind.jobFailed), MoneyTone.overdue);
+    expect(alertKindTone(AlertKind.paymentPaid), isNull);
+  });
+
+  testWidgets('a failed job row warns in its tone', (tester) async {
+    await tester.pumpApp(
+      AlertRow(
+        alert: AppAlert(
+          id: 'j',
+          kind: AlertKind.jobFailed,
+          title: 'Servidor',
+          body: 'Texto',
+          createdAt: testNow,
+          data: const {'job': 'capture', 'failures': '2'},
+        ),
+        onTap: () {},
+      ),
+    );
+    final context = tester.element(find.byType(AlertRow));
+    final icon = tester.widget<Icon>(
+      find.byIcon(alertKindIcon(AlertKind.jobFailed)),
+    );
+    expect(icon.color, context.tone(MoneyTone.overdue).foreground);
+    expect(find.text(l10n.alertTextJobPartialTitle), findsOneWidget);
   });
 
   test('the inbox controller pages, reads and reports failures', () async {

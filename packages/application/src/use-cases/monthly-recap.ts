@@ -5,6 +5,7 @@ import {
   type CategorySpend,
   type CentsChange,
   closedMonthOf,
+  ENTITY_KINDS,
   type EntityKind,
   Money,
   type MonthlyRecapFacts,
@@ -59,6 +60,8 @@ export const MONTHLY_RECAP_COLLECTION = 'monthly-recaps'
 // The longest net worth history the use case serves.
 const NET_WORTH_MONTHS = 24
 const DEFAULT_LOCALE: DeviceLocale = 'pt'
+// A template story waits this long before the model gets another try.
+const TEMPLATE_RETRY_MS = 60 * 60 * 1000
 
 const monthRange = (month: string): DayRange => ({
   from: firstDay(month),
@@ -151,6 +154,19 @@ function figures(
 const isQuiet = (recap: MonthlyRecap) =>
   recap.flow.income.cents === 0 && recap.flow.expenses.cents === 0
 
+function isFresh(recap: MonthlyRecap, now: Date): boolean {
+  if (recap.story.source === 'AI') {
+    return true
+  }
+  return now.getTime() - Date.parse(recap.generatedAt) < TEMPLATE_RETRY_MS
+}
+
+// The personal push keeps the key it had before the company got its own.
+const recapDedupeKey = (entity: EntityKind, month: string) =>
+  entity === 'PF'
+    ? `MONTHLY_RECAP:${month}`
+    : `MONTHLY_RECAP:${entity}:${month}`
+
 export function makeMonthlyRecap(deps: RecapDeps) {
   const subscriptions = makeSubscriptions(deps)
   const netWorth = makeNetWorthFromBalancesAndSnapshots(deps)
@@ -224,8 +240,8 @@ export function makeMonthlyRecap(deps: RecapDeps) {
     return figures(facts, categories, entity)
   }
 
-  // A recap the AI wrote is kept; a template one is rebuilt on the next read,
-  // so a model that was down gets another chance.
+  // A recap the AI wrote is kept for good; a template one only for a while,
+  // so a model that was down gets another chance without a call per read.
   async function get(
     tenantId: string,
     month: string,
@@ -239,7 +255,8 @@ export function makeMonthlyRecap(deps: RecapDeps) {
       MONTHLY_RECAP_COLLECTION,
       id,
     )
-    if (stored) {
+    const now = deps.clock.now()
+    if (stored && isFresh(stored, now)) {
       return stored
     }
     const recap = await compute(tenantId, month, query.entity)
@@ -247,12 +264,38 @@ export function makeMonthlyRecap(deps: RecapDeps) {
     const view: MonthlyRecap = {
       ...recap,
       story: { ...story, locale },
-      generatedAt: deps.clock.now().toISOString(),
+      generatedAt: now.toISOString(),
     }
-    if (story.source === 'AI') {
-      await deps.documents.put(tenantId, MONTHLY_RECAP_COLLECTION, id, view)
-    }
+    await deps.documents.put(tenantId, MONTHLY_RECAP_COLLECTION, id, view)
     return view
+  }
+
+  async function push(
+    tenantId: string,
+    month: string,
+    kind: EntityKind,
+  ): Promise<boolean> {
+    const entity = await deps.entities.findByKind(tenantId, kind)
+    if (!entity) {
+      return false
+    }
+    const recap = await get(tenantId, month, { entity: kind })
+    if (isQuiet(recap)) {
+      return false
+    }
+    const alert = await deps.alerts.emit({
+      tenantId,
+      type: 'MONTHLY_RECAP',
+      entityId: entity.id,
+      data: {
+        month,
+        entity: kind,
+        income: formatMoney(Money.of(recap.flow.income.cents)),
+        expenses: formatMoney(Money.of(recap.flow.expenses.cents)),
+      },
+      dedupeKey: recapDedupeKey(kind, month),
+    })
+    return alert !== null
   }
 
   return {
@@ -262,30 +305,17 @@ export function makeMonthlyRecap(deps: RecapDeps) {
       return get(tenantId, closedMonthOf(today(deps.clock.now())), query)
     },
 
-    // Day 1: the personal recap of the month that closed, one push per month.
+    // Day 1: the recap of the month that closed, one push per entity and
+    // month, for each entity that moved money in it.
     async run(tenantId: string): Promise<MonthlyRecapRun> {
       const month = closedMonthOf(today(deps.clock.now()))
-      const personal = await deps.entities.findByKind(tenantId, 'PF')
-      if (!personal) {
-        return { month, sent: false }
+      const entities: EntityKind[] = []
+      for (const kind of ENTITY_KINDS) {
+        if (await push(tenantId, month, kind)) {
+          entities.push(kind)
+        }
       }
-      const recap = await get(tenantId, month, { entity: 'PF' })
-      if (isQuiet(recap)) {
-        return { month, sent: false }
-      }
-      const alert = await deps.alerts.emit({
-        tenantId,
-        type: 'MONTHLY_RECAP',
-        entityId: personal.id,
-        data: {
-          month,
-          entity: 'PF',
-          income: formatMoney(Money.of(recap.flow.income.cents)),
-          expenses: formatMoney(Money.of(recap.flow.expenses.cents)),
-        },
-        dedupeKey: `MONTHLY_RECAP:${month}`,
-      })
-      return { month, sent: alert !== null }
+      return { month, sent: entities.length > 0, entities }
     },
   }
 }

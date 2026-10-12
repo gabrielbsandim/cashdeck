@@ -117,10 +117,16 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Fatura do cartão fechou',
     body: `${d.card}: fechou em ${d.closing}, vence em ${d.dueDate}.`,
   }),
-  JOB_FAILED: d => ({
-    title: 'Rotina automática falhou',
-    body: `${d.job} não terminou: ${d.error}`,
-  }),
+  JOB_FAILED: d =>
+    d.failures
+      ? {
+          title: 'Rotina automática com falhas',
+          body: `${d.job} terminou, mas ${d.failures} ${d.failures === '1' ? 'item falhou' : 'itens falharam'}.`,
+        }
+      : {
+          title: 'Rotina automática falhou',
+          body: `${d.job} não terminou: ${d.error}`,
+        },
   UNUSUAL_PURCHASE: d => ({
     title: 'Compra fora do padrão',
     body: `${d.merchant} · ${d.amount} em ${d.day}, cerca de ${d.times}x o habitual (${d.usual}).`,
@@ -158,7 +164,10 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     body: `${categoryPt(d)}: ${d.spent} de ${d.limit} neste mês.`,
   }),
   MONTHLY_RECAP: d => ({
-    title: `Retrospectiva de ${monthName(`${d.month}`, 'pt')}`,
+    title:
+      d.entity === 'PJ'
+        ? `Retrospectiva da empresa em ${monthName(`${d.month}`, 'pt')}`
+        : `Retrospectiva de ${monthName(`${d.month}`, 'pt')}`,
     body: `Entraram ${d.income} e saíram ${d.expenses}. Toque para ver como foi o mês.`,
   }),
 }
@@ -212,10 +221,16 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Card bill closed',
     body: `${d.card}: closed on ${d.closing}, due ${d.dueDate}.`,
   }),
-  JOB_FAILED: d => ({
-    title: 'Scheduled job failed',
-    body: `${d.job} did not finish: ${d.error}`,
-  }),
+  JOB_FAILED: d =>
+    d.failures
+      ? {
+          title: 'Scheduled job partly failed',
+          body: `${d.job} finished, but ${d.failures} ${d.failures === '1' ? 'item' : 'items'} failed.`,
+        }
+      : {
+          title: 'Scheduled job failed',
+          body: `${d.job} did not finish: ${d.error}`,
+        },
   UNUSUAL_PURCHASE: d => ({
     title: 'Unusual purchase',
     body: `${d.merchant} · ${d.amount} on ${d.day}, about ${d.times}x the usual (${d.usual}).`,
@@ -253,7 +268,10 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
     body: `${d.category}: ${d.spent} of ${d.limit} this month.`,
   }),
   MONTHLY_RECAP: d => ({
-    title: `Your ${monthName(`${d.month}`, 'en')} recap`,
+    title:
+      d.entity === 'PJ'
+        ? `Your company's ${monthName(`${d.month}`, 'en')} recap`
+        : `Your ${monthName(`${d.month}`, 'en')} recap`,
     body: `${d.income} came in and ${d.expenses} went out. Tap to see how the month went.`,
   }),
 }
@@ -428,6 +446,22 @@ export function jobFailedAlert(
   }
 }
 
+// A run that finished but left items behind; it shares the key of a failed
+// run, so one job raises at most one alert a day either way.
+export function jobPartlyFailedAlert(
+  tenantId: string,
+  job: string,
+  failures: number,
+  day: LocalDate,
+): AlertInput {
+  return {
+    tenantId,
+    type: 'JOB_FAILED',
+    data: { job, failures: String(failures) },
+    dedupeKey: `JOB_FAILED:${job}:${day}`,
+  }
+}
+
 export function makeReportJobFailure(deps: {
   alerts?: AlertEmitter
   clock: Clock
@@ -439,6 +473,26 @@ export function makeReportJobFailure(deps: {
   ): Promise<void> {
     const day = toLocalDate(deps.clock.now())
     await emitAlert(deps.alerts, jobFailedAlert(tenantId, job, error, day))
+  }
+}
+
+export function makeReportJobPartialFailure(deps: {
+  alerts?: AlertEmitter
+  clock: Clock
+}) {
+  return async function reportJobPartialFailure(
+    tenantId: string,
+    job: string,
+    failures: number,
+  ): Promise<void> {
+    if (failures <= 0) {
+      return
+    }
+    const day = toLocalDate(deps.clock.now())
+    await emitAlert(
+      deps.alerts,
+      jobPartlyFailedAlert(tenantId, job, failures, day),
+    )
   }
 }
 

@@ -65,6 +65,7 @@ import {
   makeSafeToSpend,
   makeListInstallments,
   makeReportJobFailure,
+  makeReportJobPartialFailure,
   makeSubscriptions,
   makeCreateCategoryRule,
   makeCategoryReview,
@@ -343,6 +344,10 @@ export function buildContainer(
     llm,
     vault,
     reportJobFailure: makeReportJobFailure({ alerts, clock: systemClock }),
+    reportJobPartialFailure: makeReportJobPartialFailure({
+      alerts,
+      clock: systemClock,
+    }),
     captureBill: makeCaptureBill(deps),
     describeBill: makeDescribeBill(deps),
     getBill: makeGetBill(deps),

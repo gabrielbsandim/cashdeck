@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/features/recap/domain/monthly_recap.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
@@ -24,8 +25,18 @@ String capitalMonth(AppLocalizations l10n, YearMonth month) {
   return '${name[0].toUpperCase()}${name.substring(1)}';
 }
 
-String recapTitleOf(AppLocalizations l10n, YearMonth month) =>
-    l10n.recapTitle(monthName(l10n, month));
+String recapTitleOf(
+  AppLocalizations l10n,
+  YearMonth month, {
+  EntityKind entity = EntityKind.personal,
+}) => switch (entity) {
+  EntityKind.personal => l10n.recapTitle(monthName(l10n, month)),
+  EntityKind.company => l10n.recapTitleCompany(monthName(l10n, month)),
+};
+
+/// The entity a recap link names as the server does; personal by default.
+EntityKind recapEntityOf(String? wire) =>
+    wire == 'PJ' ? EntityKind.company : EntityKind.personal;
 
 Category _asCategory(RecapCategory category) =>
     Category(id: category.categoryId, key: category.key, name: category.name);

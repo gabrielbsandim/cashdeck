@@ -21,6 +21,7 @@ import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/features/auth/application/restore_session.dart';
+import 'package:cashdeck/features/auth/auth_providers.dart';
 import 'package:cashdeck/features/auth/data/api_server_access_repository.dart';
 import 'package:cashdeck/features/auth/data/device_identity.dart';
 import 'package:flutter/material.dart';
@@ -33,12 +34,16 @@ Future<void> main() async {
   Intl.defaultLocale = 'pt_BR';
   final config = AppConfig.fromEnvironment();
   const store = SecureCredentialStore();
+  final device = deviceIdentityFor(
+    Platform.operatingSystem,
+    model: await readDeviceModel(Platform.operatingSystem),
+  );
   final credentials = switch (config.backend) {
     Backend.fake => ServerCredentials.demo,
     Backend.api => await RestoreSession(
       store,
       ApiServerAccessRepository(createApiDio(config)),
-      deviceIdentityFor(Platform.operatingSystem),
+      device,
     )(),
   };
   final preferences = await SharedPreferences.getInstance();
@@ -46,6 +51,7 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         appConfigProvider.overrideWithValue(config),
+        deviceIdentityProvider.overrideWithValue(device),
         credentialStoreProvider.overrideWithValue(store),
         initialCredentialsProvider.overrideWithValue(credentials),
         initiallyLockedProvider.overrideWithValue(

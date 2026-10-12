@@ -6,13 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Min 56 high. [chevron] for navigation, [trailing] for a switch or a value,
-/// [danger] for a destructive action.
+/// [danger] for a destructive action, [iconColor] for a row that warns.
 class CdListRow extends StatelessWidget {
   const new({
     required this.title,
     this.subtitle,
     this.titleMaxLines,
     this.icon,
+    this.iconColor,
     this.leading,
     this.trailing,
     this.onTap,
@@ -29,6 +30,7 @@ class CdListRow extends StatelessWidget {
   final String? subtitle;
   final int? titleMaxLines;
   final IconData? icon;
+  final Color? iconColor;
   final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -60,7 +62,7 @@ class CdListRow extends StatelessWidget {
               ] else if (icon != null) ...[
                 Icon(
                   icon,
-                  color: danger ? ink : palette.onSurfaceVariant,
+                  color: danger ? ink : iconColor ?? palette.onSurfaceVariant,
                   size: 24,
                 ),
                 const SizedBox(width: AppSpacing.lg),

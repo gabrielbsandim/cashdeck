@@ -1,3 +1,4 @@
+import { type EntityKind } from '@cashdeck/domain'
 import { z } from 'zod'
 import { entityKindSchema, isoMonth, moneyViewSchema } from '@/dtos/common'
 import { DEVICE_LOCALES } from '@/ports/alerts'
@@ -82,4 +83,9 @@ export const monthlyRecapSchema = z.object({
 
 export type MonthlyRecap = z.infer<typeof monthlyRecapSchema>
 
-export type MonthlyRecapRun = { month: string; sent: boolean }
+// `entities` names the ones pushed in this run.
+export type MonthlyRecapRun = {
+  month: string
+  sent: boolean
+  entities: EntityKind[]
+}

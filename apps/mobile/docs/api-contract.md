@@ -12,7 +12,10 @@ sends it once to `POST /api/v1/sessions` with a device name and platform and
 keeps only the session token it gets back, with the server URL, in secure
 storage. A static token stored by an older version is exchanged the same way
 at launch and then deleted. Every request sends `Authorization: Bearer
-<session token>`; a 401 anywhere signs the user out. Ajustes > Segurança lists
+<session token>`; a 401 anywhere signs the user out. The device name is the
+model the phone reports through `device_info_plus` (`Google Pixel 8`,
+`iPhone 15 Pro`), else `Android` or `iPhone`; a session keeps the name it was
+created with. Ajustes > Segurança lists
 the sessions (`GET /api/v1/sessions`) and revokes them
 (`DELETE /api/v1/sessions/{id}`); signing out calls
 `DELETE /api/v1/sessions/current`.
@@ -86,7 +89,7 @@ Tapping an alert or a push opens what it is about: `UNUSUAL_PURCHASE` its
 `transactionId`, `SUBSCRIPTION_CHANGED` the subscription `key`,
 `CARD_BILL_ABOVE_AVERAGE` the card `accountId`, `BANK_SYNC_STALE` the
 connections and `INVOICE_NOT_ISSUED` the company settings, `MONTHLY_RECAP` the recap of its
-`month`; any other type opens
+`month` for its `entity` (`PF` or `PJ`, personal when absent); any other type opens
 its `billId`. A push names its type in `alertType`; without a target it opens
 the inbox. Push
 needs the Firebase config files (see `docs/deploy.md` at the repository root);
@@ -94,9 +97,12 @@ without them `FirebasePushMessaging.start` returns false and the app runs as is.
 
 ## Monthly recap
 
-`/recap/:month` plays `GET /api/v1/recaps/{month}?entity=PF&locale=pt|en` as a
-story: tap right to go on, left to go back, swipe down or the close button to
-leave. A page without its figure is skipped. Análises opens the last closed
+`/recap/:month?entity=PF|PJ` plays
+`GET /api/v1/recaps/{month}?entity=PF|PJ&locale=pt|en` as a story (`PF` when
+the query has no entity): tap right to go on, left to go back, swipe down or
+the close button to leave. Each page advances by itself after 6.5 seconds while
+its bar fills; holding a finger on the screen pauses it, and with reduced
+motion nothing advances on its own. A page without its figure is skipped. Análises opens the last closed
 month; an open or malformed month fails locally without a call. With amounts
 hidden, every `R$` amount in the closing text is masked too.
 

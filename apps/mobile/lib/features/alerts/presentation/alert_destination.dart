@@ -8,7 +8,6 @@ const Map<AlertKind, (String, _Route)> _records = {
   AlertKind.unusualPurchase: ('transactionId', AppRoutes.transaction),
   AlertKind.subscriptionChanged: ('key', AppRoutes.subscription),
   AlertKind.cardBillAboveAverage: ('accountId', AppRoutes.cardBills),
-  AlertKind.monthlyRecap: ('month', AppRoutes.recap),
 };
 
 const Map<AlertKind, String> _screens = {
@@ -24,6 +23,10 @@ String? alertDestination(
 }) {
   final screen = _screens[kind];
   if (screen != null) return screen;
+  final month = data['month'];
+  if (kind == AlertKind.monthlyRecap && month != null) {
+    return AppRoutes.recap(month, entity: data['entity']);
+  }
   final record = _records[kind];
   final id = record == null ? null : data[record.$1];
   if (record != null && id != null) return record.$2(id);

@@ -7,6 +7,7 @@ import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
@@ -31,6 +32,9 @@ Future<bool?> showCdConfirmSheet(
   required List<CdConfirmRow> rows,
   required String confirmLabel,
   String? reason,
+  MoneyTone reasonTone = MoneyTone.pending,
+  IconData reasonIcon = Symbols.shield_rounded,
+  String? warning,
   String? secondaryLabel,
 }) {
   return showCdBottomSheet<bool>(
@@ -40,6 +44,9 @@ Future<bool?> showCdConfirmSheet(
       rows: rows,
       confirmLabel: confirmLabel,
       reason: reason,
+      reasonTone: reasonTone,
+      reasonIcon: reasonIcon,
+      warning: warning,
       secondaryLabel: secondaryLabel,
     ),
   );
@@ -51,11 +58,15 @@ class CdConfirmSheet extends ConsumerStatefulWidget {
     required this.rows,
     required this.confirmLabel,
     this.reason,
+    this.reasonTone = MoneyTone.pending,
+    this.reasonIcon = Symbols.shield_rounded,
+    this.warning,
     this.secondaryLabel,
     super.key,
   });
 
   static const confirmKey = Key('cd-confirm');
+  static const warningKey = Key('cd-confirm-warning');
   static const secondaryKey = Key('cd-confirm-secondary');
   static const limitedKey = Key('cd-confirm-limited');
 
@@ -65,6 +76,12 @@ class CdConfirmSheet extends ConsumerStatefulWidget {
 
   /// Why the app asks, such as a cap or a new payee.
   final String? reason;
+  final MoneyTone reasonTone;
+  final IconData reasonIcon;
+
+  /// What to check before confirming, when the reason is a doubt about the
+  /// bill itself.
+  final String? warning;
 
   /// Cancelar by default; "Pagar eu mesmo" when declining moves the bill on.
   final String? secondaryLabel;
@@ -104,6 +121,7 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final reason = widget.reason;
+    final warning = widget.warning;
     final limited = ref.watch(safeModeLimitedProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,10 +141,19 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
           Align(
             alignment: Alignment.centerLeft,
             child: CdStatusBadge(
-              tone: MoneyTone.pending,
+              tone: widget.reasonTone,
               label: reason,
-              icon: Symbols.shield_rounded,
+              icon: widget.reasonIcon,
             ),
+          ),
+        ],
+        if (warning != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          CdInlineBanner(
+            key: CdConfirmSheet.warningKey,
+            icon: widget.reasonIcon,
+            tone: widget.reasonTone,
+            message: warning,
           ),
         ],
         const SizedBox(height: AppSpacing.md),

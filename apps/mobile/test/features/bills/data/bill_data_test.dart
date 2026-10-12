@@ -266,6 +266,10 @@ void main() {
         billFromJson(waiting('ABOVE_THRESHOLD')).confirmationReason,
         ConfirmationReason.aboveThreshold,
       );
+      expect(
+        billFromJson(waiting('UNVERIFIED_SENDER')).confirmationReason,
+        ConfirmationReason.unverifiedSender,
+      );
       expect(billFromJson(waiting('SOMETHING_NEW')).confirmationReason, isNull);
       expect(billFromJson(billJson()).confirmationReason, isNull);
     });

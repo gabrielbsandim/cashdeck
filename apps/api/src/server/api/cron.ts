@@ -15,16 +15,30 @@ function isAuthorized(request: Request, secret: string | undefined): boolean {
 }
 
 // A failed run also lands in the app inbox, so it is seen without reading logs.
-async function raiseJobAlert(source: string, error: unknown): Promise<void> {
+async function raiseJobAlert(
+  source: string,
+  report: (tenantId: string) => Promise<void>,
+): Promise<void> {
   try {
-    await getContainer().reportJobFailure(
-      readEnv().CASHDECK_TENANT_ID,
-      source,
-      error,
-    )
+    await report(readEnv().CASHDECK_TENANT_ID)
   } catch (alertError) {
     reportError(alertError, `cron:${source}:alert`)
   }
+}
+
+// Jobs list what they skipped under `failures`, at the top or in a sub-result.
+export function failuresIn(result: unknown): number {
+  if (typeof result !== 'object' || result === null || Array.isArray(result)) {
+    return 0
+  }
+  return Object.entries(result).reduce(
+    (sum, [key, value]) =>
+      sum +
+      (key === 'failures' && Array.isArray(value)
+        ? value.length
+        : failuresIn(value)),
+    0,
+  )
 }
 
 // Vercel Cron sends `Authorization: Bearer $CRON_SECRET`; without a secret
@@ -40,11 +54,20 @@ export async function runCronJob(
   const startedAt = Date.now()
   try {
     const result = await job()
+    await raiseJobAlert(source, tenantId =>
+      getContainer().reportJobPartialFailure(
+        tenantId,
+        source,
+        failuresIn(result),
+      ),
+    )
     return NextResponse.json({
       data: { source, durationMs: Date.now() - startedAt, ...result },
     })
   } catch (error) {
-    await raiseJobAlert(source, error)
+    await raiseJobAlert(source, tenantId =>
+      getContainer().reportJobFailure(tenantId, source, error),
+    )
     return handleError(error, `cron:${source}`)
   }
 }

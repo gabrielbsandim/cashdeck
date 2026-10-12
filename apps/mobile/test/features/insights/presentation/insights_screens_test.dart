@@ -574,6 +574,61 @@ void main() {
       );
     });
 
+    testWidgets('a suggestion and its row expand under their own tags', (
+      tester,
+    ) async {
+      when(() => repository.subscriptions(any())).thenAnswer(
+        (_) async => Ok(
+          Subscriptions(
+            monthly: const Money(2_190),
+            yearly: const Money(26_280),
+            previousMonth: const Money(2_190),
+            items: [_subscription(id: 'music')],
+            suggestions: [
+              _subscription(transactionIds: ['tx-1']),
+            ],
+          ),
+        ),
+      );
+      final app = await pumpRoute(
+        tester,
+        AppRoutes.subscriptions,
+        overrides: overrides(),
+      );
+      List<Object> expandTags() => [
+        for (final hero in tester.widgetList<Hero>(find.byType(Hero)))
+          if ('${hero.tag}'.startsWith('cd-expand')) hero.tag,
+      ];
+      Object detailTag() => tester
+          .widget<Hero>(
+            find.descendant(
+              of: find.byType(SubscriptionDetailScreen),
+              matching: find.byType(Hero),
+            ),
+          )
+          .tag;
+
+      expect(expandTags(), [
+        subscriptionHeroTag('music', suggestion: true),
+        subscriptionHeroTag('music'),
+      ]);
+
+      await tester.tap(find.byKey(SubscriptionsScreen.suggestionKey('music')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(tester.takeException(), isNull);
+      await settle(tester);
+      expect(app.location, AppRoutes.subscription('music'));
+      expect(detailTag(), subscriptionHeroTag('music', suggestion: true));
+
+      app.router.pop();
+      await settle(tester);
+      await tester.tap(find.byKey(SubscriptionsScreen.rowKey('music')));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(detailTag(), subscriptionHeroTag('music'));
+    });
+
     test(
       'a decision without a charge or an id fails before the server',
       () async {

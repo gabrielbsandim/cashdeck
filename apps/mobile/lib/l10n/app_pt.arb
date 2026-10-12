@@ -3498,7 +3498,7 @@
   "recapStoryTitle": "Em poucas palavras",
   "recapStoryAi": "Escrito pela IA a partir dos seus números.",
   "recapStoryTemplate": "Resumo automático dos seus números.",
-  "recapHint": "Toque à direita para seguir, à esquerda para voltar, deslize para baixo para fechar.",
+  "recapHint": "Toque à direita para seguir, à esquerda para voltar, segure para pausar, deslize para baixo para fechar.",
   "alertKindMonthlyRecap": "Retrospectiva do mês",
   "alertTextRecapTitle": "Retrospectiva de {month}",
   "@alertTextRecapTitle": {
@@ -3521,5 +3521,50 @@
   },
   "approvalPaidToast": "O banco confirmou e a conta está paga.",
   "approvalPendingToast": "O banco ainda não confirmou. A conta se atualiza sozinha quando ele confirmar.",
-  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco."
+  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco.",
+  "confirmReasonUnverifiedSender": "Remetente do e-mail não verificado",
+  "billUnverifiedSenderBadge": "Remetente não verificado",
+  "billUnverifiedSenderTitle": "Confira antes de pagar",
+  "billUnverifiedSenderBody": "Não foi possível verificar quem enviou o e-mail desta conta. Confira o remetente, o recebedor e o valor antes de pagar.",
+  "alertKindJobFailed": "Rotina automática com problema",
+  "alertTextJobFailedTitle": "Rotina automática falhou",
+  "alertTextJobFailedBody": "{job} não terminou: {error}",
+  "@alertTextJobFailedBody": {
+    "placeholders": {
+      "job": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextJobPartialTitle": "Rotina automática com falhas",
+  "alertTextJobPartialBody": "{job} terminou, mas {count, plural, =1{1 item falhou} other{{count} itens falharam}}.",
+  "@alertTextJobPartialBody": {
+    "placeholders": {
+      "job": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alertTextRecapCompanyTitle": "Retrospectiva da empresa em {month}",
+  "@alertTextRecapCompanyTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recapTitleCompany": "Retrospectiva da empresa em {month}",
+  "@recapTitleCompany": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  }
 }
