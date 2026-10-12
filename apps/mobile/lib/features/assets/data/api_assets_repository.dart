@@ -48,4 +48,56 @@ final class ApiAssetsRepository implements AssetsRepository {
   @override
   Future<Result<void>> delete(String id) =>
       guardRequest(() => _dio.delete<Object?>(_asset(id)));
+
+  static const vehiclesPath = '/api/v1/vehicles';
+
+  Future<JsonMap> _catalog(String step, Map<String, Object> query) async {
+    final response = await _dio.get<Object?>(
+      '$vehiclesPath/$step',
+      queryParameters: query,
+    );
+    return asJsonMap(unwrapData(response.data));
+  }
+
+  Future<Result<List<VehicleOption>>> _options(
+    String step,
+    Map<String, Object> query,
+  ) => guardRequest(() async {
+    final json = await _catalog(step, query);
+    return readMapList(json, 'items').map(vehicleOptionFromJson).toList();
+  });
+
+  @override
+  Future<Result<List<VehicleOption>>> brands(VehicleType type) =>
+      _options('brands', {'type': vehicleTypeToJson(type)});
+
+  @override
+  Future<Result<List<VehicleOption>>> years(VehicleType type, String brand) =>
+      _options('years', {'type': vehicleTypeToJson(type), 'brand': brand});
+
+  @override
+  Future<Result<List<VehicleOption>>> models(
+    VehicleType type,
+    String brand,
+    int modelYear,
+  ) => _options('models', {
+    'type': vehicleTypeToJson(type),
+    'brand': brand,
+    'modelYear': modelYear,
+  });
+
+  @override
+  Future<Result<CatalogVehicle>> price(
+    VehicleType type,
+    String brand,
+    VehicleOption model,
+  ) => guardRequest(() async {
+    final json = await _catalog('price', {
+      'type': vehicleTypeToJson(type),
+      'brand': brand,
+      'year': model.year ?? '',
+      'model': model.code,
+    });
+    return catalogVehicleFromJson(json);
+  });
 }

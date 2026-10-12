@@ -36,6 +36,18 @@ const testFipe = FipeVehicle(
   modelYear: 2022,
 );
 
+const testModel = VehicleOption(
+  code: '10',
+  name: 'Hatch Exemplo 1.0 Flex',
+  year: '2022-5',
+);
+
+const testCatalogVehicle = CatalogVehicle(
+  fipe: testFipe,
+  model: 'Hatch Exemplo 1.0 Flex',
+  price: Money(9_000_000),
+);
+
 const testAsset = Asset(
   id: 'asset-1',
   entity: EntityKind.personal,

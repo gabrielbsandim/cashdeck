@@ -165,6 +165,29 @@ export type VehiclePriceHistory = {
   readonly prices: readonly { month: string; cents: number }[]
 }
 
+// A brand, a model year by fuel ("2020-5") or a model, as the table codes it.
+export type VehicleOption = { readonly code: string; readonly name: string }
+
+export type CatalogVehicle = {
+  readonly code: string
+  readonly modelYear: number
+  readonly model: string
+  readonly cents: number
+}
+
 export interface VehiclePrices {
   history(vehicle: FipeVehicle): Promise<VehiclePriceHistory>
+  brands(type: VehicleType): Promise<VehicleOption[]>
+  years(type: VehicleType, brand: string): Promise<VehicleOption[]>
+  models(
+    type: VehicleType,
+    brand: string,
+    year: string,
+  ): Promise<VehicleOption[]>
+  vehicle(
+    type: VehicleType,
+    brand: string,
+    year: string,
+    model: string,
+  ): Promise<CatalogVehicle>
 }

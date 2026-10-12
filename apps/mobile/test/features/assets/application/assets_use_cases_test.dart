@@ -73,4 +73,28 @@ void main() {
       verifyNever(() => repository.revalue(any(), any()));
     },
   );
+
+  test('browsing the FIPE table forwards to the repository', () async {
+    const brands = Ok([VehicleOption(code: '1', name: 'Marca Exemplo')]);
+    when(() => repository.brands(VehicleType.car))
+        .thenAnswer((_) async => brands);
+    when(() => repository.years(VehicleType.car, '1'))
+        .thenAnswer((_) async => brands);
+    when(() => repository.models(VehicleType.car, '1', 2022))
+        .thenAnswer((_) async => const Ok([testModel]));
+    when(() => repository.price(VehicleType.car, '1', testModel))
+        .thenAnswer((_) async => const Ok(testCatalogVehicle));
+    final browse = BrowseVehicles(repository);
+
+    expect(await browse.brands(VehicleType.car), brands);
+    expect(await browse.years(VehicleType.car, '1'), brands);
+    expect(
+      await browse.models(VehicleType.car, '1', 2022),
+      const Ok([testModel]),
+    );
+    expect(
+      await browse.price(VehicleType.car, '1', testModel),
+      const Ok(testCatalogVehicle),
+    );
+  });
 }

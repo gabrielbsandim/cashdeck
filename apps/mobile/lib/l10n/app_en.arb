@@ -1540,9 +1540,7 @@
   "vehicleCar": "Car",
   "vehicleMotorcycle": "Motorcycle",
   "vehicleTruck": "Truck",
-  "assetFipeCode": "FIPE code",
   "assetModelYear": "Model year",
-  "assetFipeHelp": "The code is on the vehicle papers or on the FIPE table website.",
   "assetName": "Name",
   "assetNameOptional": "Name (optional)",
   "assetValue": "Market value",
@@ -1552,7 +1550,22 @@
   "assetSave": "Add",
   "assetNameMissing": "Name the good.",
   "assetValueMissing": "Enter the market value.",
-  "assetFipeCodeInvalid": "A FIPE code reads 000000-0.",
-  "assetModelYearInvalid": "Enter the model year with 4 digits.",
-  "assetFutureDate": "The purchase date cannot be in the future."
+  "assetFutureDate": "The purchase date cannot be in the future.",
+  "vehicleBrand": "Brand",
+  "vehicleModel": "Model",
+  "vehiclePick": "Choose",
+  "vehicleSearch": "Search",
+  "vehicleNoMatch": "Nothing found.",
+  "assetVehicleMissing": "Choose the brand, year and model.",
+  "assetFipePreview": "FIPE {code}: {price} this month",
+  "@assetFipePreview": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  }
 }

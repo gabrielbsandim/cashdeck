@@ -3,7 +3,7 @@ import { ASSET_KINDS } from '@cashdeck/domain'
 import { entityKindSchema, isoDate, moneyViewSchema } from '@/dtos/common'
 import { VEHICLE_TYPES } from '@/ports/investments'
 
-const fipeSchema = z.object({
+export const fipeSchema = z.object({
   type: z.enum(VEHICLE_TYPES),
   code: z.string().regex(/^\d{6}-\d$/, 'Expected a FIPE code like 005340-6'),
   modelYear: z.int().min(1950).max(2100),

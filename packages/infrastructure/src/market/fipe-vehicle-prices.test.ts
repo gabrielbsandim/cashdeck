@@ -76,4 +76,53 @@ describe('FipeVehiclePrices', () => {
       prices.history({ ...pickup, code: '111111-1' }),
     ).rejects.toMatchObject({ status: 500 })
   })
+
+  it('walks the table from brand to model year to a priced model', async () => {
+    const brand = `${FIPE_URL}/cars/brands/1`
+    const scripted = new ScriptedTransport()
+      .on('GET', `${brand}/models/10/years/2020-5`, {
+        json: {
+          codeFipe: '001234-5',
+          modelYear: 2020,
+          model: ' Hatch Exemplo 1.0 Flex ',
+          price: 'R$ 58.900,00',
+        },
+      })
+      .on('GET', `${brand}/models/11/years/2020-5`, {
+        json: { codeFipe: '001234-6', modelYear: 2020, price: 'R$ 1,00' },
+      })
+      .on('GET', `${brand}/models/12/years/2020-5`, { json: {} })
+      .on('GET', `${brand}/years/2020-5/models`, {
+        json: [{ code: '10', name: 'Hatch Exemplo 1.0 Flex' }],
+      })
+      .on('GET', `${brand}/years`, {
+        json: [{ code: '2020-5', name: '2020 Flex' }],
+      })
+      .on('GET', `${FIPE_URL}/motorcycles/brands`, {
+        json: [{ code: 1, name: ' Alfa Exemplo ' }, { code: '2' }, {}],
+      })
+    const prices = new FipeVehiclePrices({ transport: scripted.transport })
+
+    expect(await prices.brands('MOTORCYCLE')).toEqual([
+      { code: '1', name: 'Alfa Exemplo' },
+    ])
+    expect(await prices.years('CAR', '1')).toEqual([
+      { code: '2020-5', name: '2020 Flex' },
+    ])
+    expect(await prices.models('CAR', '1', '2020-5')).toEqual([
+      { code: '10', name: 'Hatch Exemplo 1.0 Flex' },
+    ])
+    expect(await prices.vehicle('CAR', '1', '2020-5', '10')).toEqual({
+      code: '001234-5',
+      modelYear: 2020,
+      model: 'Hatch Exemplo 1.0 Flex',
+      cents: 5_890_000,
+    })
+    expect(await prices.vehicle('CAR', '1', '2020-5', '11')).toMatchObject({
+      model: '001234-6',
+    })
+    await expect(prices.vehicle('CAR', '1', '2020-5', '12')).rejects.toThrow(
+      NotFoundError,
+    )
+  })
 })

@@ -9,6 +9,7 @@ import 'package:cashdeck/features/assets/data/fake_assets_repository.dart';
 import 'package:cashdeck/features/assets/domain/asset.dart';
 import 'package:cashdeck/features/assets/presentation/asset_editor.dart';
 import 'package:cashdeck/features/assets/presentation/assets_screen.dart';
+import 'package:cashdeck/features/assets/presentation/vehicle_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -85,25 +86,44 @@ void main() {
     expect(find.text('Apartamento alugado'), findsOneWidget);
   });
 
-  testWidgets('adds a vehicle priced by the FIPE table', (tester) async {
+  testWidgets('adds a vehicle picked by brand, year and model', (tester) async {
     await pumpRoute(tester, AppRoutes.assets, screenHeight: _height);
     await _tap(tester, find.byKey(AssetsScreen.addKey));
     await _tap(tester, find.text(l10n.assetKindVehicle));
     expect(find.byKey(AssetEditor.valueKey), findsNothing);
     expect(find.text(l10n.assetNameOptional), findsOneWidget);
 
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.text(l10n.assetVehicleMissing), findsOneWidget);
+    await _tap(tester, find.byKey(AssetEditor.modelYearKey));
+    expect(find.byKey(VehicleOptionsSheet.searchKey), findsNothing);
+
     await _tap(tester, find.text(l10n.vehicleMotorcycle));
-    await _type(tester, AssetEditor.fipeCodeKey, '1234');
-    await _tap(tester, find.byKey(AssetEditor.saveKey));
-    expect(find.text(l10n.assetFipeCodeInvalid), findsOneWidget);
+    await _tap(tester, find.byKey(AssetEditor.brandKey));
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
+    await _tap(tester, find.byKey(AssetEditor.brandKey));
+    await _type(tester, VehicleOptionsSheet.searchKey, 'zzz');
+    expect(find.text(l10n.vehicleNoMatch), findsOneWidget);
+    await _type(tester, VehicleOptionsSheet.searchKey, 'outra');
+    expect(find.byKey(VehicleOptionsSheet.optionKey('1')), findsNothing);
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('2')));
+    expect(find.text('Outra Marca'), findsOneWidget);
 
-    await _type(tester, AssetEditor.fipeCodeKey, '811084-3');
-    await _tap(tester, find.byKey(AssetEditor.saveKey));
-    expect(find.text(l10n.assetModelYearInvalid), findsOneWidget);
+    await _tap(tester, find.byKey(AssetEditor.modelYearKey));
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
+    await _tap(tester, find.byKey(AssetEditor.modelYearKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('2026')));
+    await _tap(tester, find.byKey(AssetEditor.modelKey));
+    await tester.tapAt(const Offset(10, 10));
+    await settle(tester);
+    await _tap(tester, find.byKey(AssetEditor.modelKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('10')));
+    expect(find.textContaining('001210-5'), findsOneWidget);
 
-    await _type(tester, AssetEditor.modelYearKey, '2019');
     await _tap(tester, find.byKey(AssetEditor.saveKey));
-    expect(find.text('FIPE 811084-3'), findsOneWidget);
+    expect(find.text('FIPE 001210-5'), findsOneWidget);
     expect(find.text(MoneyFormat.format(fakeFipePrice)), findsWidgets);
   });
 
@@ -112,7 +132,7 @@ void main() {
     await _tap(tester, find.byKey(AssetsScreen.addKey));
     await _tap(tester, find.text(l10n.assetKindVehicle));
     await _tap(tester, find.byKey(AssetEditor.fipeKey));
-    expect(find.byKey(AssetEditor.fipeCodeKey), findsNothing);
+    expect(find.byKey(AssetEditor.brandKey), findsNothing);
 
     await _type(tester, AssetEditor.nameKey, 'Moto antiga');
     await _type(tester, AssetEditor.valueKey, '1500000');
@@ -178,10 +198,41 @@ void main() {
 
     when(repository.list).thenAnswer((_) async => Ok(summaryOf([testAsset])));
     await _tap(tester, find.byKey(CdErrorState.retryKey));
+    var brandsFail = true;
+    when(() => repository.brands(VehicleType.car)).thenAnswer(
+      (_) async => brandsFail
+          ? const Err(NetworkFailure())
+          : const Ok([VehicleOption(code: '1', name: 'Marca Exemplo')]),
+    );
+    when(() => repository.years(VehicleType.car, '1')).thenAnswer(
+      (_) async => const Ok([VehicleOption(code: '2022', name: '2022')]),
+    );
+    when(() => repository.models(VehicleType.car, '1', 2022))
+        .thenAnswer((_) async => const Ok([testModel]));
+    var priceFails = true;
+    when(() => repository.price(VehicleType.car, '1', testModel)).thenAnswer(
+      (_) async => priceFails
+          ? const Err(NotFoundFailure())
+          : const Ok(testCatalogVehicle),
+    );
+
     await _tap(tester, find.byKey(AssetsScreen.addKey));
     await _tap(tester, find.text(l10n.assetKindVehicle));
-    await _type(tester, AssetEditor.fipeCodeKey, '001234-5');
-    await _type(tester, AssetEditor.modelYearKey, '2022');
+    await _tap(tester, find.byKey(AssetEditor.brandKey));
+    brandsFail = false;
+    await _tap(tester, find.byKey(VehicleOptionsSheet.retryKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('1')));
+    await _tap(tester, find.byKey(AssetEditor.modelYearKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('2022')));
+    await _tap(tester, find.byKey(AssetEditor.modelKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('10')));
+    expect(find.byKey(AssetEditor.errorKey), findsOneWidget);
+    expect(find.byKey(AssetEditor.previewKey), findsNothing);
+
+    priceFails = false;
+    await _tap(tester, find.byKey(AssetEditor.modelKey));
+    await _tap(tester, find.byKey(VehicleOptionsSheet.optionKey('10')));
+    expect(find.byKey(AssetEditor.previewKey), findsOneWidget);
     await _tap(tester, find.byKey(AssetEditor.saveKey));
     expect(find.text('FIPE vehicle not found'), findsOneWidget);
   });

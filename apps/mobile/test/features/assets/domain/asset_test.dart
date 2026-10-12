@@ -12,12 +12,14 @@ AssetDraft _draft({
   String name = 'Apartamento',
   CalendarDate acquiredOn = const CalendarDate(2025, 6, 10),
   Money value = const Money(50_000_000),
+  bool byFipe = false,
   FipeVehicle? fipe,
 }) => AssetDraft(
   kind: kind,
   name: name,
   acquiredOn: acquiredOn,
   value: value,
+  byFipe: byFipe,
   fipe: fipe,
 );
 
@@ -32,40 +34,23 @@ void main() {
     expect(_draft(value: const Money(0)).problemOn(_today), AssetProblem.value);
   });
 
-  test('a vehicle priced by FIPE needs a valid code and model year only', () {
-    final vehicle = _draft(
-      kind: AssetKind.vehicle,
-      name: '',
-      value: const Money(0),
-      fipe: testFipe,
-    );
-    expect(vehicle.problemOn(_today), isNull);
+  test('a vehicle priced by FIPE needs only the model from the table', () {
     expect(
       _draft(
         kind: AssetKind.vehicle,
-        fipe: const FipeVehicle(
-          type: VehicleType.car,
-          code: '1234',
-          modelYear: 2022,
-        ),
+        name: '',
+        value: const Money(0),
+        byFipe: true,
+        fipe: testFipe,
       ).problemOn(_today),
-      AssetProblem.fipeCode,
+      isNull,
     );
-    for (final year in [0, 1949, 2028]) {
-      expect(
-        _draft(
-          kind: AssetKind.vehicle,
-          fipe: FipeVehicle(
-            type: VehicleType.car,
-            code: testFipe.code,
-            modelYear: year,
-          ),
-        ).problemOn(_today),
-        AssetProblem.modelYear,
-      );
-    }
     expect(
-      _draft(fipe: testFipe, name: '').problemOn(_today),
+      _draft(kind: AssetKind.vehicle, byFipe: true).problemOn(_today),
+      AssetProblem.vehicle,
+    );
+    expect(
+      _draft(byFipe: true, fipe: testFipe, name: '').problemOn(_today),
       AssetProblem.name,
       reason: 'only a vehicle is priced by the table',
     );
@@ -78,6 +63,8 @@ void main() {
     expect(testAsset.loan?.props, hasLength(3));
     expect(summaryOf([testAsset]).props, hasLength(4));
     expect(summaryOf(const []).isEmpty, isTrue);
-    expect(_draft().props, hasLength(6));
+    expect(_draft().props, hasLength(7));
+    expect(testModel.props, ['10', 'Hatch Exemplo 1.0 Flex', '2022-5']);
+    expect(testCatalogVehicle.props, hasLength(3));
   });
 }

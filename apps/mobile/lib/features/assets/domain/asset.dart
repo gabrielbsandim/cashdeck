@@ -16,14 +16,33 @@ final class FipeVehicle extends Equatable {
   final String code;
   final int modelYear;
 
-  static final codePattern = RegExp(r'^\d{6}-\d$');
-
-  /// A model year runs one ahead of the calendar.
-  bool isModelYearOn(CalendarDate today) =>
-      modelYear >= 1950 && modelYear <= today.year + 1;
-
   @override
   List<Object?> get props => [type, code, modelYear];
+}
+
+/// A brand, model year or model in the FIPE table. A model carries the
+/// table's year code, which also names its fuel.
+final class VehicleOption extends Equatable {
+  const new({required this.code, required this.name, this.year});
+
+  final String code;
+  final String name;
+  final String? year;
+
+  @override
+  List<Object?> get props => [code, name, year];
+}
+
+/// A model found in the table, with its FIPE code and price this month.
+final class CatalogVehicle extends Equatable {
+  const new({required this.fipe, required this.model, required this.price});
+
+  final FipeVehicle fipe;
+  final String model;
+  final Money price;
+
+  @override
+  List<Object?> get props => [fipe, model, price];
 }
 
 /// The loan that financed the asset and what it still owes.
@@ -113,14 +132,15 @@ final class AssetsSummary extends Equatable {
   List<Object?> get props => [items, value, loanDebt, equity];
 }
 
-/// What the person fills in to add an asset. A vehicle with a FIPE code
-/// needs neither a name nor a value: the table gives both.
+/// What the person fills in to add an asset. A vehicle picked from the FIPE
+/// table needs neither a name nor a value: the table gives both.
 final class AssetDraft extends Equatable {
   const new({
     required this.kind,
     required this.acquiredOn,
     this.name = '',
     this.value = const Money(0),
+    this.byFipe = false,
     this.fipe,
     this.loanId,
   });
@@ -129,29 +149,33 @@ final class AssetDraft extends Equatable {
   final String name;
   final CalendarDate acquiredOn;
   final Money value;
+  final bool byFipe;
   final FipeVehicle? fipe;
   final String? loanId;
 
+  bool get _priced => kind == AssetKind.vehicle && byFipe;
+
   AssetProblem? problemOn(CalendarDate today) {
-    final fipe = kind == AssetKind.vehicle ? this.fipe : null;
     if (acquiredOn.compareTo(today) > 0) return AssetProblem.futureDate;
-    if (fipe != null && !FipeVehicle.codePattern.hasMatch(fipe.code)) {
-      return AssetProblem.fipeCode;
-    }
-    if (fipe != null && !fipe.isModelYearOn(today)) {
-      return AssetProblem.modelYear;
-    }
-    if (fipe != null) return null;
+    if (_priced) return fipe == null ? AssetProblem.vehicle : null;
     if (name.trim().isEmpty) return AssetProblem.name;
     if (value.cents <= 0) return AssetProblem.value;
     return null;
   }
 
   @override
-  List<Object?> get props => [kind, name, acquiredOn, value, fipe, loanId];
+  List<Object?> get props => [
+    kind,
+    name,
+    acquiredOn,
+    value,
+    byFipe,
+    fipe,
+    loanId,
+  ];
 }
 
-enum AssetProblem { name, value, fipeCode, modelYear, futureDate }
+enum AssetProblem { name, value, vehicle, futureDate }
 
 abstract interface class AssetsRepository {
   /// Properties first, then vehicles and other goods.
@@ -165,4 +189,21 @@ abstract interface class AssetsRepository {
   Future<Result<Asset>> markSold(String id, CalendarDate on);
 
   Future<Result<void>> delete(String id);
+
+  /// The FIPE table, walked brand, model year, model.
+  Future<Result<List<VehicleOption>>> brands(VehicleType type);
+
+  Future<Result<List<VehicleOption>>> years(VehicleType type, String brand);
+
+  Future<Result<List<VehicleOption>>> models(
+    VehicleType type,
+    String brand,
+    int modelYear,
+  );
+
+  Future<Result<CatalogVehicle>> price(
+    VehicleType type,
+    String brand,
+    VehicleOption model,
+  );
 }

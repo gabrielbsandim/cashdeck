@@ -38,3 +38,7 @@ final markAssetSoldProvider = Provider<MarkAssetSold>(
 final deleteAssetProvider = Provider<DeleteAsset>(
   (ref) => DeleteAsset(ref.watch(assetsRepositoryProvider)),
 );
+
+final browseVehiclesProvider = Provider<BrowseVehicles>(
+  (ref) => BrowseVehicles(ref.watch(assetsRepositoryProvider)),
+);

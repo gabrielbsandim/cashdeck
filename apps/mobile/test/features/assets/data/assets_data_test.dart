@@ -70,6 +70,7 @@ void main() {
           const AssetDraft(
             kind: AssetKind.vehicle,
             acquiredOn: day,
+            byFipe: true,
             fipe: FipeVehicle(
               type: VehicleType.motorcycle,
               code: '811084-3',
@@ -123,6 +124,7 @@ void main() {
             const AssetDraft(
               kind: AssetKind.vehicle,
               acquiredOn: CalendarDate(2024, 5, 20),
+              byFipe: true,
               fipe: testFipe,
             ),
           ),
@@ -152,6 +154,82 @@ void main() {
       });
       expect(requests[2].data, {'value': 8_000_000});
       expect(requests[3].data, {'soldOn': '2026-10-12'});
+    });
+
+    test('walks the FIPE table from brand to a priced model', () async {
+      final dio = stubDio(
+        (options) => switch (options.path) {
+          '/api/v1/vehicles/brands' => const StubResponse(200, {
+            'data': {
+              'items': [
+                {'code': '1', 'name': 'Marca Exemplo'},
+              ],
+            },
+          }),
+          '/api/v1/vehicles/years' => const StubResponse(200, {
+            'data': {
+              'items': [
+                {'code': '2022', 'name': '2022'},
+              ],
+            },
+          }),
+          '/api/v1/vehicles/models' => const StubResponse(200, {
+            'data': {
+              'items': [
+                {
+                  'code': '10',
+                  'name': 'Hatch Exemplo 1.0 Flex',
+                  'year': '2022-5',
+                },
+              ],
+            },
+          }),
+          '/api/v1/vehicles/price' => StubResponse(200, {
+            'data': {
+              'fipe': {'type': 'CAR', 'code': '001234-5', 'modelYear': 2022},
+              'model': 'Hatch Exemplo 1.0 Flex',
+              'price': _money(9_000_000),
+            },
+          }),
+          _ => const StubResponse(404),
+        },
+      );
+      final repository = ApiAssetsRepository(dio);
+
+      expect(_ok(await repository.brands(VehicleType.motorcycle)), [
+        const VehicleOption(code: '1', name: 'Marca Exemplo'),
+      ]);
+      expect(_ok(await repository.years(VehicleType.car, '1')), [
+        const VehicleOption(code: '2022', name: '2022'),
+      ]);
+      expect(_ok(await repository.models(VehicleType.car, '1', 2022)), [
+        testModel,
+      ]);
+      expect(
+        _ok(await repository.price(VehicleType.car, '1', testModel)),
+        testCatalogVehicle,
+      );
+      expect(
+        await repository.price(
+          VehicleType.car,
+          '1',
+          const VehicleOption(code: '10', name: 'Sem ano'),
+        ),
+        isA<Ok<CatalogVehicle>>(),
+      );
+
+      final queries = adapterOf(dio).requests
+          .map((request) => request.queryParameters)
+          .toList();
+      expect(queries[0], {'type': 'MOTORCYCLE'});
+      expect(queries[2], {'type': 'CAR', 'brand': '1', 'modelYear': 2022});
+      expect(queries[3], {
+        'type': 'CAR',
+        'brand': '1',
+        'year': '2022-5',
+        'model': '10',
+      });
+      expect(queries[4]['year'], '');
     });
 
     test('a code the table does not know comes back as not found', () async {
@@ -189,6 +267,7 @@ void main() {
           const AssetDraft(
             kind: AssetKind.vehicle,
             acquiredOn: CalendarDate(2024, 5, 20),
+            byFipe: true,
             fipe: testFipe,
           ),
         ),
@@ -210,6 +289,31 @@ void main() {
       expect(watch.name, 'Relógio');
       expect(watch.fipe, isNull);
       expect(watch.value, const Money(300_000));
+    });
+
+    test('walks a small FIPE table', () async {
+      final repository = fake();
+      expect(_ok(await repository.brands(VehicleType.car)), hasLength(2));
+      expect(
+        _ok(await repository.years(VehicleType.car, '1')).first,
+        const VehicleOption(code: '2027', name: '2027'),
+      );
+      final models = _ok(await repository.models(VehicleType.car, '1', 2026));
+      expect(models.first.year, '2026-5');
+      final vehicle = _ok(
+        await repository.price(VehicleType.truck, '1', models.last),
+      );
+      expect(vehicle.fipe.code, '001211-5');
+      expect(vehicle.fipe.modelYear, 2026);
+      expect(vehicle.price, fakeFipePrice);
+      expect(
+        (await repository.price(
+          VehicleType.car,
+          '1',
+          const VehicleOption(code: '99', name: 'Sem modelo'),
+        ) as Err).failure,
+        const NotFoundFailure(),
+      );
     });
 
     test('revalues, marks sold and deletes', () async {
@@ -262,6 +366,7 @@ void main() {
       expect(container.read(revalueAssetProvider), isNotNull);
       expect(container.read(markAssetSoldProvider), isNotNull);
       expect(container.read(deleteAssetProvider), isNotNull);
+      expect(container.read(browseVehiclesProvider), isNotNull);
     }
   });
 }

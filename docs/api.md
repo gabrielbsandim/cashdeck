@@ -443,6 +443,13 @@ keyless Parallelum mirror, which gives the last three months; the
 of a code the table stops answering for. A `loanId` links the loan that
 financed the good, and `equity` is the value less what that loan owes.
 
+The FIPE code comes from walking the table: `GET /vehicles/brands?type=`,
+then `/vehicles/years?type=&brand=` (one entry a model year, up to next year,
+without the brand-new listing), then `/vehicles/models?type=&brand=&modelYear=`
+(every fuel of that year, each model with its fuel `year` code), and last
+`/vehicles/price?type=&brand=&year=&model=`, which answers the `fipe` object
+to create the vehicle with and the current price.
+
 Net worth adds the goods by kind (`realEstate`, `vehicles`, `otherAssets`)
 and takes off `loanDebt`, every stored loan's balance at the end of each day
 read from its schedule.

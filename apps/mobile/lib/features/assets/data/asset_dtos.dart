@@ -30,7 +30,7 @@ FipeVehicle fipeFromJson(JsonMap json) => FipeVehicle(
 );
 
 JsonMap fipeToJson(FipeVehicle fipe) => {
-  'type': _keyOf(vehicleTypes, fipe.type),
+  'type': vehicleTypeToJson(fipe.type),
   'code': fipe.code,
   'modelYear': fipe.modelYear,
 };
@@ -69,9 +69,25 @@ AssetsSummary assetsFromJson(JsonMap json) => AssetsSummary(
   equity: readMoney(json, 'equity'),
 );
 
+VehicleOption vehicleOptionFromJson(JsonMap json) => VehicleOption(
+  code: readString(json, 'code'),
+  name: readString(json, 'name'),
+  year: readOptionalString(json, 'year'),
+);
+
+CatalogVehicle catalogVehicleFromJson(JsonMap json) => CatalogVehicle(
+  fipe: fipeFromJson(readMap(json, 'fipe')),
+  model: readString(json, 'model'),
+  price: readMoney(json, 'price'),
+);
+
+String vehicleTypeToJson(VehicleType type) => _keyOf(vehicleTypes, type);
+
 /// The table names and prices a vehicle with a FIPE code, so neither is sent.
 JsonMap assetDraftToJson(AssetDraft draft) {
-  final fipe = draft.kind == AssetKind.vehicle ? draft.fipe : null;
+  final fipe = draft.kind == AssetKind.vehicle && draft.byFipe
+      ? draft.fipe
+      : null;
   return {
     'entity': 'PF',
     'kind': _keyOf(assetKinds, draft.kind),

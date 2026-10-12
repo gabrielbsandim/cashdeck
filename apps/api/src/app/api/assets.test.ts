@@ -10,6 +10,10 @@ import {
   PATCH as updateAsset,
 } from '@/app/api/v1/assets/[id]/route'
 import { GET as pricesCron } from '@/app/api/cron/vehicle-prices/route'
+import { GET as vehicleBrands } from '@/app/api/v1/vehicles/brands/route'
+import { GET as vehicleYears } from '@/app/api/v1/vehicles/years/route'
+import { GET as vehicleModels } from '@/app/api/v1/vehicles/models/route'
+import { GET as vehiclePrice } from '@/app/api/v1/vehicles/price/route'
 
 let session = ''
 
@@ -45,6 +49,7 @@ beforeEach(async () => {
 afterEach(() => {
   resetContainer()
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
 })
 
 describe('asset routes', () => {
@@ -108,5 +113,62 @@ describe('asset routes', () => {
       refreshed: 0,
       failed: 0,
     })
+  })
+
+  it('walks the FIPE table from brand to a priced model', async () => {
+    const table: Record<string, unknown> = {
+      '/cars/brands': [{ code: '1', name: 'Alfa Exemplo' }],
+      '/cars/brands/1/years': [{ code: '2020-5', name: '2020 Flex' }],
+      '/cars/brands/1/years/2020-5/models': [
+        { code: '10', name: 'Hatch Exemplo 1.0 Flex' },
+      ],
+      '/cars/brands/1/models/10/years/2020-5': {
+        codeFipe: '001234-5',
+        modelYear: 2020,
+        model: 'Hatch Exemplo 1.0 Flex',
+        price: 'R$ 58.900,00',
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        Response.json(table[new URL(String(url)).pathname.slice(7)]),
+      ),
+    )
+    // The container binds fetch when built.
+    resetContainer()
+    session = await signInTestDevice()
+
+    const brands = await json(
+      await vehicleBrands(request('vehicles/brands?type=CAR')),
+    )
+    expect(brands.body.data.items).toEqual([
+      { code: '1', name: 'Alfa Exemplo' },
+    ])
+    const years = await json(
+      await vehicleYears(request('vehicles/years?type=CAR&brand=1')),
+    )
+    expect(years.body.data.items).toEqual([{ code: '2020', name: '2020' }])
+    const models = await json(
+      await vehicleModels(
+        request('vehicles/models?type=CAR&brand=1&modelYear=2020'),
+      ),
+    )
+    expect(models.body.data.items).toEqual([
+      { code: '10', name: 'Hatch Exemplo 1.0 Flex', year: '2020-5' },
+    ])
+    const price = await json(
+      await vehiclePrice(
+        request('vehicles/price?type=CAR&brand=1&year=2020-5&model=10'),
+      ),
+    )
+    expect(price.body.data).toMatchObject({
+      fipe: { type: 'CAR', code: '001234-5', modelYear: 2020 },
+      price: { cents: 5_890_000 },
+    })
+    const invalid = await vehicleModels(
+      request('vehicles/models?type=BOAT&brand=1&modelYear=2020'),
+    )
+    expect(invalid.status).toBe(422)
   })
 })

@@ -1,6 +1,8 @@
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/money/money_format.dart';
+import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -12,12 +14,14 @@ import 'package:cashdeck/core/widgets/inputs/cd_currency_input.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
+import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
+import 'package:cashdeck/features/assets/assets_providers.dart';
 import 'package:cashdeck/features/assets/domain/asset.dart';
 import 'package:cashdeck/features/assets/presentation/assets_controller.dart';
+import 'package:cashdeck/features/assets/presentation/vehicle_picker.dart';
 import 'package:cashdeck/features/loans/presentation/loans_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -41,8 +45,7 @@ String assetProblemMessage(AppLocalizations l10n, AssetProblem problem) =>
     switch (problem) {
       AssetProblem.name => l10n.assetNameMissing,
       AssetProblem.value => l10n.assetValueMissing,
-      AssetProblem.fipeCode => l10n.assetFipeCodeInvalid,
-      AssetProblem.modelYear => l10n.assetModelYearInvalid,
+      AssetProblem.vehicle => l10n.assetVehicleMissing,
       AssetProblem.futureDate => l10n.assetFutureDate,
     };
 
@@ -54,8 +57,10 @@ class AssetEditor extends ConsumerStatefulWidget {
   static const valueKey = Key('asset-value');
   static const acquiredKey = Key('asset-acquired');
   static const fipeKey = Key('asset-fipe');
-  static const fipeCodeKey = Key('asset-fipe-code');
+  static const brandKey = Key('asset-brand');
   static const modelYearKey = Key('asset-model-year');
+  static const modelKey = Key('asset-model');
+  static const previewKey = Key('asset-fipe-preview');
   static const loanKey = Key('asset-loan');
   static const errorKey = Key('asset-error');
   static const saveKey = Key('asset-save');
@@ -66,12 +71,15 @@ class AssetEditor extends ConsumerStatefulWidget {
 
 class _AssetEditorState extends ConsumerState<AssetEditor> {
   final _name = TextEditingController();
-  final _code = TextEditingController();
-  final _year = TextEditingController();
   AssetKind _kind = AssetKind.property;
   var _value = const Money(0);
   var _byFipe = true;
   VehicleType _vehicleType = VehicleType.car;
+  VehicleOption? _brand;
+  VehicleOption? _modelYear;
+  VehicleOption? _model;
+  CatalogVehicle? _vehicle;
+  var _pricing = false;
   late CalendarDate _acquiredOn = _today;
   String? _loanId;
   var _saving = false;
@@ -87,21 +95,14 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     name: _name.text,
     acquiredOn: _acquiredOn,
     value: _priced ? const Money(0) : _value,
-    fipe: _priced
-        ? FipeVehicle(
-            type: _vehicleType,
-            code: _code.text.trim(),
-            modelYear: int.tryParse(_year.text.trim()) ?? 0,
-          )
-        : null,
+    byFipe: _byFipe,
+    fipe: _priced ? _vehicle?.fipe : null,
     loanId: _loanId,
   );
 
   @override
   void dispose() {
     _name.dispose();
-    _code.dispose();
-    _year.dispose();
     super.dispose();
   }
 
@@ -119,6 +120,73 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     );
     if (picked == null) return;
     setState(() => _acquiredOn = CalendarDate.fromDateTime(picked));
+  }
+
+  void _pickType(VehicleType type) => setState(() {
+    _vehicleType = type;
+    _brand = null;
+    _modelYear = null;
+    _model = null;
+    _vehicle = null;
+  });
+
+  Future<void> _pickBrand() async {
+    final browse = ref.read(browseVehiclesProvider);
+    final brand = await showVehicleOptions(
+      context,
+      title: AppLocalizations.of(context).vehicleBrand,
+      load: () => browse.brands(_vehicleType),
+    );
+    if (brand == null || !mounted) return;
+    setState(() {
+      _brand = brand;
+      _modelYear = null;
+      _model = null;
+      _vehicle = null;
+    });
+  }
+
+  Future<void> _pickModelYear(VehicleOption brand) async {
+    final browse = ref.read(browseVehiclesProvider);
+    final year = await showVehicleOptions(
+      context,
+      title: AppLocalizations.of(context).assetModelYear,
+      load: () => browse.years(_vehicleType, brand.code),
+    );
+    if (year == null || !mounted) return;
+    setState(() {
+      _modelYear = year;
+      _model = null;
+      _vehicle = null;
+    });
+  }
+
+  Future<void> _pickModel(VehicleOption brand, VehicleOption year) async {
+    final l10n = AppLocalizations.of(context);
+    final browse = ref.read(browseVehiclesProvider);
+    final model = await showVehicleOptions(
+      context,
+      title: l10n.vehicleModel,
+      load: () => browse.models(_vehicleType, brand.code, int.parse(year.code)),
+    );
+    if (model == null || !mounted) return;
+    setState(() {
+      _model = model;
+      _vehicle = null;
+      _pricing = true;
+      _error = null;
+    });
+    final priced = await browse.price(_vehicleType, brand.code, model);
+    if (!mounted) return;
+    setState(() {
+      _pricing = false;
+      switch (priced) {
+        case Ok(:final value):
+          _vehicle = value;
+        case Err(:final failure):
+          _error = failure.userMessage(l10n);
+      }
+    });
   }
 
   Future<void> _save() async {
@@ -149,6 +217,9 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
     final error = _error;
+    final brand = _brand;
+    final modelYear = _modelYear;
+    final vehicle = _vehicle;
     final loans = ref.watch(loansControllerProvider).value ?? const [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,49 +254,41 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
               CdSegment(VehicleType.truck, l10n.vehicleTruck),
             ],
             selected: _vehicleType,
-            onChanged: (type) => setState(() => _vehicleType = type),
+            onChanged: _pickType,
           ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: CdTextField(
-                  key: AssetEditor.fipeCodeKey,
-                  controller: _code,
-                  label: l10n.assetFipeCode,
-                  hintText: '000000-0',
-                  monospace: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d-]')),
-                    LengthLimitingTextInputFormatter(8),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                flex: 2,
-                child: CdTextField(
-                  key: AssetEditor.modelYearKey,
-                  controller: _year,
-                  label: l10n.assetModelYear,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(height: AppSpacing.sm),
+          _Step(
+            key: AssetEditor.brandKey,
+            label: l10n.vehicleBrand,
+            value: brand?.name,
+            onTap: _pickBrand,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            l10n.assetFipeHelp,
-            style: AppTextStyles.bodyMd.copyWith(
-              color: palette.onSurfaceVariant,
+          _Step(
+            key: AssetEditor.modelYearKey,
+            label: l10n.assetModelYear,
+            value: modelYear?.name,
+            onTap: brand == null ? null : () => _pickModelYear(brand),
+          ),
+          _Step(
+            key: AssetEditor.modelKey,
+            label: l10n.vehicleModel,
+            value: _model?.name,
+            onTap: brand == null || modelYear == null
+                ? null
+                : () => _pickModel(brand, modelYear),
+          ),
+          if (_pricing) const LinearProgressIndicator(),
+          if (vehicle != null)
+            Text(
+              l10n.assetFipePreview(
+                vehicle.fipe.code,
+                MoneyFormat.format(vehicle.price),
+              ),
+              key: AssetEditor.previewKey,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: palette.onSurfaceVariant,
+              ),
             ),
-          ),
           const SizedBox(height: AppSpacing.md),
         ],
         CdTextField(
@@ -282,9 +345,33 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
           expand: true,
           label: l10n.assetSave,
           loading: _saving,
-          onPressed: _save,
+          onPressed: _pricing ? null : _save,
         ),
       ],
+    );
+  }
+}
+
+class _Step extends StatelessWidget {
+  const new({required this.label, required this.onTap, this.value, super.key});
+
+  final String label;
+  final String? value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Opacity(
+      opacity: onTap == null ? 0.5 : 1,
+      child: CdListRow(
+        title: label,
+        subtitle: value ?? l10n.vehiclePick,
+        titleMaxLines: 1,
+        padding: EdgeInsets.zero,
+        chevron: true,
+        onTap: onTap,
+      ),
     );
   }
 }

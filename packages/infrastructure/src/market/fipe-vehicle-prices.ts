@@ -1,6 +1,8 @@
 import {
+  type CatalogVehicle,
   type FipeVehicle,
   NotFoundError,
+  type VehicleOption,
   type VehiclePriceHistory,
   type VehiclePrices,
   type VehicleType,
@@ -39,6 +41,15 @@ const MONTHS = [
 ]
 
 type YearRow = { code?: string }
+
+type OptionRow = { code?: string | number; name?: string }
+
+type VehicleBody = {
+  codeFipe?: string
+  modelYear?: number
+  model?: string
+  price?: string
+}
 
 type HistoryBody = {
   model?: string
@@ -87,6 +98,59 @@ export class FipeVehiclePrices implements VehiclePrices {
         return month && cents ? [{ month, cents }] : []
       }),
     }
+  }
+
+  brands(type: VehicleType): Promise<VehicleOption[]> {
+    return this.options(`${FIPE_URL}/${PATHS[type]}/brands`)
+  }
+
+  years(type: VehicleType, brand: string): Promise<VehicleOption[]> {
+    return this.options(`${this.brand(type, brand)}/years`)
+  }
+
+  models(
+    type: VehicleType,
+    brand: string,
+    year: string,
+  ): Promise<VehicleOption[]> {
+    return this.options(
+      `${this.brand(type, brand)}/years/${encodeURIComponent(year)}/models`,
+    )
+  }
+
+  async vehicle(
+    type: VehicleType,
+    brand: string,
+    year: string,
+    model: string,
+  ): Promise<CatalogVehicle> {
+    const body = parse<VehicleBody>(
+      await this.get(
+        `${this.brand(type, brand)}/models/${encodeURIComponent(model)}/years/${encodeURIComponent(year)}`,
+      ),
+    )
+    const cents = centsOf(body.price)
+    if (!body.codeFipe || !body.modelYear || !cents) {
+      throw new NotFoundError('FIPE vehicle')
+    }
+    return {
+      code: body.codeFipe,
+      modelYear: body.modelYear,
+      model: body.model?.trim() || body.codeFipe,
+      cents,
+    }
+  }
+
+  private brand(type: VehicleType, brand: string) {
+    return `${FIPE_URL}/${PATHS[type]}/brands/${encodeURIComponent(brand)}`
+  }
+
+  private async options(url: string): Promise<VehicleOption[]> {
+    return parse<OptionRow[]>(await this.get(url)).flatMap(row =>
+      row.code !== undefined && row.name?.trim()
+        ? [{ code: String(row.code), name: row.name.trim() }]
+        : [],
+    )
   }
 
   private get(url: string) {

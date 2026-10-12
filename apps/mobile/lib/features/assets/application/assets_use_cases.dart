@@ -59,3 +59,28 @@ final class DeleteAsset {
 
   Future<Result<void>> call(String id) => _repository.delete(id);
 }
+
+/// Walks the FIPE table so a vehicle is found without knowing its code.
+final class BrowseVehicles {
+  const new(this._repository);
+
+  final AssetsRepository _repository;
+
+  Future<Result<List<VehicleOption>>> brands(VehicleType type) =>
+      _repository.brands(type);
+
+  Future<Result<List<VehicleOption>>> years(VehicleType type, String brand) =>
+      _repository.years(type, brand);
+
+  Future<Result<List<VehicleOption>>> models(
+    VehicleType type,
+    String brand,
+    int modelYear,
+  ) => _repository.models(type, brand, modelYear);
+
+  Future<Result<CatalogVehicle>> price(
+    VehicleType type,
+    String brand,
+    VehicleOption model,
+  ) => _repository.price(type, brand, model);
+}

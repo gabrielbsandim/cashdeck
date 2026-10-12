@@ -83,6 +83,68 @@ final class FakeAssetsRepository implements AssetsRepository {
     return Ok(_assets[id] = change(asset));
   }
 
+  static const _models = {
+    '10': 'Hatch Exemplo 1.0 Flex',
+    '11': 'Sedan Exemplo 2.0 Turbo',
+  };
+
+  @override
+  Future<Result<List<VehicleOption>>> brands(VehicleType type) async {
+    await Future<void>.delayed(latency);
+    return const Ok([
+      VehicleOption(code: '1', name: 'Marca Exemplo'),
+      VehicleOption(code: '2', name: 'Outra Marca'),
+    ]);
+  }
+
+  @override
+  Future<Result<List<VehicleOption>>> years(
+    VehicleType type,
+    String brand,
+  ) async {
+    await Future<void>.delayed(latency);
+    return Ok([
+      for (var year = _today.year + 1; year > _today.year - 4; year--)
+        VehicleOption(code: '$year', name: '$year'),
+    ]);
+  }
+
+  @override
+  Future<Result<List<VehicleOption>>> models(
+    VehicleType type,
+    String brand,
+    int modelYear,
+  ) async {
+    await Future<void>.delayed(latency);
+    return Ok([
+      for (final MapEntry(:key, :value) in _models.entries)
+        VehicleOption(code: key, name: value, year: '$modelYear-5'),
+    ]);
+  }
+
+  @override
+  Future<Result<CatalogVehicle>> price(
+    VehicleType type,
+    String brand,
+    VehicleOption model,
+  ) async {
+    await Future<void>.delayed(latency);
+    final name = _models[model.code];
+    final year = int.tryParse(model.year?.split('-').first ?? '');
+    if (name == null || year == null) return const Err(NotFoundFailure());
+    return Ok(
+      CatalogVehicle(
+        fipe: FipeVehicle(
+          type: type,
+          code: '0012${model.code}-5',
+          modelYear: year,
+        ),
+        model: name,
+        price: fakeFipePrice,
+      ),
+    );
+  }
+
   @override
   Future<Result<AssetsSummary>> list() async {
     await Future<void>.delayed(latency);

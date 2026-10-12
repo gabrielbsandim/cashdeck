@@ -3846,9 +3846,7 @@
   "vehicleCar": "Carro",
   "vehicleMotorcycle": "Moto",
   "vehicleTruck": "Caminhão",
-  "assetFipeCode": "Código FIPE",
   "assetModelYear": "Ano modelo",
-  "assetFipeHelp": "O código está no documento do veículo ou no site da tabela FIPE.",
   "assetName": "Nome",
   "assetNameOptional": "Nome (opcional)",
   "assetValue": "Valor de mercado",
@@ -3865,7 +3863,22 @@
   "assetSave": "Adicionar",
   "assetNameMissing": "Dê um nome ao bem.",
   "assetValueMissing": "Informe o valor de mercado.",
-  "assetFipeCodeInvalid": "O código FIPE tem o formato 000000-0.",
-  "assetModelYearInvalid": "Informe o ano modelo com 4 dígitos.",
-  "assetFutureDate": "A data de compra não pode ser no futuro."
+  "assetFutureDate": "A data de compra não pode ser no futuro.",
+  "vehicleBrand": "Marca",
+  "vehicleModel": "Modelo",
+  "vehiclePick": "Escolher",
+  "vehicleSearch": "Buscar",
+  "vehicleNoMatch": "Nada encontrado.",
+  "assetVehicleMissing": "Escolha a marca, o ano e o modelo.",
+  "assetFipePreview": "FIPE {code}: {price} este mês",
+  "@assetFipePreview": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1,5 +1,7 @@
 import { type LocalDate } from '@cashdeck/domain'
+import { NotFoundError } from '@/errors/errors'
 import {
+  type CatalogVehicle,
   type DailyValue,
   type IndexRateRepository,
   type InvestmentMovement,
@@ -8,8 +10,10 @@ import {
   type InvestmentSnapshot,
   type FipeVehicle,
   type MarketData,
+  type VehicleOption,
   type VehiclePriceHistory,
   type VehiclePrices,
+  type VehicleType,
 } from '@/ports/investments'
 
 const keyOf = (position: InvestmentPosition) =>
@@ -195,6 +199,51 @@ export class FakeVehiclePrices implements VehiclePrices {
       new Error(`FIPE ${vehicle.code} not found`)
     if (found instanceof Error) {
       throw found
+    }
+    return found
+  }
+
+  // Keyed by the path down the table: "CAR", "CAR/59", "CAR/59/2020-5".
+  catalog = new Map<string, VehicleOption[]>()
+  // Keyed by "CAR/59/2020-5/8717".
+  vehicles = new Map<string, CatalogVehicle>()
+
+  async brands(type: VehicleType): Promise<VehicleOption[]> {
+    return this.options(type)
+  }
+
+  async years(type: VehicleType, brand: string): Promise<VehicleOption[]> {
+    return this.options(`${type}/${brand}`)
+  }
+
+  async models(
+    type: VehicleType,
+    brand: string,
+    year: string,
+  ): Promise<VehicleOption[]> {
+    return this.options(`${type}/${brand}/${year}`)
+  }
+
+  async vehicle(
+    type: VehicleType,
+    brand: string,
+    year: string,
+    model: string,
+  ): Promise<CatalogVehicle> {
+    const key = `${type}/${brand}/${year}/${model}`
+    this.requests.push(key)
+    const found = this.vehicles.get(key)
+    if (!found) {
+      throw new NotFoundError('FIPE vehicle')
+    }
+    return found
+  }
+
+  private options(key: string): VehicleOption[] {
+    this.requests.push(key)
+    const found = this.catalog.get(key)
+    if (!found) {
+      throw new NotFoundError('FIPE vehicle')
     }
     return found
   }
