@@ -16,6 +16,11 @@ enum AlertKind {
   invoiceIssued('INVOICE_ISSUED'),
   invoiceFailed('INVOICE_FAILED'),
   cardBillClosed('CARD_BILL_CLOSED'),
+  unusualPurchase('UNUSUAL_PURCHASE'),
+  subscriptionChanged('SUBSCRIPTION_CHANGED'),
+  cardBillAboveAverage('CARD_BILL_ABOVE_AVERAGE'),
+  bankSyncStale('BANK_SYNC_STALE'),
+  invoiceNotIssued('INVOICE_NOT_ISSUED'),
   other('OTHER');
 
   new(this.wire);

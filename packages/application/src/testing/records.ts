@@ -470,6 +470,10 @@ export class InMemoryCategoryRepository
   async saveRule(rule: CategoryRule): Promise<void> {
     this.rules.set(key(rule.tenantId, rule.id), rule)
   }
+
+  async deleteRule(tenantId: string, id: string): Promise<void> {
+    this.rules.delete(key(tenantId, id))
+  }
 }
 
 export class InMemoryPixContactRepository implements PixContactRepository {

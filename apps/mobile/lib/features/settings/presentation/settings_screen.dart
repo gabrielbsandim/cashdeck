@@ -50,6 +50,13 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: section.hint(l10n),
                 route: section.route,
               ),
+          if (!limited)
+            SettingsLink(
+              icon: Symbols.rule_rounded,
+              title: l10n.categoryRulesTitle,
+              subtitle: l10n.categoryRulesHint,
+              route: AppRoutes.categoryRules,
+            ),
           SettingsLink(
             icon: Symbols.notifications_rounded,
             title: l10n.alertSettingsTitle,

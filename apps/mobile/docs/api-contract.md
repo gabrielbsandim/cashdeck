@@ -82,7 +82,12 @@ The inbox rebuilds each alert text from its type and `data` in the app
 language, keeping the server text when a field is missing.
 Signing out first calls `DELETE /api/v1/devices/{token}` (percent-encoded),
 while the credentials still authenticate it; a failed call never blocks it.
-A push carries `billId` in its data; tapping it opens `/bills/{billId}`. Push
+Tapping an alert or a push opens what it is about: `UNUSUAL_PURCHASE` its
+`transactionId`, `SUBSCRIPTION_CHANGED` the subscription `key`,
+`CARD_BILL_ABOVE_AVERAGE` the card `accountId`, `BANK_SYNC_STALE` the
+connections and `INVOICE_NOT_ISSUED` the company settings; any other type opens
+its `billId`. A push names its type in `alertType`; without a target it opens
+the inbox. Push
 needs the Firebase config files (see `docs/deploy.md` at the repository root);
 without them `FirebasePushMessaging.start` returns false and the app runs as is.
 
@@ -198,6 +203,24 @@ The investments screen, opened from the balances screen, reads
 `GET /api/v1/investments` with the scope's `entity`: the totals, the split by
 institution and by kind, and each position with its yield, rate and due date.
 It never sums positions itself; totals come from the server in BRL.
+
+## Category review and rules
+
+- `GET /api/v1/categories/review?entity=` returns `{ pending, groups,
+  suggestions }`, read for the switcher's scope. A group carries the
+  `transactionIds` it settles, `suggestedCategoryId` (preselected), `reasons`
+  (`UNCATEGORIZED | LOW_CONFIDENCE | INCONSISTENT`; one the app does not know
+  is skipped), `confidence` and `canCreateRule`. The transactions tab badge
+  shows `pending` and hides at 0 or on a failure.
+- `POST /api/v1/categories/review/groups` takes `{ transactionIds, categoryId,
+  createRule }` and returns `{ updated, similarUpdated, rule | null }`; the app
+  sends `createRule` only for a group with `canCreateRule`. A skipped group
+  stays on the server and returns on the next load.
+- `POST .../review/suggestions/accept` and `.../dismiss` take `{ id }`.
+- `GET /api/v1/categories/rules` lists the rules; `PATCH /rules/{id}` takes
+  `{ pattern?, categoryId? }` with only what changed and returns `{ rule,
+  updated }`; `DELETE /rules/{id}` removes one. A blank pattern never leaves
+  the app.
 
 ## Chat
 

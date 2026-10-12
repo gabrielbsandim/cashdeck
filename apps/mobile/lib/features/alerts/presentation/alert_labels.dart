@@ -16,6 +16,11 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => l10n.alertKindInvoiceIssued,
   AlertKind.invoiceFailed => l10n.alertKindInvoiceFailed,
   AlertKind.cardBillClosed => l10n.alertKindCardBillClosed,
+  AlertKind.unusualPurchase => l10n.alertKindUnusualPurchase,
+  AlertKind.subscriptionChanged => l10n.alertKindSubscriptionChanged,
+  AlertKind.cardBillAboveAverage => l10n.alertKindCardBillAboveAverage,
+  AlertKind.bankSyncStale => l10n.alertKindBankSyncStale,
+  AlertKind.invoiceNotIssued => l10n.alertKindInvoiceNotIssued,
   AlertKind.other => l10n.alertKindOther,
 };
 
@@ -32,6 +37,11 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.invoiceIssued => Symbols.receipt_rounded,
   AlertKind.invoiceFailed => Symbols.error_rounded,
   AlertKind.cardBillClosed => Symbols.credit_card_rounded,
+  AlertKind.unusualPurchase => Symbols.troubleshoot_rounded,
+  AlertKind.subscriptionChanged => Symbols.autorenew_rounded,
+  AlertKind.cardBillAboveAverage => Symbols.trending_up_rounded,
+  AlertKind.bankSyncStale => Symbols.sync_problem_rounded,
+  AlertKind.invoiceNotIssued => Symbols.pending_actions_rounded,
   AlertKind.other => Symbols.notifications_rounded,
 };
 
@@ -115,7 +125,61 @@ final Map<AlertKind, _Builder> _builders = {
     title: l10n.alertTextCardClosedTitle,
     body: l10n.alertTextCardClosedBody(d['card'], d['closing'], d['dueDate']),
   ),
+  AlertKind.unusualPurchase: (l10n, d) => (
+    title: l10n.alertTextUnusualTitle,
+    body: l10n.alertTextUnusualBody(
+      d['merchant'],
+      d['amount'],
+      d['day'],
+      d['times'],
+      d['usual'],
+    ),
+  ),
+  AlertKind.subscriptionChanged: _subscriptionChanged,
+  AlertKind.cardBillAboveAverage: (l10n, d) => (
+    title: l10n.alertTextBillAboveTitle,
+    body: l10n.alertTextBillAboveBody(
+      d['card'],
+      d['amount'],
+      d['percent'],
+      d['average'],
+      d['dueDate'],
+    ),
+  ),
+  AlertKind.bankSyncStale: (l10n, d) => (
+    title: l10n.alertTextSyncStaleTitle,
+    body: switch (d.fields['hours'] ?? '') {
+      '' => l10n.alertTextSyncStaleBody(d['institution']),
+      final hours => l10n.alertTextSyncStaleHoursBody(d['institution'], hours),
+    },
+  ),
+  AlertKind.invoiceNotIssued: (l10n, d) => (
+    title: l10n.alertTextInvoiceMissingTitle,
+    body: l10n.alertTextInvoiceMissingBody(d['client'], d['amount'], d['day']),
+  ),
 };
+
+AlertText _subscriptionChanged(AppLocalizations l10n, _AlertData d) {
+  if (d['change'] == 'DUPLICATE') {
+    return (
+      title: l10n.alertTextSubscriptionTwiceTitle,
+      body: l10n.alertTextSubscriptionTwiceBody(
+        d['name'],
+        d['count'],
+        d['amount'],
+      ),
+    );
+  }
+  return (
+    title: l10n.alertTextSubscriptionUpTitle,
+    body: l10n.alertTextSubscriptionUpBody(
+      d['name'],
+      d['previous'],
+      d['amount'],
+      d['percent'],
+    ),
+  );
+}
 
 String _hint(AppLocalizations l10n, String method) => switch (method) {
   'PIX' => l10n.alertTextHintPix,

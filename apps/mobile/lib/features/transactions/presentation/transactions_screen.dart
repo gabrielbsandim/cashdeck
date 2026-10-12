@@ -19,6 +19,7 @@ import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/category_review/presentation/category_review_badge.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
@@ -113,6 +114,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 const _DaysButton(),
+                const CategoryReviewBadge(),
               ],
             ),
           ),

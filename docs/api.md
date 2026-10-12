@@ -457,6 +457,67 @@ is null or left out, and relabels every matching transaction the user did not
 set, transfers aside. A pattern of only noise is a 422. `data`:
 `{ pattern, categoryId, updated: int }`, 201.
 
+### GET /categories/rules, PATCH and DELETE /categories/rules/{id}
+
+`CategoryRule`: `{ id, entityKind: "PF" | "PJ" | null, pattern: string,
+counterparty: string | null, direction: "IN" | "OUT" | null, categoryId,
+priority: int, createdAt: timestamp }`. A rule matches the description words in
+`pattern`, or the payee document in `counterparty` when `pattern` is empty;
+`entityKind` null applies to both entities.
+
+- `GET /categories/rules`: `data` is `[CategoryRule]`, by the words or document
+  they match.
+- `PATCH /categories/rules/{id}`: body `{ pattern?: string, categoryId?: string,
+  direction?: "IN" | "OUT" | null }`. New words replace a document. The rule
+  relabels what it now matches, user choices aside. `data`:
+  `{ rule: CategoryRule, updated: int }`.
+- `DELETE /categories/rules/{id}`: `data` is `{ id }`. Labels the rule gave
+  stay.
+
+### GET /categories/review?entity=
+
+The transactions of the last 90 days that need a human look, transfers and
+previews aside, grouped by entity, direction and description words (the
+normalization rules use), or by payee document when the words say nothing. A
+transaction is in the queue when it has no category (`UNCATEGORIZED`), when the
+model answered below 0.75 (`LOW_CONFIDENCE`), or when it carries a category
+other than the one the group points to (`INCONSISTENT`): the one the user chose
+last for those words, or else the one most of the group carries. User choices
+never enter the queue.
+
+```json
+{
+  "pending": int,
+  "groups": [{ "id": string, "entityKind": "PF"|"PJ", "merchant": string,
+    "pattern": string, "counterparty": string | null, "direction": "IN"|"OUT",
+    "count": int, "total": Money, "reasons": [string],
+    "suggestedCategoryId": string | null, "confidence": number | null,
+    "canCreateRule": bool, "lastBookedOn": date, "transactionIds": [string] }],
+  "suggestions": [{ "id": string, "entityKind": "PF"|"PJ", "merchant": string,
+    "pattern": string, "counterparty": string | null, "direction": "IN"|"OUT",
+    "categoryId": string, "count": int }]
+}
+```
+
+Groups come largest first. A suggestion appears when the user picked the same
+category two or more times for one merchant (its `merchant` field, or the
+description words) in the last 180 days, never another one, and no single rule
+already labels all of those transactions that way. Its rule takes the words
+every description shares, or the shared payee document.
+
+- `POST /categories/review/groups`: body `{ transactionIds: [string] (1 to
+  500), categoryId, createRule?: bool (default true) }`. Labels every
+  transaction as the user's choice in one call. With `createRule` and a pattern
+  the transactions share, it learns that rule for their entity and direction
+  and relabels the other matches; transactions of two entities or directions
+  with a rule are a 422. `data`: `{ updated: int, similarUpdated: int, rule:
+  CategoryRule | null }`.
+- `POST /categories/review/suggestions/accept`: body `{ id }`. Turns the
+  suggestion into a rule and relabels the matches; 201 with the same `data`
+  shape (`updated` is 0). An unknown or stale id is a 404.
+- `POST /categories/review/suggestions/dismiss`: body `{ id }`. The suggestion
+  is not offered again. `data`: `{ id }`.
+
 ### Automatic categorization
 
 After every Open Finance sync (manual or cron) the server categorizes the
@@ -979,9 +1040,10 @@ The Android app forwards the notifications of the apps the user picked.
 Alerts land in an inbox and go out as push notifications through FCM. The
 server writes `title` and `body` in pt-BR; `data` carries the raw values
 (`payee`, `amount`, `dueDate`, and per type `rail`, `reason`, `method`,
-`hasPixCode`, `shortfall`, `invoice`, `client`, `card`, `closing`, `source`). A push
-carries the same `data` plus `alertId`, `entityId`, `billId` and `invoiceId`
-when set, so a tap opens the bill.
+`hasPixCode`, `shortfall`, `invoice`, `client`, `card`, `closing`, `source`,
+and the keys the table below names). A push
+carries the same `data` plus `alertType`, `alertId`, and `entityId`, `billId`
+and `invoiceId` when set, so a tap opens the screen the alert is about.
 
 | Type | Raised when |
 |---|---|
@@ -996,6 +1058,11 @@ when set, so a tap opens the bill.
 | `LOW_BALANCE` | daily cron: the reserve does not cover tomorrow's automatic payments |
 | `INVOICE_ISSUED`, `INVOICE_FAILED` | the issuer answers `ISSUED` or `REJECTED`, on issue, polling or webhook |
 | `CARD_BILL_CLOSED` | a card statement is read |
+| `UNUSUAL_PURCHASE` | daily cron: an expense of the last 3 days (not an installment or a preview) of at least R$ 200 is over 3 times the median of that merchant in the last 90 days (3 or more past charges), or of its category (5 or more); `transactionId`, `merchant`, `amount`, `usual`, `times`, `scope` (`MERCHANT` or `CATEGORY`), `day`. Once per transaction |
+| `SUBSCRIPTION_CHANGED` | daily cron: a confirmed or detected subscription (not dismissed) charged in the last 7 days costs over 5% more than the charge before (`change: PRICE_UP`, `previous`, `percent`), or was charged twice in the same month (`change: DUPLICATE`, `count`, `month`); `key`, `name`, `amount`, `transactionId`. Once per charge |
+| `CARD_BILL_ABOVE_AVERAGE` | daily cron: a card bill closed in the last 10 days is over 30% and R$ 100 above the average of the up to 6 bills before it (3 or more); `accountId`, `card`, `amount`, `average`, `percent`, `dueDate`. Once per bill |
+| `BANK_SYNC_STALE` | daily cron: a connection last synced over 48 hours ago, never synced, or in `LOGIN_ERROR`, `WAITING_USER_INPUT` or `OUTDATED`; `connectionId`, `institution`, `status`, `hours`, `lastSyncAt`. Once per last sync time |
+| `INVOICE_NOT_ISSUED` | daily cron: an active invoice template is past its day of the month and the month has no invoice of it issued or processing; `invoiceId` is the draft when one exists; `templateId`, `client`, `amount`, `day`, `competence`. Once per template and month |
 
 Each alert has a dedupe key, so a retried job or a second cron run on the
 same day never repeats it.

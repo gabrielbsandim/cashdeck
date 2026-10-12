@@ -1,5 +1,6 @@
 import 'package:cashdeck/features/automation/domain/automation.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
+import 'package:cashdeck/features/category_review/domain/category_review.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/home/domain/home_repository.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
@@ -26,3 +27,6 @@ final class MockInsightsRepository extends Mock implements InsightsRepository;
 
 final class MockPixContactsRepository extends Mock
     implements PixContactsRepository;
+
+final class MockCategoryReviewRepository extends Mock
+    implements CategoryReviewRepository;

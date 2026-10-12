@@ -2922,5 +2922,246 @@
       }
     }
   },
-  "netWorthBarsSemantics": "Ativos e passivos ao fim de cada mês"
+  "netWorthBarsSemantics": "Ativos e passivos ao fim de cada mês",
+  "categoryReviewTitle": "Revisar categorias",
+  "categoryReviewPending": "{count, plural, =1{1 transação espera uma categoria} other{{count} transações esperam uma categoria}}",
+  "@categoryReviewPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryReviewDoneTitle": "Tudo categorizado!",
+  "categoryReviewDoneMessage": "Nenhuma transação espera revisão. As regras cuidam das próximas.",
+  "categoryReviewGroupsHeader": "Para revisar",
+  "categoryReviewSuggestionsHeader": "Sugestões de regra",
+  "categoryReviewTransactions": "{count, plural, =1{1 transação} other{{count} transações}}",
+  "@categoryReviewTransactions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryReviewLastOn": "{times} · última em {date}",
+  "@categoryReviewLastOn": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReviewReasonUncategorized": "Sem categoria",
+  "categoryReviewReasonLowConfidence": "Palpite da IA com {percent}% de confiança",
+  "@categoryReviewReasonLowConfidence": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReviewReasonUnsure": "Palpite da IA com pouca confiança",
+  "categoryReviewReasonInconsistent": "Diferente das outras do mesmo lugar",
+  "categoryReviewPickCategory": "Escolher categoria",
+  "categoryReviewAlwaysRule": "Sempre categorizar assim",
+  "categoryReviewAlwaysRuleHint": "Cria uma regra para \"{pattern}\"",
+  "@categoryReviewAlwaysRuleHint": {
+    "placeholders": {
+      "pattern": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReviewConfirm": "Confirmar",
+  "categoryReviewSkip": "Pular",
+  "categoryReviewSaved": "{count, plural, =1{1 transação categorizada.} other{{count} transações categorizadas.}}",
+  "@categoryReviewSaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryReviewSavedRule": "{count, plural, =1{1 transação categorizada e regra criada.} other{{count} transações categorizadas e regra criada.}}",
+  "@categoryReviewSavedRule": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryReviewSuggestionTitle": "Sempre {category} para {merchant}?",
+  "@categoryReviewSuggestionTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "merchant": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReviewSuggestionBody": "{count, plural, =1{Você escolheu essa categoria 1 vez.} other{Você escolheu essa categoria {count} vezes.}}",
+  "@categoryReviewSuggestionBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryReviewSuggestionAccept": "Criar regra",
+  "categoryReviewSuggestionDismiss": "Agora não",
+  "categoryReviewRuleCreated": "Regra criada.",
+  "categoryRulesTitle": "Regras de categoria",
+  "categoryRulesHint": "O que o app categoriza sozinho",
+  "categoryRulesEmptyTitle": "Nenhuma regra ainda",
+  "categoryRulesEmptyMessage": "Ao revisar categorias, deixe \"Sempre categorizar assim\" ligado para criar uma.",
+  "categoryRuleDocument": "Documento {document}",
+  "@categoryRuleDocument": {
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRuleAnyEntity": "Pessoal e empresa",
+  "categoryRuleIncoming": "Entradas",
+  "categoryRuleOutgoing": "Saídas",
+  "categoryRuleAnyDirection": "Entradas e saídas",
+  "categoryRuleEdit": "Editar regra",
+  "categoryRulePattern": "Texto que a descrição contém",
+  "categoryRulePatternMissing": "Escreva o texto da regra.",
+  "categoryRuleDocumentHint": "Hoje a regra reconhece o documento {document}.",
+  "@categoryRuleDocumentHint": {
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRuleSave": "Salvar regra",
+  "categoryRuleSaved": "Regra salva.",
+  "categoryRuleDelete": "Excluir regra",
+  "categoryRuleDeleteTitle": "Excluir esta regra?",
+  "categoryRuleDeleteMessage": "As transações que ela já categorizou continuam como estão.",
+  "categoryRuleDeleted": "Regra excluída.",
+  "alertKindUnusualPurchase": "Compra fora do padrão",
+  "alertKindSubscriptionChanged": "Assinatura mudou",
+  "alertKindCardBillAboveAverage": "Fatura acima da média",
+  "alertKindBankSyncStale": "Banco sem sincronizar",
+  "alertKindInvoiceNotIssued": "Nota não emitida",
+  "alertTextUnusualTitle": "Compra fora do padrão",
+  "alertTextUnusualBody": "{merchant} · {amount} em {day}, cerca de {times}x o habitual ({usual}).",
+  "@alertTextUnusualBody": {
+    "placeholders": {
+      "merchant": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "usual": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextSubscriptionUpTitle": "Assinatura ficou mais cara",
+  "alertTextSubscriptionUpBody": "{name} passou de {previous} para {amount} (+{percent}%).",
+  "@alertTextSubscriptionUpBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "previous": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextSubscriptionTwiceTitle": "Assinatura cobrada em dobro",
+  "alertTextSubscriptionTwiceBody": "{name} foi cobrada {count} vezes no mesmo mês ({amount} cada).",
+  "@alertTextSubscriptionTwiceBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextBillAboveTitle": "Fatura acima da média",
+  "alertTextBillAboveBody": "{card}: {amount}, {percent}% acima da média de {average}; vence em {dueDate}.",
+  "@alertTextBillAboveBody": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "average": {
+        "type": "String"
+      },
+      "dueDate": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextSyncStaleTitle": "Banco sem sincronizar",
+  "alertTextSyncStaleHoursBody": "{institution} não sincroniza há {hours} h; reconecte em Ajustes.",
+  "@alertTextSyncStaleHoursBody": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextSyncStaleBody": "{institution} precisa de atenção para voltar a sincronizar.",
+  "@alertTextSyncStaleBody": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextInvoiceMissingTitle": "Nota não emitida",
+  "alertTextInvoiceMissingBody": "A nota de {client} · {amount} costuma sair até {day} e ainda não foi emitida.",
+  "@alertTextInvoiceMissingBody": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  }
 }

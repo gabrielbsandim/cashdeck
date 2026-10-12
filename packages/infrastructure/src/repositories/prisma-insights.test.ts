@@ -94,6 +94,10 @@ describe('PrismaCategoryRepository', () => {
     ])
     await categories.saveRule(rule)
     expect(db.categoryRule.upsert.mock.calls[0]?.[0].create).toEqual(rule)
+    await categories.deleteRule(TENANT, 'r1')
+    expect(db.categoryRule.deleteMany.mock.calls[0]?.[0]).toEqual({
+      where: { tenantId: TENANT, id: 'r1' },
+    })
   })
 })
 

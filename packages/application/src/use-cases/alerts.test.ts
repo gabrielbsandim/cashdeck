@@ -91,6 +91,16 @@ describe('alert text', () => {
       source: 'DDA',
       job: 'capture',
       error: 'Error: boom',
+      merchant: 'Store',
+      usual: 'R$ 1,00',
+      times: '3',
+      day: '05/10',
+      name: 'Streaming',
+      previous: 'R$ 1,00',
+      percent: '10',
+      average: 'R$ 1,00',
+      institution: 'Bank',
+      hours: '50',
     }
     for (const type of ALERT_TYPES) {
       for (const text of [
@@ -259,6 +269,7 @@ describe('alert emitter', () => {
         },
         data: expect.objectContaining({
           alertId: 'a_1',
+          alertType: 'BILL_DUE_SOON',
           billId: 'b1',
           entityId: 'pf',
         }),

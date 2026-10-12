@@ -5,6 +5,8 @@ import 'package:cashdeck/core/push/push_messaging.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/features/alerts/alerts_providers.dart';
+import 'package:cashdeck/features/alerts/domain/app_alert.dart';
+import 'package:cashdeck/features/alerts/presentation/alert_destination.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/foundation.dart';
@@ -12,11 +14,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Where tapping [message] leads: its bill, or the inbox.
-String pushLocation(PushMessage message) {
-  final billId = message.billId;
-  return billId == null ? AppRoutes.alerts : AppRoutes.bill(billId);
-}
+/// Where tapping [message] leads: the screen its alert is about, its bill,
+/// or the inbox.
+String pushLocation(PushMessage message) =>
+    alertDestination(
+      AlertKind.fromWire(message.data['alertType'] ?? ''),
+      message.data,
+      billId: message.billId,
+    ) ??
+    AppRoutes.alerts;
 
 String pushPlatformOf(TargetPlatform platform) => switch (platform) {
   TargetPlatform.iOS || TargetPlatform.macOS => 'IOS',

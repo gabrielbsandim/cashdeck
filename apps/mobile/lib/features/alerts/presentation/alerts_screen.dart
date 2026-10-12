@@ -13,6 +13,7 @@ import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
+import 'package:cashdeck/features/alerts/presentation/alert_destination.dart';
 import 'package:cashdeck/features/alerts/presentation/alert_labels.dart';
 import 'package:cashdeck/features/alerts/presentation/alerts_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -79,9 +80,13 @@ class AlertsScreen extends ConsumerWidget {
                   alert: alert,
                   onTap: () async {
                     await report(controller.markRead(alert.id));
-                    final billId = alert.billId;
-                    if (billId == null || !context.mounted) return;
-                    context.go(AppRoutes.bill(billId));
+                    final target = alertDestination(
+                      alert.kind,
+                      alert.data,
+                      billId: alert.billId,
+                    );
+                    if (target == null || !context.mounted) return;
+                    context.go(target);
                   },
                 ),
               if (value.nextCursor != null)
