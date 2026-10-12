@@ -11,6 +11,7 @@ abstract final class AppRoutes {
   static const unlock = '/unlock';
   static const sharedFile = '/shared-file';
   static const balances = '$home/balances';
+  static const netWorth = '$home/net-worth';
   static const alerts = '/alerts';
   static const alertSettings = '$alerts/settings';
   static const pasteCode = '/paste-code';

@@ -33,6 +33,7 @@ import 'package:cashdeck/features/investments/presentation/investment_detail_scr
 import 'package:cashdeck/features/investments/presentation/investments_screen.dart';
 import 'package:cashdeck/features/invoices/presentation/invoice_issuer_setup_screen.dart';
 import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_screen.dart';
+import 'package:cashdeck/features/outlook/presentation/net_worth_screen.dart';
 import 'package:cashdeck/features/payroll/presentation/payroll_input_screen.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_screen.dart';
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
@@ -318,6 +319,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _page(
               _below(AppRoutes.balances, AppRoutes.home),
               const BalancesScreen(),
+            ),
+            _page(
+              _below(AppRoutes.netWorth, AppRoutes.home),
+              const NetWorthScreen(),
             ),
           ]),
           _tab(AppRoutes.transactions, const TransactionsScreen(), [

@@ -21,6 +21,7 @@ import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/features/home/presentation/personal_home.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
+import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,8 @@ class HomeScreen extends ConsumerWidget {
     installmentsProvider,
     subscriptionsControllerProvider,
     automationControllerProvider,
+    safeToSpendProvider,
+    netWorthProvider,
   ];
 
   @override

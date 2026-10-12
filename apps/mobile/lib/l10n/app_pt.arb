@@ -2817,5 +2817,110 @@
   "deviceSessionsLastUsed": "Último uso",
   "deviceSessionsRevoke": "Desconectar",
   "deviceSessionsRevoked": "Dispositivo desconectado",
-  "resumeAutomationReason": "Retomar os pagamentos automáticos"
+  "resumeAutomationReason": "Retomar os pagamentos automáticos",
+  "safeToSpendTitle": "Livre para gastar hoje",
+  "safeToSpendPerDay": "por dia até {date}",
+  "@safeToSpendPerDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendTotal": "{amount} livres em {days, plural, =1{1 dia} other{{days} dias}}",
+  "@safeToSpendTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "safeToSpendIncome": "Próxima entrada: {amount} em {date}",
+  "@safeToSpendIncome": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendNoIncome": "Sem entrada prevista: a conta vai até o fim do mês",
+  "safeToSpendShort": "Sem folga até {date}",
+  "@safeToSpendShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendShortBy": "Faltam {amount} para cobrir o que vence",
+  "@safeToSpendShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendBreakdownTitle": "Como chegamos nesse valor",
+  "safeToSpendCash": "Saldo em conta corrente",
+  "safeToSpendLineBill": "Conta",
+  "safeToSpendLineFixed": "Gasto fixo",
+  "safeToSpendLineSubscription": "Assinatura",
+  "safeToSpendLineCard": "Fatura do cartão",
+  "safeToSpendLineReserve": "Coberto pela reserva",
+  "safeToSpendLineDue": "{kind} · vence {date}",
+  "@safeToSpendLineDue": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendFree": "Livre até {date}",
+  "@safeToSpendFree": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "netWorthTitle": "Patrimônio",
+  "netWorthFromLastMonth": "vs. mês passado",
+  "netWorthFromYearAgo": "vs. 12 meses atrás",
+  "netWorthPeriodSix": "6m",
+  "netWorthPeriodTwelve": "12m",
+  "netWorthAssets": "Ativos",
+  "netWorthLiabilities": "Passivos",
+  "netWorthCash": "Caixa",
+  "netWorthInvestments": "Investimentos",
+  "netWorthCardDebt": "Cartões",
+  "netWorthCompositionTitle": "Composição",
+  "netWorthNet": "líquido",
+  "netWorthHistoryTitle": "Ativos e passivos",
+  "netWorthEmpty": "Ainda sem patrimônio",
+  "netWorthEmptyMessage": "Conecte contas e investimentos para acompanhar seu patrimônio.",
+  "netWorthHistoryHint": "Os meses passados refazem os saldos pelas transações e usam o último valor conhecido de cada investimento.",
+  "netWorthChartSemantics": "Patrimônio de {start} em {from} para {end} hoje",
+  "@netWorthChartSemantics": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "netWorthBarsSemantics": "Ativos e passivos ao fim de cada mês"
 }

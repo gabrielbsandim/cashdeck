@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/personal/safe-to-spend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the person can spend each day until the next income */
+        get: operations["getSafeToSpend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/net-worth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Net worth now, its change and its month-end history */
+        get: operations["getNetWorth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/personal/funding/items": {
         parameters: {
             query?: never;
@@ -2180,6 +2214,199 @@ export interface operations {
                                     currency: string;
                                 };
                             } | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getSafeToSpend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the person can spend each day until the next income */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            cash: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            total: {
+                                cents: number;
+                                currency: string;
+                            };
+                            daily: {
+                                cents: number;
+                                currency: string;
+                            };
+                            days: number;
+                            until: string;
+                            income: {
+                                on: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
+                            shortBy: {
+                                cents: number;
+                                currency: string;
+                            };
+                            lines: {
+                                /** @enum {string} */
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "RESERVE";
+                                label: string;
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                on: string | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getNetWorth: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Net worth now, its change and its month-end history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            current: {
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                investments: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                cardDebt: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                assets: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                liabilities: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            fromLastMonth: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            fromYearAgo: {
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                percent: number | null;
+                            };
+                            entities: {
+                                /** @enum {string} */
+                                kind: "PF" | "PJ";
+                                current: {
+                                    cash: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    investments: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    cardDebt: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    assets: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    liabilities: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                };
+                            }[];
+                            series: {
+                                on: string;
+                                assets: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                liabilities: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
                         };
                     };
                 };

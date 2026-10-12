@@ -23,6 +23,8 @@ import 'package:cashdeck/features/home/presentation/home_investments_card.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
+import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
+import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,10 +62,12 @@ class PersonalHome extends ConsumerWidget {
             const InstitutionBar(),
           ],
         ),
+        const SafeToSpendCard(),
         if (summary.reserve case final reserve?)
           _ReserveCard(reserve: reserve, today: today),
         const HomeFundingCard(),
         const HomeInvestmentsCard(),
+        const NetWorthCard(),
         const HomeSpendCard(),
         const HomeCategoryCard(),
         const HomeFlowCard(),
