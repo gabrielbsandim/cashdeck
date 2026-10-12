@@ -4,6 +4,7 @@ import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/widgets/charts/cd_chart_scrub.dart';
 import 'package:flutter/material.dart';
 
 final class CdBarGroup {
@@ -15,6 +16,7 @@ final class CdBarGroup {
 }
 
 /// Income against expense per period, two bars a group, with a legend.
+/// With [groupLabel], dragging across reads each group.
 class CdBarChart extends StatelessWidget {
   const new({
     required this.groups,
@@ -22,6 +24,7 @@ class CdBarChart extends StatelessWidget {
     required this.expenseLabel,
     required this.semanticsLabel,
     this.height = 120,
+    this.groupLabel,
     super.key,
   });
 
@@ -30,6 +33,9 @@ class CdBarChart extends StatelessWidget {
   final String expenseLabel;
   final String semanticsLabel;
   final double height;
+
+  /// The period and both values of group `index`, for the scrub tooltip.
+  final String Function(int index)? groupLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +75,26 @@ class CdBarChart extends StatelessWidget {
         Text(label, style: caption),
       ],
     );
+    final groupLabel = this.groupLabel;
+    final bars = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final group in groups)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  bar(group.income, money.income),
+                  const SizedBox(width: 2),
+                  bar(group.expense, money.expense),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
     return Semantics(
       label: semanticsLabel,
       excludeSemantics: true,
@@ -77,25 +103,16 @@ class CdBarChart extends StatelessWidget {
         children: [
           SizedBox(
             height: height,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final group in groups)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          bar(group.income, money.income),
-                          const SizedBox(width: 2),
-                          bar(group.expense, money.expense),
-                        ],
-                      ),
-                    ),
+            child: groupLabel == null
+                ? bars
+                : CdChartScrub(
+                    count: groups.length,
+                    labelOf: groupLabel,
+                    dot: false,
+                    pointOf: (index, size) =>
+                        Offset((index + 0.5) * size.width / groups.length, 0),
+                    child: bars,
                   ),
-              ],
-            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(

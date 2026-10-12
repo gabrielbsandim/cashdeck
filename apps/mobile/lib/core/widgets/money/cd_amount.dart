@@ -7,6 +7,7 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/feedback/tone_icon.dart';
+import 'package:cashdeck/core/widgets/money/cd_count_up.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,7 @@ class CdAmount extends ConsumerWidget {
     this.showIcon = false,
     this.color,
     this.textAlign = TextAlign.end,
+    this.countUp = false,
     super.key,
   });
 
@@ -42,6 +44,10 @@ class CdAmount extends ConsumerWidget {
   /// Overrides the kind's color, for chart totals and inverse surfaces.
   final Color? color;
   final TextAlign textAlign;
+
+  /// Counts to [value] instead of jumping, for headline figures. A hidden
+  /// amount never counts: the mask would only flicker.
+  final bool countUp;
 
   static TextStyle styleOf(CdAmountSize size) => switch (size) {
     CdAmountSize.xl => AppTextStyles.amountXl,
@@ -77,14 +83,17 @@ class CdAmount extends ConsumerWidget {
         color ??
         (tone == null ? palette.onSurface : money.tone(tone).foreground);
     final style = styleOf(size).copyWith(color: foreground);
-    final text = Text(
-      MoneyFormat.format(_signed, hide: hide, sign: signOf(kind)),
+    Text textOf(Money amount) => Text(
+      MoneyFormat.format(amount, hide: hide, sign: signOf(kind)),
       style: style,
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.fade,
       textAlign: textAlign,
     );
+    final text = countUp && !hide
+        ? CdCountUp(value: _signed, builder: textOf)
+        : textOf(_signed);
     final converted = this.converted;
     final main = showIcon && tone != null
         ? Row(

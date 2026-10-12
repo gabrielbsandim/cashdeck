@@ -65,6 +65,7 @@ class _Invested extends StatelessWidget {
           performance.end,
           size: CdAmountSize.lg,
           textAlign: TextAlign.start,
+          countUp: true,
         ),
         if (percent != null) ...[
           const SizedBox(height: AppSpacing.xs),

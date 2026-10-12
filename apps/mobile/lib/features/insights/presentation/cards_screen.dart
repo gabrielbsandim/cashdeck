@@ -15,11 +15,13 @@ import 'package:cashdeck/core/widgets/inputs/cd_filter_chip.dart';
 import 'package:cashdeck/core/widgets/insights/cd_column_bars.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/insights/cd_progress_ring.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
@@ -64,12 +66,12 @@ class CardsScreen extends ConsumerWidget {
           ),
         ),
         body: switch (accounts) {
-          AsyncData(:final value) => _cardsOf(l10n, value),
+          AsyncValue(:final value?, hasError: false) => _cardsOf(l10n, value),
           AsyncError(:final error) => CdErrorState(
             failure: failureOf(error),
             onRetry: () => ref.invalidate(transactionAccountsProvider),
           ),
-          _ => const CdSkeleton(),
+          _ => const CdSkeleton(parts: _skeleton),
         },
       ),
     );
@@ -95,6 +97,12 @@ class CardsScreen extends ConsumerWidget {
     );
   }
 }
+
+const List<Widget> _skeleton = [
+  CdSkeletonChips(count: 2),
+  CdSkeletonCard(height: 280),
+  CdSkeletonRows(count: 3),
+];
 
 String _cardName(TransactionAccount card) {
   final suffix = card.numberSuffix;
@@ -123,18 +131,22 @@ class _BillsState extends ConsumerState<_Bills> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return switch (ref.watch(cardBillsProvider)) {
-      AsyncData(:final value) when value.isEmpty => ListView(
-        padding: _listPadding,
-        children: [
-          CdEmptyState(
-            icon: Symbols.receipt_long_rounded,
-            title: l10n.cardsBills,
-            message: l10n.cardsNoBills,
+      AsyncValue(:final value?, hasError: false) when value.isEmpty =>
+        CdRefresh(
+          providers: [cardBillsProvider],
+          child: ListView(
+            padding: _listPadding,
+            children: [
+              CdEmptyState(
+                icon: Symbols.receipt_long_rounded,
+                title: l10n.cardsBills,
+                message: l10n.cardsNoBills,
+              ),
+              const _ImportLink(),
+            ],
           ),
-          const _ImportLink(),
-        ],
-      ),
-      AsyncData(:final value) => _billsOf(
+        ),
+      AsyncValue(:final value?, hasError: false) => _billsOf(
         context,
         value[_card.clamp(0, value.length - 1)],
         value,
@@ -143,7 +155,7 @@ class _BillsState extends ConsumerState<_Bills> {
         failure: failureOf(error),
         onRetry: () => ref.invalidate(cardBillsProvider),
       ),
-      _ => const CdSkeleton(),
+      _ => const CdSkeleton(parts: _skeleton),
     };
   }
 
@@ -152,50 +164,57 @@ class _BillsState extends ConsumerState<_Bills> {
     final palette = context.palette;
     final index = _bill ?? card.focus;
     final bill = index == null ? null : card.bills[index];
-    return ListView(
-      padding: _listPadding,
-      children: [
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            for (final (position, item) in cards.indexed)
-              CdFilterChip(
-                key: CardsScreen.cardKey(item.accountId),
-                label: _billCardName(item),
-                selected: position == _card,
-                onTap: () => setState(() {
-                  _card = position;
-                  _bill = null;
-                }),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        if (bill == null || index == null)
-          Text(
-            l10n.cardsNoBills,
-            style: AppTextStyles.bodyMd.copyWith(
-              color: palette.onSurfaceVariant,
-            ),
-          )
-        else ...[
-          _BillCard(
-            card: card,
-            bill: bill,
-            selected: index,
-            onSelect: (picked) => setState(() => _bill = picked),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          CdSectionHeader(title: l10n.cardsCharges, small: true),
-          const SizedBox(height: AppSpacing.xs),
-          CardBillCharges(
-            charges: (accountId: card.accountId, range: bill.range),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.md),
-        const _ImportLink(),
+    return CdRefresh(
+      providers: [
+        cardBillsProvider,
+        if (bill != null)
+          billChargesProvider((accountId: card.accountId, range: bill.range)),
       ],
+      child: ListView(
+        padding: _listPadding,
+        children: [
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final (position, item) in cards.indexed)
+                CdFilterChip(
+                  key: CardsScreen.cardKey(item.accountId),
+                  label: _billCardName(item),
+                  selected: position == _card,
+                  onTap: () => setState(() {
+                    _card = position;
+                    _bill = null;
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (bill == null || index == null)
+            Text(
+              l10n.cardsNoBills,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: palette.onSurfaceVariant,
+              ),
+            )
+          else ...[
+            _BillCard(
+              card: card,
+              bill: bill,
+              selected: index,
+              onSelect: (picked) => setState(() => _bill = picked),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            CdSectionHeader(title: l10n.cardsCharges, small: true),
+            const SizedBox(height: AppSpacing.xs),
+            CardBillCharges(
+              charges: (accountId: card.accountId, range: bill.range),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          const _ImportLink(),
+        ],
+      ),
     );
   }
 }
@@ -253,7 +272,7 @@ class _BillCard extends ConsumerWidget {
     final muted = AppTextStyles.bodyMd.copyWith(
       color: palette.onSurfaceVariant,
     );
-    return CdInsightCard(
+    final content = CdInsightCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -268,6 +287,7 @@ class _BillCard extends ConsumerWidget {
             bill.total,
             size: CdAmountSize.lg,
             textAlign: TextAlign.start,
+            countUp: true,
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
@@ -330,6 +350,10 @@ class _BillCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+    return CdExpandHero(
+      tag: CdExpandHero.tagOf('card', card.accountId),
+      child: content,
     );
   }
 }
@@ -447,59 +471,63 @@ class _Limits extends ConsumerWidget {
     final limit = lines.fold(0, (sum, line) => sum + line.limit.cents);
     final used = lines.fold(0, (sum, line) => sum + line.used.cents);
     final percent = limit > 0 ? (used * 100 / limit).round() : 0;
-    return ListView(
-      padding: _listPadding,
-      children: [
-        if (lines.isNotEmpty)
-          CdInsightCard(
-            child: Row(
-              children: [
-                CdProgressRing(
-                  size: 96,
-                  stroke: 10,
-                  semanticsLabel: l10n.cardsLimitSemantics(percent),
-                  parts: [
-                    for (final (index, card) in cards.indexed)
-                      if (card.credit case final credit? when limit > 0)
-                        (credit.used.cents / limit, charts.at(index).fill),
-                  ],
-                  center: Text(
-                    l10n.insightsPercent(percent),
-                    style: AppTextStyles.titleMd.copyWith(
-                      color: palette.onSurface,
+    return CdRefresh(
+      providers: [transactionAccountsProvider],
+      child: ListView(
+        padding: _listPadding,
+        children: [
+          if (lines.isNotEmpty)
+            CdInsightCard(
+              child: Row(
+                children: [
+                  CdProgressRing(
+                    size: 96,
+                    stroke: 10,
+                    semanticsLabel: l10n.cardsLimitSemantics(percent),
+                    parts: [
+                      for (final (index, card) in cards.indexed)
+                        if (card.credit case final credit? when limit > 0)
+                          (credit.used.cents / limit, charts.at(index).fill),
+                    ],
+                    center: Text(
+                      l10n.insightsPercent(percent),
+                      style: AppTextStyles.titleMd.copyWith(
+                        color: palette.onSurface,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CdAmount(
-                        Money(used),
-                        size: CdAmountSize.lg,
-                        textAlign: TextAlign.start,
-                      ),
-                      Text(
-                        l10n.cardsUsedOfTotal,
-                        style: AppTextStyles.bodyMd.copyWith(
-                          color: palette.onSurfaceVariant,
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CdAmount(
+                          Money(used),
+                          size: CdAmountSize.lg,
+                          textAlign: TextAlign.start,
+                          countUp: true,
                         ),
-                      ),
-                    ],
+                        Text(
+                          l10n.cardsUsedOfTotal,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: palette.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        for (final (index, card) in cards.indexed) ...[
-          const SizedBox(height: AppSpacing.md),
-          CdInsightCard(
-            title: _cardName(card),
-            child: _limitOf(context, l10n, card, index, hide: hide),
-          ),
+          for (final (index, card) in cards.indexed) ...[
+            const SizedBox(height: AppSpacing.md),
+            CdInsightCard(
+              title: _cardName(card),
+              child: _limitOf(context, l10n, card, index, hide: hide),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 

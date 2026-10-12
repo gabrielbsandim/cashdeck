@@ -7,11 +7,12 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/widgets/money/cd_amount.dart';
+import 'package:cashdeck/core/widgets/money/cd_count_up.dart';
 import 'package:cashdeck/features/investments/presentation/investment_performance.dart';
 import 'package:cashdeck/features/outlook/data/fake_outlook_repository.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 import 'package:cashdeck/features/outlook/outlook_providers.dart';
-import 'package:cashdeck/features/outlook/presentation/count_up_amount.dart';
 import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -36,7 +37,7 @@ void main() {
 
     expect(find.byKey(SafeToSpendCard.cardKey), findsOneWidget);
     expect(_inCard(find.text(l10n.safeToSpendTitle)), findsOneWidget);
-    expect(_inCard(find.byType(CountUpAmount)), findsOneWidget);
+    expect(_inCard(find.byType(CdCountUp)), findsOneWidget);
     expect(_inCard(find.text(_brl(20_947))), findsOneWidget);
     expect(_inCard(find.text(l10n.safeToSpendPerDay('20/10'))), findsOneWidget);
     expect(
@@ -50,7 +51,7 @@ void main() {
   });
 
   testWidgets('the count starts low and lands on the amount', (tester) async {
-    await tester.pumpApp(const CountUpAmount(Money(10_000)));
+    await tester.pumpApp(const CdAmount(Money(10_000), countUp: true));
     await tester.pump(const Duration(milliseconds: 16));
     expect(find.text(_brl(10_000)), findsNothing);
 
@@ -106,7 +107,7 @@ void main() {
       findsOneWidget,
     );
     expect(_inCard(find.text(l10n.safeToSpendNoIncome)), findsOneWidget);
-    expect(_inCard(find.byType(CountUpAmount)), findsNothing);
+    expect(_inCard(find.byType(CdCountUp)), findsNothing);
 
     await tester.tap(_inCard(find.text(l10n.safeToSpendNoIncome)));
     await settle(tester);

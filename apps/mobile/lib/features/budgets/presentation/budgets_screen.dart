@@ -15,6 +15,7 @@ import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_budget_bar.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/budgets/domain/budget.dart';
 import 'package:cashdeck/features/budgets/presentation/budget_labels.dart';
@@ -85,15 +86,15 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 month: value,
                 onSuggest: () => openBudgetSuggestions(context, _month),
               ),
-              AsyncData(:final value) => _MonthList(
-                month: value,
-                onCopy: _copy,
+              AsyncData(:final value) => CdRefresh(
+                providers: [provider],
+                child: _MonthList(month: value, onCopy: _copy),
               ),
               AsyncError(:final error) => CdErrorState(
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(provider),
               ),
-              _ => const CdSkeleton(),
+              _ => const CdSkeleton(parts: [CdSkeletonCards(count: 4)]),
             },
           ),
         ],

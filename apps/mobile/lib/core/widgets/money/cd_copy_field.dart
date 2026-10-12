@@ -5,6 +5,7 @@ import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,7 +46,7 @@ class _CdCopyFieldState extends State<CdCopyField> {
 
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: widget.code));
-    await HapticFeedback.selectionClick();
+    CdHaptics.selection();
     if (!mounted) return;
     setState(() => _copied = true);
     _reset?.cancel();

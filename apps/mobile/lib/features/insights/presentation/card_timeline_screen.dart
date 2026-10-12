@@ -10,6 +10,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_filter_chip.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/money/cd_transaction_row.dart';
@@ -67,19 +68,28 @@ class CardTimelineScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: switch (timeline) {
-        AsyncData(:final value) when value.bills.isEmpty => CdEmptyState(
-          icon: Symbols.receipt_long_rounded,
-          title: l10n.cardsBills,
-          message: l10n.cardsNoBills,
-        ),
-        AsyncData(:final value) => _Timeline(timeline: value),
-        AsyncError(:final error) => CdErrorState(
-          failure: failureOf(error),
-          onRetry: () => ref.invalidate(cardTimelineProvider(accountId)),
-        ),
-        _ => const CdSkeleton(),
-      },
+      body: CdExpandHero(
+        tag: CdExpandHero.tagOf('card', accountId),
+        child: switch (timeline) {
+          AsyncData(:final value) when value.bills.isEmpty => CdEmptyState(
+            icon: Symbols.receipt_long_rounded,
+            title: l10n.cardsBills,
+            message: l10n.cardsNoBills,
+          ),
+          AsyncData(:final value) => _Timeline(timeline: value),
+          AsyncError(:final error) => CdErrorState(
+            failure: failureOf(error),
+            onRetry: () => ref.invalidate(cardTimelineProvider(accountId)),
+          ),
+          _ => const CdSkeleton(
+            parts: [
+              CdSkeletonChips(count: 4),
+              CdSkeletonCard(height: 200),
+              CdSkeletonRows(count: 3),
+            ],
+          ),
+        },
+      ),
     );
   }
 }
@@ -309,6 +319,7 @@ class _BillSummary extends ConsumerWidget {
             bill.total,
             size: CdAmountSize.lg,
             textAlign: TextAlign.start,
+            countUp: true,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(dates, style: muted),

@@ -2,6 +2,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -42,13 +43,17 @@ Future<SnackBarClosedReason> showCdToast(
       .closed;
 }
 
-/// [success] when [failure] is null, the failure's message otherwise.
+/// [success] when [failure] is null, the failure's message otherwise, with
+/// the matching vibration.
 Future<SnackBarClosedReason> showOutcomeToast(
   BuildContext context,
   AppFailure? failure, {
   required String success,
-}) => showCdToast(
-  context,
-  icon: failure == null ? Symbols.task_alt_rounded : Symbols.error_rounded,
-  message: failure?.userMessage(AppLocalizations.of(context)) ?? success,
-);
+}) {
+  CdHaptics.outcome(failure);
+  return showCdToast(
+    context,
+    icon: failure == null ? Symbols.task_alt_rounded : Symbols.error_rounded,
+    message: failure?.userMessage(AppLocalizations.of(context)) ?? success,
+  );
+}

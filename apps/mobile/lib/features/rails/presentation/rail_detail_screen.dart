@@ -8,6 +8,7 @@ import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_filter_chip.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
@@ -67,6 +68,7 @@ class _RailDetailScreenState extends ConsumerState<RailDetailScreen> {
 
   Future<void> _remove() async {
     final l10n = AppLocalizations.of(context);
+    CdHaptics.warning();
     final result = await ref
         .read(railsRepositoryProvider)
         .remove(widget.railId);

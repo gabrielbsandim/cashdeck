@@ -5,16 +5,15 @@ import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/features/investments/presentation/investment_performance.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
-import 'package:cashdeck/features/outlook/presentation/count_up_amount.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The one number up top: what can be spent each day until the next income
@@ -48,7 +47,7 @@ class SafeToSpendCard extends ConsumerWidget {
   }
 
   void _openBreakdown(BuildContext context, SafeToSpend free) {
-    unawaited(HapticFeedback.selectionClick());
+    CdHaptics.selection();
     unawaited(
       showCdBottomSheet<void>(
         context,
@@ -88,7 +87,12 @@ class _Free extends StatelessWidget {
             style: muted,
           ),
         ] else ...[
-          CountUpAmount(free.daily),
+          CdAmount(
+            free.daily,
+            size: CdAmountSize.xl,
+            textAlign: TextAlign.start,
+            countUp: true,
+          ),
           Text(l10n.safeToSpendPerDay(until), style: muted),
           const SizedBox(height: AppSpacing.xs),
           CdPrivateText(

@@ -1387,5 +1387,8 @@
   "alertTextSyncStaleHoursBody": "{institution} has not synced for {hours} h; reconnect it in Settings.",
   "alertTextSyncStaleBody": "{institution} needs attention to sync again.",
   "alertTextInvoiceMissingTitle": "Invoice not issued",
-  "alertTextInvoiceMissingBody": "The invoice to {client} · {amount} usually goes out by {day} and was not issued yet."
+  "alertTextInvoiceMissingBody": "The invoice to {client} · {amount} usually goes out by {day} and was not issued yet.",
+  "approvalPaidToast": "The bank confirmed and the bill is paid.",
+  "approvalPendingToast": "The bank has not confirmed yet. The bill updates on its own once it does.",
+  "approvalUpdatedToast": "The bill was updated with the bank answer."
 }

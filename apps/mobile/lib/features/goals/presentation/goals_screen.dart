@@ -6,8 +6,10 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/goals/domain/goal.dart';
 import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
@@ -45,30 +47,34 @@ class GoalsScreen extends ConsumerWidget {
         label: Text(l10n.goalNew),
       ),
       body: switch (goals) {
-        AsyncData(:final value) when value.isEmpty => CdEmptyState(
-          icon: Symbols.flag_rounded,
-          title: l10n.goalsEmptyTitle,
-          message: l10n.goalsEmptyMessage,
-        ),
-        AsyncData(:final value) => ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenGutter,
-            AppSpacing.sm,
-            AppSpacing.screenGutter,
-            96,
+        AsyncValue(:final value?, hasError: false) when value.isEmpty =>
+          CdEmptyState(
+            icon: Symbols.flag_rounded,
+            title: l10n.goalsEmptyTitle,
+            message: l10n.goalsEmptyMessage,
           ),
-          children: [
-            for (final goal in value) ...[
-              _GoalTile(key: tileKey(goal.id), goal: goal),
-              const SizedBox(height: AppSpacing.md),
+        AsyncValue(:final value?, hasError: false) => CdRefresh(
+          providers: [goalsControllerProvider],
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.sm,
+              AppSpacing.screenGutter,
+              96,
+            ),
+            children: [
+              for (final goal in value) ...[
+                _GoalTile(key: tileKey(goal.id), goal: goal),
+                const SizedBox(height: AppSpacing.md),
+              ],
             ],
-          ],
+          ),
         ),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(goalsControllerProvider),
         ),
-        _ => const CdSkeleton(),
+        _ => const CdSkeleton(parts: [CdSkeletonCards(height: 96)]),
       },
     );
   }
@@ -88,7 +94,7 @@ class _GoalTile extends ConsumerWidget {
       color: palette.onSurfaceVariant,
     );
     final required = goalRequiredLine(l10n, goal, hide: hide);
-    return CdCard(
+    final card = CdCard(
       onTap: () => context.push(AppRoutes.goal(goal.id)),
       child: Row(
         children: [
@@ -122,5 +128,9 @@ class _GoalTile extends ConsumerWidget {
         ],
       ),
     );
+    return CdExpandHero(tag: goalHeroTag(goal.id), child: card);
   }
 }
+
+/// The tile that grows into the goal's screen.
+String goalHeroTag(String id) => CdExpandHero.tagOf('goal', id);

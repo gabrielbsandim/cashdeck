@@ -47,12 +47,12 @@ chosen in Ajustes and held in `displayPreferencesProvider`.
 | ---------- | ---------- |
 | `brand`    | `CdMark` |
 | `buttons`  | `CdButton` (`filled`, `tonal`, `outlined`, `text`, `danger`; `dense`, `loading`, `expand`) |
-| `charts`   | `CdLineChart`, `CdBarChart`, `CdDonut` |
-| `feedback` | `CdStatusBadge`, `CdInlineBanner`, `showCdToast` and `showOutcomeToast`, `ToneIcon` |
+| `charts`   | `CdLineChart`, `CdBarChart`, `CdDonut`, `CdChartScrub` (drag or tap a chart to read a point) |
+| `feedback` | `CdStatusBadge`, `CdInlineBanner`, `showCdToast` and `showOutcomeToast`, `ToneIcon`, `CdHaptics` (every vibration goes through it) |
 | `inputs`   | `CdTextField`, `CdCurrencyInput`, `CdSearchField`, `CdSegmented`, `CdFilterChip`, `CdCheckboxRow` |
-| `layout`   | `CdCard`, `CdListRow`, `CdSectionHeader`, `CdKeyValueRow`, `CdIconTile`, `CdEntityBadge`, `CdStepper`, `CdNavBar`, `showCdBottomSheet` |
-| `money`    | `CdAmount`, `CdAccountCard`, `CdBillCard`, `CdBudgetBar`, `CdTransactionRow`, `CdCopyField`, `CdPaymentLadder`, `CdConfirmSheet`, `PrivacyToggle` |
-| `states`   | `CdEmptyState`, `CdErrorState`, `CdRefresh`, `CdSkeleton`, `CdStateView`, `ComingSoon` |
+| `layout`   | `CdCard`, `CdListRow`, `CdSectionHeader`, `CdKeyValueRow`, `CdIconTile`, `CdEntityBadge`, `CdStepper`, `CdNavBar`, `showCdBottomSheet`, `CdExpandHero` (a card that grows into the screen it opens) |
+| `money`    | `CdAmount` (`countUp` for headline figures), `CdCountUp`, `CdAccountCard`, `CdBillCard`, `CdBudgetBar`, `CdTransactionRow`, `CdCopyField`, `CdPaymentLadder`, `CdConfirmSheet`, `PrivacyToggle` |
+| `states`   | `CdEmptyState`, `CdErrorState`, `CdRefresh`, `CdSkeleton` (shaped per screen from `CdSkeletonHeadline`, `CdSkeletonCard`, `CdSkeletonCards`, `CdSkeletonTiles`, `CdSkeletonChips`, `CdSkeletonRows`), `CdShimmer`, `CdStateView`, `ComingSoon` |
 
 Feature widgets: `EntitySwitcher` and `EntityKindBadge` (`features/entities`),
 `PaymentLadderView` (`features/bills`), and the three home layouts in

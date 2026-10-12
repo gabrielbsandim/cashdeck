@@ -9,12 +9,14 @@ import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_currency_input.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
@@ -25,6 +27,7 @@ import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
 import 'package:cashdeck/features/goals/presentation/goal_labels.dart';
 import 'package:cashdeck/features/goals/presentation/goal_ring.dart';
 import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
+import 'package:cashdeck/features/goals/presentation/goals_screen.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,14 +84,17 @@ class GoalDetailScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: switch (goal) {
-        AsyncData(:final value) => _GoalBody(goal: value),
-        AsyncError(:final error) => CdErrorState(
-          failure: failureOf(error),
-          onRetry: () => ref.invalidate(provider),
-        ),
-        _ => const CdSkeleton(),
-      },
+      body: CdExpandHero(
+        tag: goalHeroTag(goalId),
+        child: switch (goal) {
+          AsyncData(:final value) => _GoalBody(goal: value),
+          AsyncError(:final error) => CdErrorState(
+            failure: failureOf(error),
+            onRetry: () => ref.invalidate(provider),
+          ),
+          _ => const CdSkeleton(),
+        },
+      ),
     );
   }
 
@@ -114,6 +120,7 @@ class GoalDetailScreen extends ConsumerWidget {
           builder: (_) => const _ConfirmDelete(),
         );
         if (confirmed != true || !context.mounted) return;
+        CdHaptics.warning();
         final failure = await controller.delete();
         if (!context.mounted) return;
         await _leaveOr(context, failure, l10n.goalDeleted);

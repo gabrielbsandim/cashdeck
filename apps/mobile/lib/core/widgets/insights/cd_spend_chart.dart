@@ -4,10 +4,12 @@ import 'package:cashdeck/core/theme/app_chart_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/widgets/charts/cd_chart_scrub.dart';
 import 'package:flutter/material.dart';
 
 /// Cumulative spending of this period over the dashed previous one, with a
 /// "today" marker on the last point. The line draws left to right once.
+/// With [pointLabel], dragging across reads each day of this period.
 class CdSpendChart extends StatelessWidget {
   const new({
     required this.current,
@@ -16,6 +18,7 @@ class CdSpendChart extends StatelessWidget {
     required this.todayLabel,
     required this.semanticsLabel,
     this.height = 120,
+    this.pointLabel,
     super.key,
   });
 
@@ -29,10 +32,14 @@ class CdSpendChart extends StatelessWidget {
   final String semanticsLabel;
   final double height;
 
+  /// The day and the spending so far at point `index` of [current].
+  final String Function(int index)? pointLabel;
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final charts = context.charts;
+    final pointLabel = this.pointLabel;
     final labelStyle = AppTextStyles.bodyMd.copyWith(
       fontSize: 12,
       color: palette.onSurfaceVariant,
@@ -45,24 +52,27 @@ class CdSpendChart extends StatelessWidget {
         children: [
           SizedBox(
             height: height,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: AppMotion.of(context, AppMotion.chartDraw),
-              curve: AppMotion.emphasizedDecelerate,
-              builder: (context, progress, _) => CustomPaint(
-                painter: SpendPainter(
-                  current: current,
-                  previous: previous,
-                  progress: progress,
-                  line: palette.primary,
-                  previousColor: charts.previous,
-                  today: charts.today,
-                  grid: charts.grid,
-                  ring: charts.card,
-                  todayLabel: todayLabel,
-                  labelStyle: labelStyle.copyWith(
-                    color: palette.onSurface,
-                    fontWeight: FontWeight.w600,
+            child: _scrubbable(
+              pointLabel,
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: AppMotion.of(context, AppMotion.chartDraw),
+                curve: AppMotion.emphasizedDecelerate,
+                builder: (context, progress, _) => CustomPaint(
+                  painter: SpendPainter(
+                    current: current,
+                    previous: previous,
+                    progress: progress,
+                    line: palette.primary,
+                    previousColor: charts.previous,
+                    today: charts.today,
+                    grid: charts.grid,
+                    ring: charts.card,
+                    todayLabel: todayLabel,
+                    labelStyle: labelStyle.copyWith(
+                      color: palette.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -77,6 +87,17 @@ class CdSpendChart extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _scrubbable(String Function(int)? pointLabel, Widget chart) {
+    if (pointLabel == null) return chart;
+    return CdChartScrub(
+      count: current.length,
+      labelOf: pointLabel,
+      pointOf: (index, size) =>
+          SpendPainter.pointOf(current, previous, index, size),
+      child: chart,
     );
   }
 }
@@ -105,6 +126,23 @@ class SpendPainter extends CustomPainter {
   final Color ring;
   final String todayLabel;
   final TextStyle labelStyle;
+
+  static const _labelHeight = 18.0;
+
+  /// Where day [index] of [current] sits, on the same scale as [paint].
+  static Offset pointOf(
+    List<double> current,
+    List<double> previous,
+    int index,
+    Size size,
+  ) {
+    final days = math.max(math.max(previous.length, current.length), 2);
+    final top = [...current, ...previous, 1.0].reduce(math.max);
+    return Offset(
+      index * size.width / (days - 1),
+      size.height - 4 - current[index] / top * (size.height - _labelHeight - 8),
+    );
+  }
 
   static void dashed(
     Canvas canvas,
@@ -137,7 +175,7 @@ class SpendPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final days = math.max(math.max(previous.length, current.length), 2);
     final top = [...current, ...previous, 1.0].reduce(math.max);
-    const labelHeight = 18.0;
+    const labelHeight = _labelHeight;
     double x(int day) => day * size.width / (days - 1);
     double y(double value) =>
         size.height - 4 - value / top * (size.height - labelHeight - 8);

@@ -138,7 +138,7 @@ class _ReserveCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          CdAmount(reserve.balance, textAlign: TextAlign.start),
+          CdAmount(reserve.balance, textAlign: TextAlign.start, countUp: true),
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
@@ -269,6 +269,9 @@ class _ForecastChart extends ConsumerWidget {
         middle.dayMonth,
         forecast.lastDate.dayMonth,
       ],
+      pointLabel: (index) =>
+          '${forecast.from.addDays(index).dayMonth} · '
+          '${MoneyFormat.format(forecast.balances[index], hide: hide)}',
       semanticsLabel: l10n.forecastSemantics(
         MoneyFormat.format(forecast.lowest, hide: hide),
         forecast.lowestDate.dayMonth,

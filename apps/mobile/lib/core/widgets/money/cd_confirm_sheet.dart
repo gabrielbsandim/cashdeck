@@ -6,6 +6,7 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
@@ -87,9 +88,11 @@ class _CdConfirmSheetState extends ConsumerState<CdConfirmSheet> {
         .authenticate(widget.title);
     if (!mounted) return;
     if (passed) {
+      CdHaptics.confirm();
       navigator.pop(true);
       return;
     }
+    CdHaptics.error();
     setState(() {
       _checking = false;
       _denied = true;

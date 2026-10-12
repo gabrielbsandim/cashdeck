@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cashdeck/core/error/load_failure.dart';
@@ -12,6 +11,7 @@ import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/charts/cd_bar_chart.dart';
 import 'package:cashdeck/core/widgets/charts/cd_donut.dart';
 import 'package:cashdeck/core/widgets/charts/cd_line_chart.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
@@ -23,12 +23,10 @@ import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/home/presentation/home_labels.dart';
 import 'package:cashdeck/features/outlook/domain/net_worth.dart';
-import 'package:cashdeck/features/outlook/presentation/count_up_amount.dart';
 import 'package:cashdeck/features/outlook/presentation/net_worth_card.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -86,7 +84,13 @@ class _History extends ConsumerWidget {
         AppSpacing.xxl,
       ),
       children: [
-        CountUpAmount(worth.current.total, key: NetWorthScreen.totalKey),
+        CdAmount(
+          worth.current.total,
+          key: NetWorthScreen.totalKey,
+          size: CdAmountSize.xl,
+          textAlign: TextAlign.start,
+          countUp: true,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
@@ -111,7 +115,7 @@ class _History extends ConsumerWidget {
           ],
           selected: period,
           onChanged: (chosen) {
-            unawaited(HapticFeedback.selectionClick());
+            CdHaptics.selection();
             ref.read(netWorthPeriodProvider.notifier).period = chosen;
           },
         ),
@@ -155,6 +159,11 @@ class _Curve extends ConsumerWidget {
       height: 160,
       values: [for (final point in worth.series) point.total.cents / 100],
       xLabels: [monthShort(context, first.on), l10n.relativeTodayTitle],
+      pointLabel: (index) {
+        final point = worth.series[index];
+        return '${point.on.dayMonth} · '
+            '${MoneyFormat.format(point.total, hide: hide)}';
+      },
       semanticsLabel: l10n.netWorthChartSemantics(
         MoneyFormat.format(first.total, hide: hide),
         monthShort(context, first.on),
@@ -164,14 +173,15 @@ class _Curve extends ConsumerWidget {
   }
 }
 
-class _Bars extends StatelessWidget {
+class _Bars extends ConsumerWidget {
   const new({required this.series});
 
   final List<NetWorthPoint> series;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final hide = ref.watch(hideAmountsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -188,6 +198,16 @@ class _Bars extends StatelessWidget {
           incomeLabel: l10n.netWorthAssets,
           expenseLabel: l10n.netWorthLiabilities,
           semanticsLabel: l10n.netWorthBarsSemantics,
+          groupLabel: (index) {
+            final point = series[index];
+            final assets = MoneyFormat.format(point.assets, hide: hide);
+            final debts = MoneyFormat.format(point.liabilities, hide: hide);
+            return [
+              monthShort(context, point.on),
+              '${l10n.netWorthAssets} $assets',
+              '${l10n.netWorthLiabilities} $debts',
+            ].join('\n');
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         Text(

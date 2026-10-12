@@ -2,6 +2,8 @@ import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
+import 'package:cashdeck/core/links/bank_app_links.dart';
+import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -11,6 +13,7 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_sheet.dart';
@@ -65,7 +68,7 @@ class BillDetailScreen extends ConsumerWidget {
         ],
       ),
       body: switch (bill) {
-        AsyncData(:final value) => _BillDetail(bill: value, today: today),
+        AsyncValue(:final value?) => _BillDetail(bill: value, today: today),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(billDetailControllerProvider(billId)),
@@ -79,6 +82,7 @@ class BillDetailScreen extends ConsumerWidget {
 Future<void> _markPaid(BuildContext context, WidgetRef ref, Bill bill) async {
   final l10n = AppLocalizations.of(context);
   final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+  CdHaptics.confirm();
   final undone = showCdToast(
     context,
     icon: Symbols.task_alt_rounded,
@@ -234,12 +238,58 @@ class _BillDetail extends ConsumerWidget {
     if (confirmed == null || !confirmed || !context.mounted) return;
     final failure = await notifier.pay(confirmed: confirmed);
     if (!context.mounted) return;
+    CdHaptics.outcome(failure);
     await showCdToast(
       context,
       icon: failure == null
           ? Symbols.check_circle_rounded
           : Symbols.error_rounded,
       message: failure?.userMessage(l10n) ?? l10n.billConfirmedToast,
+    );
+  }
+
+  /// The app of the bank that asked for the approval, named by the rail it
+  /// tried; the hint toast when no app answers.
+  Future<void> _openBank(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final rail = bill.attempts
+        .where((attempt) => attempt.step == LadderStep.bankApproval)
+        .lastOrNull
+        ?.rail;
+    final links = rail == null ? const <Uri>[] : bankAppLinks(rail);
+    final opened = await openFirst(ref.read(linkOpenerProvider), links);
+    if (opened || !context.mounted) return;
+    await showCdToast(
+      context,
+      icon: Symbols.open_in_new_rounded,
+      message: l10n.openBankToast,
+    );
+  }
+
+  /// Reloads the bill so an approval the server already heard about shows
+  /// at once; the server keeps checking with the bank on its own.
+  Future<void> _checkApproval(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    CdHaptics.confirm();
+    ref.invalidate(billsControllerProvider);
+    final Bill fresh;
+    try {
+      fresh = await ref.refresh(billDetailControllerProvider(bill.id).future);
+    } on LoadFailure catch (error) {
+      if (!context.mounted) return;
+      await showOutcomeToast(context, error.failure, success: '');
+      return;
+    }
+    if (!context.mounted) return;
+    await showOutcomeToast(
+      context,
+      null,
+      success: switch (fresh) {
+        _ when fresh.isSettled => l10n.approvalPaidToast,
+        _ when currentStepOf(fresh) == LadderStep.bankApproval =>
+          l10n.approvalPendingToast,
+        _ => l10n.approvalUpdatedToast,
+      },
     );
   }
 
@@ -394,16 +444,8 @@ class _BillDetail extends ConsumerWidget {
             actions: LadderActions(
               onMarkPaid: () => _markPaid(context, ref, bill),
               onReceipt: () => context.push(AppRoutes.billReceipt(bill.id)),
-              onOpenBank: () => showCdToast(
-                context,
-                icon: Symbols.open_in_new_rounded,
-                message: l10n.openBankToast,
-              ),
-              onApproved: () => showCdToast(
-                context,
-                icon: Symbols.sync_rounded,
-                message: l10n.approvalCheckToast,
-              ),
+              onOpenBank: () => _openBank(context, ref),
+              onApproved: () => _checkApproval(context, ref),
               onConfirm: () => _confirm(context, ref),
             ),
           ),

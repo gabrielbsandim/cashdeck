@@ -1,15 +1,13 @@
-import 'dart:async';
-
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
-import 'package:flutter/services.dart';
 
 /// A bill: what, when, how much, its status and where it is on the ladder.
 /// [action] replaces the ladder hint when the user has something to do.
@@ -192,7 +190,7 @@ class _CdPaidPopState extends State<CdPaidPop>
     _controller
       ..value = 0.6
       ..animateWith(SpringSimulation(AppMotion.springSnappy, 0.6, 1, 0));
-    unawaited(HapticFeedback.mediumImpact());
+    CdHaptics.success();
   }
 
   @override

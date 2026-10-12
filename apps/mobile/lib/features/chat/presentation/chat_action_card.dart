@@ -4,6 +4,7 @@ import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
@@ -63,6 +64,7 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
         .read(biometricAuthenticatorProvider)
         .authenticate(chatToolTitle(l10n, tool));
     if (passed || !mounted) return passed;
+    CdHaptics.error();
     showCdToast(
       context,
       icon: Symbols.fingerprint_rounded,
@@ -74,6 +76,7 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
   Future<void> _confirm() async {
     final l10n = AppLocalizations.of(context);
     if (!await _deviceCheck(l10n) || !mounted) return;
+    CdHaptics.confirm();
     final failure = await _controller.confirm(widget.action, entity: _entity);
     if (!mounted) return;
     if (failure == null && widget.action.tool == ChatTool.sendPix) {

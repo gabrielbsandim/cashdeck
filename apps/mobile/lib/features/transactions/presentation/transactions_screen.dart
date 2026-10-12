@@ -133,7 +133,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(transactionsControllerProvider),
               ),
-              _ => const CdSkeleton(rows: 6),
+              _ => const CdSkeleton(
+                parts: [CdSkeletonRows(count: 6, header: true)],
+              ),
             },
           ),
         ],

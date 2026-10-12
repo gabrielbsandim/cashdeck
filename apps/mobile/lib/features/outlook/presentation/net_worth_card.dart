@@ -5,17 +5,16 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/insights/cd_comparison_pill.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/features/investments/presentation/investment_performance.dart';
 import 'package:cashdeck/features/investments/presentation/investments_labels.dart';
 import 'package:cashdeck/features/outlook/domain/net_worth.dart';
-import 'package:cashdeck/features/outlook/presentation/count_up_amount.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,7 +37,7 @@ class NetWorthCard extends ConsumerWidget {
       key: cardKey,
       title: l10n.netWorthTitle,
       onTap: () {
-        unawaited(HapticFeedback.selectionClick());
+        CdHaptics.selection();
         context.push(AppRoutes.netWorth).ignore();
       },
       child: switch (worth) {
@@ -64,7 +63,12 @@ class _Worth extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CountUpAmount(worth.current.total, size: CdAmountSize.lg),
+        CdAmount(
+          worth.current.total,
+          size: CdAmountSize.lg,
+          textAlign: TextAlign.start,
+          countUp: true,
+        ),
         const SizedBox(height: AppSpacing.xs),
         Align(
           alignment: AlignmentDirectional.centerStart,

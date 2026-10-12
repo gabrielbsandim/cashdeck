@@ -102,7 +102,13 @@ class InsightsScreen extends ConsumerWidget {
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(monthlyInsightsProvider),
               ),
-              _ => const CdSkeleton(),
+              _ => const CdSkeleton(
+                parts: [
+                  CdSkeletonCard(height: 260),
+                  CdSkeletonCard(height: 140),
+                  CdSkeletonCard(),
+                ],
+              ),
             },
           ),
         ],
@@ -275,16 +281,28 @@ class _FlowCardState extends ConsumerState<_FlowCard> {
             const SizedBox(height: AppSpacing.md),
             CdKeyValueRow(
               label: l10n.insightsIncome,
-              value: CdAmount(result.income, size: CdAmountSize.row),
+              value: CdAmount(
+                result.income,
+                size: CdAmountSize.row,
+                countUp: true,
+              ),
             ),
             CdKeyValueRow(
               label: l10n.insightsExpenses,
-              value: CdAmount(result.expenses, size: CdAmountSize.row),
+              value: CdAmount(
+                result.expenses,
+                size: CdAmountSize.row,
+                countUp: true,
+              ),
             ),
             CdKeyValueRow(
               label: l10n.insightsResult,
               strong: true,
-              value: CdAmount(result.result, size: CdAmountSize.row),
+              value: CdAmount(
+                result.result,
+                size: CdAmountSize.row,
+                countUp: true,
+              ),
             ),
           ],
         ],
@@ -468,7 +486,11 @@ class _FixedCostCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CdAmount(cost.total, textAlign: TextAlign.start),
+                    CdAmount(
+                      cost.total,
+                      textAlign: TextAlign.start,
+                      countUp: true,
+                    ),
                     if (share != null)
                       Text(
                         l10n.insightsFixedOfIncome(income),
@@ -534,6 +556,7 @@ class _LeftCard extends StatelessWidget {
             left.left,
             size: CdAmountSize.lg,
             textAlign: TextAlign.start,
+            countUp: true,
           ),
           const SizedBox(height: AppSpacing.md),
           CdSegmentBar(

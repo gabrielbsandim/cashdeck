@@ -131,7 +131,12 @@ class BalanceHeader extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        CdAmount(balance, size: CdAmountSize.xl, textAlign: TextAlign.start),
+        CdAmount(
+          balance,
+          size: CdAmountSize.xl,
+          textAlign: TextAlign.start,
+          countUp: true,
+        ),
         if (syncLine != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Row(
