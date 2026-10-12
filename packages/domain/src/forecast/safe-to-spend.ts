@@ -46,7 +46,21 @@ export type BudgetLeft = {
   readonly left: Money
 }
 
-export type SafeToSpendLineKind = ObligationKind | 'BUDGET' | 'RESERVE'
+// The steps of a monthly plan: the typical income, the savings target and
+// what was already spent this month on cards and from the accounts.
+export const PLAN_LINE_KINDS = [
+  'INCOME',
+  'SAVINGS',
+  'SPENT_CARD',
+  'SPENT_ACCOUNT',
+] as const
+export type PlanLineKind = (typeof PLAN_LINE_KINDS)[number]
+
+export type SafeToSpendLineKind =
+  | ObligationKind
+  | PlanLineKind
+  | 'BUDGET'
+  | 'RESERVE'
 
 // Signed: a deduction is negative, the share the reserve covers is positive.
 export type SafeToSpendLine = {
@@ -211,7 +225,7 @@ export function proratedBudgetLeft(
   return Money.of(Math.ceil((left.cents * covered) / monthDays), left.currency)
 }
 
-function budgetLines(
+export function budgetLines(
   budgets: readonly BudgetLeft[],
   today: LocalDate,
   days: number,
@@ -236,34 +250,55 @@ function budgetLines(
 const byDate = (a: Obligation, b: Obligation) =>
   a.on.localeCompare(b.on) || a.label.localeCompare(b.label)
 
-// Checking balance minus what is owed until the next income and what the
-// month's budgets still allow; the reserve covers the obligations paid from it.
-export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
-  const { until, days } = spendingWindow(input.today, input.income)
-  const due = input.obligations.filter(obligation => obligation.on <= until)
-  const fromReserve = sum(
-    due.filter(item => item.fromReserve).map(item => item.amount),
-  )
-  const available = Math.max(0, input.reserve.cents)
-  const covered = Money.of(Math.min(available, fromReserve.cents))
-  const lines: SafeToSpendLine[] = [...due].sort(byDate).map(item => ({
+export function obligationLines(due: readonly Obligation[]): SafeToSpendLine[] {
+  return [...due].sort(byDate).map(item => ({
     kind: item.kind,
     label: item.label,
     amount: item.amount.negate(),
     on: item.on,
   }))
-  lines.push(...budgetLines(input.budgets ?? [], input.today, days))
-  if (covered.isPositive()) {
-    lines.push({ kind: 'RESERVE', label: '', amount: covered, on: null })
+}
+
+// The share of the obligations paid from the reserve that its balance covers.
+export function reserveLines(
+  due: readonly Obligation[],
+  reserve: Money,
+): SafeToSpendLine[] {
+  const fromReserve = sum(
+    due.filter(item => item.fromReserve).map(item => item.amount),
+  )
+  const available = Math.max(0, reserve.cents)
+  const covered = Money.of(Math.min(available, fromReserve.cents))
+  if (!covered.isPositive()) {
+    return []
   }
+  return [{ kind: 'RESERVE', label: '', amount: covered, on: null }]
+}
+
+export const shortfallOf = (total: Money) =>
+  Money.of(total.isNegative() ? -total.cents : 0)
+
+export const dailyOf = (total: Money, days: number) =>
+  Money.of(total.isPositive() ? Math.floor(total.cents / days) : 0)
+
+// Checking balance minus what is owed until the next income and what the
+// month's budgets still allow; the reserve covers the obligations paid from it.
+export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
+  const { until, days } = spendingWindow(input.today, input.income)
+  const due = input.obligations.filter(obligation => obligation.on <= until)
+  const lines = [
+    ...obligationLines(due),
+    ...budgetLines(input.budgets ?? [], input.today, days),
+    ...reserveLines(due, input.reserve),
+  ]
   const total = input.cash.add(sum(lines.map(line => line.amount)))
   return {
     total,
-    daily: Money.of(total.isPositive() ? Math.floor(total.cents / days) : 0),
+    daily: dailyOf(total, days),
     days,
     until,
     income: input.income,
-    shortBy: Money.of(total.isNegative() ? -total.cents : 0),
+    shortBy: shortfallOf(total),
     lines,
   }
 }

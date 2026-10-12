@@ -6,6 +6,7 @@ import {
   recipientKeys,
   recurrenceKey,
 } from '@cashdeck/domain'
+import { type SafeToSpendView } from '@/dtos/safe-to-spend'
 import { type Recurrence } from '@/ports/records'
 import {
   account,
@@ -17,6 +18,7 @@ import { TENANT } from '@/testing/scenario.test-helpers'
 import { AUTO_DEBIT_COLLECTION } from '@/use-cases/auto-debit'
 import { FUNDING_ITEMS_COLLECTION } from '@/use-cases/funding-plan'
 import { makeSafeToSpend } from '@/use-cases/safe-to-spend'
+import { makeSetSpendingPlan } from '@/use-cases/spending-plan'
 
 const EMPLOYER = '12345678000195'
 const OWN_CPF = '52998224725'
@@ -219,6 +221,20 @@ async function seed() {
       description: 'Pagamento Boleto Banco Exemplo',
     }),
     transaction({
+      id: 'mortgage',
+      accountId: 'chk',
+      bookedOn: '2026-09-29',
+      amount: Money.of(-100000),
+      description: 'Mortgage Bank',
+    }),
+    transaction({
+      id: 'dinner',
+      accountId: 'card',
+      bookedOn: '2026-10-04',
+      amount: Money.of(-15000),
+      description: 'Restaurante Exemplo',
+    }),
+    transaction({
       id: 'old-payment',
       accountId: 'chk',
       bookedOn: '2026-07-01',
@@ -247,6 +263,16 @@ async function seed() {
   )
   await deps.recurrences.save(
     recurrence({ id: 'r5', key: streaming, entityId: 'pj' }),
+  )
+  await deps.recurrences.save(
+    recurrence({
+      id: 'r6',
+      key: keyOf('Mortgage Bank'),
+      name: 'Mortgage Bank',
+      amount: Money.of(100000),
+      dayOfMonth: 29,
+      status: 'DISMISSED',
+    }),
   )
   const debit = bill({ id: 'b2', payee: 'Water Co', dueDate: '2026-10-14' })
   const bills = [
@@ -286,38 +312,108 @@ async function seed() {
   return deps
 }
 
+const rows = (view: { lines: readonly SafeToSpendView['lines'][number][] }) =>
+  view.lines.map(line => [line.kind, line.label, line.amount.cents, line.on])
+
 describe('safe to spend', () => {
-  it('takes what is owed until the next income off the checking balance', async () => {
+  it('plans the month of a person from the typical income and the target', async () => {
     const deps = await seed()
+    const target = { savings: { cents: 300000, currency: 'BRL' as const } }
+    expect(await makeSetSpendingPlan(deps)(TENANT, target)).toEqual({
+      ...target,
+      incomeSources: [],
+    })
     const view = await makeSafeToSpend(deps)(TENANT)
     expect(view).toMatchObject({
       asOf: '2026-10-08',
+      basis: 'MONTH',
       cash: { cents: 500000 },
-      reserve: { cents: 15000 },
-      until: '2026-10-25',
-      days: 17,
-      income: { on: '2026-10-25', amount: { cents: 800000 } },
-      total: { cents: 355065 },
-      daily: { cents: 20886 },
+      until: '2026-10-31',
+      days: 24,
+      income: null,
+      plan: {
+        income: { cents: 800000 },
+        typical: { cents: 800000 },
+        received: { cents: 500 },
+        savings: { cents: 300000 },
+        savingsSet: true,
+        months: 3,
+        sources: 0,
+      },
+      total: { cents: 325165 },
+      daily: { cents: 13548 },
       shortBy: { cents: 0 },
+      cashShortBy: { cents: 0 },
     })
-    expect(
-      view.lines.map(line => [
-        line.kind,
-        line.label,
-        line.amount.cents,
-        line.on,
-      ]),
-    ).toEqual([
+    expect(rows(view)).toEqual([
+      ['INCOME', '', 800000, null],
+      ['SAVINGS', '', -300000, null],
+      ['SPENT_CARD', '', -15000, null],
+      ['SPENT_ACCOUNT', '', -9900, null],
       ['BILL', 'Power Co', -12345, '2026-10-12'],
       ['BILL', 'Water Co', -10000, '2026-10-14'],
       ['SUBSCRIPTION', 'Streaming Plus', -5590, '2026-10-15'],
-      ['BILL', 'Card boleto', -30000, '2026-10-16'],
-      ['CARD', 'Gold card', -80000, '2026-10-17'],
       ['BILL', '', -2000, '2026-10-20'],
       ['FIXED', 'Cleaner', -20000, '2026-10-20'],
-      ['RESERVE', '', 15000, null],
+      ['FIXED', 'Mortgage Bank', -100000, '2026-10-29'],
     ])
+  })
+
+  it('saves what a typical month leaves and warns when checking falls short', async () => {
+    const deps = await seed()
+    const setPlan = makeSetSpendingPlan(deps)
+    await setPlan(TENANT, { savings: { cents: 1, currency: 'BRL' } })
+    await setPlan(TENANT, { savings: null })
+    await deps.accounts.save(
+      account({ id: 'chk', entityId: 'pf', balance: Money.of(100000) }),
+    )
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(view).toMatchObject({
+      plan: { savings: { cents: 694910 }, savingsSet: false },
+      total: { cents: -69745 },
+      daily: { cents: 0 },
+      shortBy: { cents: 69745 },
+      cashShortBy: { cents: 144935 },
+    })
+  })
+
+  it('counts only the chosen payers and what they already sent this month', async () => {
+    const deps = await seed()
+    const payments = [
+      {
+        id: 'pay-now',
+        accountId: 'chk',
+        cents: 900000,
+        by: '12.345.678/0001-95',
+      },
+      { id: 'pay-card', accountId: 'card', cents: 70000, by: EMPLOYER },
+      { id: 'pay-other', accountId: 'chk', cents: 40000, by: '11222333000181' },
+    ]
+    for (const row of payments) {
+      await deps.transactions.save(
+        transaction({
+          id: row.id,
+          accountId: row.accountId,
+          bookedOn: '2026-10-06',
+          amount: Money.of(row.cents),
+          counterparty: row.by,
+        }),
+      )
+    }
+    await makeSetSpendingPlan(deps)(TENANT, {
+      incomeSources: [{ taxId: EMPLOYER, name: 'Employer' }],
+    })
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(view.plan).toMatchObject({
+      income: { cents: 900000 },
+      typical: { cents: 800000 },
+      received: { cents: 900000 },
+      sources: 1,
+    })
+    expect(view.lines[0]).toMatchObject({
+      kind: 'INCOME',
+      amount: { cents: 900000 },
+    })
   })
 
   it('drops a subscription whose charge was captured as a bill that month', async () => {
@@ -336,7 +432,7 @@ describe('safe to spend', () => {
     expect(labels).not.toContainEqual(['SUBSCRIPTION', 'Streaming Plus'])
   })
 
-  it('runs to the month end without an income and says how short it is', async () => {
+  it('runs a person without a closed month on cash until the month end', async () => {
     const deps = fullDeps()
     await deps.accounts.save(
       account({ id: 'chk', entityId: 'pf', balance: Money.of(1000) }),
@@ -346,17 +442,20 @@ describe('safe to spend', () => {
     )
     const view = await makeSafeToSpend(deps)(TENANT)
     expect(view).toMatchObject({
+      basis: 'CASH',
       until: '2026-10-31',
       days: 24,
       income: null,
+      plan: null,
       total: { cents: -4000 },
       daily: { cents: 0 },
       shortBy: { cents: 4000 },
+      cashShortBy: { cents: 4000 },
     })
     expect(view.lines.map(line => line.kind)).toEqual(['BILL'])
   })
 
-  it('serves the company and keeps what its budgets still allow', async () => {
+  it('runs the company on cash until its next income and keeps its budgets', async () => {
     const deps = await seed()
     await deps.accounts.save(
       account({ id: 'pj-chk', entityId: 'pj', balance: Money.of(300000) }),
@@ -380,6 +479,38 @@ describe('safe to spend', () => {
         rollover: false,
       }),
     )
+    const credits = [
+      {
+        id: 'c1',
+        bookedOn: '2026-08-20',
+        cents: 200000,
+        counterparty: EMPLOYER,
+      },
+      {
+        id: 'c2',
+        bookedOn: '2026-09-20',
+        cents: 200000,
+        counterparty: EMPLOYER,
+      },
+      {
+        id: 't1',
+        bookedOn: '2026-09-03',
+        cents: 1000,
+        transferGroupId: 'gone',
+      },
+      {
+        id: 't2',
+        bookedOn: '2026-09-04',
+        cents: 1000,
+        transferGroupId: 'tr-p1',
+      },
+      { id: 'c3', bookedOn: '2026-09-06', cents: 500 },
+    ]
+    for (const { cents: amount, ...row } of credits) {
+      await deps.transactions.save(
+        transaction({ ...row, accountId: 'pj-chk', amount: Money.of(amount) }),
+      )
+    }
     await deps.transactions.save(
       transaction({
         id: 'paper',
@@ -392,14 +523,14 @@ describe('safe to spend', () => {
     const view = await makeSafeToSpend(deps)(TENANT, 'PJ')
     expect(view).toMatchObject({
       entity: 'PJ',
+      basis: 'CASH',
       cash: { cents: 300000 },
-      until: '2026-10-31',
-      days: 24,
-      income: null,
-      total: { cents: 276000 },
+      until: '2026-10-20',
+      days: 12,
+      income: { on: '2026-10-20', amount: { cents: 200000 } },
+      plan: null,
+      total: { cents: 288000 },
     })
-    expect(
-      view.lines.map(line => [line.kind, line.label, line.amount.cents]),
-    ).toEqual([['BUDGET', 'Office', -24000]])
+    expect(rows(view)).toEqual([['BUDGET', 'Office', -12000, null]])
   })
 })

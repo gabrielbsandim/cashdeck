@@ -164,7 +164,10 @@ export async function flowEntries(
       accountType: types.get(transaction.accountId) as Account['type'],
       categoryKey: categories.get(transaction.categoryId ?? '')?.key ?? null,
     })),
-    { ownNames: entities.map(entity => entity.name) },
+    {
+      ownNames: entities.map(entity => entity.name),
+      ownTaxIds: entities.map(entity => entity.taxId.value),
+    },
   )
   return transactions.map(transaction => ({
     transaction,

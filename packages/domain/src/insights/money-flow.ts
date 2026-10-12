@@ -1,6 +1,7 @@
 import { daysBetween } from '@/calendar/local-date'
 import { type AccountType } from '@/entities/account'
 import { type Transaction } from '@/entities/transaction'
+import { onlyDigits } from '@/shared/digits'
 
 export type FlowKind = 'INCOME' | 'EXPENSE' | 'NEUTRAL'
 
@@ -23,6 +24,8 @@ export type FlowContext = {
   // The tenant's own entity names: a Pix to or from one moves money between
   // own accounts, even when the other account is not connected.
   readonly ownNames: readonly string[]
+  // Their CPF or CNPJ digits, for a Pix whose description names no one.
+  readonly ownTaxIds?: readonly string[]
 }
 
 const NO_CONTEXT: FlowContext = { ownNames: [] }
@@ -62,11 +65,19 @@ export function namesOwner(
     .some(words => text.includes(` ${words.join(' ')} `))
 }
 
-function movesOwnMoney(description: string, context: FlowContext): boolean {
+const fromOwnTaxId = (transaction: Transaction, context: FlowContext) =>
+  (context.ownTaxIds ?? []).includes(onlyDigits(transaction.counterparty ?? ''))
+
+function movesOwnMoney(
+  transaction: Transaction,
+  context: FlowContext,
+): boolean {
+  const { description } = transaction
   return (
     isCardBillPayment(description) ||
     isInvestment(description) ||
-    namesOwner(description, context.ownNames)
+    namesOwner(description, context.ownNames) ||
+    fromOwnTaxId(transaction, context)
   )
 }
 
@@ -78,7 +89,7 @@ function baseKind(line: FlowLine, context: FlowContext): FlowKind {
   if (categoryKey !== null && NEUTRAL_CATEGORIES.has(categoryKey)) {
     return 'NEUTRAL'
   }
-  if (movesOwnMoney(transaction.description, context)) {
+  if (movesOwnMoney(transaction, context)) {
     return 'NEUTRAL'
   }
   if (!transaction.amount.isPositive()) {

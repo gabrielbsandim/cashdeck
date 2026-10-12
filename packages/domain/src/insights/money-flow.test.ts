@@ -20,6 +20,7 @@ function line(
     description?: string
     categoryKey?: string | null
     transferGroupId?: string | null
+    counterparty?: string | null
   } = {},
 ): FlowLine {
   return {
@@ -31,6 +32,7 @@ function line(
       bookedOn: options.bookedOn ?? '2026-10-05',
       description: options.description ?? `Line ${id}`,
       transferGroupId: options.transferGroupId ?? null,
+      counterparty: options.counterparty ?? null,
     }),
     accountType: options.accountType ?? 'CHECKING',
     categoryKey: options.categoryKey ?? null,
@@ -94,8 +96,16 @@ describe('money flow', () => {
           description: 'Pix recebido de Maria Exemplo Silva',
         }),
         line('other', -4_000, { description: 'JOSE EXEMPLO SILVA' }),
+        line('own-pix', 25_000, {
+          description: 'PIX RECEBIDO',
+          counterparty: '529.982.247-25',
+        }),
+        line('client', 40_000, {
+          description: 'PIX RECEBIDO',
+          counterparty: '11222333000181',
+        }),
       ],
-      { ownNames: owners },
+      { ownNames: owners, ownTaxIds: ['52998224725'] },
     )
     expect(Object.fromEntries(kinds)).toEqual({
       'cdb-out': 'NEUTRAL',
@@ -103,6 +113,8 @@ describe('money flow', () => {
       'own-out': 'NEUTRAL',
       'own-in': 'NEUTRAL',
       other: 'EXPENSE',
+      'own-pix': 'NEUTRAL',
+      client: 'INCOME',
     })
   })
 

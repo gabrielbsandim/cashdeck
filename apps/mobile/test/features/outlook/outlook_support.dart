@@ -14,6 +14,8 @@ MockOutlookRepository outlookRepository() {
   registerFallbackValue(EntityScope.personal);
   registerFallbackValue(EntityKind.personal);
   registerFallbackValue(NetWorthPeriod.twelveMonths);
+  registerFallbackValue(const Money(0));
+  registerFallbackValue(<IncomeSource>[]);
   return MockOutlookRepository();
 }
 

@@ -3599,5 +3599,69 @@
   "draftSavedToast": "Rascunho salvo.",
   "draftCustomerMissing": "Informe o cliente.",
   "draftDescriptionMissing": "Descreva o serviço.",
-  "draftAmountMissing": "Informe um valor maior que zero."
+  "draftAmountMissing": "Informe um valor maior que zero.",
+  "safeToSpendPlan": "Renda típica {income}/mês, meta de investimento {savings}",
+  "@safeToSpendPlan": {
+    "placeholders": {
+      "income": {
+        "type": "String"
+      },
+      "savings": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendCashShort": "Faltam {amount} em conta para o que vence em 30 dias",
+  "@safeToSpendCashShort": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendOverBy": "{amount} acima do planejado no mês",
+  "@safeToSpendOverBy": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "safeToSpendLineIncome": "Renda típica",
+  "safeToSpendLineIncomeMedian": "Mediana de {months, plural, =1{1 mês} other{{months} meses}}",
+  "@safeToSpendLineIncomeMedian": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "safeToSpendLineSavings": "Meta de investimento",
+  "safeToSpendLineSavingsTypical": "O que costuma sobrar · toque para ajustar",
+  "safeToSpendLineSavingsSet": "Definida por você · toque para ajustar",
+  "safeToSpendLineSpentCard": "Gasto no cartão no mês",
+  "safeToSpendLineSpentAccount": "Gasto em conta no mês",
+  "savingsTargetTitle": "Meta de investimento mensal",
+  "savingsTargetLabel": "Investir por mês",
+  "savingsTargetHelp": "Sai da renda antes do que fica livre para gastar.",
+  "savingsTargetSave": "Salvar meta",
+  "savingsTargetTypical": "Usar o que costuma sobrar",
+  "savingsTargetSaved": "Meta de investimento salva",
+  "safeToSpendLineIncomeReceived": "Já recebido este mês",
+  "incomeSourcesTitle": "De onde vem sua renda",
+  "incomeSourcesHelp": "Marque quem paga você. Sem nenhum marcado, conta todo crédito que não é transferência sua.",
+  "incomeSourcesSent": "{amount} em {months, plural, =1{1 mês} other{{months} meses}}",
+  "@incomeSourcesSent": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "incomeSourcesSave": "Salvar fontes",
+  "incomeSourcesSaved": "Fontes de renda salvas",
+  "incomeSourcesEmpty": "Nenhum pagador nos últimos 6 meses"
 }

@@ -4,12 +4,21 @@ import 'package:cashdeck/features/outlook/domain/net_worth.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 
 const Map<String, SafeToSpendLineKind> safeToSpendLineKinds = {
+  'INCOME': SafeToSpendLineKind.income,
+  'SAVINGS': SafeToSpendLineKind.savings,
+  'SPENT_CARD': SafeToSpendLineKind.spentCard,
+  'SPENT_ACCOUNT': SafeToSpendLineKind.spentAccount,
   'BILL': SafeToSpendLineKind.bill,
   'FIXED': SafeToSpendLineKind.fixed,
   'SUBSCRIPTION': SafeToSpendLineKind.subscription,
   'CARD': SafeToSpendLineKind.card,
   'BUDGET': SafeToSpendLineKind.budget,
   'RESERVE': SafeToSpendLineKind.reserve,
+};
+
+const Map<String, SafeToSpendBasis> safeToSpendBases = {
+  'MONTH': SafeToSpendBasis.month,
+  'CASH': SafeToSpendBasis.cash,
 };
 
 double? _readOptionalNumber(JsonMap json, String key) {
@@ -20,6 +29,7 @@ double? _readOptionalNumber(JsonMap json, String key) {
 
 SafeToSpend safeToSpendFromJson(JsonMap json) {
   final income = readOptionalMap(json, 'income');
+  final plan = readOptionalMap(json, 'plan');
   return SafeToSpend(
     asOf: readDate(json, 'asOf'),
     cash: readMoney(json, 'cash'),
@@ -28,6 +38,19 @@ SafeToSpend safeToSpendFromJson(JsonMap json) {
     days: readInt(json, 'days'),
     until: readDate(json, 'until'),
     shortBy: readMoney(json, 'shortBy'),
+    basis: readEnum(json, 'basis', safeToSpendBases),
+    cashShortBy: readMoney(json, 'cashShortBy'),
+    plan: plan == null
+        ? null
+        : SpendingPlan(
+            income: readMoney(plan, 'income'),
+            savings: readMoney(plan, 'savings'),
+            savingsSet: readBool(plan, 'savingsSet'),
+            months: readInt(plan, 'months'),
+            typical: readMoney(plan, 'typical'),
+            received: readMoney(plan, 'received'),
+            sources: readInt(plan, 'sources'),
+          ),
     income: income == null
         ? null
         : ExpectedIncome(
@@ -45,6 +68,20 @@ SafeToSpend safeToSpendFromJson(JsonMap json) {
     ],
   );
 }
+
+List<IncomeSourceCandidate> incomeSourcesFromJson(JsonMap json) => [
+  for (final item in readMapList(json, 'items'))
+    IncomeSourceCandidate(
+      source: IncomeSource(
+        taxId: readString(item, 'taxId'),
+        name: readString(item, 'name'),
+      ),
+      total: readMoney(item, 'total'),
+      months: readInt(item, 'months'),
+      lastOn: readDate(item, 'lastOn'),
+      selected: readBool(item, 'selected'),
+    ),
+];
 
 NetWorthComposition _composition(JsonMap json) => NetWorthComposition(
   cash: readMoney(json, 'cash'),

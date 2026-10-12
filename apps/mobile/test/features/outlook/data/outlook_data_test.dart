@@ -32,6 +32,9 @@ Map<String, Object?> _composition(int total) => {
 
 Map<String, Object?> _safeToSpendJson({bool income = true}) => {
   'asOf': '2026-10-08',
+  'basis': 'CASH',
+  'plan': null,
+  'cashShortBy': _money(12_000),
   'cash': _money(400_000),
   'reserve': _money(50_000),
   'total': _money(-12_000),
@@ -132,6 +135,124 @@ void main() {
       );
     });
 
+    test('reads the monthly plan of a person', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {
+            ..._safeToSpendJson(income: false),
+            'basis': 'MONTH',
+            'plan': {
+              'income': _money(2_400_000),
+              'typical': _money(2_000_000),
+              'received': _money(2_400_000),
+              'savings': _money(650_000),
+              'savingsSet': true,
+              'months': 3,
+              'sources': 2,
+            },
+            'cashShortBy': _money(0),
+            'lines': [
+              for (final kind in ['INCOME', 'SAVINGS', 'SPENT_CARD'])
+                {'kind': kind, 'label': '', 'amount': _money(1), 'on': null},
+              {
+                'kind': 'SPENT_ACCOUNT',
+                'label': '',
+                'amount': _money(1),
+                'on': null,
+              },
+            ],
+          },
+        }),
+      );
+      final free = _valueOf(await ApiOutlookRepository(dio).safeToSpend());
+
+      expect(free.basis, SafeToSpendBasis.month);
+      expect(
+        free.plan,
+        const SpendingPlan(
+          income: Money(2_400_000),
+          typical: Money(2_000_000),
+          received: Money(2_400_000),
+          savings: Money(650_000),
+          savingsSet: true,
+          months: 3,
+          sources: 2,
+        ),
+      );
+      expect(free.plan?.fromReceived, isTrue);
+      expect(free.isCashShort, isFalse);
+      expect(free.lines.map((line) => line.kind), [
+        SafeToSpendLineKind.income,
+        SafeToSpendLineKind.savings,
+        SafeToSpendLineKind.spentCard,
+        SafeToSpendLineKind.spentAccount,
+      ]);
+    });
+
+    test('sets the savings target, or clears it with null', () async {
+      final dio = stubDio(
+        (_) => const StubResponse(200, {'data': <String, Object?>{}}),
+      );
+      final repository = ApiOutlookRepository(dio);
+
+      expect(
+        await repository.setSavingsTarget(const Money(300_000)),
+        isA<Ok<void>>(),
+      );
+      expect(await repository.setSavingsTarget(null), isA<Ok<void>>());
+      final requests = adapterOf(dio).requests;
+      expect(requests.first.path, '/api/v1/home/personal/spending-plan');
+      expect(requests.first.method, 'PUT');
+      expect(requests.first.data, {
+        'savings': {'cents': 300_000, 'currency': 'BRL'},
+      });
+      expect(requests.last.data, {'savings': null});
+    });
+
+    test('lists the payers and saves the chosen ones', () async {
+      final dio = stubDio(
+        (options) => StubResponse(200, {
+          'data': options.method == 'GET'
+              ? {
+                  'items': [
+                    {
+                      'taxId': '11222333000181',
+                      'name': 'Cliente Exemplo',
+                      'total': _money(900_000),
+                      'months': 3,
+                      'lastOn': '2026-10-05',
+                      'selected': true,
+                    },
+                  ],
+                }
+              : <String, Object?>{},
+        }),
+      );
+      final repository = ApiOutlookRepository(dio);
+      const source = IncomeSource(
+        taxId: '11222333000181',
+        name: 'Cliente Exemplo',
+      );
+
+      expect(_valueOf(await repository.incomeSources()), [
+        const IncomeSourceCandidate(
+          source: source,
+          total: Money(900_000),
+          months: 3,
+          lastOn: CalendarDate(2026, 10, 5),
+          selected: true,
+        ),
+      ]);
+      expect(await repository.setIncomeSources([source]), isA<Ok<void>>());
+      final requests = adapterOf(dio).requests;
+      expect(requests.first.path, '/api/v1/home/personal/income-sources');
+      expect(requests.last.data, {
+        'incomeSources': [
+          {'taxId': '11222333000181', 'name': 'Cliente Exemplo'},
+        ],
+      });
+    });
+
     test('reads safe to spend without a known income', () async {
       final dio = stubDio(
         (_) => StubResponse(200, {'data': _safeToSpendJson(income: false)}),
@@ -202,13 +323,46 @@ void main() {
       latency: Duration.zero,
     );
 
-    test('adds the deductions and the reserve up to the free total', () async {
+    test('plans the month from the typical income to the free total', () async {
       final free = _valueOf(await repository.safeToSpend());
 
       final lines = free.lines.fold(0, (sum, line) => sum + line.amount.cents);
-      expect(free.cash.cents + lines, free.total.cents);
-      expect(free.until, testToday.addDays(12));
+      expect(free.basis, SafeToSpendBasis.month);
+      expect(lines, free.total.cents);
+      expect(free.until, const CalendarDate(2026, 10, 31));
       expect(free.isShort, isFalse);
+      expect(free.plan?.savingsSet, isFalse);
+    });
+
+    test('keeps the savings target until it is cleared', () async {
+      final target = FakeOutlookRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+      await target.setSavingsTarget(const Money(2_400_000));
+      final saved = _valueOf(await target.safeToSpend());
+      expect(saved.plan?.savings, const Money(2_400_000));
+      expect(saved.plan?.savingsSet, isTrue);
+      expect(saved.isShort, isTrue);
+      expect(saved.daily, const Money(0));
+
+      await target.setSavingsTarget(null);
+      final typical = _valueOf(await target.safeToSpend());
+      expect(typical.plan?.savings, FakeOutlookRepository.typicalSavings);
+    });
+
+    test('remembers the chosen payers', () async {
+      final target = FakeOutlookRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+      final payers = _valueOf(await target.incomeSources());
+      expect(payers.where((payer) => payer.selected), isEmpty);
+
+      await target.setIncomeSources([payers.first.source]);
+      final chosen = _valueOf(await target.incomeSources());
+      expect(chosen.first.selected, isTrue);
+      expect(_valueOf(await target.safeToSpend()).plan?.sources, 1);
     });
 
     test('the company runs to the month end with budgets kept', () async {

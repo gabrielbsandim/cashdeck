@@ -22,6 +22,12 @@ final FutureProvider<SafeToSpend> safeToSpendProvider = safeToSpendOfProvider(
 final FutureProvider<SafeToSpend> companySafeToSpendProvider =
     safeToSpendOfProvider(EntityKind.company);
 
+final FutureProvider<List<IncomeSourceCandidate>> incomeSourcesProvider =
+    FutureProvider.autoDispose<List<IncomeSourceCandidate>>(
+      (ref) async => (await ref.watch(loadIncomeSourcesProvider)()).orThrow,
+      retry: noRetry,
+    );
+
 class NetWorthPeriodController extends Notifier<NetWorthPeriod> {
   @override
   NetWorthPeriod build() => NetWorthPeriod.twelveMonths;

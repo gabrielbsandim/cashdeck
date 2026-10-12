@@ -5,6 +5,8 @@ import { getContainer, resetContainer } from '@/server/container'
 import { GET as safeToSpend } from '@/app/api/v1/home/personal/safe-to-spend/route'
 import { GET as companySafeToSpend } from '@/app/api/v1/home/company/safe-to-spend/route'
 import { GET as netWorth } from '@/app/api/v1/net-worth/route'
+import { PUT as setSpendingPlan } from '@/app/api/v1/home/personal/spending-plan/route'
+import { GET as incomeSources } from '@/app/api/v1/home/personal/income-sources/route'
 
 let session = ''
 const TENANT = 'local'
@@ -60,6 +62,36 @@ describe('safe to spend route', () => {
       lines: [],
     })
     expect(found.body.data.daily.cents).toBeGreaterThan(0)
+  })
+
+  it('sets the monthly savings target and rejects a negative one', async () => {
+    const put = (savings: unknown) =>
+      setSpendingPlan(
+        new Request('http://localhost/api/v1/home/personal/spending-plan', {
+          method: 'PUT',
+          headers: {
+            authorization: `Bearer ${session}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ savings }),
+        }),
+      )
+    const saved = await json(await put({ cents: 300_000, currency: 'BRL' }))
+    expect(saved.status).toBe(200)
+    expect(saved.body.data).toEqual({
+      savings: { cents: 300_000, currency: 'BRL' },
+      incomeSources: [],
+    })
+    expect((await put({ cents: -1, currency: 'BRL' })).status).toBe(422)
+  })
+
+  it('lists the payers to pick the income from', async () => {
+    await seeded()
+    const found = await json(
+      await incomeSources(get('home/personal/income-sources')),
+    )
+    expect(found.status).toBe(200)
+    expect(found.body.data).toEqual({ items: [] })
   })
 
   it('answers for the company on its own path', async () => {

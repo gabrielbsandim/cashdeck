@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -37,4 +38,39 @@ final class ApiOutlookRepository implements OutlookRepository {
         );
         return netWorthFromJson(asJsonMap(unwrapData(response.data)));
       });
+
+  @override
+  Future<Result<void>> setSavingsTarget(Money? savings) => guardRequest(
+    () => _dio.put<Object?>(
+      '/api/v1/home/personal/spending-plan',
+      data: {
+        'savings': savings == null
+            ? null
+            : {'cents': savings.cents, 'currency': 'BRL'},
+      },
+    ),
+  );
+
+  @override
+  Future<Result<List<IncomeSourceCandidate>>> incomeSources() =>
+      guardRequest(() async {
+        final response = await _dio.get<Object?>(
+          '/api/v1/home/personal/income-sources',
+        );
+        return incomeSourcesFromJson(asJsonMap(unwrapData(response.data)));
+      });
+
+  @override
+  Future<Result<void>> setIncomeSources(List<IncomeSource> sources) =>
+      guardRequest(
+        () => _dio.put<Object?>(
+          '/api/v1/home/personal/spending-plan',
+          data: {
+            'incomeSources': [
+              for (final source in sources)
+                {'taxId': source.taxId, 'name': source.name},
+            ],
+          },
+        ),
+      );
 }

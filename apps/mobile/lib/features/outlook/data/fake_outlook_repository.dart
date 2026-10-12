@@ -7,8 +7,8 @@ import 'package:cashdeck/features/outlook/domain/net_worth.dart';
 import 'package:cashdeck/features/outlook/domain/outlook_repository.dart';
 import 'package:cashdeck/features/outlook/domain/safe_to_spend.dart';
 
-/// Fictional bills, a card and a salary twelve days out, and a net worth
-/// that grew steadily every month.
+/// A fictional typical month with bills still owed, a company with no income
+/// in sight, and a net worth that grew steadily every month.
 final class FakeOutlookRepository implements OutlookRepository {
   new(this._clock, {this.latency = const Duration(milliseconds: 300)});
 
@@ -39,6 +39,23 @@ final class FakeOutlookRepository implements OutlookRepository {
 
   Future<void> _wait() => Future<void>.delayed(latency);
 
+  static const typicalIncome = Money(2_400_000);
+  static const typicalSavings = Money(650_000);
+
+  Money? _savings;
+
+  static const _payers = [
+    IncomeSource(taxId: '11222333000181', name: 'Cliente Exemplo LTDA'),
+    IncomeSource(taxId: '52998224725', name: 'Fulana de Tal'),
+  ];
+
+  Set<String> _sources = {};
+
+  static CalendarDate _monthEnd(CalendarDate today) {
+    final end = DateTime.utc(today.year, today.month + 1, 0);
+    return CalendarDate(end.year, end.month, end.day);
+  }
+
   @override
   Future<Result<SafeToSpend>> safeToSpend({
     EntityKind entity = EntityKind.personal,
@@ -46,65 +63,110 @@ final class FakeOutlookRepository implements OutlookRepository {
     await _wait();
     final today = _today;
     if (entity == EntityKind.company) return Ok(_companySafeToSpend(today));
-    return Ok(
-      SafeToSpend(
-        asOf: today,
-        cash: const Money(485_000),
-        total: const Money(251_370),
-        daily: const Money(20_947),
-        days: 12,
-        until: today.addDays(12),
-        shortBy: const Money(0),
-        income: ExpectedIncome(
-          on: today.addDays(12),
-          amount: const Money(820_000),
+    return Ok(_personalSafeToSpend(today));
+  }
+
+  @override
+  Future<Result<void>> setSavingsTarget(Money? savings) async {
+    await _wait();
+    _savings = savings;
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<List<IncomeSourceCandidate>>> incomeSources() async {
+    await _wait();
+    return Ok([
+      for (final (index, payer) in _payers.indexed)
+        IncomeSourceCandidate(
+          source: payer,
+          total: Money(index == 0 ? 12_000_000 : 1_800_000),
+          months: 6,
+          lastOn: _today.addDays(-index - 2),
+          selected: _sources.contains(payer.taxId),
         ),
-        lines: [
-          SafeToSpendLine(
-            kind: SafeToSpendLineKind.bill,
-            label: 'Condomínio Jardim',
-            amount: const Money(-95_000),
-            on: today.addDays(3),
-          ),
-          SafeToSpendLine(
-            kind: SafeToSpendLineKind.subscription,
-            label: 'Streaming Plus',
-            amount: const Money(-5_590),
-            on: today.addDays(4),
-          ),
-          SafeToSpendLine(
-            kind: SafeToSpendLineKind.bill,
-            label: 'Energia Azul',
-            amount: const Money(-18_740),
-            on: today.addDays(6),
-          ),
-          SafeToSpendLine(
-            kind: SafeToSpendLineKind.fixed,
-            label: 'Diarista',
-            amount: const Money(-32_000),
-            on: today.addDays(8),
-          ),
-          SafeToSpendLine(
-            kind: SafeToSpendLineKind.card,
-            label: 'Cartão Aurora',
-            amount: const Money(-142_300),
-            on: today.addDays(10),
-          ),
-          const SafeToSpendLine(
-            kind: SafeToSpendLineKind.reserve,
-            label: '',
-            amount: Money(60_000),
-          ),
-        ],
+    ]);
+  }
+
+  @override
+  Future<Result<void>> setIncomeSources(List<IncomeSource> sources) async {
+    await _wait();
+    _sources = {for (final source in sources) source.taxId};
+    return const Ok(null);
+  }
+
+  /// A typical month less the savings target, what the cards and accounts
+  /// already took this month and what is still owed until the month end.
+  SafeToSpend _personalSafeToSpend(CalendarDate today) {
+    final until = _monthEnd(today);
+    final days = today.daysUntil(until) + 1;
+    final savings = _savings ?? typicalSavings;
+    final lines = [
+      const SafeToSpendLine(
+        kind: SafeToSpendLineKind.income,
+        label: '',
+        amount: typicalIncome,
       ),
+      SafeToSpendLine(
+        kind: SafeToSpendLineKind.savings,
+        label: '',
+        amount: Money(-savings.cents),
+      ),
+      const SafeToSpendLine(
+        kind: SafeToSpendLineKind.spentCard,
+        label: '',
+        amount: Money(-420_000),
+      ),
+      const SafeToSpendLine(
+        kind: SafeToSpendLineKind.spentAccount,
+        label: '',
+        amount: Money(-95_000),
+      ),
+      SafeToSpendLine(
+        kind: SafeToSpendLineKind.bill,
+        label: 'Condomínio Jardim',
+        amount: const Money(-95_000),
+        on: today.addDays(3),
+      ),
+      SafeToSpendLine(
+        kind: SafeToSpendLineKind.subscription,
+        label: 'Streaming Plus',
+        amount: const Money(-5_590),
+        on: today.addDays(4),
+      ),
+      SafeToSpendLine(
+        kind: SafeToSpendLineKind.fixed,
+        label: 'Financiamento',
+        amount: const Money(-326_300),
+        on: until,
+      ),
+    ];
+    final total = lines.fold(const Money(0), (sum, line) => sum + line.amount);
+    return SafeToSpend(
+      asOf: today,
+      basis: SafeToSpendBasis.month,
+      cash: const Money(485_000),
+      total: total,
+      daily: Money(total.cents > 0 ? total.cents ~/ days : 0),
+      days: days,
+      until: until,
+      shortBy: Money(total.cents < 0 ? -total.cents : 0),
+      plan: SpendingPlan(
+        income: typicalIncome,
+        received: const Money(1_500_000),
+        savings: savings,
+        savingsSet: _savings != null,
+        months: 3,
+        sources: _sources.length,
+      ),
+      lines: lines,
     );
   }
 
   /// No income in sight, so the month end closes the window; the DAS and
   /// what the budgets still allow come off the company cash.
   SafeToSpend _companySafeToSpend(CalendarDate today) {
-    final monthEnd = DateTime.utc(today.year, today.month + 1, 0);
-    final until = CalendarDate(monthEnd.year, monthEnd.month, monthEnd.day);
+    final until = _monthEnd(today);
     final days = today.daysUntil(until) + 1;
     const total = Money(1_250_000 - 182_400 - 40_000 - 25_000);
     return SafeToSpend(

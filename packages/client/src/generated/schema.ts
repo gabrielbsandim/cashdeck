@@ -113,8 +113,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** What the person can spend each day until the next income */
+        /** What the person can still spend this month, and each day */
         get: operations["getSafeToSpend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/personal/spending-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the savings target or the income sources; omitted fields stay */
+        put: operations["setSpendingPlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/personal/income-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The payers of the last six months to pick the income from */
+        get: operations["getIncomeSources"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2553,7 +2587,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description What the person can spend each day until the next income */
+            /** @description What the person can still spend this month, and each day */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2564,6 +2598,8 @@ export interface operations {
                             asOf: string;
                             /** @enum {string} */
                             entity: "PF" | "PJ";
+                            /** @enum {string} */
+                            basis: "MONTH" | "CASH";
                             cash: {
                                 cents: number;
                                 currency: string;
@@ -2589,19 +2625,142 @@ export interface operations {
                                     currency: string;
                                 };
                             } | null;
+                            plan: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                typical: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                received: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                savings: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                savingsSet: boolean;
+                                months: number;
+                                sources: number;
+                            } | null;
                             shortBy: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cashShortBy: {
                                 cents: number;
                                 currency: string;
                             };
                             lines: {
                                 /** @enum {string} */
-                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "BUDGET" | "RESERVE";
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
                                 label: string;
                                 amount: {
                                     cents: number;
                                     currency: string;
                                 };
                                 on: string | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setSpendingPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    savings?: {
+                        cents: number;
+                        /** @enum {string} */
+                        currency: "BRL";
+                    } | null;
+                    incomeSources?: {
+                        taxId: string;
+                        name: string;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Set the savings target or the income sources; omitted fields stay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            savings: {
+                                cents: number;
+                                /** @enum {string} */
+                                currency: "BRL";
+                            } | null;
+                            incomeSources: {
+                                taxId: string;
+                                name: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getIncomeSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The payers of the last six months to pick the income from */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: {
+                                taxId: string;
+                                name: string;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                months: number;
+                                lastOn: string;
+                                selected: boolean;
                             }[];
                         };
                     };
@@ -2638,6 +2797,8 @@ export interface operations {
                             asOf: string;
                             /** @enum {string} */
                             entity: "PF" | "PJ";
+                            /** @enum {string} */
+                            basis: "MONTH" | "CASH";
                             cash: {
                                 cents: number;
                                 currency: string;
@@ -2663,13 +2824,38 @@ export interface operations {
                                     currency: string;
                                 };
                             } | null;
+                            plan: {
+                                income: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                typical: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                received: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                savings: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                savingsSet: boolean;
+                                months: number;
+                                sources: number;
+                            } | null;
                             shortBy: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cashShortBy: {
                                 cents: number;
                                 currency: string;
                             };
                             lines: {
                                 /** @enum {string} */
-                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "BUDGET" | "RESERVE";
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
                                 label: string;
                                 amount: {
                                     cents: number;

@@ -4,6 +4,7 @@ import {
   type Bill,
   CASH_ACCOUNT_TYPES,
   type BudgetLeft,
+  cashShortfall,
   daysBetween,
   type EntityKind,
   expectedIncome,
@@ -11,24 +12,39 @@ import {
   isSettled,
   type LocalDate,
   Money,
+  type MonthFlow,
+  monthlyAllowance,
   monthlyDatesBetween,
   type Obligation,
   recurrenceKey,
+  type SafeToSpendLine,
   safeToSpend,
   spendingWindow,
   type Transaction,
+  type TypicalMonth,
+  typicalMonth,
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
 import { type FundingItemView } from '@/dtos/home'
 import { type SafeToSpendView } from '@/dtos/safe-to-spend'
-import { type TransferKind } from '@/ports/records'
+import { type Recurrence, type TransferKind } from '@/ports/records'
 import { loadAutoDebit } from '@/use-cases/auto-debit'
 import { type BudgetDeps, makeBudgets } from '@/use-cases/budgets'
 import { cardBillsOf } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import { FUNDING_ITEMS_COLLECTION } from '@/use-cases/funding-plan'
 import {
+  categoryIndex,
+  type FlowEntry,
+  flowEntries,
+  insightScope,
+} from '@/use-cases/insights'
+import { incomeTest, loadSpendingPlan } from '@/use-cases/spending-plan'
+import {
+  addMonths,
   allPages,
+  firstDay,
+  lastDay,
   monthOf,
   requireEntity,
   startOfDay,
@@ -47,6 +63,11 @@ const OVERDUE_DAYS = 20
 const EARLY_PAYMENT_DAYS = 40
 // A card bill also captured as a boleto falls due within days of the card's.
 const SAME_BILL_DAYS = 3
+// Closed months the typical income and spending are read from; few, since an
+// hourly rate that rises shows in the income within a quarter.
+const PLAN_MONTHS = 3
+// Income days are irregular, so the cash check looks a month ahead instead.
+const CASH_ALERT_DAYS = 30
 
 const isCash = (account: Account) =>
   CASH_ACCOUNT_TYPES.includes(account.type) &&
@@ -75,6 +96,70 @@ type Context = {
   entity: FinancialEntity
   recent: readonly Transaction[]
   open: readonly Bill[]
+}
+
+type Base = Omit<Context, 'until'> & {
+  tenantId: string
+  kind: EntityKind
+  accounts: readonly Account[]
+  checking: Money
+  reserve: Money
+  isAutoDebit: (bill: Bill) => boolean
+  items: readonly FundingItemView[]
+}
+
+// Which recurring charges count and since when their last charge must be.
+type RecurringScope = {
+  charges: readonly Transaction[]
+  include: (recurrence: Recurrence) => boolean
+  since: string
+}
+
+type Plan = {
+  typical: TypicalMonth
+  received: Money
+  sources: number
+  savings: Money
+  savingsSet: boolean
+  entries: readonly FlowEntry[]
+  cards: ReadonlySet<string>
+}
+
+const lineView = (line: SafeToSpendLine) => ({
+  kind: line.kind,
+  label: line.label,
+  amount: money(line.amount),
+  on: line.on,
+})
+
+const isCard = (account: Account) => account.type === 'CREDIT_CARD'
+
+const centsOf = (entries: readonly FlowEntry[]) =>
+  entries.reduce((total, entry) => total + entry.cents, 0)
+
+function closedMonths(
+  entries: readonly FlowEntry[],
+  month: string,
+  isIncome: (entry: FlowEntry) => boolean,
+): MonthFlow[] {
+  const months = Array.from({ length: PLAN_MONTHS }, (_, index) =>
+    addMonths(month, index - PLAN_MONTHS),
+  )
+  return months.flatMap(closed => {
+    const inMonth = entries.filter(
+      entry => monthOf(entry.transaction.bookedOn) === closed,
+    )
+    if (inMonth.length === 0) {
+      return []
+    }
+    return [
+      {
+        month: closed,
+        income: centsOf(inMonth.filter(isIncome)),
+        expenses: centsOf(inMonth.filter(entry => entry.kind === 'EXPENSE')),
+      },
+    ]
+  })
 }
 
 // A transfer from the company keeps its kind, so pro-labore and profit
@@ -176,33 +261,36 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     )
   }
 
-  // Confirmed recurrences charged to a checking account; one charged to a
-  // card is already in that card's bill.
-  async function subscriptionObligations(
+  // Recurring charges still to come by the window end; one charged this month
+  // already, or captured as a bill of that month, is not owed again.
+  async function recurringObligations(
     tenantId: string,
     context: Context,
+    scope: RecurringScope,
   ): Promise<Obligation[]> {
     const charged = new Map<string, LocalDate>()
-    for (const tx of context.recent.filter(tx => tx.amount.isNegative())) {
+    for (const tx of scope.charges.filter(tx => tx.amount.isNegative())) {
       const key = recurrenceKey(tx)
       const known = charged.get(key) ?? ''
       charged.set(key, tx.bookedOn > known ? tx.bookedOn : known)
     }
-    const confirmed = (await deps.recurrences.list(tenantId)).filter(
+    const lastMonthOf = (recurrence: Recurrence) =>
+      monthOf(charged.get(recurrence.key) as LocalDate)
+    const running = (await deps.recurrences.list(tenantId)).filter(
       recurrence =>
         recurrence.entityId === context.entity.id &&
-        recurrence.status === 'CONFIRMED' &&
-        charged.has(recurrence.key),
+        scope.include(recurrence) &&
+        charged.has(recurrence.key) &&
+        lastMonthOf(recurrence) >= scope.since,
     )
-    // A captured bill of the same payee that month is this very charge.
     const billed = (name: string, on: LocalDate) =>
       context.open.some(
         bill =>
           monthOf(bill.dueDate) === monthOf(on) &&
           sharesWord(bill.payee ?? '', name),
       )
-    return confirmed.flatMap(recurrence => {
-      const lastMonth = monthOf(charged.get(recurrence.key) as LocalDate)
+    return running.flatMap(recurrence => {
+      const lastMonth = lastMonthOf(recurrence)
       return monthlyDatesBetween(
         recurrence.dayOfMonth,
         context.day,
@@ -210,7 +298,10 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       )
         .filter(on => monthOf(on) !== lastMonth && !billed(recurrence.name, on))
         .map(on => ({
-          kind: 'SUBSCRIPTION' as const,
+          kind:
+            recurrence.status === 'CONFIRMED'
+              ? ('SUBSCRIPTION' as const)
+              : ('FIXED' as const),
           label: recurrence.name,
           amount: recurrence.amount,
           on,
@@ -265,22 +356,12 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     )
   }
 
-  // How much the entity can spend each day until the next income without
-  // touching what bills, fixed payments, subscriptions, cards and the
-  // month's budgets will take.
-  return async function safeToSpendToday(
-    tenantId: string,
-    kind: EntityKind = 'PF',
-  ): Promise<SafeToSpendView> {
+  async function load(tenantId: string, kind: EntityKind): Promise<Base> {
     const day = today(deps.clock.now())
     const entity = await requireEntity(deps.entities, tenantId, kind)
     const accounts = await deps.accounts.listByEntity(tenantId, entity.id)
     const cash = accounts.filter(isCash)
     const spending = cash.filter(account => !account.isReserve)
-    const checking = sum(spending.map(account => account.balance))
-    const reserve = sum(
-      cash.filter(account => account.isReserve).map(account => account.balance),
-    )
     const recent = (
       await deps.transactions.all(tenantId, {
         accountIds: spending.map(account => account.id),
@@ -288,9 +369,6 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         to: day,
       })
     ).filter(tx => !tx.provisional)
-    const income = await incomeOf(tenantId, entity, recent, day)
-    const { until } = spendingWindow(day, income)
-    const isAutoDebit = await loadAutoDebit(deps, tenantId)
     const open = (
       await allPages(page =>
         deps.bills.list(tenantId, { entityId: entity.id }, page),
@@ -298,30 +376,80 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     ).filter(
       bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
     )
-    const context: Context = { day, until, entity, recent, open }
-    const items = await fixedItems(kind, tenantId)
+    return {
+      tenantId,
+      kind,
+      day,
+      entity,
+      accounts,
+      recent,
+      open,
+      checking: sum(spending.map(account => account.balance)),
+      reserve: sum(
+        cash
+          .filter(account => account.isReserve)
+          .map(account => account.balance),
+      ),
+      isAutoDebit: await loadAutoDebit(deps, tenantId),
+      items: await fixedItems(kind, tenantId),
+    }
+  }
+
+  // Everything due by `until` that leaves the checking accounts, card bills
+  // included, as the cash itself has to pay it.
+  async function cashObligations(
+    base: Base,
+    until: LocalDate,
+    recurring: Omit<RecurringScope, 'charges'>,
+  ): Promise<Obligation[]> {
+    const context: Context = { ...base, until }
+    return [
+      ...billObligations(base.open, base.isAutoDebit),
+      ...fixedObligations(base.items, context),
+      ...(await recurringObligations(base.tenantId, context, {
+        charges: base.recent,
+        ...recurring,
+      })),
+      ...(await cardObligations(
+        base.tenantId,
+        base.accounts.filter(isCard),
+        context,
+      )),
+    ]
+  }
+
+  function baseView(base: Base) {
+    return {
+      asOf: base.day,
+      entity: base.kind,
+      cash: money(base.checking),
+      reserve: money(base.reserve),
+    }
+  }
+
+  // Until the next income: for a company, or a person without a closed month.
+  async function cashView(base: Base): Promise<SafeToSpendView> {
+    const income = await incomeOf(
+      base.tenantId,
+      base.entity,
+      base.recent,
+      base.day,
+    )
+    const { until } = spendingWindow(base.day, income)
     const result = safeToSpend({
-      today: day,
-      cash: checking,
-      reserve,
+      today: base.day,
+      cash: base.checking,
+      reserve: base.reserve,
       income,
-      obligations: [
-        ...billObligations(open, isAutoDebit),
-        ...fixedObligations(items, context),
-        ...(await subscriptionObligations(tenantId, context)),
-        ...(await cardObligations(
-          tenantId,
-          accounts.filter(account => account.type === 'CREDIT_CARD'),
-          context,
-        )),
-      ],
-      budgets: await budgetsLeft(tenantId, kind, day),
+      obligations: await cashObligations(base, until, {
+        include: recurrence => recurrence.status === 'CONFIRMED',
+        since: '',
+      }),
+      budgets: await budgetsLeft(base.tenantId, base.kind, base.day),
     })
     return {
-      asOf: day,
-      entity: kind,
-      cash: money(checking),
-      reserve: money(reserve),
+      ...baseView(base),
+      basis: 'CASH',
       total: money(result.total),
       daily: money(result.daily),
       days: result.days,
@@ -330,13 +458,173 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         on: result.income.on,
         amount: money(result.income.amount),
       },
+      plan: null,
       shortBy: money(result.shortBy),
-      lines: result.lines.map(line => ({
-        kind: line.kind,
-        label: line.label,
-        amount: money(line.amount),
-        on: line.on,
-      })),
+      cashShortBy: money(result.shortBy),
+      lines: result.lines.map(lineView),
     }
   }
+
+  async function planOf(base: Base): Promise<Plan | null> {
+    const scope = await insightScope(deps, base.tenantId, base.kind)
+    const month = monthOf(base.day)
+    const entries = await flowEntries(
+      deps,
+      base.tenantId,
+      scope.accounts,
+      await categoryIndex(deps, base.tenantId),
+      { from: firstDay(addMonths(month, -PLAN_MONTHS)), to: base.day },
+    )
+    const stored = await loadSpendingPlan(deps, base.tenantId, base.entity.id)
+    const cards = new Set(
+      scope.accounts.filter(isCard).map(account => account.id),
+    )
+    // An unconfirmed purchase already counts; an unconfirmed credit frees nothing.
+    const fromSources = incomeTest(stored.incomeSources, cards)
+    const isIncome = (entry: FlowEntry) =>
+      !entry.transaction.provisional && fromSources(entry)
+    const typical = typicalMonth(closedMonths(entries, month, isIncome))
+    if (!typical) {
+      return null
+    }
+    const target = stored.savings
+    return {
+      typical,
+      received: Money.of(
+        centsOf(
+          entries.filter(
+            entry =>
+              monthOf(entry.transaction.bookedOn) === month && isIncome(entry),
+          ),
+        ),
+      ),
+      sources: stored.incomeSources.length,
+      savings: target ? Money.of(target.cents) : typical.saved,
+      savingsSet: target !== null,
+      entries,
+      cards,
+    }
+  }
+
+  // A captured boleto or a debit of a card bill's exact total pays purchases
+  // the month already counted on the card.
+  async function cardBillTotals(base: Base) {
+    const cards = base.accounts.filter(isCard)
+    const stored = await deps.cardBills.list(
+      base.tenantId,
+      cards.map(card => card.id),
+    )
+    const dues = cards.flatMap(card =>
+      cardBillsOf(
+        card,
+        stored.filter(bill => bill.accountId === card.id),
+        base.day,
+      ),
+    )
+    const matches = (cents: number, on: LocalDate, days: number) =>
+      dues.some(
+        due =>
+          due.total.cents === cents &&
+          Math.abs(daysBetween(due.dueOn, on)) <= days,
+      )
+    return {
+      boleto: (bill: Bill) =>
+        matches(bill.amount.cents, bill.dueDate, SAME_BILL_DAYS),
+      payment: (tx: Transaction) =>
+        matches(-tx.amount.cents, tx.bookedOn, EARLY_PAYMENT_DAYS),
+    }
+  }
+
+  // What the typical month leaves after the savings target, less what this
+  // month already spent on cards and accounts and what it still owes.
+  async function monthView(base: Base, plan: Plan): Promise<SafeToSpendView> {
+    const month = monthOf(base.day)
+    const context: Context = { ...base, until: lastDay(month) }
+    // Any recurring debit still running is owed, a dismissed subscription too.
+    const running = { include: () => true, since: addMonths(month, -1) }
+    const cardBill = await cardBillTotals(base)
+    const spent = plan.entries.filter(
+      entry =>
+        entry.kind === 'EXPENSE' &&
+        monthOf(entry.transaction.bookedOn) === month &&
+        !cardBill.payment(entry.transaction),
+    )
+    const spentOn = (onCard: boolean) =>
+      Money.of(
+        spent
+          .filter(
+            entry => plan.cards.has(entry.transaction.accountId) === onCard,
+          )
+          .reduce((total, entry) => total + entry.cents, 0),
+      )
+    const income = Money.of(
+      Math.max(plan.typical.income.cents, plan.received.cents),
+    )
+    const result = monthlyAllowance({
+      today: base.day,
+      income,
+      savings: plan.savings,
+      spentOnCards: spentOn(true),
+      spentFromAccounts: spentOn(false),
+      obligations: [
+        ...billObligations(
+          base.open.filter(bill => !cardBill.boleto(bill)),
+          base.isAutoDebit,
+        ),
+        ...fixedObligations(base.items, context),
+        ...(await recurringObligations(base.tenantId, context, {
+          charges: plan.entries
+            .filter(entry => entry.kind === 'EXPENSE')
+            .map(entry => entry.transaction),
+          ...running,
+        })),
+      ],
+      budgets: await budgetsLeft(base.tenantId, base.kind, base.day),
+    })
+    const until = addDays(base.day, CASH_ALERT_DAYS)
+    return {
+      ...baseView(base),
+      basis: 'MONTH',
+      total: money(result.total),
+      daily: money(result.daily),
+      days: result.days,
+      until: result.until,
+      income: null,
+      plan: {
+        income: money(income),
+        typical: money(plan.typical.income),
+        received: money(plan.received),
+        savings: money(plan.savings),
+        savingsSet: plan.savingsSet,
+        months: plan.typical.months,
+        sources: plan.sources,
+      },
+      shortBy: money(result.shortBy),
+      cashShortBy: money(
+        cashShortfall({
+          until,
+          cash: base.checking,
+          reserve: base.reserve,
+          obligations: await cashObligations(base, until, running),
+        }),
+      ),
+      lines: result.lines.map(lineView),
+    }
+  }
+
+  // A person's free money follows a monthly plan, since income days and
+  // amounts vary and most spending goes on cards; a company's runs on cash.
+  async function safeToSpendToday(
+    tenantId: string,
+    kind: EntityKind = 'PF',
+  ): Promise<SafeToSpendView> {
+    const base = await load(tenantId, kind)
+    const plan = kind === 'PF' ? await planOf(base) : null
+    if (!plan) {
+      return cashView(base)
+    }
+    return monthView(base, plan)
+  }
+
+  return safeToSpendToday
 }

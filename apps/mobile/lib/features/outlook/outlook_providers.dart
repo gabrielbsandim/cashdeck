@@ -17,6 +17,18 @@ final loadSafeToSpendProvider = Provider<LoadSafeToSpend>(
   (ref) => LoadSafeToSpend(ref.watch(outlookRepositoryProvider)),
 );
 
+final setSavingsTargetProvider = Provider<SetSavingsTarget>(
+  (ref) => SetSavingsTarget(ref.watch(outlookRepositoryProvider)),
+);
+
+final loadIncomeSourcesProvider = Provider<LoadIncomeSources>(
+  (ref) => LoadIncomeSources(ref.watch(outlookRepositoryProvider)),
+);
+
+final setIncomeSourcesProvider = Provider<SetIncomeSources>(
+  (ref) => SetIncomeSources(ref.watch(outlookRepositoryProvider)),
+);
+
 final loadNetWorthProvider = Provider<LoadNetWorth>(
   (ref) => LoadNetWorth(ref.watch(outlookRepositoryProvider)),
 );
