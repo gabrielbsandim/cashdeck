@@ -451,9 +451,24 @@ without the brand-new listing), then `/vehicles/models?type=&brand=&modelYear=`
 to create the vehicle with and the current price.
 
 `PATCH /assets/{id}` takes any of `name`, `acquiredOn`, `value` (with
-`valuedOn`), `loanId`, `soldOn` and `fipe`. Another `fipe` reprices the vehicle
-from the table and drops the old model's prices, taking the model name unless
-`name` comes too; `fipe: null` stops the table and keeps the prices known.
+`valuedOn`), `loanId`, `soldOn`, `fipe` and `rental`. Another `fipe` reprices
+the vehicle from the table and drops the old model's prices, taking the model
+name unless `name` comes too; `fipe: null` stops the table and keeps the
+prices known.
+
+A rented good carries `rental`: the `rent` in cents, the `passThrough` words
+that pick the tenant's lines out of the building's bill (like `gás`) and
+`billFrom`, words of that bill's payee. The view adds `charge`, read from the
+latest captured bill of that payee: the lines passed on, the `total` to ask
+the tenant for, the `ownerCost` left with the owner, the linked loan's
+`installment` due that month and the month's `result` (rent less both). Its
+`attachmentId` is the bill's PDF, at `GET /bills/{billId}/attachments/{id}`.
+`rental: null` stops renting it out.
+
+The Gmail reader asks the model for the lines a bill itemizes and keeps them,
+with the PDF, the first time it reads that bill. Besides attachments it
+follows links to the PDF from known billers (the Winker portal used by
+building managers), and no other host.
 
 Net worth adds the goods by kind (`realEstate`, `vehicles`, `otherAssets`)
 and takes off `loanDebt`, every stored loan's balance at the end of each day

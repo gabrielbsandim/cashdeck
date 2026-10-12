@@ -161,6 +161,10 @@ export type CapturedBill = {
   taxIds?: string[]
   // E-mail only: whether the sender passed DKIM, SPF and DMARC checks.
   senderVerified?: boolean
+  // What the bill charges for, line by line, in cents.
+  lines?: Array<{ description: string; cents: number }>
+  // The document it was read from, kept so it can be passed on.
+  file?: { fileName: string; mimeType: string; bytes: Uint8Array }
 }
 
 // The charge behind a dynamic BR Code, read from its location (field 26.25).

@@ -39,6 +39,13 @@ const READABLE = /^(application\/pdf|image\/(png|jpe?g|webp))$/
 const PDF_NAME = /\.pdf$/i
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 
+// Billers that send a link to the PDF instead of the PDF. Only these hosts are
+// fetched, so a message cannot point the reader anywhere else.
+const BILL_LINKS = [
+  /^https:\/\/app\.winker\.com\.br\/emailAccess\/link\/[\w/]+$/,
+]
+const HREF = /href=["']([^"']+)["']/g
+
 type MessagePart = {
   partId?: string
   mimeType?: string
@@ -70,6 +77,10 @@ export type GmailSourceDeps = {
 }
 
 type Session = { token: string }
+
+type BillFile = NonNullable<CapturedBill['file']>
+
+type Read = { bill: ExtractedBill; file: BillFile }
 
 export class GmailBillSource implements BillSource {
   readonly source = 'GMAIL' as const
@@ -173,50 +184,83 @@ export class GmailBillSource implements BillSource {
     const parts = flattenParts(message.payload)
     const payee = sender(message)
     const verified = isSenderVerified(message.payload?.headers ?? [])
-    const found: ExtractedBill[] = []
-    for (const part of parts.filter(isReadableAttachment)) {
-      const extracted = await this.readAttachment(session, id, part, {
-        today,
-        passwords,
-      })
-      if (extracted) {
-        found.push(extracted)
+    const read = { today, passwords }
+    // Without a reader no document is fetched at all.
+    const readable = this.deps.extractor ? parts : []
+    const found: Read[] = []
+    for (const part of readable.filter(isReadableAttachment)) {
+      const attachment = await this.get<{ data?: string }>(
+        session,
+        `/messages/${id}/attachments/${part.body?.attachmentId}`,
+      )
+      const file = {
+        fileName: part.filename || 'boleto.pdf',
+        mimeType: mimeOf(part),
+        bytes: Buffer.from(attachment.data ?? '', 'base64url'),
       }
+      found.push(...(await this.readFile(file, read)))
+    }
+    for (const link of billLinks(readable)) {
+      found.push(...(await this.readLink(link, read)))
     }
     const text = parts.filter(isText).map(decodeBody).join('\n')
     const fromText = toExtracted(findPaymentCodes(text, today), today, {
       payee,
       taxIds: findTaxIds(text),
     })
-    return withBody(found, fromText, today).map((bill, index) =>
-      toCaptured(`${id}:${index}`, bill, payee, verified),
+    const files = found.map(item => item.file)
+    const bills = withBody(
+      found.map(item => item.bill),
+      fromText,
+      today,
+    )
+    return bills.map((bill, index) =>
+      toCaptured(`${id}:${index}`, bill, payee, verified, files[index]),
     )
   }
 
-  private async readAttachment(
-    session: Session,
-    messageId: string,
-    part: MessagePart,
+  private async readFile(
+    file: BillFile,
     read: { today: LocalDate; passwords: readonly string[] },
-  ): Promise<ExtractedBill | null> {
-    if (!this.deps.extractor) {
-      return null
+  ): Promise<Read[]> {
+    const attachment: LlmAttachment = {
+      mimeType: file.mimeType,
+      dataBase64: Buffer.from(file.bytes).toString('base64'),
     }
-    const attachment = await this.get<{ data?: string }>(
-      session,
-      `/messages/${messageId}/attachments/${part.body?.attachmentId}`,
-    )
-    const bytes = Buffer.from(attachment.data ?? '', 'base64url')
-    const llmAttachment: LlmAttachment = {
-      mimeType: mimeOf(part),
-      dataBase64: bytes.toString('base64'),
-    }
-    return this.deps.extractor.fromAttachment(
-      llmAttachment,
+    const extractor = this.deps.extractor as BillExtractor
+    const bill = await extractor.fromAttachment(
+      attachment,
       read.today,
       read.passwords,
     )
+    return bill ? [{ bill, file }] : []
   }
+
+  // A link that has expired or answers anything but a PDF is skipped.
+  private async readLink(
+    url: string,
+    read: { today: LocalDate; passwords: readonly string[] },
+  ): Promise<Read[]> {
+    const response = await this.deps.transport({ method: 'GET', url })
+    const bytes = response.bytes ?? new Uint8Array()
+    const pdf = response.headers['content-type']?.startsWith('application/pdf')
+    if (!isSuccess(response) || !pdf || bytes.length > MAX_ATTACHMENT_BYTES) {
+      return []
+    }
+    const file = { fileName: 'boleto.pdf', mimeType: 'application/pdf', bytes }
+    return this.readFile(file, read)
+  }
+}
+
+function billLinks(parts: readonly MessagePart[]): string[] {
+  const html = parts
+    .filter(part => isText(part) && part.mimeType === 'text/html')
+    .map(part => Buffer.from(part.body?.data ?? '', 'base64url').toString())
+    .join('\n')
+  const hrefs = [...html.matchAll(HREF)].map(([, href]) => href as string)
+  return [
+    ...new Set(hrefs.filter(href => BILL_LINKS.some(link => link.test(href)))),
+  ]
 }
 
 function flattenParts(part: MessagePart | undefined): MessagePart[] {
@@ -364,6 +408,7 @@ function joined(
     amountCents: bill.amountCents ?? other.amountCents,
     dueDate: bill.dueDate ?? other.dueDate,
     taxIds: [...new Set([...bill.taxIds, ...other.taxIds])],
+    lines: bill.lines.length > 0 ? bill.lines : other.lines,
   }
   return toExtracted(codes, today, hints) ?? bill
 }
@@ -392,6 +437,7 @@ function toCaptured(
   bill: ExtractedBill,
   payee: string | null,
   senderVerified: boolean,
+  file: BillFile | undefined,
 ): CapturedBill {
   return {
     externalId,
@@ -403,5 +449,7 @@ function toCaptured(
     kind: bill.kind,
     taxIds: bill.taxIds,
     senderVerified,
+    lines: bill.lines,
+    file,
   }
 }

@@ -3896,5 +3896,53 @@
         "type": "String"
       }
     }
+  },
+  "assetRented": "Alugado",
+  "assetRentedHelp": "O inquilino paga o aluguel e a parte dele no boleto do condomínio",
+  "assetRent": "Aluguel",
+  "assetRentBillFrom": "Condomínio do boleto",
+  "assetRentBillFromHelp": "Parte do nome de quem emite o boleto, como o nome do condomínio",
+  "assetRentPassThrough": "Itens repassados ao inquilino",
+  "assetRentPassThroughHelp": "Separados por vírgula, como gás, água",
+  "assetRentMissing": "Informe o valor do aluguel.",
+  "assetBillFromMissing": "Informe o condomínio do boleto.",
+  "rentChargeTitle": "Cobrança de {month}",
+  "@rentChargeTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "rentChargeTotal": "Cobrar do inquilino",
+  "rentChargeSend": "Enviar cobrança",
+  "rentChargeNoBill": "O boleto do condomínio ainda não chegou.",
+  "rentInstallment": "Parcela do financiamento",
+  "rentOwnerCost": "Condomínio (sua parte)",
+  "rentResult": "Sobra do aluguel no mês",
+  "rentMessage": "Olá! A cobrança de {month} fica assim:\n{lines}\nTotal: {total}\nO boleto do condomínio vai junto para você conferir.",
+  "@rentMessage": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "rentMessageLine": "{label}: {amount}",
+  "@rentMessageLine": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

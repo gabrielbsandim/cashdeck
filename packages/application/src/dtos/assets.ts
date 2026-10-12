@@ -9,6 +9,14 @@ export const fipeSchema = z.object({
   modelYear: z.int().min(1950).max(2100),
 })
 
+// The tenant pays the rent plus the lines of the building's bill whose
+// description holds a pass-through word, like the gas they used.
+export const rentalSchema = z.object({
+  rent: z.int().positive(),
+  passThrough: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
+  billFrom: z.string().trim().min(1).max(80),
+})
+
 // Amounts in cents. A vehicle with a FIPE code is priced by the table.
 export const createAssetSchema = z
   .object({
@@ -19,6 +27,7 @@ export const createAssetSchema = z
     value: z.int().positive().optional(),
     fipe: fipeSchema.optional(),
     loanId: z.string().min(1).nullable().default(null),
+    rental: rentalSchema.nullable().default(null),
   })
   .refine(input => input.value !== undefined || input.fipe !== undefined, {
     message: 'Give a value or a FIPE code.',
@@ -43,6 +52,35 @@ export const updateAssetSchema = z.object({
   valuedOn: isoDate.optional(),
   loanId: z.string().min(1).nullable().optional(),
   soldOn: isoDate.nullable().optional(),
+  // Null stops renting it out.
+  rental: rentalSchema.nullable().optional(),
+})
+
+const billLineViewSchema = z.object({
+  description: z.string(),
+  amount: moneyViewSchema,
+})
+
+// The latest bill of the building: what to ask the tenant for and what the
+// month leaves once the loan installment and the owner's share are paid.
+const rentChargeViewSchema = z.object({
+  billId: z.string(),
+  dueDate: isoDate,
+  billTotal: moneyViewSchema,
+  passedOn: z.array(billLineViewSchema),
+  total: moneyViewSchema,
+  ownerCost: moneyViewSchema,
+  // The bill's document, to send to the tenant.
+  attachmentId: z.string().nullable(),
+  installment: moneyViewSchema.nullable(),
+  result: moneyViewSchema,
+})
+
+const rentalViewSchema = z.object({
+  rent: moneyViewSchema,
+  passThrough: z.array(z.string()),
+  billFrom: z.string(),
+  charge: rentChargeViewSchema.nullable(),
 })
 
 const changeSchema = z.object({
@@ -67,6 +105,7 @@ export const assetViewSchema = z.object({
     .nullable(),
   // The value less what the linked loan still owes.
   equity: moneyViewSchema,
+  rental: rentalViewSchema.nullable(),
 })
 
 export const assetsViewSchema = z.object({
@@ -79,4 +118,5 @@ export const assetsViewSchema = z.object({
 export type CreateAssetInput = z.infer<typeof createAssetSchema>
 export type UpdateAssetInput = z.infer<typeof updateAssetSchema>
 export type AssetView = z.infer<typeof assetViewSchema>
+export type RentalView = z.infer<typeof rentalViewSchema>
 export type AssetsView = z.infer<typeof assetsViewSchema>

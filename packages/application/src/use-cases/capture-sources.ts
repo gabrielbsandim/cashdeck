@@ -4,6 +4,7 @@ import { AmountRequiredError, NotConfiguredSource } from '@/errors/errors'
 import { type CapturedBill } from '@/ports/providers'
 import { amountRequiredAlert, emitAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
+import { keepBillLines } from '@/use-cases/bill-lines'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
 import { credentialName, putCredential } from '@/use-cases/credentials'
 import { required, requireEntity, requireEntityById } from '@/use-cases/shared'
@@ -50,6 +51,7 @@ type CaptureDeps = Pick<
   | 'billSources'
   | 'mailboxAuthorizer'
   | 'bills'
+  | 'attachments'
   | 'audit'
   | 'pixLocations'
   | 'payments'
@@ -216,6 +218,7 @@ export function makeCaptureSources(deps: CaptureDeps) {
           unverifiedSender: source === 'GMAIL' && found.senderVerified !== true,
         },
       )
+      await keepBillLines(deps, tenantId, result.bill, found)
       return !result.duplicate
     } catch (error) {
       const skipped = error instanceof AmountRequiredError

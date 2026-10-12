@@ -35,10 +35,50 @@ JsonMap fipeToJson(FipeVehicle fipe) => {
   'modelYear': fipe.modelYear,
 };
 
+RentCharge rentChargeFromJson(JsonMap json) {
+  final installment = readOptionalMap(json, 'installment');
+  return RentCharge(
+    billId: readString(json, 'billId'),
+    dueDate: readDate(json, 'dueDate'),
+    billTotal: readMoney(json, 'billTotal'),
+    passedOn: [
+      for (final line in readMapList(json, 'passedOn'))
+        BillLine(
+          description: readString(line, 'description'),
+          amount: readMoney(line, 'amount'),
+        ),
+    ],
+    total: readMoney(json, 'total'),
+    ownerCost: readMoney(json, 'ownerCost'),
+    result: readMoney(json, 'result'),
+    attachmentId: readOptionalString(json, 'attachmentId'),
+    installment: installment == null ? null : moneyFromJson(installment),
+  );
+}
+
+AssetRental rentalFromJson(JsonMap json) {
+  final charge = readOptionalMap(json, 'charge');
+  return AssetRental(
+    rent: readMoney(json, 'rent'),
+    passThrough: readStringList(json, 'passThrough'),
+    billFrom: readString(json, 'billFrom'),
+    charge: charge == null ? null : rentChargeFromJson(charge),
+  );
+}
+
+JsonMap? rentalToJson(RentalDraft? rental) => rental == null
+    ? null
+    : {
+        'rent': rental.rent.cents,
+        'passThrough': rental.words,
+        'billFrom': rental.billFrom.trim(),
+      };
+
 Asset assetFromJson(JsonMap json) {
   final change = readMap(json, 'change');
   final fipe = readOptionalMap(json, 'fipe');
   final loan = readOptionalMap(json, 'loan');
+  final rental = readOptionalMap(json, 'rental');
   return Asset(
     id: readString(json, 'id'),
     entity: entityKindFromJson(readString(json, 'entity')),
@@ -59,6 +99,7 @@ Asset assetFromJson(JsonMap json) {
             balance: readMoney(loan, 'balance'),
           ),
     equity: readMoney(json, 'equity'),
+    rental: rental == null ? null : rentalFromJson(rental),
   );
 }
 
@@ -97,8 +138,15 @@ JsonMap assetEditToJson(Asset before, AssetDraft draft) {
     if (fipe != null && fipe != before.fipe) 'fipe': fipeToJson(fipe),
     if (!priced && before.fipe != null) 'fipe': null,
     if (!priced && draft.value != before.value) 'value': draft.value.cents,
+    if (!_sameRental(before.rental, draft.rental))
+      'rental': rentalToJson(draft.rental),
   };
 }
+
+bool _sameRental(AssetRental? before, RentalDraft? draft) => switch (draft) {
+  null => before == null,
+  final draft => draft.matches(before),
+};
 
 /// The table names and prices a vehicle with a FIPE code, so neither is sent.
 JsonMap assetDraftToJson(AssetDraft draft) {
@@ -110,6 +158,7 @@ JsonMap assetDraftToJson(AssetDraft draft) {
     'kind': _keyOf(assetKinds, draft.kind),
     'acquiredOn': draft.acquiredOn.iso,
     'loanId': draft.loanId,
+    'rental': rentalToJson(draft.rental),
     if (draft.name.trim().isNotEmpty) 'name': draft.name.trim(),
     if (draft.value.cents > 0) 'value': draft.value.cents,
     if (fipe != null) 'fipe': fipeToJson(fipe),

@@ -1,4 +1,7 @@
+import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/network/file_transfer.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -52,6 +55,20 @@ final class ApiAssetsRepository implements AssetsRepository {
   @override
   Future<Result<void>> delete(String id) =>
       guardRequest(() => _dio.delete<Object?>(_asset(id)));
+
+  @override
+  Future<Result<LocalFile>> rentBill(RentCharge charge) {
+    final attachment = charge.attachmentId;
+    if (attachment == null) return Future.value(const Err(NotFoundFailure()));
+    final bill = Uri.encodeComponent(charge.billId);
+    return guardRequest(
+      () => downloadFile(
+        _dio,
+        '/api/v1/bills/$bill/attachments/${Uri.encodeComponent(attachment)}',
+        fallbackName: 'boleto.pdf',
+      ),
+    );
+  }
 
   static const vehiclesPath = '/api/v1/vehicles';
 

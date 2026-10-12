@@ -8,6 +8,7 @@ import {
 import {
   type BillKind,
   billKindFor,
+  type BillLine,
   decodePaymentCode,
   findPaymentCodes,
   findTaxIds,
@@ -26,6 +27,8 @@ export type ExtractedBill = {
   kind: BillKind | null
   // CPFs and CNPJs printed on it, which tell whose guide it is.
   taxIds: string[]
+  // What it charges for, line by line, like a building's gas.
+  lines: BillLine[]
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -59,6 +62,7 @@ export function toExtracted(
     amountCents?: number | null
     dueDate?: string | null
     taxIds?: readonly string[]
+    lines?: readonly BillLine[]
   } = {},
 ): ExtractedBill | null {
   if (!candidate.barcode && !candidate.pixCode) {
@@ -74,6 +78,7 @@ export function toExtracted(
     dueDate: facts.dueDate ?? hinted,
     kind: kindOf(candidate, today),
     taxIds: [...(hints.taxIds ?? [])],
+    lines: [...(hints.lines ?? [])],
   }
 }
 
@@ -96,6 +101,22 @@ const SCHEMA: LlmToolParameter = {
       description: 'Amount due as a decimal, like 123.45.',
     },
     dueDate: { type: 'string', description: 'Due date as YYYY-MM-DD.' },
+    lines: {
+      type: 'array',
+      description:
+        'Each charge the bill itemizes, like a building fee or the gas used; empty when it lists none.',
+      items: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'As printed.' },
+          amount: {
+            type: 'string',
+            description: 'Amount as a decimal, like 123.45.',
+          },
+        },
+        required: ['description', 'amount'],
+      },
+    },
   },
   required: ['barcode', 'pixCode'],
 }
@@ -111,6 +132,20 @@ type LlmAnswer = {
   payee?: string
   amount?: string
   dueDate?: string
+  lines?: Array<{ description?: string; amount?: string }>
+}
+
+const centsOf = (amount: string | undefined) => {
+  const value = Number(amount)
+  return Number.isFinite(value) && value > 0 ? Math.round(value * 100) : null
+}
+
+function linesOf(answer: LlmAnswer): BillLine[] {
+  return (answer.lines ?? []).flatMap(line => {
+    const description = line.description?.trim()
+    const cents = centsOf(line.amount)
+    return description && cents ? [{ description, cents }] : []
+  })
 }
 
 export class BillExtractor {
@@ -136,13 +171,12 @@ export class BillExtractor {
       pixCode:
         local.pixCode ?? (answer.pixCode ? validBrCode(answer.pixCode) : null),
     }
-    const amount = Number(answer.amount)
     return toExtracted(candidate, today, {
       payee: answer.payee,
-      amountCents:
-        Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null,
+      amountCents: centsOf(answer.amount),
       dueDate: answer.dueDate,
       taxIds: findTaxIds(text),
+      lines: linesOf(answer),
     })
   }
 

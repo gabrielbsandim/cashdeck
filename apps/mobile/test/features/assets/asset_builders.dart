@@ -15,6 +15,7 @@ Map<String, Object?> assetJson({
     'balance': {'cents': 3_000_000, 'currency': 'BRL'},
   },
   String? soldOn,
+  Object? rental,
 }) => {
   'id': id,
   'entity': 'PF',
@@ -28,6 +29,7 @@ Map<String, Object?> assetJson({
   'fipe': fipe,
   'loan': loan,
   'equity': _money(6_000_000),
+  'rental': rental,
 };
 
 const testFipe = FipeVehicle(
@@ -73,3 +75,43 @@ AssetsSummary summaryOf(List<Asset> items) => AssetsSummary(
   loanDebt: const Money(0),
   equity: items.fold(const Money(0), (sum, asset) => sum + asset.equity),
 );
+
+const testCharge = RentCharge(
+  billId: 'bill-1',
+  dueDate: CalendarDate(2026, 10, 10),
+  billTotal: Money(59_769),
+  passedOn: [BillLine(description: 'Consumo de gás', amount: Money(13_665))],
+  total: Money(173_665),
+  ownerCost: Money(46_104),
+  attachmentId: 'attachment-1',
+  installment: Money(108_500),
+  result: Money(5_396),
+);
+
+const testRental = AssetRental(
+  rent: Money(160_000),
+  passThrough: ['gás'],
+  billFrom: 'Jardim Azul',
+  charge: testCharge,
+);
+
+Map<String, Object?> rentalJson({bool billed = true, Object? installment}) => {
+  'rent': _money(160_000),
+  'passThrough': ['gás'],
+  'billFrom': 'Jardim Azul',
+  'charge': !billed
+      ? null
+      : {
+          'billId': 'bill-1',
+          'dueDate': '2026-10-10',
+          'billTotal': _money(59_769),
+          'passedOn': [
+            {'description': 'Consumo de gás', 'amount': _money(13_665)},
+          ],
+          'total': _money(173_665),
+          'ownerCost': _money(46_104),
+          'attachmentId': 'attachment-1',
+          'installment': installment,
+          'result': _money(5_396),
+        },
+};

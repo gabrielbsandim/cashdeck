@@ -47,6 +47,8 @@ String assetProblemMessage(AppLocalizations l10n, AssetProblem problem) =>
       AssetProblem.value => l10n.assetValueMissing,
       AssetProblem.vehicle => l10n.assetVehicleMissing,
       AssetProblem.futureDate => l10n.assetFutureDate,
+      AssetProblem.rent => l10n.assetRentMissing,
+      AssetProblem.billFrom => l10n.assetBillFromMissing,
     };
 
 class AssetEditor extends ConsumerStatefulWidget {
@@ -65,6 +67,10 @@ class AssetEditor extends ConsumerStatefulWidget {
   static const previewKey = Key('asset-fipe-preview');
   static const currentKey = Key('asset-fipe-current');
   static const loanKey = Key('asset-loan');
+  static const rentedKey = Key('asset-rented');
+  static const rentKey = Key('asset-rent');
+  static const billFromKey = Key('asset-bill-from');
+  static const passThroughKey = Key('asset-pass-through');
   static const errorKey = Key('asset-error');
   static const saveKey = Key('asset-save');
 
@@ -74,6 +80,10 @@ class AssetEditor extends ConsumerStatefulWidget {
 
 class _AssetEditorState extends ConsumerState<AssetEditor> {
   final _name = TextEditingController();
+  final _billFrom = TextEditingController();
+  final _passThrough = TextEditingController();
+  var _rented = false;
+  var _rent = const Money(0);
   AssetKind _kind = AssetKind.property;
   var _value = const Money(0);
   var _byFipe = true;
@@ -96,6 +106,8 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
 
   bool get _priced => _kind == AssetKind.vehicle && _byFipe;
 
+  bool get _rentable => _kind == AssetKind.property;
+
   AssetDraft get _draft => AssetDraft(
     kind: _kind,
     name: _name.text,
@@ -104,6 +116,13 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     byFipe: _byFipe,
     fipe: _priced ? _fipe : null,
     loanId: _loanId,
+    rental: _rentable && _rented
+        ? RentalDraft(
+            rent: _rent,
+            billFrom: _billFrom.text,
+            passThrough: _passThrough.text,
+          )
+        : null,
   );
 
   @override
@@ -120,13 +139,27 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
     _loanId = asset.loan?.id;
     _fipe = asset.fipe;
     _modelName = asset.fipe == null ? null : asset.name;
+    final rental = asset.rental;
+    if (rental == null) return;
+    _rented = true;
+    _rent = rental.rent;
+    _billFrom.text = rental.billFrom;
+    _passThrough.text = rental.passThrough.join(', ');
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _billFrom.dispose();
+    _passThrough.dispose();
     super.dispose();
   }
+
+  // The building usually shares the property's name.
+  void _toggleRented(bool rented) => setState(() {
+    _rented = rented;
+    if (rented && _billFrom.text.trim().isEmpty) _billFrom.text = _name.text;
+  });
 
   Future<void> _pickAcquired() async {
     final today = _today;
@@ -375,6 +408,41 @@ class _AssetEditorState extends ConsumerState<AssetEditor> {
                 ),
             ],
             onChanged: (value) => setState(() => _loanId = value),
+          ),
+        ],
+        if (_rentable) ...[
+          const SizedBox(height: AppSpacing.sm),
+          SwitchListTile(
+            key: AssetEditor.rentedKey,
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.assetRented),
+            subtitle: Text(l10n.assetRentedHelp),
+            value: _rented,
+            onChanged: _toggleRented,
+          ),
+        ],
+        if (_rentable && _rented) ...[
+          CdCurrencyInput(
+            key: AssetEditor.rentKey,
+            label: l10n.assetRent,
+            initial: _rent,
+            large: false,
+            onChanged: (value) => setState(() => _rent = value),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          CdTextField(
+            key: AssetEditor.billFromKey,
+            controller: _billFrom,
+            label: l10n.assetRentBillFrom,
+            helperText: l10n.assetRentBillFromHelp,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          CdTextField(
+            key: AssetEditor.passThroughKey,
+            controller: _passThrough,
+            label: l10n.assetRentPassThrough,
+            helperText: l10n.assetRentPassThroughHelp,
           ),
         ],
         if (error != null) ...[

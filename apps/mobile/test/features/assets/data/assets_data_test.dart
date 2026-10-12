@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
@@ -92,6 +95,47 @@ void main() {
       );
     });
 
+    test('read a rented good with the charge of its latest bill', () {
+      final rented = assetFromJson(
+        assetJson(rental: rentalJson(installment: _money(108_500))),
+      );
+      expect(rented.rental, testRental);
+      final unlinked = assetFromJson(assetJson(rental: rentalJson()));
+      expect(unlinked.rental?.charge?.installment, isNull);
+      final waiting = assetFromJson(
+        assetJson(rental: rentalJson(billed: false)),
+      );
+      expect(waiting.rental?.charge, isNull);
+    });
+
+    test('an edit sends the rental only when it changed', () {
+      const rental = RentalDraft(
+        rent: Money(160_000),
+        billFrom: 'Jardim Azul ',
+        passThrough: 'gás',
+      );
+      AssetDraft draft(RentalDraft? rental) => AssetDraft(
+        kind: AssetKind.vehicle,
+        name: 'Hatch Exemplo',
+        acquiredOn: testAsset.acquiredOn,
+        byFipe: true,
+        fipe: testFipe,
+        loanId: 'loan-1',
+        rental: rental,
+      );
+      final rented = assetFromJson(assetJson(rental: rentalJson()));
+      expect(assetEditToJson(testAsset, draft(null)), isEmpty);
+      expect(assetEditToJson(rented, draft(rental)), isEmpty);
+      expect(assetEditToJson(rented, draft(null)), {'rental': null});
+      expect(assetEditToJson(testAsset, draft(rental)), {
+        'rental': {
+          'rent': 160_000,
+          'passThrough': ['gás'],
+          'billFrom': 'Jardim Azul',
+        },
+      });
+    });
+
     test('send a value by hand, or only the FIPE code for a vehicle', () {
       const day = CalendarDate(2025, 6, 10);
       expect(
@@ -110,6 +154,7 @@ void main() {
           'kind': 'PROPERTY',
           'acquiredOn': '2025-06-10',
           'loanId': 'loan-1',
+          'rental': null,
           'name': 'Apartamento',
           'value': 50_000_000,
         },
@@ -132,6 +177,7 @@ void main() {
           'kind': 'VEHICLE',
           'acquiredOn': '2025-06-10',
           'loanId': null,
+          'rental': null,
           'fipe': {'type': 'MOTORCYCLE', 'code': '811084-3', 'modelYear': 2019},
         },
       );
@@ -220,6 +266,39 @@ void main() {
         testAsset,
       );
       expect(adapterOf(dio).requests.last.data, {'name': 'Carro'});
+    });
+
+    test('downloads the bill behind a rent charge', () async {
+      final dio = stubDio(
+        (options) => switch (options.path) {
+          '/api/v1/bills/bill-1/attachments/attachment-1' => StubResponse(
+            200,
+            Uint8List.fromList([37, 80, 68, 70]),
+            const {
+              'content-type': ['application/pdf'],
+            },
+          ),
+          _ => const StubResponse(404),
+        },
+      );
+      final repository = ApiAssetsRepository(dio);
+
+      final bill = _ok(await repository.rentBill(testCharge));
+      expect(bill.name, 'boleto.pdf');
+      expect(bill.bytes, [37, 80, 68, 70]);
+      const unattached = RentCharge(
+        billId: 'bill-1',
+        dueDate: CalendarDate(2026, 10, 10),
+        billTotal: Money(1),
+        passedOn: [],
+        total: Money(1),
+        ownerCost: Money(1),
+        result: Money(1),
+      );
+      expect(
+        await repository.rentBill(unattached),
+        const Err<LocalFile>(NotFoundFailure()),
+      );
     });
 
     test('walks the FIPE table from brand to a priced model', () async {
@@ -355,6 +434,69 @@ void main() {
       expect(watch.name, 'Relógio');
       expect(watch.fipe, isNull);
       expect(watch.value, const Money(300_000));
+      expect(watch.rental, isNull);
+    });
+
+    test('rents a good out, keeps its charge and sends its bill', () async {
+      final repository = fake();
+      final home = _ok(await repository.list()).items.first;
+      final charge = home.rental?.charge;
+      expect(charge?.total, const Money(173_665));
+
+      final bill = _ok(await repository.rentBill(charge!));
+      expect(bill.mimeType, 'application/pdf');
+      const draft = RentalDraft(
+        rent: Money(170_000),
+        billFrom: ' Jardim Exemplo ',
+        passThrough: 'gás, água',
+      );
+      final edited = _ok(
+        await repository.edit(
+          home,
+          AssetDraft(
+            kind: home.kind,
+            name: home.name,
+            acquiredOn: home.acquiredOn,
+            value: home.value,
+            loanId: home.loan?.id,
+            rental: draft,
+          ),
+        ),
+      );
+      expect(edited.rental?.rent, const Money(170_000));
+      expect(edited.rental?.passThrough, ['gás', 'água']);
+      expect(edited.rental?.charge, charge);
+      final revalued = _ok(
+        await repository.revalue(home.id, const Money(70_000_000)),
+      );
+      expect(revalued.rental, edited.rental);
+
+      final created = _ok(
+        await repository.create(
+          AssetDraft(
+            kind: AssetKind.property,
+            name: 'Casa',
+            acquiredOn: home.acquiredOn,
+            value: const Money(1),
+            rental: draft,
+          ),
+        ),
+      );
+      expect(created.rental?.charge, isNull);
+      expect(
+        await repository.rentBill(
+          RentCharge(
+            billId: 'x',
+            dueDate: charge.dueDate,
+            billTotal: charge.billTotal,
+            passedOn: const [],
+            total: charge.total,
+            ownerCost: charge.ownerCost,
+            result: charge.result,
+          ),
+        ),
+        const Err<LocalFile>(NotFoundFailure()),
+      );
     });
 
     test('walks a small FIPE table', () async {
@@ -488,6 +630,7 @@ void main() {
       expect(container.read(deleteAssetProvider), isNotNull);
       expect(container.read(browseVehiclesProvider), isNotNull);
       expect(container.read(editAssetProvider), isNotNull);
+      expect(container.read(loadRentBillProvider), isNotNull);
     }
   });
 }

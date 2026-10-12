@@ -3633,6 +3633,214 @@
                                   "currency"
                                 ],
                                 "additionalProperties": false
+                              },
+                              "rental": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "rent": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cents": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "cents",
+                                      "currency"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "passThrough": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "billFrom": {
+                                    "type": "string"
+                                  },
+                                  "charge": {
+                                    "nullable": true,
+                                    "type": "object",
+                                    "properties": {
+                                      "billId": {
+                                        "type": "string"
+                                      },
+                                      "dueDate": {
+                                        "type": "string",
+                                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                      },
+                                      "billTotal": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "passedOn": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "description": {
+                                              "type": "string"
+                                            },
+                                            "amount": {
+                                              "type": "object",
+                                              "properties": {
+                                                "cents": {
+                                                  "type": "integer",
+                                                  "minimum": -9007199254740991,
+                                                  "maximum": 9007199254740991
+                                                },
+                                                "currency": {
+                                                  "type": "string",
+                                                  "minLength": 3,
+                                                  "maxLength": 3
+                                                }
+                                              },
+                                              "required": [
+                                                "cents",
+                                                "currency"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "description",
+                                            "amount"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "total": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "ownerCost": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "attachmentId": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "installment": {
+                                        "nullable": true,
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "result": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "billId",
+                                      "dueDate",
+                                      "billTotal",
+                                      "passedOn",
+                                      "total",
+                                      "ownerCost",
+                                      "attachmentId",
+                                      "installment",
+                                      "result"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "rent",
+                                  "passThrough",
+                                  "billFrom",
+                                  "charge"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -3647,7 +3855,8 @@
                               "change",
                               "fipe",
                               "loan",
-                              "equity"
+                              "equity",
+                              "rental"
                             ],
                             "additionalProperties": false
                           }
@@ -3832,6 +4041,37 @@
                     "nullable": true,
                     "type": "string",
                     "minLength": 1
+                  },
+                  "rental": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "rent": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991
+                      },
+                      "passThrough": {
+                        "default": [],
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "billFrom": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      }
+                    },
+                    "required": [
+                      "rent",
+                      "billFrom"
+                    ]
                   }
                 },
                 "required": [
@@ -4027,6 +4267,214 @@
                             "currency"
                           ],
                           "additionalProperties": false
+                        },
+                        "rental": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "rent": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "passThrough": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "billFrom": {
+                              "type": "string"
+                            },
+                            "charge": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "billId": {
+                                  "type": "string"
+                                },
+                                "dueDate": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "billTotal": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "passedOn": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "description": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "description",
+                                      "amount"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "total": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "ownerCost": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "attachmentId": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "installment": {
+                                  "nullable": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "result": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "billId",
+                                "dueDate",
+                                "billTotal",
+                                "passedOn",
+                                "total",
+                                "ownerCost",
+                                "attachmentId",
+                                "installment",
+                                "result"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "rent",
+                            "passThrough",
+                            "billFrom",
+                            "charge"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4041,7 +4489,8 @@
                         "change",
                         "fipe",
                         "loan",
-                        "equity"
+                        "equity",
+                        "rental"
                       ],
                       "additionalProperties": false
                     }
@@ -4160,6 +4609,36 @@
                     "nullable": true,
                     "type": "string",
                     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "rental": {
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "rent": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991
+                      },
+                      "passThrough": {
+                        "default": [],
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "billFrom": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      }
+                    },
+                    "required": [
+                      "rent",
+                      "billFrom"
+                    ]
                   }
                 }
               }
@@ -4351,6 +4830,214 @@
                             "currency"
                           ],
                           "additionalProperties": false
+                        },
+                        "rental": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "rent": {
+                              "type": "object",
+                              "properties": {
+                                "cents": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 3
+                                }
+                              },
+                              "required": [
+                                "cents",
+                                "currency"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "passThrough": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "billFrom": {
+                              "type": "string"
+                            },
+                            "charge": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "billId": {
+                                  "type": "string"
+                                },
+                                "dueDate": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "billTotal": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "passedOn": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "description": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cents": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "currency": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 3
+                                          }
+                                        },
+                                        "required": [
+                                          "cents",
+                                          "currency"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "description",
+                                      "amount"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "total": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "ownerCost": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "attachmentId": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "installment": {
+                                  "nullable": true,
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "result": {
+                                  "type": "object",
+                                  "properties": {
+                                    "cents": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "minLength": 3,
+                                      "maxLength": 3
+                                    }
+                                  },
+                                  "required": [
+                                    "cents",
+                                    "currency"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "billId",
+                                "dueDate",
+                                "billTotal",
+                                "passedOn",
+                                "total",
+                                "ownerCost",
+                                "attachmentId",
+                                "installment",
+                                "result"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "rent",
+                            "passThrough",
+                            "billFrom",
+                            "charge"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4365,7 +5052,8 @@
                         "change",
                         "fipe",
                         "loan",
-                        "equity"
+                        "equity",
+                        "rental"
                       ],
                       "additionalProperties": false
                     }

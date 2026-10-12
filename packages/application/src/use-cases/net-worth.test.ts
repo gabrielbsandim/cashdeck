@@ -206,6 +206,7 @@ describe('net worth', () => {
       acquiredOn: '2026-08-10',
       value: 900000,
       loanId,
+      rental: null,
     })
     await assets.create(TENANT, {
       entity: 'PJ',
@@ -214,6 +215,7 @@ describe('net worth', () => {
       acquiredOn: '2020-01-10',
       value: 300000,
       loanId: null,
+      rental: null,
     })
 
     const view = await makeNetWorthFromBalancesAndSnapshots(deps)(TENANT, {

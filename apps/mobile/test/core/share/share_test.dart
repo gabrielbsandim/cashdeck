@@ -26,10 +26,11 @@ void main() {
     });
 
     await sharer.shareText('oi', subject: 'assunto');
-    await sharer.shareFile(pdf);
+    await sharer.shareFile(pdf, text: 'segue o boleto');
 
     expect(sent.first.text, 'oi');
     expect(sent.first.subject, 'assunto');
+    expect(sent.last.text, 'segue o boleto');
     expect(sent.last.fileNameOverrides, ['conta.pdf']);
     expect(sent.last.files!.single.mimeType, 'application/pdf');
   });
@@ -37,10 +38,11 @@ void main() {
   test('the fake sharer records what was shared', () async {
     final sharer = FakeFileSharer();
     await sharer.shareText('oi');
-    await sharer.shareFile(pdf);
+    await sharer.shareFile(pdf, text: 'legenda');
 
     expect(sharer.texts, ['oi']);
     expect(sharer.files, [pdf]);
+    expect(sharer.captions, ['legenda']);
   });
 
   test('links open outside the app', () async {

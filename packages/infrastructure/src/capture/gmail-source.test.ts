@@ -72,6 +72,7 @@ describe('toExtracted', () => {
       dueDate: '2026-10-20',
       kind: 'BOLETO',
       taxIds: [],
+      lines: [],
     })
     expect(
       toExtracted({ barcode: TAX_BARCODE, pixCode: null }, TODAY, {
@@ -110,6 +111,7 @@ describe('BillExtractor', () => {
       dueDate: '2026-10-20',
       kind: 'BOLETO',
       taxIds: [],
+      lines: [],
     })
     expect(await extractor.fromAttachment(attachment, TODAY)).toBeNull()
     expect(await extractor.fromAttachment(attachment, TODAY)).toMatchObject({
@@ -125,6 +127,28 @@ describe('BillExtractor', () => {
       stopReason: 'end',
     })
     expect(await extractor.fromAttachment(attachment, TODAY)).toBeNull()
+  })
+
+  it('reads the lines a bill itemizes and drops the unreadable ones', async () => {
+    const llm = new FakeLlmProvider().enqueueObject({
+      barcode: BOLETO_LINE,
+      pixCode: '',
+      lines: [
+        { description: ' Taxas de condomínio ', amount: '372.78' },
+        { description: 'Consumo de gás', amount: '136.65' },
+        { description: '', amount: '10.00' },
+        { description: 'Desconto', amount: '-5.00' },
+        { amount: '1.00' },
+      ],
+    })
+    const extracted = await new BillExtractor(llm).fromAttachment(
+      { mimeType: 'application/pdf', dataBase64: 'JVBERi0=' },
+      TODAY,
+    )
+    expect(extracted?.lines).toEqual([
+      { description: 'Taxas de condomínio', cents: 37278 },
+      { description: 'Consumo de gás', cents: 13665 },
+    ])
   })
 
   it('takes the codes from the PDF text layer before the model answer', async () => {
@@ -322,6 +346,12 @@ describe('GmailBillSource', () => {
         kind: 'BOLETO',
         taxIds: [],
         senderVerified: true,
+        lines: [],
+        file: {
+          fileName: 'boleto.pdf',
+          mimeType: 'application/pdf',
+          bytes: Buffer.from('%PDF fake'),
+        },
       },
       {
         externalId: 'm2:0',
@@ -333,6 +363,7 @@ describe('GmailBillSource', () => {
         kind: 'PIX_QR',
         taxIds: [],
         senderVerified: false,
+        lines: [],
       },
     ])
     const list = scripted.requests.find(r =>
@@ -345,6 +376,77 @@ describe('GmailBillSource', () => {
     expect(scripted.last('POST', TOKEN).body).toContain(
       'grant_type=refresh_token',
     )
+    expect(llm.calls).toHaveLength(1)
+  })
+
+  it('fetches the PDF behind a known biller link and keeps it', async () => {
+    const link = (id: string) =>
+      `https://app.winker.com.br/emailAccess/link/l/${id}/h/abc123`
+    const html = [
+      `<a href="${link('1')}">Acessar boleto</a>`,
+      `<a href='${link('1')}'><img></a>`,
+      `<a href="${link('2')}">expired</a>`,
+      `<a href="${link('3')}">gone</a>`,
+      `<a href="${link('4')}">huge</a>`,
+      '<a href="https://elsewhere.test/emailAccess/link/l/9/h/x">no</a>',
+    ].join('')
+    const scripted = new ScriptedTransport()
+      .on('POST', TOKEN, { json: { access_token: 'gtoken' } })
+      .on('GET', `${API}/messages?`, { json: { messages: [{ id: 'm1' }] } })
+      .on('GET', `${API}/messages/m1?format=full`, {
+        json: {
+          id: 'm1',
+          payload: {
+            mimeType: 'text/html',
+            headers: [{ name: 'From', value: 'Condomínio <c@adm.test>' }],
+            body: { data: b64(html) },
+          },
+        },
+      })
+      .on('GET', link('1'), {
+        headers: { 'content-type': 'application/pdf' },
+        bytes: Buffer.from('%PDF condo'),
+      })
+      .on('GET', link('2'), {
+        headers: { 'content-type': 'text/html' },
+        text: '<p>expired</p>',
+      })
+      .on('GET', link('3'), { status: 404 })
+      .on('GET', link('4'), {
+        headers: { 'content-type': 'application/pdf' },
+        bytes: new Uint8Array(10 * 1024 * 1024 + 1),
+      })
+    const llm = new FakeLlmProvider().enqueueObject({
+      barcode: BOLETO_LINE,
+      pixCode: '',
+      payee: 'Condomínio Jardim Azul',
+      lines: [{ description: 'Consumo de gás', amount: '136.65' }],
+    })
+    const source = new GmailBillSource({
+      credentials: gmailEnv(),
+      transport: scripted.transport,
+      extractor: new BillExtractor(llm),
+      now,
+    })
+
+    const bills = await source.fetch(TENANT, ENTITY, since)
+
+    expect(bills).toMatchObject([
+      {
+        paymentCode: BOLETO_LINE,
+        payee: 'Condomínio Jardim Azul',
+        lines: [{ description: 'Consumo de gás', cents: 13665 }],
+        file: {
+          fileName: 'boleto.pdf',
+          mimeType: 'application/pdf',
+          bytes: Buffer.from('%PDF condo'),
+        },
+      },
+    ])
+    const fetched = scripted.requests
+      .map(request => request.url)
+      .filter(url => !url.startsWith(API) && url !== TOKEN)
+    expect(fetched).toEqual([link('1'), link('2'), link('3'), link('4')])
     expect(llm.calls).toHaveLength(1)
   })
 

@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
@@ -69,6 +72,11 @@ void main() {
       ),
     );
     expect((unnamed as Err).failure, const UnexpectedFailure());
+
+    final bill = LocalFile(name: 'boleto.pdf', bytes: Uint8List(1));
+    when(() => repository.rentBill(testCharge))
+        .thenAnswer((_) async => Ok(bill));
+    expect(await LoadRentBill(repository)(testCharge), Ok(bill));
   });
 
   test(

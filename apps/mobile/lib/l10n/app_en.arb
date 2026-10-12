@@ -1580,5 +1580,53 @@
         "type": "String"
       }
     }
+  },
+  "assetRented": "Rented out",
+  "assetRentedHelp": "The tenant pays the rent and their part of the building's bill",
+  "assetRent": "Rent",
+  "assetRentBillFrom": "Building on the bill",
+  "assetRentBillFromHelp": "Part of the bill issuer's name, like the building's name",
+  "assetRentPassThrough": "Lines passed on to the tenant",
+  "assetRentPassThroughHelp": "Separated by commas, like gas, water",
+  "assetRentMissing": "Enter the rent.",
+  "assetBillFromMissing": "Enter the building on the bill.",
+  "rentChargeTitle": "{month} charge",
+  "@rentChargeTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "rentChargeTotal": "Ask the tenant for",
+  "rentChargeSend": "Send the charge",
+  "rentChargeNoBill": "The building's bill has not arrived yet.",
+  "rentInstallment": "Loan installment",
+  "rentOwnerCost": "Building fee (your part)",
+  "rentResult": "Rent left this month",
+  "rentMessage": "Hi! The {month} charge is:\n{lines}\nTotal: {total}\nThe building's bill is attached so you can check it.",
+  "@rentMessage": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "rentMessageLine": "{label}: {amount}",
+  "@rentMessageLine": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

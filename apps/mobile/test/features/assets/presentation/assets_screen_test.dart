@@ -3,6 +3,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/share/file_sharer.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/assets/assets_providers.dart';
 import 'package:cashdeck/features/assets/data/fake_assets_repository.dart';
@@ -171,6 +172,139 @@ void main() {
     await _tap(tester, find.byKey(AssetEditor.saveKey));
     expect(find.text('Casa'), findsOneWidget);
     expect(find.text('Banco Exemplo 1001'), findsOneWidget);
+  });
+
+  testWidgets('sends the tenant the charge with the building bill', (
+    tester,
+  ) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.assets,
+      screenHeight: _height,
+    );
+    final sharer = app.read(fileSharerProvider) as FakeFileSharer;
+
+    expect(find.text('Consumo de gás'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(AssetsScreen.rentTotalKey),
+        matching: find.text(MoneyFormat.format(const Money(173_665))),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(AssetsScreen.rentResultKey),
+        matching: find.text(MoneyFormat.format(const Money(5_396))),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.rentInstallment), findsOneWidget);
+
+    await _tap(tester, find.byKey(AssetsScreen.rentSendKey));
+
+    expect(sharer.files.single.name, 'boleto.pdf');
+    final caption = sharer.captions.single ?? '';
+    expect(caption, contains(r'Consumo de gás: R$'));
+    expect(caption, contains(MoneyFormat.format(const Money(173_665))));
+  });
+
+  testWidgets('a rent with no bill yet, no PDF or a failed download', (
+    tester,
+  ) async {
+    final repository = MockAssetsRepository();
+    final unattached = RentCharge(
+      billId: testCharge.billId,
+      dueDate: testCharge.dueDate,
+      billTotal: testCharge.billTotal,
+      passedOn: testCharge.passedOn,
+      total: testCharge.total,
+      ownerCost: testCharge.ownerCost,
+      result: testCharge.result,
+    );
+    Asset rented(String id, RentCharge? charge) => Asset(
+      id: id,
+      entity: testAsset.entity,
+      kind: AssetKind.property,
+      name: 'Apto $id',
+      acquiredOn: testAsset.acquiredOn,
+      value: testAsset.value,
+      valuedOn: testAsset.valuedOn,
+      change: testAsset.change,
+      equity: testAsset.equity,
+      rental: AssetRental(
+        rent: testRental.rent,
+        passThrough: testRental.passThrough,
+        billFrom: testRental.billFrom,
+        charge: charge,
+      ),
+    );
+    when(repository.list).thenAnswer(
+      (_) async => Ok(
+        summaryOf([
+          rented('a', null),
+          rented('b', unattached),
+          rented('c', testCharge),
+        ]),
+      ),
+    );
+    when(() => repository.rentBill(testCharge))
+        .thenAnswer((_) async => const Err(NetworkFailure()));
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.assets,
+      screenHeight: 3200,
+      overrides: [assetsRepositoryProvider.overrideWithValue(repository)],
+    );
+    final sharer = app.read(fileSharerProvider) as FakeFileSharer;
+
+    expect(find.text(l10n.rentChargeNoBill), findsOneWidget);
+    await _tap(tester, find.byKey(AssetsScreen.rentSendKey).first);
+    expect(sharer.texts.single, contains('Consumo de gás'));
+    await _tap(tester, find.byKey(AssetsScreen.rentSendKey).last);
+    expect(sharer.files, isEmpty);
+    expect(find.text(l10n.rentChargeSend), findsWidgets);
+  });
+
+  testWidgets('rents a property out and checks the rental fields', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.assets, screenHeight: _height);
+    await _tap(tester, find.byKey(AssetsScreen.addKey));
+    await _type(tester, AssetEditor.nameKey, 'Jardim Azul');
+    await _type(tester, AssetEditor.valueKey, '30000000');
+    await _tap(tester, find.byKey(AssetEditor.rentedKey));
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: find.byKey(AssetEditor.billFromKey),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .controller
+          .text,
+      'Jardim Azul',
+    );
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.text(l10n.assetRentMissing), findsOneWidget);
+    await _type(tester, AssetEditor.rentKey, '160000');
+    await _type(tester, AssetEditor.billFromKey, ' ');
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.text(l10n.assetBillFromMissing), findsOneWidget);
+    await _type(tester, AssetEditor.billFromKey, 'Jardim Azul');
+    await _type(tester, AssetEditor.passThroughKey, 'gás');
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+
+    expect(find.text(l10n.assetAdded), findsOneWidget);
+    expect(find.text(l10n.rentChargeNoBill), findsOneWidget);
+
+    await _act(tester, 'asset-home', AssetsScreen.editKey);
+    expect(find.byKey(AssetEditor.rentKey), findsOneWidget);
+    await _tap(tester, find.byKey(AssetEditor.rentedKey));
+    expect(find.byKey(AssetEditor.rentKey), findsNothing);
+    await _tap(tester, find.byKey(AssetEditor.saveKey));
+    expect(find.byKey(AssetsScreen.rentSendKey), findsNothing);
   });
 
   testWidgets('revalues, marks sold and deletes', (tester) async {

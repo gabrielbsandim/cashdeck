@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
@@ -74,6 +75,16 @@ final class DeleteAsset {
   final AssetsRepository _repository;
 
   Future<Result<void>> call(String id) => _repository.delete(id);
+}
+
+/// The building's bill, to send the tenant with the month's charge.
+final class LoadRentBill {
+  const new(this._repository);
+
+  final AssetsRepository _repository;
+
+  Future<Result<LocalFile>> call(RentCharge charge) =>
+      _repository.rentBill(charge);
 }
 
 /// Walks the FIPE table so a vehicle is found without knowing its code.

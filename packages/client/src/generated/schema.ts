@@ -3387,6 +3387,46 @@ export interface operations {
                                     cents: number;
                                     currency: string;
                                 };
+                                rental: {
+                                    rent: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    passThrough: string[];
+                                    billFrom: string;
+                                    charge: {
+                                        billId: string;
+                                        dueDate: string;
+                                        billTotal: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        passedOn: {
+                                            description: string;
+                                            amount: {
+                                                cents: number;
+                                                currency: string;
+                                            };
+                                        }[];
+                                        total: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        ownerCost: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                        attachmentId: string | null;
+                                        installment: {
+                                            cents: number;
+                                            currency: string;
+                                        } | null;
+                                        result: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                    } | null;
+                                } | null;
                             }[];
                             value: {
                                 cents: number;
@@ -3443,6 +3483,13 @@ export interface operations {
                     };
                     /** @default null */
                     loanId?: string | null;
+                    /** @default null */
+                    rental?: {
+                        rent: number;
+                        /** @default [] */
+                        passThrough?: string[];
+                        billFrom: string;
+                    } | null;
                 };
             };
         };
@@ -3493,6 +3540,46 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            rental: {
+                                rent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                passThrough: string[];
+                                billFrom: string;
+                                charge: {
+                                    billId: string;
+                                    dueDate: string;
+                                    billTotal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    passedOn: {
+                                        description: string;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                    }[];
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    ownerCost: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    attachmentId: string | null;
+                                    installment: {
+                                        cents: number;
+                                        currency: string;
+                                    } | null;
+                                    result: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                } | null;
+                            } | null;
                         };
                     };
                 };
@@ -3567,6 +3654,12 @@ export interface operations {
                     valuedOn?: string;
                     loanId?: string | null;
                     soldOn?: string | null;
+                    rental?: {
+                        rent: number;
+                        /** @default [] */
+                        passThrough?: string[];
+                        billFrom: string;
+                    } | null;
                 };
             };
         };
@@ -3617,6 +3710,46 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            rental: {
+                                rent: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                passThrough: string[];
+                                billFrom: string;
+                                charge: {
+                                    billId: string;
+                                    dueDate: string;
+                                    billTotal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    passedOn: {
+                                        description: string;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                    }[];
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    ownerCost: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    attachmentId: string | null;
+                                    installment: {
+                                        cents: number;
+                                        currency: string;
+                                    } | null;
+                                    result: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                } | null;
+                            } | null;
                         };
                     };
                 };

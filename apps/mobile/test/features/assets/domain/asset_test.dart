@@ -14,6 +14,7 @@ AssetDraft _draft({
   Money value = const Money(50_000_000),
   bool byFipe = false,
   FipeVehicle? fipe,
+  RentalDraft? rental,
 }) => AssetDraft(
   kind: kind,
   name: name,
@@ -21,6 +22,13 @@ AssetDraft _draft({
   value: value,
   byFipe: byFipe,
   fipe: fipe,
+  rental: rental,
+);
+
+const _rental = RentalDraft(
+  rent: Money(160_000),
+  billFrom: ' Jardim Azul ',
+  passThrough: 'gás, , água ',
 );
 
 void main() {
@@ -56,14 +64,65 @@ void main() {
     );
   });
 
+  test('a rented good needs the rent and the building on the bill', () {
+    expect(_draft(rental: _rental).problemOn(_today), isNull);
+    expect(
+      _draft(
+        rental: const RentalDraft(rent: Money(0), billFrom: 'Jardim'),
+      ).problemOn(_today),
+      AssetProblem.rent,
+    );
+    expect(
+      _draft(
+        rental: const RentalDraft(rent: Money(1), billFrom: ' '),
+      ).problemOn(_today),
+      AssetProblem.billFrom,
+    );
+  });
+
+  test('a rental draft reads its words and tells whether it changed', () {
+    expect(_rental.words, ['gás', 'água']);
+    const rental = AssetRental(
+      rent: Money(160_000),
+      passThrough: ['gás', 'água'],
+      billFrom: 'Jardim Azul',
+    );
+    expect(_rental.matches(rental), isTrue);
+    expect(_rental.matches(null), isFalse);
+    expect(
+      _rental.matches(
+        const AssetRental(
+          rent: Money(160_000),
+          passThrough: ['água', 'gás'],
+          billFrom: 'Jardim Azul',
+        ),
+      ),
+      isFalse,
+    );
+    expect(
+      _rental.matches(
+        const AssetRental(
+          rent: Money(160_000),
+          passThrough: ['gás'],
+          billFrom: 'Jardim Azul',
+        ),
+      ),
+      isFalse,
+    );
+    expect(_rental.props, hasLength(3));
+    expect(rental.props, hasLength(4));
+    expect(testRental.charge?.props, hasLength(9));
+    expect(testRental.charge?.passedOn.single.props, hasLength(2));
+  });
+
   test('values compare by every field', () {
     expect(testAsset.sold, isFalse);
-    expect(testAsset.props, hasLength(13));
+    expect(testAsset.props, hasLength(14));
     expect(testFipe.props, [VehicleType.car, '001234-5', 2022]);
     expect(testAsset.loan?.props, hasLength(3));
     expect(summaryOf([testAsset]).props, hasLength(4));
     expect(summaryOf(const []).isEmpty, isTrue);
-    expect(_draft().props, hasLength(7));
+    expect(_draft().props, hasLength(8));
     expect(testModel.props, ['10', 'Hatch Exemplo 1.0 Flex', '2022-5']);
     expect(testCatalogVehicle.props, hasLength(3));
   });

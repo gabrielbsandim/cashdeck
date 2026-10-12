@@ -6,7 +6,8 @@ import { fullDeps } from '@/testing/deps.test-helpers'
 import { FakeVehiclePrices } from '@/testing/investments'
 import { importLoan } from '@/testing/loans.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
-import { makeAssets } from '@/use-cases/assets'
+import { ASSETS_COLLECTION, makeAssets } from '@/use-cases/assets'
+import { BILL_LINES_COLLECTION } from '@/use-cases/bill-lines'
 
 const pickup = { type: 'CAR' as const, code: '005340-6', modelYear: 2020 }
 
@@ -30,6 +31,7 @@ const home = {
   acquiredOn: '2026-08-10',
   value: 900000,
   loanId: null,
+  rental: null,
 }
 
 describe('assets', () => {
@@ -42,6 +44,7 @@ describe('assets', () => {
       acquiredOn: '2022-03-01',
       fipe: pickup,
       loanId: null,
+      rental: null,
     })
 
     expect(view).toMatchObject({
@@ -67,6 +70,7 @@ describe('assets', () => {
       value: 13000000,
       fipe: pickup,
       loanId: null,
+      rental: null,
     })
     await assets.create(TENANT, { ...home, loanId })
 
@@ -126,6 +130,86 @@ describe('assets', () => {
     await expect(assets.remove(TENANT, id)).rejects.toThrow(NotFoundError)
   })
 
+  it('charges the tenant the rent and the gas of the latest building bill', async () => {
+    const { deps, assets } = setup()
+    const loanId = await importLoan(deps)
+    const bill = (id: string, payee: string, dueDate: string, gas: number) =>
+      deps.documents.put(TENANT, BILL_LINES_COLLECTION, id, {
+        billId: id,
+        payee,
+        dueDate,
+        total: 46104 + gas,
+        lines: [
+          { description: 'Taxas de condomínio', cents: 46104 },
+          { description: 'Consumo de gás', cents: gas },
+        ],
+        attachmentId: `${id}-pdf`,
+      })
+    await bill('b-sep', 'CONDOMÍNIO JARDIM AZUL', '2026-09-10', 15597)
+    await bill('b-oct', 'CONDOMÍNIO JARDIM AZUL', '2026-10-10', 13665)
+    await bill('b-other', 'Residencial Jardim Verde', '2026-11-10', 9000)
+    const rental = {
+      rent: 160000,
+      passThrough: ['gas'],
+      billFrom: 'Jardim Azul',
+    }
+
+    const rented = await assets.create(TENANT, { ...home, loanId, rental })
+
+    expect(rented.rental).toEqual({
+      rent: { cents: 160000, currency: 'BRL' },
+      passThrough: ['gas'],
+      billFrom: 'Jardim Azul',
+      charge: {
+        billId: 'b-oct',
+        dueDate: '2026-10-10',
+        billTotal: { cents: 59769, currency: 'BRL' },
+        passedOn: [
+          {
+            description: 'Consumo de gás',
+            amount: { cents: 13665, currency: 'BRL' },
+          },
+        ],
+        total: { cents: 173665, currency: 'BRL' },
+        ownerCost: { cents: 46104, currency: 'BRL' },
+        attachmentId: 'b-oct-pdf',
+        installment: { cents: 108500, currency: 'BRL' },
+        result: { cents: 5396, currency: 'BRL' },
+      },
+    })
+
+    const unlinked = await assets.update(TENANT, rented.id, { loanId: null })
+    expect(unlinked.rental?.charge).toMatchObject({
+      installment: null,
+      result: { cents: 113896 },
+    })
+    const elsewhere = await assets.update(TENANT, rented.id, {
+      rental: { ...rental, billFrom: 'Vila Nova' },
+    })
+    expect(elsewhere.rental?.charge).toBeNull()
+    const kept = await assets.update(TENANT, rented.id, { name: 'Apto 2' })
+    expect(kept.rental?.billFrom).toBe('Vila Nova')
+    const ended = await assets.update(TENANT, rented.id, { rental: null })
+    expect(ended.rental).toBeNull()
+  })
+
+  it('reads a good stored before renting out was tracked as not rented', async () => {
+    const { deps, assets } = setup()
+    const { id } = await assets.create(TENANT, home)
+    const stored = await deps.documents.get<Record<string, unknown>>(
+      TENANT,
+      ASSETS_COLLECTION,
+      id,
+    )
+    const { rental: _rental, ...older } = stored ?? {}
+    await deps.documents.put(TENANT, ASSETS_COLLECTION, id, older)
+
+    expect((await assets.list(TENANT)).items[0]?.rental).toBeNull()
+    expect(
+      (await assets.update(TENANT, id, { name: 'Casa' })).rental,
+    ).toBeNull()
+  })
+
   it('refuses a model year with no price and a value from a future day', async () => {
     const { assets, vehiclePrices } = setup()
     vehiclePrices.histories.set('009999-9', { model: 'Novo', prices: [] })
@@ -136,6 +220,7 @@ describe('assets', () => {
         acquiredOn: '2026-10-01',
         fipe: { ...pickup, code: '009999-9' },
         loanId: null,
+        rental: null,
       }),
     ).rejects.toThrow(ValidationError)
     const { id } = await assets.create(TENANT, home)
@@ -157,6 +242,7 @@ describe('assets', () => {
       acquiredOn: '2022-03-01',
       fipe: pickup,
       loanId: null,
+      rental: null,
     })
 
     const moved = await assets.update(TENANT, id, {
@@ -197,6 +283,7 @@ describe('assets', () => {
       acquiredOn: '2022-03-01',
       fipe: pickup,
       loanId: null,
+      rental: null,
     })
     await expect(
       assets.update(TENANT, car.id, { fipe: { ...pickup, code: '009999-9' } }),
@@ -228,6 +315,7 @@ describe('assets', () => {
         acquiredOn: '2022-03-01',
         fipe,
         loanId: null,
+        rental: null,
       })
     const tracked = await vehicle(pickup)
     const lost = await vehicle(retired)

@@ -11,6 +11,7 @@ import {
   TAX_BARCODE,
   TENANT,
 } from '@/testing/scenario.test-helpers'
+import { loadBillLines } from '@/use-cases/bill-lines'
 import {
   DDA_COLLECTION,
   MAILBOX_COLLECTION,
@@ -148,6 +149,54 @@ describe('capture sources', () => {
       items.map(bill => [bill.kind, bill.unverifiedSender]),
     )
     expect(flags).toEqual({ BOLETO: false, TAX_BARCODE: true, PIX_QR: true })
+  })
+
+  it('keeps the lines and the document of the first read of each bill', async () => {
+    const pdf = {
+      fileName: 'boleto.pdf',
+      mimeType: 'application/pdf',
+      bytes: new Uint8Array([37, 80, 68, 70]),
+    }
+    const gas = { description: 'Consumo de gás', cents: 13665 }
+    const deps = fullDeps({
+      billSources: [
+        source('GMAIL', [
+          found({ paymentCode: BOLETO_LINE, lines: [gas], file: pdf }),
+          found({ externalId: 'm2', paymentCode: BOLETO_LINE }),
+          found({ externalId: 'm3', paymentCode: BOLETO_LINE, lines: [gas] }),
+          found({ externalId: 'm4', paymentCode: TAX_BARCODE, file: pdf }),
+          found({
+            externalId: 'm5',
+            pixCode: PIX_NO_AMOUNT,
+            amountCents: 900,
+            lines: [gas],
+          }),
+        ]),
+      ],
+    })
+    const capture = makeCaptureSources(deps)
+    const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
+    await capture.readMailbox(TENANT, mailbox.id)
+
+    const kept = await loadBillLines(deps, TENANT)
+    const { items } = await deps.bills.list(TENANT, {}, { limit: 10 })
+    const kindOf = new Map(items.map(bill => [bill.id, bill.kind]))
+    const byKind = Object.fromEntries(
+      kept.map(row => [
+        kindOf.get(row.billId),
+        [row.lines.length, row.attachmentId !== null],
+      ]),
+    )
+    expect(byKind).toEqual({
+      BOLETO: [1, true],
+      TAX_BARCODE: [0, true],
+      PIX_QR: [1, false],
+    })
+    const boleto = kept.find(row => kindOf.get(row.billId) === 'BOLETO')
+    const files = await deps.attachments.list(TENANT, boleto?.billId ?? '')
+    expect(files.map(file => [file.fileName, file.size])).toEqual([
+      ['boleto.pdf', 4],
+    ])
   })
 
   it('starts the next read window when the previous run started', async () => {

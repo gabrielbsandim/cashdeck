@@ -2,10 +2,14 @@ import {
   type AssetKind,
   assetValueOn,
   type EntityKind,
+  installmentIn,
+  isRentalBill,
   type LocalDate,
   loanBalanceOn,
   Money,
   netWorthChange,
+  type Rental,
+  rentCharge,
   ValidationError,
   type Valuation,
   withValuation,
@@ -14,10 +18,12 @@ import {
   type AssetsView,
   type AssetView,
   type CreateAssetInput,
+  type RentalView,
   type UpdateAssetInput,
 } from '@/dtos/assets'
 import { money } from '@/dtos/common'
 import { type FipeVehicle, type VehiclePriceHistory } from '@/ports/investments'
+import { loadBillLines, type StoredBillLines } from '@/use-cases/bill-lines'
 import { type Deps } from '@/use-cases/deps'
 import { LOANS_COLLECTION, loadLoans, type StoredLoan } from '@/use-cases/loans'
 import { requireEntity, required, today } from '@/use-cases/shared'
@@ -35,7 +41,15 @@ export type StoredAsset = {
   valuations: Valuation[]
   fipe: FipeVehicle | null
   loanId: string | null
+  // Missing on goods stored before renting out was tracked.
+  rental?: Rental | null
   createdAt: string
+}
+
+// What the asset view reads besides the asset itself.
+export type AssetContext = {
+  loans: ReadonlyMap<string, StoredLoan>
+  bills: readonly StoredBillLines[]
 }
 
 type AssetDeps = Pick<
@@ -55,16 +69,62 @@ const fromTable = (history: VehiclePriceHistory): Valuation[] =>
     cents: price.cents,
   }))
 
+const latestBill = (rental: Rental, bills: readonly StoredBillLines[]) =>
+  bills
+    .filter(bill => isRentalBill(rental, bill.payee))
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .at(-1)
+
+export function rentalView(
+  rental: Rental,
+  loan: StoredLoan | undefined,
+  bills: readonly StoredBillLines[],
+): RentalView {
+  const base = {
+    rent: money(Money.of(rental.rent)),
+    passThrough: [...rental.passThrough],
+    billFrom: rental.billFrom,
+  }
+  const bill = latestBill(rental, bills)
+  if (!bill) {
+    return { ...base, charge: null }
+  }
+  const charge = rentCharge(rental, bill.lines, bill.total)
+  const installment = loan
+    ? installmentIn(loan, bill.dueDate.slice(0, 7))
+    : null
+  const owed = installment?.total ?? 0
+  return {
+    ...base,
+    charge: {
+      billId: bill.billId,
+      dueDate: bill.dueDate,
+      billTotal: money(Money.of(bill.total)),
+      passedOn: charge.passedOn.map(line => ({
+        description: line.description,
+        amount: money(Money.of(line.cents)),
+      })),
+      total: money(Money.of(charge.total)),
+      ownerCost: money(Money.of(charge.ownerCost)),
+      attachmentId: bill.attachmentId,
+      installment: installment ? money(Money.of(installment.total)) : null,
+      result: money(Money.of(rental.rent - owed - charge.ownerCost)),
+    },
+  }
+}
+
 const merged = (valuations: readonly Valuation[], priced: Valuation[]) =>
   priced.reduce(withValuation, [...valuations])
 
 export function assetView(
   asset: StoredAsset,
-  loans: ReadonlyMap<string, StoredLoan>,
+  context: AssetContext,
   day: LocalDate,
 ): AssetView {
   const value = assetValueOn(asset, day)
-  const loan = asset.loanId === null ? undefined : loans.get(asset.loanId)
+  const loan =
+    asset.loanId === null ? undefined : context.loans.get(asset.loanId)
+  const rental = asset.rental ?? null
   const owed = Money.of(loan ? loanBalanceOn(loan, day) : 0)
   // Create and update keep one value at least, none of them after today.
   const first = asset.valuations[0] as Valuation
@@ -89,6 +149,7 @@ export function assetView(
         }
       : null,
     equity: money(value.subtract(owed)),
+    rental: rental ? rentalView(rental, loan, context.bills) : null,
   }
 }
 
@@ -112,20 +173,25 @@ export function makeAssets(deps: AssetDeps) {
     )
   }
 
-  async function viewOf(tenantId: string, asset: StoredAsset) {
+  async function contextOf(tenantId: string): Promise<AssetContext> {
     const loans = await loadLoans(deps, tenantId)
-    return assetView(asset, new Map(loans.map(loan => [loan.id, loan])), day())
+    return {
+      loans: new Map(loans.map(loan => [loan.id, loan])),
+      bills: await loadBillLines(deps, tenantId),
+    }
+  }
+
+  async function viewOf(tenantId: string, asset: StoredAsset) {
+    return assetView(asset, await contextOf(tenantId), day())
   }
 
   async function list(tenantId: string): Promise<AssetsView> {
-    const loans = new Map(
-      (await loadLoans(deps, tenantId)).map(loan => [loan.id, loan]),
-    )
+    const context = await contextOf(tenantId)
     const items = (await loadAssets(deps, tenantId))
       .sort(
         (a, b) => ORDER[a.kind] - ORDER[b.kind] || a.name.localeCompare(b.name),
       )
-      .map(asset => assetView(asset, loans, day()))
+      .map(asset => assetView(asset, context, day()))
     const total = (pick: (item: AssetView) => number) =>
       money(Money.of(items.reduce((sum, item) => sum + pick(item), 0)))
     return {
@@ -165,6 +231,7 @@ export function makeAssets(deps: AssetDeps) {
       valuations,
       fipe: input.fipe ?? null,
       loanId: input.loanId,
+      rental: input.rental,
       createdAt: deps.clock.now().toISOString(),
     }
     await deps.documents.put(tenantId, ASSETS_COLLECTION, asset.id, asset)
@@ -206,6 +273,8 @@ export function makeAssets(deps: AssetDeps) {
       fipe: input.fipe === undefined ? asset.fipe : input.fipe,
       loanId: input.loanId === undefined ? asset.loanId : input.loanId,
       soldOn: input.soldOn === undefined ? asset.soldOn : input.soldOn,
+      rental:
+        input.rental === undefined ? (asset.rental ?? null) : input.rental,
       valuations,
     }
     await deps.documents.put(tenantId, ASSETS_COLLECTION, id, next)

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
@@ -9,8 +12,8 @@ import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 /// What the offline table answers for any FIPE code.
 const fakeFipePrice = Money(8_950_000);
 
-/// A fictional home bought with a loan and a car priced by the FIPE table,
-/// kept in memory.
+/// A fictional home bought with a loan and rented out, and a car priced by
+/// the FIPE table, kept in memory.
 final class FakeAssetsRepository implements AssetsRepository {
   new(this._clock, {this.latency = const Duration(milliseconds: 300)});
 
@@ -38,6 +41,24 @@ final class FakeAssetsRepository implements AssetsRepository {
           balance: Money(17_400_000),
         ),
         equity: const Money(44_600_000),
+        rental: AssetRental(
+          rent: const Money(160_000),
+          passThrough: const ['gás'],
+          billFrom: 'Jardim Exemplo',
+          charge: RentCharge(
+            billId: 'bill-condo',
+            dueDate: CalendarDate(_today.year, _today.month, 10),
+            billTotal: const Money(59_769),
+            passedOn: const [
+              BillLine(description: 'Consumo de gás', amount: Money(13_665)),
+            ],
+            total: const Money(173_665),
+            ownerCost: const Money(46_104),
+            attachmentId: 'attachment-condo',
+            installment: const Money(108_500),
+            result: const Money(5_396),
+          ),
+        ),
       ),
       Asset(
         id: 'asset-car',
@@ -172,6 +193,7 @@ final class FakeAssetsRepository implements AssetsRepository {
       changePercent: 0,
       fipe: fipe,
       equity: value,
+      rental: _rentalOf(draft.rental, null),
     );
     return Ok(_assets[asset.id] = asset);
   }
@@ -200,8 +222,34 @@ final class FakeAssetsRepository implements AssetsRepository {
         fipe: fipe,
         loan: loan,
         equity: value - (loan?.balance ?? const Money(0)),
+        rental: _rentalOf(draft.rental, asset.rental),
       );
     });
+  }
+
+  // The charge comes from a captured bill, which this table does not keep.
+  AssetRental? _rentalOf(RentalDraft? draft, AssetRental? before) =>
+      switch (draft) {
+        null => null,
+        final draft => AssetRental(
+          rent: draft.rent,
+          passThrough: draft.words,
+          billFrom: draft.billFrom.trim(),
+          charge: before?.charge,
+        ),
+      };
+
+  @override
+  Future<Result<LocalFile>> rentBill(RentCharge charge) async {
+    await Future<void>.delayed(latency);
+    if (charge.attachmentId == null) return const Err(NotFoundFailure());
+    return Ok(
+      LocalFile(
+        name: 'boleto.pdf',
+        bytes: utf8.encode('%PDF-1.4 fake'),
+        mimeType: 'application/pdf',
+      ),
+    );
   }
 
   @override
@@ -219,6 +267,7 @@ final class FakeAssetsRepository implements AssetsRepository {
       fipe: asset.fipe,
       loan: asset.loan,
       equity: value - (asset.loan?.balance ?? const Money(0)),
+      rental: asset.rental,
     ),
   );
 

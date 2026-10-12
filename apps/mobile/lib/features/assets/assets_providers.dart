@@ -47,3 +47,7 @@ final deleteAssetProvider = Provider<DeleteAsset>(
 final browseVehiclesProvider = Provider<BrowseVehicles>(
   (ref) => BrowseVehicles(ref.watch(assetsRepositoryProvider)),
 );
+
+final loadRentBillProvider = Provider<LoadRentBill>(
+  (ref) => LoadRentBill(ref.watch(assetsRepositoryProvider)),
+);
