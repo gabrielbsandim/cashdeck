@@ -82,10 +82,9 @@ final class Loan extends Equatable {
     required this.termMonths,
     required this.paidCount,
     required this.balance,
-    required this.balanceOn,
-    required this.lastDueOn,
     required this.remaining,
     required this.paid,
+    this.lastDueOn,
     this.propertyValue,
     this.next,
     this.upcoming = const [],
@@ -107,8 +106,9 @@ final class Loan extends Equatable {
   final int termMonths;
   final int paidCount;
   final Money balance;
-  final CalendarDate balanceOn;
-  final CalendarDate lastDueOn;
+
+  /// Null once every installment is paid.
+  final CalendarDate? lastDueOn;
   final LoanInstallment? next;
   final List<LoanInstallment> upcoming;
   final LoanRemaining remaining;
@@ -134,7 +134,6 @@ final class Loan extends Equatable {
     termMonths,
     paidCount,
     balance,
-    balanceOn,
     lastDueOn,
     next,
     upcoming,
@@ -150,15 +149,17 @@ final class Prepayment extends Equatable {
     required this.interestSaved,
     required this.feesSaved,
     required this.monthsCut,
-    required this.lastDueOn,
     required this.balanceAfter,
+    this.lastDueOn,
   });
 
   final Money amount;
   final Money interestSaved;
   final Money feesSaved;
   final int monthsCut;
-  final CalendarDate lastDueOn;
+
+  /// Null when the prepayment pays the loan off.
+  final CalendarDate? lastDueOn;
   final Money balanceAfter;
 
   Money get saved => interestSaved + feesSaved;

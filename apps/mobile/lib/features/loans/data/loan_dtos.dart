@@ -34,8 +34,7 @@ Loan loanFromJson(JsonMap json) {
     termMonths: readInt(json, 'termMonths'),
     paidCount: readInt(json, 'paidCount'),
     balance: readMoney(json, 'balance'),
-    balanceOn: readDate(json, 'balanceOn'),
-    lastDueOn: readDate(json, 'lastDueOn'),
+    lastDueOn: readOptionalDate(json, 'lastDueOn'),
     next: next == null ? null : installmentFromJson(next),
     upcoming: readMapList(json, 'upcoming').map(installmentFromJson).toList(),
     remaining: LoanRemaining(
@@ -59,6 +58,6 @@ Prepayment prepaymentFromJson(JsonMap json) => Prepayment(
   interestSaved: readMoney(json, 'interestSaved'),
   feesSaved: readMoney(json, 'feesSaved'),
   monthsCut: readInt(json, 'monthsCut'),
-  lastDueOn: readDate(json, 'lastDueOn'),
+  lastDueOn: readOptionalDate(json, 'lastDueOn'),
   balanceAfter: readMoney(json, 'balanceAfter'),
 );

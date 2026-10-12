@@ -21,6 +21,7 @@ Map<String, Object?> loanJson({
   Object? next = const {},
   Object? property = 30_000_000,
   int lateFees = 9_300,
+  String? lastDueOn = '2060-06-17',
 }) => {
   'id': id,
   'entity': 'PF',
@@ -37,8 +38,7 @@ Map<String, Object?> loanJson({
   'termMonths': 420,
   'paidCount': 15,
   'balance': moneyJson(24_600_000),
-  'balanceOn': '2026-10-09',
-  'lastDueOn': '2060-06-17',
+  'lastDueOn': lastDueOn,
   'next': next == null ? null : installmentJson(16, '2026-10-17'),
   'upcoming': [installmentJson(16, '2026-10-17')],
   'remaining': {
@@ -79,7 +79,6 @@ Loan loanWith({int paidCount = 15, int termMonths = 420, int lateFees = 0}) =>
       termMonths: termMonths,
       paidCount: paidCount,
       balance: const Money(24_600_000),
-      balanceOn: const CalendarDate(2026, 10, 9),
       lastDueOn: const CalendarDate(2060, 6, 17),
       next: testInstallment,
       upcoming: const [testInstallment],

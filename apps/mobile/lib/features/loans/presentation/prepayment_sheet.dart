@@ -159,12 +159,13 @@ class _Result extends StatelessWidget {
             color: context.palette.onSurface,
           ),
         ),
-        Text(
-          l10n.loanPrepayLastDue(result.lastDueOn.display),
-          style: AppTextStyles.bodyMd.copyWith(
-            color: context.palette.onSurfaceVariant,
+        if (result.lastDueOn case final lastDueOn?)
+          Text(
+            l10n.loanPrepayLastDue(lastDueOn.display),
+            style: AppTextStyles.bodyMd.copyWith(
+              color: context.palette.onSurfaceVariant,
+            ),
           ),
-        ),
       ],
     );
   }

@@ -37,9 +37,12 @@ void main() {
       expect(loan.paid.lateFees, const Money(9_300));
       expect(loan.lastDueOn, const CalendarDate(2060, 6, 17));
 
-      final paidOff = loanFromJson(loanJson(next: null, property: null));
+      final paidOff = loanFromJson(
+        loanJson(next: null, property: null, lastDueOn: null),
+      );
       expect(paidOff.next, isNull);
       expect(paidOff.propertyValue, isNull);
+      expect(paidOff.lastDueOn, isNull);
     });
 
     test('a rate that is not a number fails the read', () {
@@ -59,6 +62,15 @@ void main() {
         'balanceAfter': moneyJson(23_600_000),
       });
       expect(prepayment, testPrepayment);
+      final payoff = prepaymentFromJson({
+        'amount': moneyJson(24_600_000),
+        'interestSaved': moneyJson(90_000_000),
+        'feesSaved': moneyJson(3_000_000),
+        'monthsCut': 405,
+        'lastDueOn': null,
+        'balanceAfter': moneyJson(0),
+      });
+      expect(payoff.lastDueOn, isNull);
     });
   });
 
@@ -153,7 +165,7 @@ void main() {
       );
       expect(prepayment.monthsCut, 3);
       expect(prepayment.balanceAfter, loan.balance - const Money(150_000));
-      expect(prepayment.lastDueOn, loan.lastDueOn.addDays(-90));
+      expect(prepayment.lastDueOn, loan.lastDueOn?.addDays(-90));
 
       expect(
         (await repository.prepayment('missing', const Money(1)) as Err).failure,

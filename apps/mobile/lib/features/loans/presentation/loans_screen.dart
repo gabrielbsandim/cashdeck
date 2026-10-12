@@ -219,10 +219,11 @@ class _LoanCard extends ConsumerWidget {
               ),
             ),
           ),
-          CdKeyValueRow(
-            label: l10n.loanLastDue,
-            value: Text(loan.lastDueOn.display),
-          ),
+          if (loan.lastDueOn case final lastDueOn?)
+            CdKeyValueRow(
+              label: l10n.loanLastDue,
+              value: Text(lastDueOn.display),
+            ),
           if (loan.paidLate) ...[
             const SizedBox(height: AppSpacing.md),
             CdInlineBanner(

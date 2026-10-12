@@ -63,7 +63,6 @@ final class FakeLoansRepository implements LoansRepository {
       termMonths: term,
       paidCount: paidCount,
       balance: Money(balance),
-      balanceOn: today.addDays(-3),
       lastDueOn: first.addDays((term - paidCount - 1) * 30),
       next: upcoming.first,
       upcoming: upcoming,
@@ -117,7 +116,7 @@ final class FakeLoansRepository implements LoansRepository {
         interestSaved: Money((amount.cents * _monthlyRate * left).round()),
         feesSaved: Money(cut * _monthlyFees),
         monthsCut: cut,
-        lastDueOn: loan.lastDueOn.addDays(-cut * 30),
+        lastDueOn: loan.lastDueOn?.addDays(-cut * 30),
         balanceAfter: loan.balance - amount,
       ),
     );
