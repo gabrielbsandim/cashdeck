@@ -55,6 +55,20 @@ const isCash = (account: Account) =>
 const sum = (amounts: readonly Money[]) =>
   amounts.reduce((total, amount) => total.add(amount), Money.zero())
 
+// Words every biller uses, so sharing one says nothing about the payee.
+const GENERIC_WORDS = new Set(['FATURA', 'CONTA', 'BOLETO', 'LTDA', 'EIRELI'])
+
+const nameWords = (name: string) =>
+  name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(word => word.length >= 4 && !GENERIC_WORDS.has(word))
+
+const sharesWord = (a: string, b: string) =>
+  nameWords(a).some(word => nameWords(b).includes(word))
+
 type Context = {
   day: LocalDate
   until: LocalDate
@@ -180,6 +194,13 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         recurrence.status === 'CONFIRMED' &&
         charged.has(recurrence.key),
     )
+    // A captured bill of the same payee that month is this very charge.
+    const billed = (name: string, on: LocalDate) =>
+      context.open.some(
+        bill =>
+          monthOf(bill.dueDate) === monthOf(on) &&
+          sharesWord(bill.payee ?? '', name),
+      )
     return confirmed.flatMap(recurrence => {
       const lastMonth = monthOf(charged.get(recurrence.key) as LocalDate)
       return monthlyDatesBetween(
@@ -187,7 +208,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         context.day,
         context.until,
       )
-        .filter(on => monthOf(on) !== lastMonth)
+        .filter(on => monthOf(on) !== lastMonth && !billed(recurrence.name, on))
         .map(on => ({
           kind: 'SUBSCRIPTION' as const,
           label: recurrence.name,

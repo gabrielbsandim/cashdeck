@@ -320,6 +320,22 @@ describe('safe to spend', () => {
     ])
   })
 
+  it('drops a subscription whose charge was captured as a bill that month', async () => {
+    const deps = await seed()
+    await deps.bills.save(
+      bill({
+        id: 'b8',
+        payee: 'Fatura Streaming Plus',
+        dueDate: '2026-10-09',
+        amount: Money.of(5790),
+      }),
+    )
+    const view = await makeSafeToSpend(deps)(TENANT)
+    const labels = view.lines.map(line => [line.kind, line.label])
+    expect(labels).toContainEqual(['BILL', 'Fatura Streaming Plus'])
+    expect(labels).not.toContainEqual(['SUBSCRIPTION', 'Streaming Plus'])
+  })
+
   it('runs to the month end without an income and says how short it is', async () => {
     const deps = fullDeps()
     await deps.accounts.save(
