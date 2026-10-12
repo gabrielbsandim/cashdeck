@@ -41,6 +41,8 @@ export type ProviderTransaction = {
   accountExternalId: string
   amountCents: number
   currency: string
+  // Signed, in the account currency, for a purchase made in another one.
+  accountAmountCents?: number | null
   bookedOn: string
   description: string
   merchant?: string | null

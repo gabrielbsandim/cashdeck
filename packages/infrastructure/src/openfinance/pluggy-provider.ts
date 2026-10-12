@@ -481,12 +481,15 @@ function toTransaction(
   tx: PluggyTransaction,
   accountExternalId: string,
 ): ProviderTransaction {
-  const cents = Math.abs(toCents(tx.amount))
+  const sign = tx.type === 'CREDIT' ? 1 : -1
+  const converted = tx.amountInAccountCurrency
   return {
     externalId: tx.id,
     accountExternalId: tx.accountId ?? accountExternalId,
-    amountCents: tx.type === 'CREDIT' ? cents : -cents,
+    amountCents: sign * Math.abs(toCents(tx.amount)),
     currency: tx.currencyCode ?? 'BRL',
+    accountAmountCents:
+      converted == null ? null : sign * Math.abs(toCents(converted)),
     bookedOn: tx.date ? toLocalDate(new Date(tx.date)) : '',
     description: tx.description ?? '',
     merchant: merchantOf(tx),

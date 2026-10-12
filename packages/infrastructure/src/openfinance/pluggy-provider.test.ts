@@ -216,6 +216,7 @@ describe('PluggyProvider', () => {
             {
               id: 't2',
               amount: 12,
+              amountInAccountCurrency: 61.2,
               type: 'DEBIT',
               currencyCode: 'USD',
               merchant: { businessName: 'Exemplo LTDA' },
@@ -239,6 +240,7 @@ describe('PluggyProvider', () => {
         accountExternalId: 'a1',
         amountCents: -4590,
         currency: 'BRL',
+        accountAmountCents: null,
         bookedOn: '2026-10-02',
         description: 'Mercado',
         merchant: 'Mercado Exemplo',
@@ -252,6 +254,7 @@ describe('PluggyProvider', () => {
         accountExternalId: 'a1',
         amountCents: -1200,
         currency: 'USD',
+        accountAmountCents: -6120,
         bookedOn: '',
         description: '',
         merchant: 'Exemplo LTDA',

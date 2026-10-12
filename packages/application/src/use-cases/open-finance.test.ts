@@ -172,6 +172,27 @@ describe('open finance', () => {
     expect(await deps.transactions.all(TENANT, {})).toHaveLength(1)
   })
 
+  it('books a purchase made abroad in the currency of the account', async () => {
+    const abroad = provider()
+    const list = abroad.listTransactions.bind(abroad)
+    abroad.listTransactions = async (connection, accountId, range) =>
+      (await list(connection, accountId, range)).map(tx => ({
+        ...tx,
+        amountCents: -500,
+        currency: 'USD',
+        accountAmountCents: -2550,
+      }))
+    const { deps, of } = setup(abroad)
+    const { connectionId } = await of.connect(TENANT, {
+      itemId: ITEM,
+      entity: 'PF',
+      accountIds: ['acc-1'],
+    })
+    await of.sync(TENANT, connectionId)
+    const [purchase] = await deps.transactions.all(TENANT, {})
+    expect(purchase?.amount).toEqual(Money.of(-2550, 'BRL'))
+  })
+
   it('fills the other side of a known row when the provider names it', async () => {
     const named = provider()
     const list = named.listTransactions.bind(named)

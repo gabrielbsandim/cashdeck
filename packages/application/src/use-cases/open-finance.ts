@@ -243,6 +243,12 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
     return accountName => owners.get(accountName) ?? sole ?? null
   }
 
+  // The balance moves in the account currency, whatever the purchase was in.
+  const amountOf = (account: Account, tx: ProviderTransaction) =>
+    tx.accountAmountCents == null
+      ? Money.of(tx.amountCents, tx.currency)
+      : Money.of(tx.accountAmountCents, account.balance.currency)
+
   const toTransaction = (
     tenantId: string,
     account: Account,
@@ -252,7 +258,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       id: deps.ids.next(),
       tenantId,
       accountId: account.id,
-      amount: Money.of(tx.amountCents, tx.currency),
+      amount: amountOf(account, tx),
       bookedOn: tx.bookedOn,
       description: tx.description,
       externalId: tx.externalId,

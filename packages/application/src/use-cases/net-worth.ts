@@ -83,8 +83,15 @@ export function makeNetWorthFromBalancesAndSnapshots(deps: NetWorthDeps) {
       (account: Account): RolledBackAccount => ({
         kind: KIND_OF[account.type],
         balance: account.balance,
+        // A purchase abroad stored in its own currency cannot roll back a
+        // balance kept in reais.
         movements: booked
-          .filter(tx => tx.accountId === account.id && !tx.provisional)
+          .filter(
+            tx =>
+              tx.accountId === account.id &&
+              !tx.provisional &&
+              tx.amount.currency === account.balance.currency,
+          )
           .map(tx => ({ on: tx.bookedOn, amount: tx.amount })),
       }),
     )

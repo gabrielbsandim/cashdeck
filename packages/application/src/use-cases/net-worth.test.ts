@@ -80,6 +80,14 @@ async function seed() {
       provisional: true,
     }),
   )
+  await deps.transactions.save(
+    transaction({
+      id: 'abroad-purchase',
+      accountId: 'chk',
+      bookedOn: '2026-10-06',
+      amount: Money.of(-1500, 'USD'),
+    }),
+  )
   await deps.investments.saveAll([
     position({ id: 'cdb' }),
     position({ id: 'closed', status: 'CLOSED', balance: Money.of(1000) }),
