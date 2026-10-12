@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Portuguese is the default, as in the app: English only on an English device. -->
+<resources>
+    <string name="widget_label">Cashdeck</string>
+    <string name="widget_description">Livre para gastar hoje, a próxima conta e a fatura atual</string>
+    <string name="widget_safe_title">Livre para gastar hoje</string>
+    <string name="widget_bill_title">Próxima conta</string>
+    <string name="widget_card_title">Fatura atual</string>
+    <string name="widget_masked">R$ ••••</string>
+    <string name="widget_unknown">--</string>
+    <string name="widget_open_app">Abra o app para atualizar</string>
+    <string name="widget_updated_at">atualizado às %1$s</string>
+    <string name="widget_updated_on">atualizado em %1$s às %2$s</string>
+    <string name="widget_safe_per_day">por dia até %1$s</string>
+    <string name="widget_safe_short">falta até %1$s</string>
+    <string name="widget_bill_due">%1$s · vence %2$s</string>
+    <string name="widget_bill_overdue">%1$s · venceu %2$s</string>
+    <string name="widget_no_bill">Nenhuma em aberto</string>
+    <string name="widget_card_due">vence %1$s</string>
+    <string name="widget_no_card">Sem cartão</string>
+</resources>

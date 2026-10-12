@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AppPalette.dark and AppMoneyColors.dark; surfaceContainer, as pure black vanishes on a dark wallpaper. -->
+<resources>
+    <color name="widget_surface">#15171C</color>
+    <color name="widget_on_surface">#EDEEF1</color>
+    <color name="widget_on_surface_variant">#A7ABB1</color>
+    <color name="widget_primary">#68A1FF</color>
+    <color name="widget_divider">#24272B</color>
+    <color name="widget_overdue">#FCA676</color>
+</resources>

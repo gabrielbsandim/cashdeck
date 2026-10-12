@@ -20,6 +20,7 @@ import 'package:cashdeck/features/home/presentation/consolidated_home.dart';
 import 'package:cashdeck/features/home/presentation/home_controller.dart';
 import 'package:cashdeck/features/home/presentation/home_sections.dart';
 import 'package:cashdeck/features/home/presentation/personal_home.dart';
+import 'package:cashdeck/features/home_widget/presentation/home_widget_sync.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
 import 'package:cashdeck/features/outlook/presentation/outlook_controller.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
@@ -68,6 +69,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Stack(
         children: [
+          const HomeWidgetSync(),
           CdEntityGlow(colors: context.glow.of(tone)),
           CdRefresh(
             edgeOffset: top,

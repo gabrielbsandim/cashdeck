@@ -49,6 +49,7 @@ lib/
     entities/               PF, PJ, consolidated scope and the switcher
     bills/                  bills list, bill detail, the payment ladder
     home/                   tab placeholder until the design lands
+    home_widget/            the Android home screen widget, fed by Início
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
@@ -143,6 +144,22 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   in app-private preferences; signing out clears them. Dart reaches it through
   the `io.cashdeck.app/card_notifications` channel
   (`features/card_notifications`).
+- Android home screen widget: `widget/CashdeckWidgetProvider` (a
+  `home_widget` `HomeWidgetProvider`, RemoteViews layout
+  `res/layout/cashdeck_widget.xml`, 4x2 and resizable) shows what is free to
+  spend today, the next open bill and the current card bill, plus when the
+  app last wrote them. The app writes them, nothing fetches in the
+  background: `HomeWidgetSync`, mounted by Início, maps the loaded
+  safe-to-spend, bills and insights overview into a `WidgetSnapshot`
+  (`features/home_widget`) every time one of them loads or privacy changes.
+  Amounts are masked while `hideAmountsProvider` is on and whenever a safe
+  zone is saved, since the home screen cannot check where the phone is. The
+  session ending (sign-out or a 401) clears it. Tapping opens the app on
+  Início; the bill and card parts open `/bills` and `/cards` through
+  `cashdeck://widget/<path>` and Flutter's deep linking. Labels live in
+  `res/values` (Portuguese, the default) and `res/values-en`, colors in
+  `widget_colors.xml` with a `values-night` twin. iOS has no widget: the
+  publisher is a no-op off Android.
 - Location: the Android manifest asks for coarse and fine location and
   `Info.plist` carries `NSLocationWhenInUseUsageDescription`; only the
   foreground fix is read, never in the background.

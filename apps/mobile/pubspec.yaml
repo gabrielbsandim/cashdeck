@@ -23,6 +23,7 @@ dependencies:
   geocoding: ^5.0.0
   geolocator: ^14.1.1
   go_router: ^18.0.2
+  home_widget: ^0.10.0
   http: ^1.6.0
   image: ^4.10.1
   intl: ^0.20.3
