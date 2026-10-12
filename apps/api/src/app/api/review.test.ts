@@ -15,8 +15,13 @@ import { GET as reviewQueue } from '@/app/api/v1/categories/review/route'
 import { POST as categorizeGroup } from '@/app/api/v1/categories/review/groups/route'
 import { POST as acceptSuggestion } from '@/app/api/v1/categories/review/suggestions/accept/route'
 import { POST as dismissSuggestion } from '@/app/api/v1/categories/review/suggestions/dismiss/route'
+import {
+  restartTestDevice,
+  signInTestDevice,
+  STATIC_TOKEN,
+} from '@/app/api/sign-in.test-helpers'
 
-const TOKEN = 'test-token-0123456789'
+let session = ''
 
 type Handler = (request: Request, context: never) => Promise<Response>
 
@@ -33,7 +38,7 @@ async function call(
     `http://localhost/api/v1/test${options.query ?? ''}`,
     {
       method,
-      headers: { authorization: `Bearer ${TOKEN}` },
+      headers: { authorization: `Bearer ${session}` },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     },
@@ -43,8 +48,9 @@ async function call(
   return { status: response.status, body: await response.json() }
 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -140,7 +146,7 @@ describe('category review', () => {
     expect(dismissed.body.data).toEqual({ id })
     const gone = await call(acceptSuggestion, 'POST', { body: { id } })
     expect(gone.status).toBe(404)
-    resetContainer()
+    session = await restartTestDevice()
     await seed()
     const fresh = await call(reviewQueue, 'GET')
     const accepted = await call(acceptSuggestion, 'POST', {
