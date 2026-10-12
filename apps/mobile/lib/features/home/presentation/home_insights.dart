@@ -169,14 +169,15 @@ class _Pending extends StatelessWidget {
   );
 }
 
-class _Spend extends StatelessWidget {
+class _Spend extends ConsumerWidget {
   const new({required this.overview});
 
   final InsightsOverview overview;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final hide = ref.watch(hideAmountsProvider);
     final spend = overview.spend;
     final change = spend.changePercent;
     return Column(
@@ -186,6 +187,7 @@ class _Spend extends StatelessWidget {
           spend.total,
           size: CdAmountSize.lg,
           textAlign: TextAlign.start,
+          countUp: true,
         ),
         if (change != null) ...[
           const SizedBox(height: AppSpacing.xs),
@@ -210,6 +212,11 @@ class _Spend extends StatelessWidget {
               point.cumulative.cents / 100,
           ],
           xLabels: [overview.range.from.dayMonth, overview.range.to.dayMonth],
+          pointLabel: (index) {
+            final point = spend.series[index];
+            return '${point.day.dayMonth} · '
+                '${MoneyFormat.format(point.cumulative, hide: hide)}';
+          },
         ),
         if (spend.topMerchants.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.lg),

@@ -3518,5 +3518,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "approvalPaidToast": "O banco confirmou e a conta está paga.",
+  "approvalPendingToast": "O banco ainda não confirmou. A conta se atualiza sozinha quando ele confirmar.",
+  "approvalUpdatedToast": "A conta foi atualizada com a resposta do banco."
 }

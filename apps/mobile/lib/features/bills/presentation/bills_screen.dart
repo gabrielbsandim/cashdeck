@@ -18,6 +18,7 @@ import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
@@ -57,20 +58,24 @@ class BillsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: switch (bills) {
-              AsyncData(:final value) when value.bills.isEmpty => CdEmptyState(
-                icon: Symbols.receipt_long_rounded,
-                title: l10n.billsEmptyTitle,
-                message: l10n.billsEmptyMessage,
-              ),
-              AsyncData(:final value) => _BillList(
-                listing: value,
-                today: today,
+              AsyncValue(:final value?, hasError: false)
+                  when value.bills.isEmpty =>
+                CdEmptyState(
+                  icon: Symbols.receipt_long_rounded,
+                  title: l10n.billsEmptyTitle,
+                  message: l10n.billsEmptyMessage,
+                ),
+              AsyncValue(:final value?, hasError: false) => CdRefresh(
+                providers: [billsControllerProvider],
+                child: _BillList(listing: value, today: today),
               ),
               AsyncError(:final error) => CdErrorState(
                 failure: failureOf(error),
                 onRetry: () => ref.invalidate(billsControllerProvider),
               ),
-              _ => const CdSkeleton(),
+              _ => const CdSkeleton(
+                parts: [CdSkeletonCard(height: 240), CdSkeletonCards()],
+              ),
             },
           ),
         ],

@@ -1417,5 +1417,8 @@
   "recapHint": "Tap right to go on, left to go back, swipe down to close.",
   "alertKindMonthlyRecap": "Monthly recap",
   "alertTextRecapTitle": "Your {month} recap",
-  "alertTextRecapBody": "{income} came in and {expenses} went out. Tap to see how the month went."
+  "alertTextRecapBody": "{income} came in and {expenses} went out. Tap to see how the month went.",
+  "approvalPaidToast": "The bank confirmed and the bill is paid.",
+  "approvalPendingToast": "The bank has not confirmed yet. The bill updates on its own once it does.",
+  "approvalUpdatedToast": "The bill was updated with the bank answer."
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,9 +27,24 @@ final class PlatformLinkOpener implements LinkOpener {
 
   final LaunchCall launch;
 
+  /// False when nothing on the phone handles [uri]; Android reports that by
+  /// throwing.
   @override
-  Future<bool> open(Uri uri) =>
-      launch(uri, mode: LaunchMode.externalApplication);
+  Future<bool> open(Uri uri) async {
+    try {
+      return await launch(uri, mode: LaunchMode.externalApplication);
+    } on PlatformException {
+      return false;
+    }
+  }
+}
+
+/// Opens the first of [links] the phone can handle; false when none could.
+Future<bool> openFirst(LinkOpener opener, Iterable<Uri> links) async {
+  for (final link in links) {
+    if (await opener.open(link)) return true;
+  }
+  return false;
 }
 
 final linkOpenerProvider = Provider<LinkOpener>((ref) => FakeLinkOpener());

@@ -14,10 +14,12 @@ import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_options_sheet.dart';
@@ -31,6 +33,7 @@ import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
 import 'package:cashdeck/features/insights/presentation/insights_labels.dart';
 import 'package:cashdeck/features/insights/presentation/subscription_widgets.dart';
+import 'package:cashdeck/features/insights/presentation/subscriptions_screen.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -62,21 +65,24 @@ class SubscriptionDetailScreen extends ConsumerWidget {
     final state = ref.watch(subscriptionsControllerProvider);
     return Scaffold(
       appBar: AppBar(),
-      body: switch (state) {
-        AsyncValue(:final value?) => switch (_find(value)) {
-          final subscription? => _Detail(subscription: subscription),
-          null => CdEmptyState(
-            icon: Symbols.autorenew_rounded,
-            title: l10n.subscriptionsTitle,
-            message: l10n.subscriptionDetailNotFound,
+      body: CdExpandHero(
+        tag: subscriptionHeroTag(subscriptionKey),
+        child: switch (state) {
+          AsyncValue(:final value?) => switch (_find(value)) {
+            final subscription? => _Detail(subscription: subscription),
+            null => CdEmptyState(
+              icon: Symbols.autorenew_rounded,
+              title: l10n.subscriptionsTitle,
+              message: l10n.subscriptionDetailNotFound,
+            ),
+          },
+          AsyncError(:final error) => CdErrorState(
+            failure: failureOf(error),
+            onRetry: () => ref.invalidate(subscriptionsControllerProvider),
           ),
+          _ => const CdSkeleton(),
         },
-        AsyncError(:final error) => CdErrorState(
-          failure: failureOf(error),
-          onRetry: () => ref.invalidate(subscriptionsControllerProvider),
-        ),
-        _ => const CdSkeleton(),
-      },
+      ),
     );
   }
 
@@ -144,6 +150,7 @@ class _DetailState extends ConsumerState<_Detail> {
       ],
     );
     if (choice == null || !mounted) return;
+    CdHaptics.warning();
     await _run(_Action.remove);
   }
 

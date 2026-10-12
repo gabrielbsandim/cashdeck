@@ -89,7 +89,14 @@ class HomeScreen extends ConsumerWidget {
               ),
               _ => Padding(
                 padding: EdgeInsets.only(top: top),
-                child: const CdSkeleton(),
+                child: const CdSkeleton(
+                  parts: [
+                    CdSkeletonHeadline(),
+                    CdSkeletonCard(height: 140),
+                    CdSkeletonTiles(),
+                    CdSkeletonRows(count: 3),
+                  ],
+                ),
               ),
             },
           ),

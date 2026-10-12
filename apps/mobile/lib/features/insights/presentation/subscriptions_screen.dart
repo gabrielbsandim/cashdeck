@@ -14,10 +14,12 @@ import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/insights/cd_comparison_pill.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_expand_hero.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/insights/application/insights_use_cases.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
@@ -46,19 +48,28 @@ class SubscriptionsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.subscriptionsTitle)),
       body: switch (ref.watch(subscriptionsControllerProvider)) {
-        AsyncData(:final value)
+        AsyncValue(:final value?, hasError: false)
             when value.items.isEmpty && value.suggestions.isEmpty =>
           CdEmptyState(
             icon: Symbols.autorenew_rounded,
             title: l10n.subscriptionsEmpty,
             message: l10n.subscriptionsEmptyMessage,
           ),
-        AsyncData(:final value) => _Subscriptions(subscriptions: value),
+        AsyncValue(:final value?, hasError: false) => CdRefresh(
+          providers: [subscriptionsControllerProvider],
+          child: _Subscriptions(subscriptions: value),
+        ),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(subscriptionsControllerProvider),
         ),
-        _ => const CdSkeleton(),
+        _ => const CdSkeleton(
+          parts: [
+            CdSkeletonCard(height: 110),
+            CdSkeletonChips(count: 2),
+            CdSkeletonRows(count: 5),
+          ],
+        ),
       },
     );
   }
@@ -139,6 +150,7 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
                     subscriptions.monthly,
                     size: CdAmountSize.xl,
                     textAlign: TextAlign.start,
+                    countUp: true,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
@@ -292,14 +304,21 @@ class _SubscriptionsState extends ConsumerState<_Subscriptions> {
   }
 
   Widget _row(AppLocalizations l10n, Subscription item, {required bool hide}) =>
-      CdListRow(
-        key: SubscriptionsScreen.rowKey(item.key),
-        title: item.name,
-        titleMaxLines: 1,
-        subtitle: subscriptionSubtitle(l10n, item, hide: hide),
-        leading: SubscriptionAvatar(subscription: item),
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        trailing: CdAmount(item.amount, size: CdAmountSize.row),
-        onTap: () => _open(item),
+      CdExpandHero(
+        tag: subscriptionHeroTag(item.key),
+        child: CdListRow(
+          key: SubscriptionsScreen.rowKey(item.key),
+          title: item.name,
+          titleMaxLines: 1,
+          subtitle: subscriptionSubtitle(l10n, item, hide: hide),
+          leading: SubscriptionAvatar(subscription: item),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          trailing: CdAmount(item.amount, size: CdAmountSize.row),
+          onTap: () => _open(item),
+        ),
       );
 }
+
+/// The list row that grows into the subscription screen.
+String subscriptionHeroTag(String key) =>
+    CdExpandHero.tagOf('subscription', key);

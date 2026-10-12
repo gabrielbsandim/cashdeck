@@ -4,6 +4,7 @@ import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/core/widgets/inputs/cd_text_field.dart';
@@ -278,6 +279,7 @@ class _DeleteSheetState extends ConsumerState<_DeleteSheet> {
   var _deleting = false;
 
   Future<void> _delete() async {
+    CdHaptics.warning();
     setState(() => _deleting = true);
     final navigator = Navigator.of(context);
     final failure = await ref

@@ -5,15 +5,15 @@ import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// A short, quiet celebration when a goal reaches its target: one haptic
 /// tap and a badge that grows in.
 Future<void> celebrateGoal(BuildContext context, String name) {
-  unawaited(HapticFeedback.heavyImpact());
+  CdHaptics.celebrate();
   return showDialog<void>(
     context: context,
     builder: (_) => GoalCelebration(name: name),

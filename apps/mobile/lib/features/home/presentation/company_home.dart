@@ -1,5 +1,4 @@
 import 'package:cashdeck/core/error/app_failure.dart';
-import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
@@ -8,6 +7,7 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
+import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
@@ -39,14 +39,10 @@ class CompanyHome extends ConsumerWidget {
     Future<AppFailure?> Function() action,
     String success,
   ) async {
-    final l10n = AppLocalizations.of(context);
+    CdHaptics.confirm();
     final failure = await action();
     if (!context.mounted) return;
-    await showCdToast(
-      context,
-      icon: failure == null ? Symbols.task_alt_rounded : Symbols.error_rounded,
-      message: failure?.userMessage(l10n) ?? success,
-    );
+    await showOutcomeToast(context, failure, success: success);
   }
 
   @override

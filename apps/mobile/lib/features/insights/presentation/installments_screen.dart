@@ -12,6 +12,7 @@ import 'package:cashdeck/core/widgets/layout/cd_key_value_row.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/insights/domain/insights.dart';
 import 'package:cashdeck/features/insights/presentation/insights_controller.dart';
@@ -39,7 +40,10 @@ class InstallmentsScreen extends ConsumerWidget {
           title: l10n.installmentsEmpty,
           message: l10n.installmentsEmptyMessage,
         ),
-        AsyncData(:final value) => _Plans(installments: value),
+        AsyncValue(:final value?, hasError: false) => CdRefresh(
+          providers: [installmentsProvider],
+          child: _Plans(installments: value),
+        ),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(installmentsProvider),
@@ -94,6 +98,7 @@ class _PlansState extends State<_Plans> {
                   selected.$2,
                   size: CdAmountSize.lg,
                   textAlign: TextAlign.start,
+                  countUp: true,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 CdColumnBars(

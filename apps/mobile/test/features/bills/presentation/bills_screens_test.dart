@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/links/link_opener.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
@@ -235,20 +236,37 @@ void main() {
       expect(find.text(l10n.billsGroupSettled), findsOneWidget);
     });
 
-    testWidgets('a bank approval step offers the bank and a recheck', (
+    testWidgets('a bank approval step opens the bank app and rechecks', (
       tester,
     ) async {
-      await pumpRoute(tester, AppRoutes.bill('bill-coworking'));
+      final app = await pumpRoute(tester, AppRoutes.bill('bill-coworking'));
 
       expect(find.text(l10n.ladderNextApprove), findsOneWidget);
       expect(find.text(l10n.ladderWaitingForYou), findsOneWidget);
       await tester.tap(find.byKey(PaymentLadderView.openBankKey));
       await settle(tester);
-      expect(find.text(l10n.openBankToast), findsOneWidget);
+      final opener = app.read(linkOpenerProvider) as FakeLinkOpener;
+      expect(opener.opened.map((uri) => '$uri'), ['bancoatlantico://']);
+      expect(find.text(l10n.openBankToast), findsNothing);
 
       await tester.tap(find.byKey(PaymentLadderView.approvedKey));
       await settle(tester);
-      expect(find.text(l10n.approvalCheckToast), findsOneWidget);
+      expect(find.text(l10n.approvalPendingToast), findsOneWidget);
+      expect(find.text(l10n.ladderWaitingForYou), findsOneWidget);
+    });
+
+    testWidgets('without a bank app the hint stays', (tester) async {
+      await pumpRoute(
+        tester,
+        AppRoutes.bill('bill-coworking'),
+        overrides: [
+          linkOpenerProvider.overrideWithValue(FakeLinkOpener(succeeds: false)),
+        ],
+      );
+
+      await tester.tap(find.byKey(PaymentLadderView.openBankKey));
+      await settle(tester);
+      expect(find.text(l10n.openBankToast), findsOneWidget);
     });
 
     testWidgets('a bill above the cap is confirmed with the device check', (
@@ -443,6 +461,70 @@ void main() {
       expect(copied, ['12345.67890']);
       expect(find.text(l10n.copied), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
+    });
+
+    group('the approval recheck', () {
+      final waiting = testBill(
+        status: BillStatus.awaitingApproval,
+        attempts: [
+          testAttempt(LadderStep.automatic, AttemptOutcome.failed),
+          testAttempt(LadderStep.bankApproval, AttemptOutcome.waiting),
+        ],
+      );
+
+      Future<void> recheck(WidgetTester tester, Result<Bill> next) async {
+        var calls = 0;
+        when(() => repository.get('bill-1'))
+            .thenAnswer((_) async => calls++ == 0 ? Ok(waiting) : next);
+        when(listCall()).thenAnswer((_) async => const Ok(BillPage(bills: [])));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1'),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(PaymentLadderView.approvedKey));
+        await tester.pump();
+        await tester.pump();
+      }
+
+      testWidgets('says when the bank already paid', (tester) async {
+        await recheck(
+          tester,
+          Ok(
+            testBill(
+              status: BillStatus.paid,
+              attempts: [
+                ...waiting.attempts,
+                testAttempt(LadderStep.bankApproval, AttemptOutcome.succeeded),
+              ],
+            ),
+          ),
+        );
+        expect(find.text(l10n.approvalPaidToast), findsOneWidget);
+      });
+
+      testWidgets('says when the bill moved on', (tester) async {
+        await recheck(
+          tester,
+          Ok(
+            testBill(
+              attempts: [
+                ...waiting.attempts,
+                testAttempt(LadderStep.bankApproval, AttemptOutcome.failed),
+              ],
+            ),
+          ),
+        );
+        expect(find.text(l10n.approvalUpdatedToast), findsOneWidget);
+      });
+
+      testWidgets('keeps the bill and says why the check failed', (
+        tester,
+      ) async {
+        await recheck(tester, const Err(NetworkFailure()));
+        expect(find.text(l10n.errorNetwork), findsOneWidget);
+        expect(find.text(waiting.payee), findsOneWidget);
+      });
     });
 
     testWidgets('a step 3 bill after two failures collapses the past', (

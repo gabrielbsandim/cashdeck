@@ -16,6 +16,7 @@ import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/core/widgets/states/cd_refresh.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
@@ -31,6 +32,7 @@ import 'package:cashdeck/features/transactions/presentation/transactions_control
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -45,6 +47,14 @@ class BalancesScreen extends ConsumerStatefulWidget {
   static const investmentsKey = Key('balances-investments');
 
   static Key rowKey(String id) => Key('balances-account-$id');
+
+  /// What pulling the list down refetches: the accounts and the totals
+  /// built on them.
+  static final List<ProviderBase<AsyncValue<Object?>>> refreshed = [
+    transactionAccountsProvider,
+    investmentsProvider,
+    homeControllerProvider,
+  ];
 
   /// How far back a manual sync reaches.
   static const syncDays = 365;
@@ -113,18 +123,24 @@ class _BalancesScreenState extends ConsumerState<BalancesScreen> {
         ],
       ),
       body: switch (accounts) {
-        AsyncData(:final value) when value.isEmpty => CdEmptyState(
-          icon: Symbols.account_balance_rounded,
-          title: l10n.balancesEmpty,
-          actionLabel: l10n.balancesConnect,
-          onAction: () => context.push(AppRoutes.connectItemId).ignore(),
+        AsyncValue(:final value?, hasError: false) when value.isEmpty =>
+          CdEmptyState(
+            icon: Symbols.account_balance_rounded,
+            title: l10n.balancesEmpty,
+            actionLabel: l10n.balancesConnect,
+            onAction: () => context.push(AppRoutes.connectItemId).ignore(),
+          ),
+        AsyncValue(:final value?, hasError: false) => CdRefresh(
+          providers: BalancesScreen.refreshed,
+          child: _Balances(accounts: value),
         ),
-        AsyncData(:final value) => _Balances(accounts: value),
         AsyncError(:final error) => CdErrorState(
           failure: failureOf(error),
           onRetry: () => ref.invalidate(transactionAccountsProvider),
         ),
-        _ => const CdSkeleton(),
+        _ => const CdSkeleton(
+          parts: [CdSkeletonHeadline(), CdSkeletonRows(count: 5)],
+        ),
       },
     );
   }
@@ -271,6 +287,7 @@ class _Balances extends ConsumerWidget {
                 key: BalancesScreen.totalKey,
                 size: CdAmountSize.xl,
                 textAlign: TextAlign.start,
+                countUp: true,
               ),
             ],
           ),

@@ -104,6 +104,11 @@ class PerformanceChart extends ConsumerWidget {
       height: height,
       values: [for (final point in performance.series) point.value.cents / 100],
       xLabels: [performance.from.dayMonth, performance.to.dayMonth],
+      pointLabel: (index) {
+        final point = performance.series[index];
+        return '${point.day.dayMonth} · '
+            '${MoneyFormat.format(point.value, hide: hide)}';
+      },
       semanticsLabel: l10n.investmentsChartSemantics(
         MoneyFormat.format(performance.start, hide: hide),
         MoneyFormat.format(performance.end, hide: hide),
