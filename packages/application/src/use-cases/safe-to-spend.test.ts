@@ -17,6 +17,7 @@ import {
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { AUTO_DEBIT_COLLECTION } from '@/use-cases/auto-debit'
 import { FUNDING_ITEMS_COLLECTION } from '@/use-cases/funding-plan'
+import { LOANS_COLLECTION } from '@/use-cases/loans'
 import { makeSafeToSpend } from '@/use-cases/safe-to-spend'
 import { makeSetSpendingPlan } from '@/use-cases/spending-plan'
 
@@ -414,6 +415,66 @@ describe('safe to spend', () => {
       kind: 'INCOME',
       amount: { cents: 900000 },
     })
+  })
+
+  it('owes the month installment of a loan its debit pays', async () => {
+    const deps = await seed()
+    const installment = (dueOn: string, total: number) => ({
+      number: 1,
+      dueOn,
+      total,
+      principal: 50000,
+      interest: 40000,
+      fees: 1000,
+      lateFees: 0,
+      balance: 0,
+      paidOn: null,
+      paid: null,
+    })
+    const loan = (entityId: string, installments: unknown[]) => ({
+      id: `bank-${entityId}`,
+      entityId,
+      lender: 'Bank',
+      contract: '77',
+      installments,
+    })
+    const store = (entityId: string, installments: unknown[]) =>
+      deps.documents.put(
+        TENANT,
+        LOANS_COLLECTION,
+        `bank-${entityId}`,
+        loan(entityId, installments),
+      )
+    await store('pj', [installment('2026-10-17', 1)])
+    await store('pf', [
+      {
+        ...installment('2026-09-17', 99000),
+        paidOn: '2026-09-29',
+        paid: 100000,
+      },
+      installment('2026-10-17', 98000),
+    ])
+    const lines = rows(await makeSafeToSpend(deps)(TENANT))
+    expect(lines).toContainEqual(['LOAN', 'Bank 77', -98000, '2026-10-17'])
+    expect(lines).not.toContainEqual([
+      'FIXED',
+      'Mortgage Bank',
+      -100000,
+      '2026-10-29',
+    ])
+
+    await store('pf', [
+      { ...installment('2026-09-05', 100000), paidOn: '2026-09-29' },
+      installment('2026-10-05', 98000),
+    ])
+    const late = rows(await makeSafeToSpend(deps)(TENANT))
+    expect(late).toContainEqual(['LOAN', 'Bank 77', -98000, '2026-10-29'])
+
+    await store('pf', [
+      { ...installment('2026-09-17', 100000), paidOn: '2026-09-29' },
+    ])
+    const paidOff = rows(await makeSafeToSpend(deps)(TENANT))
+    expect(paidOff.map(([kind]) => kind)).not.toContain('LOAN')
   })
 
   it('drops a subscription whose charge was captured as a bill that month', async () => {

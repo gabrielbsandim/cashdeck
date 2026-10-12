@@ -107,6 +107,31 @@ void main() {
       );
     });
 
+    test('reads a loan installment and a kind it does not know yet', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {
+            ..._safeToSpendJson(),
+            'lines': [
+              for (final kind in ['LOAN', 'SOMETHING_NEW'])
+                {
+                  'kind': kind,
+                  'label': 'Banco Exemplo',
+                  'amount': _money(-300_000),
+                  'on': '2026-10-17',
+                },
+            ],
+          },
+        }),
+      );
+      final free = _valueOf(await ApiOutlookRepository(dio).safeToSpend());
+
+      expect(free.lines.map((line) => line.kind), [
+        SafeToSpendLineKind.loan,
+        SafeToSpendLineKind.fixed,
+      ]);
+    });
+
     test('asks the company home for the company figure', () async {
       final dio = stubDio(
         (_) => StubResponse(200, {

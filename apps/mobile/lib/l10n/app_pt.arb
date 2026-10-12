@@ -3663,5 +3663,104 @@
   },
   "incomeSourcesSave": "Salvar fontes",
   "incomeSourcesSaved": "Fontes de renda salvas",
-  "incomeSourcesEmpty": "Nenhum pagador nos últimos 6 meses"
+  "incomeSourcesEmpty": "Nenhum pagador nos últimos 6 meses",
+  "safeToSpendLineLoan": "Financiamento",
+  "loansTitle": "Financiamentos",
+  "loansImport": "Importar extrato",
+  "loansImported": "Financiamento importado",
+  "loansReadingTitle": "Lendo o extrato",
+  "loansReadingMessage": "Separando parcelas, juros e seguros.",
+  "loansEmptyTitle": "Nenhum financiamento ainda",
+  "loansEmptyMessage": "Baixe o extrato do financiamento em PDF no app do banco e importe aqui. O app lê cada parcela, os juros e os seguros.",
+  "loanBalance": "Saldo devedor",
+  "loanProgress": "{paid} de {term} parcelas pagas",
+  "@loanProgress": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "term": {
+        "type": "int"
+      }
+    }
+  },
+  "loanNext": "Próxima parcela",
+  "loanNextDue": "{amount} em {date}",
+  "@loanNextDue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "loanRemainingInterest": "Juros a pagar",
+  "loanRate": "Taxa efetiva",
+  "loanRateValue": "{rate}% ao ano + {indexer}",
+  "@loanRateValue": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "indexer": {
+        "type": "String"
+      }
+    }
+  },
+  "loanLastDue": "Última parcela",
+  "loanLateFees": "{amount} pagos em multa e juros de atraso",
+  "@loanLateFees": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "loanPrepay": "Simular amortização",
+  "loanPrepayTitle": "Amortização extra",
+  "loanPrepayAmount": "Valor a amortizar",
+  "loanPrepayHelp": "Reduz o prazo e mantém o valor da parcela.",
+  "loanPrepayRun": "Simular",
+  "loanPrepaySaved": "Economia total",
+  "loanPrepayInterest": "Juros a menos",
+  "loanPrepayMonths": "{months, plural, =0{Nenhuma parcela a menos} =1{1 parcela a menos} other{{months} parcelas a menos}}",
+  "@loanPrepayMonths": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "loanPrepayLastDue": "Termina em {date}",
+  "@loanPrepayLastDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "loanPrepayYield": "Amortizar rende {rate}% ao ano + {indexer}, garantido",
+  "@loanPrepayYield": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "indexer": {
+        "type": "String"
+      }
+    }
+  },
+  "loanDelete": "Excluir financiamento",
+  "loanDeleteTitle": "Excluir {name}?",
+  "@loanDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "loanDeleteMessage": "O financiamento sai do app; o contrato no banco não muda. Importe o extrato de novo quando quiser.",
+  "loanDeleted": "Financiamento excluído"
 }

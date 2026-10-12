@@ -17,6 +17,7 @@ enum SafeToSpendLineKind {
   card,
   budget,
   reserve,
+  loan,
 }
 
 /// Where the breakdown starts: a person's typical month, which lasts to the

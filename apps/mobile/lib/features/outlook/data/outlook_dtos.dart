@@ -14,7 +14,13 @@ const Map<String, SafeToSpendLineKind> safeToSpendLineKinds = {
   'CARD': SafeToSpendLineKind.card,
   'BUDGET': SafeToSpendLineKind.budget,
   'RESERVE': SafeToSpendLineKind.reserve,
+  'LOAN': SafeToSpendLineKind.loan,
 };
+
+/// A kind a newer server adds still owes money, so it reads as a fixed cost
+/// instead of failing the whole card.
+SafeToSpendLineKind safeToSpendLineKindOf(String raw) =>
+    safeToSpendLineKinds[raw] ?? SafeToSpendLineKind.fixed;
 
 const Map<String, SafeToSpendBasis> safeToSpendBases = {
   'MONTH': SafeToSpendBasis.month,
@@ -60,7 +66,7 @@ SafeToSpend safeToSpendFromJson(JsonMap json) {
     lines: [
       for (final line in readMapList(json, 'lines'))
         SafeToSpendLine(
-          kind: readEnum(line, 'kind', safeToSpendLineKinds),
+          kind: safeToSpendLineKindOf(readString(line, 'kind')),
           label: readString(line, 'label'),
           amount: readMoney(line, 'amount'),
           on: readOptionalDate(line, 'on'),

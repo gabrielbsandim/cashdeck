@@ -5,10 +5,12 @@ import {
   CASH_ACCOUNT_TYPES,
   type BudgetLeft,
   cashShortfall,
+  chargesInstallment,
   daysBetween,
   type EntityKind,
   expectedIncome,
   type FinancialEntity,
+  installmentIn,
   isSettled,
   type LocalDate,
   Money,
@@ -39,6 +41,7 @@ import {
   flowEntries,
   insightScope,
 } from '@/use-cases/insights'
+import { loadLoans, type StoredLoan } from '@/use-cases/loans'
 import { incomeTest, loadSpendingPlan } from '@/use-cases/spending-plan'
 import {
   addMonths,
@@ -96,6 +99,7 @@ type Context = {
   entity: FinancialEntity
   recent: readonly Transaction[]
   open: readonly Bill[]
+  loans: readonly StoredLoan[]
 }
 
 type Base = Omit<Context, 'until'> & {
@@ -185,6 +189,29 @@ function billObligations(
     on: bill.dueDate,
     fromReserve: !isAutoDebit(bill),
   }))
+}
+
+// The month's installment of the schedule, not the last debit, which may carry
+// a late fee; nothing once the loan is paid off. One past due keeps the
+// debit's usual day.
+function loanObligations(
+  loan: StoredLoan,
+  on: LocalDate,
+  day: LocalDate,
+): Obligation[] {
+  const due = installmentIn(loan, monthOf(on))
+  if (!due) {
+    return []
+  }
+  return [
+    {
+      kind: 'LOAN',
+      label: `${loan.lender} ${loan.contract}`,
+      amount: Money.of(due.total),
+      on: due.dueOn >= day ? due.dueOn : on,
+      fromReserve: false,
+    },
+  ]
 }
 
 function fixedObligations(
@@ -289,24 +316,34 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
           monthOf(bill.dueDate) === monthOf(on) &&
           sharesWord(bill.payee ?? '', name),
       )
+    const loanOf = (recurrence: Recurrence) =>
+      context.loans.find(loan =>
+        chargesInstallment(loan, recurrence.amount.cents),
+      )
     return running.flatMap(recurrence => {
       const lastMonth = lastMonthOf(recurrence)
+      const loan = loanOf(recurrence)
       return monthlyDatesBetween(
         recurrence.dayOfMonth,
         context.day,
         context.until,
       )
         .filter(on => monthOf(on) !== lastMonth && !billed(recurrence.name, on))
-        .map(on => ({
-          kind:
-            recurrence.status === 'CONFIRMED'
-              ? ('SUBSCRIPTION' as const)
-              : ('FIXED' as const),
-          label: recurrence.name,
-          amount: recurrence.amount,
-          on,
-          fromReserve: false,
-        }))
+        .flatMap((on): Obligation[] => {
+          if (loan) {
+            return loanObligations(loan, on, context.day)
+          }
+          return [
+            {
+              kind:
+                recurrence.status === 'CONFIRMED' ? 'SUBSCRIPTION' : 'FIXED',
+              label: recurrence.name,
+              amount: recurrence.amount,
+              on,
+              fromReserve: false,
+            },
+          ]
+        })
     })
   }
 
@@ -392,6 +429,9 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       ),
       isAutoDebit: await loadAutoDebit(deps, tenantId),
       items: await fixedItems(kind, tenantId),
+      loans: (await loadLoans(deps, tenantId)).filter(
+        loan => loan.entityId === entity.id,
+      ),
     }
   }
 

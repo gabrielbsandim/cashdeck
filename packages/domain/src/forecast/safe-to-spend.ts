@@ -27,6 +27,7 @@ export const OBLIGATION_KINDS = [
   'FIXED',
   'SUBSCRIPTION',
   'CARD',
+  'LOAN',
 ] as const
 export type ObligationKind = (typeof OBLIGATION_KINDS)[number]
 

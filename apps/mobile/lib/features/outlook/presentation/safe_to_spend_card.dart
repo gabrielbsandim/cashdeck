@@ -172,6 +172,7 @@ String safeToSpendKindLabel(AppLocalizations l10n, SafeToSpendLineKind kind) =>
       SafeToSpendLineKind.card => l10n.safeToSpendLineCard,
       SafeToSpendLineKind.budget => l10n.safeToSpendLineBudget,
       SafeToSpendLineKind.reserve => l10n.safeToSpendLineReserve,
+      SafeToSpendLineKind.loan => l10n.safeToSpendLineLoan,
     };
 
 /// From the typical income, or the checking balance on cash, line by line to

@@ -157,6 +157,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/loans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Imported loans with what is paid and still owed */
+        get: operations["listLoans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/loans/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a bank's loan statement PDF; the same contract is replaced, 422 when it cannot be read */
+        post: operations["importLoan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/loans/{id}/prepayment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Interest and months a prepayment saves, keeping the installment */
+        get: operations["simulateLoanPrepayment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/loans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an imported loan */
+        delete: operations["removeLoan"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/company/safe-to-spend": {
         parameters: {
             query?: never;
@@ -2656,7 +2724,7 @@ export interface operations {
                             };
                             lines: {
                                 /** @enum {string} */
-                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "LOAN" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
                                 label: string;
                                 amount: {
                                     cents: number;
@@ -2777,6 +2845,388 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    listLoans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Imported loans with what is paid and still owed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: {
+                                id: string;
+                                /** @enum {string} */
+                                entity: "PF" | "PJ";
+                                name: string;
+                                lender: string;
+                                contract: string;
+                                /** @enum {string} */
+                                system: "SAC" | "PRICE";
+                                indexer: string;
+                                effectiveRate: number;
+                                cet: number;
+                                principal: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                propertyValue: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                signedOn: string;
+                                termMonths: number;
+                                paidCount: number;
+                                balance: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                lastDueOn: string | null;
+                                next: {
+                                    number: number;
+                                    dueOn: string;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    principal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    interest: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    fees: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                } | null;
+                                upcoming: {
+                                    number: number;
+                                    dueOn: string;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    principal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    interest: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    fees: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                }[];
+                                remaining: {
+                                    count: number;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    interest: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    principal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    fees: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                };
+                                paid: {
+                                    count: number;
+                                    total: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    interest: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    principal: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    lateFees: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                };
+                                /** Format: date-time */
+                                importedAt: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    importLoan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fileName: string;
+                    mimeType: string;
+                    base64: string;
+                    /**
+                     * @default PF
+                     * @enum {string}
+                     */
+                    entity?: "PF" | "PJ";
+                };
+            };
+        };
+        responses: {
+            /** @description Import a bank's loan statement PDF; the same contract is replaced, 422 when it cannot be read */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string} */
+                            entity: "PF" | "PJ";
+                            name: string;
+                            lender: string;
+                            contract: string;
+                            /** @enum {string} */
+                            system: "SAC" | "PRICE";
+                            indexer: string;
+                            effectiveRate: number;
+                            cet: number;
+                            principal: {
+                                cents: number;
+                                currency: string;
+                            };
+                            propertyValue: {
+                                cents: number;
+                                currency: string;
+                            } | null;
+                            signedOn: string;
+                            termMonths: number;
+                            paidCount: number;
+                            balance: {
+                                cents: number;
+                                currency: string;
+                            };
+                            lastDueOn: string | null;
+                            next: {
+                                number: number;
+                                dueOn: string;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                principal: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                interest: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fees: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            } | null;
+                            upcoming: {
+                                number: number;
+                                dueOn: string;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                principal: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                interest: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fees: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                            remaining: {
+                                count: number;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                interest: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                principal: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                fees: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            paid: {
+                                count: number;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                interest: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                principal: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                lateFees: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            };
+                            /** Format: date-time */
+                            importedAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    simulateLoanPrepayment: {
+        parameters: {
+            query: {
+                amount: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Interest and months a prepayment saves, keeping the installment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            interestSaved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            feesSaved: {
+                                cents: number;
+                                currency: string;
+                            };
+                            monthsCut: number;
+                            lastDueOn: string | null;
+                            balanceAfter: {
+                                cents: number;
+                                currency: string;
+                            };
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeLoan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove an imported loan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getCompanySafeToSpend: {
         parameters: {
             query?: never;
@@ -2855,7 +3305,7 @@ export interface operations {
                             };
                             lines: {
                                 /** @enum {string} */
-                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
+                                kind: "BILL" | "FIXED" | "SUBSCRIPTION" | "CARD" | "LOAN" | "INCOME" | "SAVINGS" | "SPENT_CARD" | "SPENT_ACCOUNT" | "BUDGET" | "RESERVE";
                                 label: string;
                                 amount: {
                                     cents: number;
