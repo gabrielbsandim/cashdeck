@@ -289,7 +289,7 @@
   "signInBody": "Enter the address of your Cashdeck server and the access token set on it.",
   "fieldServerUrl": "Server address",
   "fieldAccessToken": "Access token",
-  "accessTokenHint": "It is the value of CASHDECK_API_TOKEN on the server.",
+  "accessTokenHint": "It is the value of CASHDECK_API_TOKEN on the server. The app trades it for access for this device only and does not keep it.",
   "errorServerUrlInvalid": "Check the address, for example cashdeck.yourhome.com.",
   "errorTokenRequired": "Paste the access token.",
   "signInButton": "Connect",
@@ -1192,5 +1192,15 @@
   "pixContactKeyTaken": "That key belongs to another contact.",
   "pixContactHandleTaken": "That @ belongs to another contact.",
   "pixContactPaidTimes": "{count, plural, =0{No Pix yet} =1{1 Pix sent} other{{count} Pix sent}}",
-  "pixContactLastPaid": "{times} · last on {date}"
+  "pixContactLastPaid": "{times} · last on {date}",
+  "deviceSessionsTitle": "Connected devices",
+  "deviceSessionsHint": "Phones with access to your server",
+  "deviceSessionsCurrent": "This device",
+  "deviceSessionsSubtitle": "Last used {lastUsed} · since {since}",
+  "deviceSessionsRevokeTitle": "Disconnect {device}?",
+  "deviceSessionsRevokeCurrent": "You will be signed out on this device",
+  "deviceSessionsLastUsed": "Last used",
+  "deviceSessionsRevoke": "Disconnect",
+  "deviceSessionsRevoked": "Device disconnected",
+  "resumeAutomationReason": "Resume automatic payments"
 }

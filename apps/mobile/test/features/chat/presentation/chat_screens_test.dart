@@ -3,6 +3,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/files/file_chooser.dart';
 import 'package:cashdeck/core/files/local_file.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/features/chat/chat_providers.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
@@ -170,7 +171,12 @@ void main() {
   testWidgets('a Pix to someone new says the contact will be saved', (
     tester,
   ) async {
-    await pumpRoute(tester, AppRoutes.chatNew);
+    final biometrics = FakeBiometricAuthenticator(approve: false);
+    await pumpRoute(
+      tester,
+      AppRoutes.chatNew,
+      overrides: [biometricAuthenticatorProvider.overrideWithValue(biometrics)],
+    );
 
     await _send(tester, r'Pix de R$ 20,50 para a Ana');
 
@@ -180,6 +186,15 @@ void main() {
 
     await tester.tap(_keyStarting('chat-action-confirm-'));
     await settle(tester);
+    expect(biometrics.reasons, [l10n.chatToolSendPix]);
+    expect(find.text(l10n.confirmDenied), findsOneWidget);
+    expect(find.text(l10n.chatActionPending), findsOneWidget);
+    await waitForToast(tester);
+
+    biometrics.approve = true;
+    await tester.tap(_keyStarting('chat-action-confirm-'));
+    await settle(tester);
+    expect(biometrics.reasons, hasLength(2));
 
     expect(find.text(l10n.chatActionConfirmed), findsOneWidget);
     expect(find.byKey(ChatActionCard.newContactKey), findsNothing);

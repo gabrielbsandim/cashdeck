@@ -1,5 +1,12 @@
 import { type Actor } from '@cashdeck/application'
-import { authorize, requestActor } from '@/server/api/auth'
+import {
+  apiToken,
+  authorizeStatic,
+  bearerToken,
+  notConfigured,
+  sessionActor,
+  staticTokenActor,
+} from '@/server/api/auth'
 import { handleError } from '@/server/api/respond'
 import { resolveTenant } from '@/server/api/tenant'
 import { type Container, getContainer } from '@/server/container'
@@ -10,11 +17,12 @@ export type RouteContext<P> = {
   params: P
   container: Container
   actor: Actor
+  sessionId: string
 }
 
 type Params = Record<string, string>
 
-// Every guarded route goes through here: the token check, the tenant, the
+// Every guarded route goes through here: the device session, the tenant, the
 // container and the error envelope.
 export function route<P extends Params = Params>(
   scope: string,
@@ -24,7 +32,42 @@ export function route<P extends Params = Params>(
     request: Request,
     context?: { params: Promise<P> },
   ): Promise<Response> => {
-    const denied = authorize(request)
+    if (!apiToken()) {
+      return notConfigured()
+    }
+    try {
+      const container = getContainer()
+      const tenantId = resolveTenant(request)
+      const session = await container.sessions.authenticate(
+        tenantId,
+        bearerToken(request),
+      )
+      return await handler({
+        request,
+        tenantId,
+        params: context ? await context.params : ({} as P),
+        container,
+        actor: sessionActor(request, session.id),
+        sessionId: session.id,
+      })
+    } catch (error) {
+      return handleError(error, scope)
+    }
+  }
+}
+
+export type StaticTokenContext = Omit<
+  RouteContext<Params>,
+  'params' | 'sessionId'
+>
+
+// Only signing a device in takes the static token itself.
+export function staticTokenRoute(
+  scope: string,
+  handler: (context: StaticTokenContext) => Promise<Response>,
+) {
+  return async (request: Request): Promise<Response> => {
+    const denied = authorizeStatic(request)
     if (denied) {
       return denied
     }
@@ -32,9 +75,8 @@ export function route<P extends Params = Params>(
       return await handler({
         request,
         tenantId: resolveTenant(request),
-        params: context ? await context.params : ({} as P),
         container: getContainer(),
-        actor: requestActor(request),
+        actor: staticTokenActor(request),
       })
     } catch (error) {
       return handleError(error, scope)

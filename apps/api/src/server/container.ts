@@ -22,6 +22,7 @@ import {
   InMemoryCategoryRepository,
   InMemoryChatRepository,
   InMemoryConnectionRepository,
+  InMemoryDeviceSessionRepository,
   InMemoryDeviceTokenRepository,
   InMemoryDocumentStore,
   InMemoryEntityRepository,
@@ -61,6 +62,7 @@ import {
   makeSubscriptions,
   makeCreateCategoryRule,
   makeCreateManualAccount,
+  makeDeviceSessions,
   makeDescribeBill,
   makeSetAutoDebit,
   makeDocuments,
@@ -125,6 +127,8 @@ import {
   getPrismaClient,
   SimplePdfWriter,
   GoogleMailboxAuthorizer,
+  PrismaDeviceSessionRepository,
+  RandomSessionTokens,
   StoredZipWriter,
   X509CertificateInspector,
 } from '@cashdeck/infrastructure'
@@ -201,6 +205,7 @@ function inMemoryStores(tenantId: string, settings: PaymentSettings) {
     categories: new InMemoryCategoryRepository(),
     chat: new InMemoryChatRepository(),
     pixContacts: new InMemoryPixContactRepository(),
+    sessions: new InMemoryDeviceSessionRepository(),
   }
 }
 
@@ -247,6 +252,7 @@ function stores(env: ServerEnv, settings: PaymentSettings) {
     ...createPrismaRepositories(db, settings),
     ...createPrismaRecords(db),
     ...createPrismaAlertStores(db),
+    sessions: new PrismaDeviceSessionRepository(db),
   }
 }
 
@@ -407,6 +413,11 @@ export function buildContainer(
     receipts: makeReceipts(deps),
     accountantExport: makeAccountantExport(deps),
     alerts: makeAlerts(deps),
+    sessions: makeDeviceSessions({
+      ...deps,
+      sessions: base.sessions,
+      sessionTokens: new RandomSessionTokens(),
+    }),
     runDailyAlerts: makeRunDailyAlerts(deps),
   }
 }

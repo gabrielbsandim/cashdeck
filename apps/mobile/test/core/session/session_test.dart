@@ -36,6 +36,14 @@ void main() {
     expect(await store.read(), isNull);
   });
 
+  test('finds and drops a static token kept in memory', () async {
+    final store = InMemoryCredentialStore(null, credentials);
+    expect(await store.readLegacy(), credentials);
+    await store.clearLegacy();
+    expect(await store.readLegacy(), isNull);
+    await InMemoryCredentialStore(null, credentials).clear();
+  });
+
   test('keeps credentials in the secure storage', () async {
     final storage = _MockStorage();
     final values = <String, String>{};
@@ -58,6 +66,18 @@ void main() {
     await store.write(credentials);
     expect(values[SecureCredentialStore.tokenKey], 'token-1234');
     expect(await store.read(), credentials);
+    expect(await store.readLegacy(), isNull);
+    values[SecureCredentialStore.legacyTokenKey] = 'static-token';
+    expect(
+      await store.readLegacy(),
+      const ServerCredentials(
+        baseUrl: 'https://home.test',
+        token: 'static-token',
+      ),
+    );
+    await store.clearLegacy();
+    expect(values.containsKey(SecureCredentialStore.legacyTokenKey), isFalse);
+    values[SecureCredentialStore.legacyTokenKey] = 'static-token';
     await store.clear();
     expect(values, isEmpty);
     expect(const SecureCredentialStore(), isA<CredentialStore>());

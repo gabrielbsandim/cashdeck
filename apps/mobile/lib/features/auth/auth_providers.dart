@@ -1,14 +1,25 @@
+import 'dart:io';
+
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/alerts/alerts_providers.dart';
+import 'package:cashdeck/features/auth/application/device_sessions_use_cases.dart';
 import 'package:cashdeck/features/auth/application/sign_in.dart';
 import 'package:cashdeck/features/auth/application/sign_out.dart';
+import 'package:cashdeck/features/auth/data/api_device_sessions_repository.dart';
 import 'package:cashdeck/features/auth/data/api_server_access_repository.dart';
+import 'package:cashdeck/features/auth/data/device_identity.dart';
+import 'package:cashdeck/features/auth/data/fake_device_sessions_repository.dart';
 import 'package:cashdeck/features/auth/data/fake_server_access_repository.dart';
+import 'package:cashdeck/features/auth/domain/device_session.dart';
 import 'package:cashdeck/features/auth/domain/server_access.dart';
 import 'package:cashdeck/features/card_notifications/card_notifications_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final deviceIdentityProvider = Provider<DeviceIdentity>(
+  (ref) => deviceIdentityFor(Platform.operatingSystem),
+);
 
 final serverAccessRepositoryProvider = Provider<ServerAccessRepository>((ref) {
   return switch (ref.watch(appConfigProvider).backend) {
@@ -17,8 +28,30 @@ final serverAccessRepositoryProvider = Provider<ServerAccessRepository>((ref) {
   };
 });
 
+final deviceSessionsRepositoryProvider = Provider<DeviceSessionsRepository>((
+  ref,
+) {
+  return switch (ref.watch(appConfigProvider).backend) {
+    Backend.fake => FakeDeviceSessionsRepository(
+      now: ref.read(clockProvider).now(),
+    ),
+    Backend.api => ApiDeviceSessionsRepository(ref.watch(dioProvider)),
+  };
+});
+
 final signInProvider = Provider<SignIn>(
-  (ref) => SignIn(ref.watch(serverAccessRepositoryProvider)),
+  (ref) => SignIn(
+    ref.watch(serverAccessRepositoryProvider),
+    ref.watch(deviceIdentityProvider),
+  ),
+);
+
+final listDeviceSessionsProvider = Provider<ListDeviceSessions>(
+  (ref) => ListDeviceSessions(ref.watch(deviceSessionsRepositoryProvider)),
+);
+
+final revokeDeviceSessionProvider = Provider<RevokeDeviceSession>(
+  (ref) => RevokeDeviceSession(ref.watch(deviceSessionsRepositoryProvider)),
 );
 
 final signOutProvider = Provider<SignOut>(
@@ -26,5 +59,6 @@ final signOutProvider = Provider<SignOut>(
     ref.watch(unregisterPushDeviceProvider),
     ref.read(serverSessionProvider.notifier).signOut,
     ref.watch(stopCardNotificationsProvider).call,
+    ref.watch(deviceSessionsRepositoryProvider),
   ),
 );

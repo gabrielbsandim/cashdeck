@@ -7,10 +7,15 @@ the same change.
 
 ## Auth
 
-The server has one access token (`CASHDECK_API_TOKEN`). The app stores the
-server URL and the token in secure storage, sends `Authorization: Bearer
-<token>` on every request and checks them with `GET /api/v1/auth/check` at
-sign in. A 401 anywhere signs the user out.
+The server has one static token (`CASHDECK_API_TOKEN`). At sign in the app
+sends it once to `POST /api/v1/sessions` with a device name and platform and
+keeps only the session token it gets back, with the server URL, in secure
+storage. A static token stored by an older version is exchanged the same way
+at launch and then deleted. Every request sends `Authorization: Bearer
+<session token>`; a 401 anywhere signs the user out. Ajustes > Segurança lists
+the sessions (`GET /api/v1/sessions`) and revokes them
+(`DELETE /api/v1/sessions/{id}`); signing out calls
+`DELETE /api/v1/sessions/current`.
 
 ## Repositories
 

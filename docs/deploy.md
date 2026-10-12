@@ -149,6 +149,7 @@ the migration `20261013120000_alerts_and_devices`.
 
 ## After the first deploy
 
-1. `curl -H "Authorization: Bearer $CASHDECK_API_TOKEN" https://<api domain>/api/v1/auth/check`
-   lists both entities.
+1. `curl -X POST -H "Authorization: Bearer $CASHDECK_API_TOKEN" -d '{"deviceName":"curl","platform":"WEB"}' https://<api domain>/api/v1/sessions`
+   answers a session token; `GET /api/v1/auth/check` with that token lists
+   both entities.
 2. Sign in from the app with the API URL and the same token.

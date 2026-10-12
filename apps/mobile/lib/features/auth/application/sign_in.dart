@@ -3,12 +3,13 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/session/server_credentials.dart';
 import 'package:cashdeck/features/auth/domain/server_access.dart';
 
-/// Checks the address and token against the server and returns what to
-/// keep; storing them is the session's job.
+/// Trades the address and static token for a session of this device and
+/// returns what to keep; storing it is the session's job.
 final class SignIn {
-  const new(this._repository);
+  const new(this._repository, this._device);
 
   final ServerAccessRepository _repository;
+  final DeviceIdentity _device;
 
   Future<Result<ServerCredentials>> call({
     required String serverUrl,
@@ -20,13 +21,10 @@ final class SignIn {
         ValidationFailure([for (final field in errors) field.name].join(', ')),
       );
     }
-    final credentials = ServerCredentials(
+    final staticToken = ServerCredentials(
       baseUrl: normalizeServerUrl(serverUrl),
       token: token.trim(),
     );
-    return switch (await _repository.check(credentials)) {
-      Ok() => Ok(credentials),
-      Err(:final failure) => Err(failure),
-    };
+    return await _repository.exchange(staticToken, _device);
   }
 }

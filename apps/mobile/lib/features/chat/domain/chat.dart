@@ -18,7 +18,15 @@ enum ChatTool {
   payBill,
   createCategoryRule,
   draftInvoice,
-  sendPix,
+  sendPix;
+
+  /// Confirming these sends money out, so the device check comes first.
+  bool get movesMoney => switch (this) {
+    ChatTool.payBill || ChatTool.sendPix => true,
+    ChatTool.createBillFromAttachment ||
+    ChatTool.createCategoryRule ||
+    ChatTool.draftInvoice => false,
+  };
 }
 
 enum ChatActionStatus { pending, confirmed, cancelled, failed, expired }

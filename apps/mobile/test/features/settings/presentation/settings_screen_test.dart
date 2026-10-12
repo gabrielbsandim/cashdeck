@@ -54,7 +54,7 @@ void main() {
       AppRoutes.payroll,
       AppRoutes.accountantExport,
     ],
-    AppRoutes.settingsSecurity: [AppRoutes.safeZone],
+    AppRoutes.settingsSecurity: [AppRoutes.safeZone, AppRoutes.deviceSessions],
   };
   for (final MapEntry(key: from, value: routes) in links.entries) {
     for (final route in routes) {
@@ -112,18 +112,36 @@ void main() {
     expect(app.read(displayPreferencesProvider).hideAmounts, isFalse);
   });
 
-  testWidgets('the kill switch pauses every automatic payment', (tester) async {
-    final app = await pumpRoute(tester, AppRoutes.settingsPayments);
-
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(PaymentsSettingsScreen.pauseKey),
-        matching: find.byType(Switch),
-      ),
+  testWidgets('the kill switch pauses at once and resumes after the check', (
+    tester,
+  ) async {
+    final biometrics = FakeBiometricAuthenticator(approve: false);
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.settingsPayments,
+      overrides: [biometricAuthenticatorProvider.overrideWithValue(biometrics)],
     );
-    await settle(tester);
+    final toggle = find.descendant(
+      of: find.byKey(PaymentsSettingsScreen.pauseKey),
+      matching: find.byType(Switch),
+    );
 
+    await tester.tap(toggle);
+    await settle(tester);
     expect(app.read(automationControllerProvider).value?.paused, isTrue);
+    expect(biometrics.reasons, isEmpty);
+
+    await tester.tap(toggle);
+    await settle(tester);
+    expect(biometrics.reasons, [l10n.resumeAutomationReason]);
+    expect(find.text(l10n.confirmDenied), findsOneWidget);
+    expect(app.read(automationControllerProvider).value?.paused, isTrue);
+    await waitForToast(tester);
+
+    biometrics.approve = true;
+    await tester.tap(toggle);
+    await settle(tester);
+    expect(app.read(automationControllerProvider).value?.paused, isFalse);
   });
 
   testWidgets('a failed pause says why', (tester) async {

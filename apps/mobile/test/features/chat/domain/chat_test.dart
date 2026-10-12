@@ -65,6 +65,16 @@ void main() {
     expect(message.attachments.first.props, hasLength(4));
   });
 
+  test('only paying a bill and sending a Pix move money', () {
+    expect(
+      {
+        for (final tool in ChatTool.values)
+          if (tool.movesMoney) tool,
+      },
+      {ChatTool.payBill, ChatTool.sendPix},
+    );
+  });
+
   test('value classes compare by value', () {
     expect(testThread().props, hasLength(5));
     expect(testAction().props, hasLength(10));

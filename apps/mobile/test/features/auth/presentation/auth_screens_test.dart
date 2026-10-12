@@ -59,7 +59,7 @@ void main() {
       await store.read(),
       const ServerCredentials(
         baseUrl: 'https://cashdeck.casa',
-        token: 'token-de-teste',
+        token: 'session-token-de-teste',
       ),
     );
     await waitForToast(tester);

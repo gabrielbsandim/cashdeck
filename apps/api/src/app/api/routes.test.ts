@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { signInTestDevice, STATIC_TOKEN } from '@/app/api/sign-in.test-helpers'
 import { type InMemoryAuditLog } from '@cashdeck/application'
 import { getContainer, resetContainer } from '@/server/container'
 import { GET as health } from '@/app/api/v1/health/route'
@@ -14,17 +15,17 @@ import { GET as paymentCron } from '@/app/api/cron/payment-ladder/route'
 const BOLETO_LINE = '00190000090280001234256789012178916050000012345'
 const TAX_BARCODE = '85600000001500003282026102000000000000123000'
 
-const TOKEN = 'test-token-0123456789'
-const AUTH = { authorization: `Bearer ${TOKEN}` }
+let session = ''
+const auth = () => ({ authorization: `Bearer ${session}` })
 
 function get(path: string) {
-  return new Request(`http://localhost/api/v1${path}`, { headers: AUTH })
+  return new Request(`http://localhost/api/v1${path}`, { headers: auth() })
 }
 
 function post(path: string, body?: unknown) {
   return new Request(`http://localhost/api/v1${path}`, {
     method: 'POST',
-    headers: AUTH,
+    headers: auth(),
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 }
@@ -35,8 +36,9 @@ async function json(response: Response) {
   return { status: response.status, body: await response.json() }
 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -108,7 +110,7 @@ describe('api routes', () => {
     expect(attempts.at(-1)).toMatchObject({
       action: 'payment.attempt',
       actor: 'USER',
-      actorId: expect.stringMatching(/^token:[0-9a-f]{12}$/),
+      actorId: expect.stringMatching(/^session:/),
       requestId: 'req-42',
     })
     expect(
@@ -137,7 +139,7 @@ describe('api routes', () => {
     const flag = (enabled: unknown) =>
       new Request(`http://localhost/api/v1/bills/${id}/auto-debit`, {
         method: 'PUT',
-        headers: { ...AUTH, 'content-type': 'application/json' },
+        headers: { ...auth(), 'content-type': 'application/json' },
         body: JSON.stringify({ enabled }),
       })
     const flagged = await json(await setAutoDebit(flag(true), params(id)))
@@ -155,7 +157,7 @@ describe('api routes', () => {
     ])
     const broken = new Request('http://localhost/api/v1/bills', {
       method: 'POST',
-      headers: AUTH,
+      headers: auth(),
       body: '{',
     })
     expect((await captureBill(broken)).status).toBe(400)

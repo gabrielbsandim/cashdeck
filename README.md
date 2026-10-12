@@ -67,9 +67,10 @@ SDK to build the app. The full guide is [docs/deploy.md](docs/deploy.md).
    adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
    ```
 
-4. **Sign in.** Open the app and enter the API URL and `CASHDECK_API_TOKEN`.
-   Check the server first with
-   `curl -H "Authorization: Bearer $CASHDECK_API_TOKEN" https://<api domain>/api/v1/auth/check`.
+4. **Sign in.** Open the app and enter the API URL and `CASHDECK_API_TOKEN`;
+   the app trades it for a device session and keeps only that. Check the
+   server first with
+   `curl -X POST -H "Authorization: Bearer $CASHDECK_API_TOKEN" -d '{"deviceName":"curl","platform":"WEB"}' https://<api domain>/api/v1/sessions`.
 
 With only the required variables, you can add bills by hand, paste a boleto or
 Pix code, and pay through the assisted step. Every integration is optional and

@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
@@ -54,8 +55,25 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
   ConversationController get _controller =>
       ref.read(conversationControllerProvider(widget.conversation).notifier);
 
+  /// Money leaves only after the same device check as the confirm sheet.
+  Future<bool> _deviceCheck(AppLocalizations l10n) async {
+    final tool = widget.action.tool;
+    if (!tool.movesMoney) return true;
+    final passed = await ref
+        .read(biometricAuthenticatorProvider)
+        .authenticate(chatToolTitle(l10n, tool));
+    if (passed || !mounted) return passed;
+    showCdToast(
+      context,
+      icon: Symbols.fingerprint_rounded,
+      message: l10n.confirmDenied,
+    ).ignore();
+    return false;
+  }
+
   Future<void> _confirm() async {
     final l10n = AppLocalizations.of(context);
+    if (!await _deviceCheck(l10n) || !mounted) return;
     final failure = await _controller.confirm(widget.action, entity: _entity);
     if (!mounted) return;
     if (failure == null && widget.action.tool == ChatTool.sendPix) {

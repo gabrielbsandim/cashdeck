@@ -1,4 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  restartTestDevice,
+  signInTestDevice,
+  STATIC_TOKEN,
+} from '@/app/api/sign-in.test-helpers'
 import { Money } from '@cashdeck/domain'
 import { getContainer, resetContainer } from '@/server/container'
 import { signState } from '@/server/api/auth'
@@ -85,7 +90,7 @@ import { GET as previewCron } from '@/app/api/cron/preview-sync/route'
 import { GET as captureCron } from '@/app/api/cron/capture/route'
 import { GET as reconcileCron } from '@/app/api/cron/reconcile-payments/route'
 
-const TOKEN = 'test-token-0123456789'
+let session = ''
 const BOLETO_LINE = '00190000090280001234256789012178916050000012345'
 const ITEM = '0b5c3a1e-7d2f-4c8a-9e61-3f2b8d4c5a10'
 
@@ -105,7 +110,7 @@ async function call(
     `http://localhost/api/v1/test${options.query ?? ''}`,
     {
       method,
-      headers: { authorization: `Bearer ${TOKEN}` },
+      headers: { authorization: `Bearer ${session}` },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     },
@@ -140,9 +145,10 @@ const callback = (query: string) =>
     ),
   )
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
   vi.stubEnv('CRON_SECRET', 'cron-secret')
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -385,6 +391,7 @@ describe('capture sources', () => {
           : Response.json({ email: 'mailbox@example.com' }),
       ),
     )
+    session = await restartTestDevice()
     const state = signState({ tenantId: 'local', entity: 'PF' }, new Date())
     const done = await callback(`code=c&state=${encodeURIComponent(state)}`)
     expect(done.headers.get('location')).toBe('cashdeck://capture?connected=1')

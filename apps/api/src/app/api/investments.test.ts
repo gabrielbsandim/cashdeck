@@ -1,16 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { signInTestDevice, STATIC_TOKEN } from '@/app/api/sign-in.test-helpers'
 import { addDays, Money, toLocalDate } from '@cashdeck/domain'
 import { getContainer, resetContainer } from '@/server/container'
 import { GET as listInvestments } from '@/app/api/v1/investments/route'
 import { GET as getInvestment } from '@/app/api/v1/investments/[id]/route'
 import { GET as investmentPerformance } from '@/app/api/v1/investments/performance/route'
 
-const TOKEN = 'test-token-0123456789'
+let session = ''
 const TENANT = 'local'
 
 function get(query = '') {
   return new Request(`http://localhost/api/v1/investments${query}`, {
-    headers: { authorization: `Bearer ${TOKEN}` },
+    headers: { authorization: `Bearer ${session}` },
   })
 }
 
@@ -20,8 +21,9 @@ async function json(response: Response) {
   return { status: response.status, body: await response.json() }
 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
+  session = await signInTestDevice()
 })
 
 afterEach(() => {

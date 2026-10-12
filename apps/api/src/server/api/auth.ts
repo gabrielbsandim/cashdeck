@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
-import { type Actor } from '@cashdeck/application'
+import { type Actor, sessionActorId } from '@cashdeck/application'
 import { type NextResponse } from 'next/server'
 import { type ApiErrorBody, fail } from '@/server/api/respond'
 import { readEnv } from '@/server/env'
@@ -15,16 +15,24 @@ export function apiToken(): string | null {
   return readEnv().CASHDECK_API_TOKEN ?? null
 }
 
-// One guard for every protected route: no token configured is a server
-// problem (503), a wrong token is the caller's (401).
-export function authorize(request: Request): NextResponse<ApiErrorBody> | null {
+export function notConfigured(): NextResponse<ApiErrorBody> {
+  return fail('NOT_CONFIGURED', 'The server has no API token configured.', 503)
+}
+
+export function bearerToken(request: Request): string {
+  const header = request.headers.get('authorization') ?? ''
+  return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
+}
+
+// The static token only signs a device in; every other route takes the
+// session that exchange returns. No token configured is a server problem
+// (503), a wrong token is the caller's (401).
+export function authorizeStatic(
+  request: Request,
+): NextResponse<ApiErrorBody> | null {
   const token = apiToken()
   if (!token) {
-    return fail(
-      'NOT_CONFIGURED',
-      'The server has no API token configured.',
-      503,
-    )
+    return notConfigured()
   }
   const header = request.headers.get('authorization') ?? ''
   if (!sameSecret(header, `Bearer ${token}`)) {
@@ -33,14 +41,23 @@ export function authorize(request: Request): NextResponse<ApiErrorBody> | null {
   return null
 }
 
-// One token stands for the app user, so its hash prefix names the actor in the
-// audit log without storing the token; rotating it shows up as a new actor.
-export function requestActor(request: Request): Actor {
+const requestIdOf = (request: Request) =>
+  request.headers.get('x-request-id') ?? request.headers.get('x-vercel-id')
+
+// Whoever holds the static token, named by its hash prefix so the audit log
+// never stores it; rotating it shows up as a new actor.
+export function staticTokenActor(request: Request): Actor {
   const token = apiToken() ?? ''
   const id = createHash('sha256').update(token).digest('hex').slice(0, 12)
-  const requestId =
-    request.headers.get('x-request-id') ?? request.headers.get('x-vercel-id')
-  return { kind: 'USER', id: `token:${id}`, requestId }
+  return { kind: 'USER', id: `token:${id}`, requestId: requestIdOf(request) }
+}
+
+export function sessionActor(request: Request, sessionId: string): Actor {
+  return {
+    kind: 'USER',
+    id: sessionActorId(sessionId),
+    requestId: requestIdOf(request),
+  }
 }
 
 const STATE_TTL_MS = 10 * 60 * 1000
