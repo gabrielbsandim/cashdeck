@@ -133,24 +133,10 @@ import {
   markPaidSchema,
   payBillSchema,
 } from '@/server/api/schemas'
+import { type Operation } from '@/server/api/openapi-operation'
+import { PLANNING_OPERATIONS } from '@/server/api/openapi-planning'
 
 export const API_VERSION = 'v1'
-
-type Method = 'get' | 'post' | 'put' | 'patch' | 'delete'
-
-type Operation = {
-  method: Method
-  path: string
-  id: string
-  summary: string
-  query?: z.ZodObject
-  body?: z.ZodType
-  status?: '200' | '201'
-  response: z.ZodType | 'file' | 'redirect'
-  page?: boolean
-  public?: boolean
-  staticToken?: boolean
-}
 
 const errorSchema = z.object({
   error: z.object({
@@ -1298,7 +1284,7 @@ function describe(operation: Operation) {
 
 export function buildOpenApiDocument() {
   const paths: Record<string, Record<string, unknown>> = {}
-  for (const operation of OPERATIONS) {
+  for (const operation of [...OPERATIONS, ...PLANNING_OPERATIONS]) {
     paths[operation.path] = {
       ...paths[operation.path],
       [operation.method]: describe(operation),

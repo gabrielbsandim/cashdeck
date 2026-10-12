@@ -303,13 +303,15 @@ model CategoryRule {
 }
 
 model Budget {
-  id         String  @id
-  tenantId   String  @map("tenant_id")
-  entityId   String  @map("entity_id")
-  categoryId String  @map("category_id")
-  month      String  @db.Char(7)
-  limitCents BigInt  @map("limit_cents")
-  rollover   Boolean @default(false)
+  id           String  @id
+  tenantId     String  @map("tenant_id")
+  entityId     String  @map("entity_id")
+  categoryId   String  @map("category_id")
+  month        String  @db.Char(7)
+  limitCents   BigInt  @map("limit_cents")
+  // The leftover of the month before, for a budget that rolls over.
+  carriedCents BigInt  @default(0) @map("carried_cents")
+  rollover     Boolean @default(false)
 
   @@unique([tenantId, entityId, categoryId, month])
   @@map("budgets")
@@ -438,16 +440,35 @@ model Holding {
 }
 
 model Goal {
-  id          String    @id
-  tenantId    String    @map("tenant_id")
-  entityId    String    @map("entity_id")
-  name        String
-  targetCents BigInt    @map("target_cents")
-  deadline    DateTime? @db.Date
-  accountId   String?   @map("account_id")
+  id           String    @id
+  tenantId     String    @map("tenant_id")
+  entityId     String    @map("entity_id")
+  name         String
+  targetCents  BigInt    @map("target_cents")
+  deadline     DateTime? @db.Date
+  accountId    String?   @map("account_id")
+  investmentId String?   @map("investment_id")
+  icon         String?
+  color        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  archivedAt   DateTime? @map("archived_at")
 
   @@index([tenantId, entityId])
   @@map("goals")
+}
+
+model GoalContribution {
+  id          String   @id
+  tenantId    String   @map("tenant_id")
+  goalId      String   @map("goal_id")
+  // Negative for a withdrawal.
+  amountCents BigInt   @map("amount_cents")
+  on          DateTime @db.Date
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, goalId])
+  @@map("goal_contributions")
 }
 
 model Bill {

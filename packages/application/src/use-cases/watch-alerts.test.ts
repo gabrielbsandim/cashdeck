@@ -65,6 +65,7 @@ describe('watch alerts', () => {
     expect(await makeRunDailyAlerts(deps)(TENANT)).toEqual({
       dueSoon: 0,
       lowBalance: 0,
+      budgets: 0,
       ...NONE,
     })
   })

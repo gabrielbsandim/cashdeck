@@ -1,4 +1,6 @@
 import 'package:cashdeck/features/alerts/domain/app_alert.dart';
+import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -21,6 +23,8 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.cardBillAboveAverage => l10n.alertKindCardBillAboveAverage,
   AlertKind.bankSyncStale => l10n.alertKindBankSyncStale,
   AlertKind.invoiceNotIssued => l10n.alertKindInvoiceNotIssued,
+  AlertKind.budgetNearLimit => l10n.alertKindBudgetNearLimit,
+  AlertKind.budgetLimitReached => l10n.alertKindBudgetLimitReached,
   AlertKind.other => l10n.alertKindOther,
 };
 
@@ -42,6 +46,8 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.cardBillAboveAverage => Symbols.trending_up_rounded,
   AlertKind.bankSyncStale => Symbols.sync_problem_rounded,
   AlertKind.invoiceNotIssued => Symbols.pending_actions_rounded,
+  AlertKind.budgetNearLimit => Symbols.donut_small_rounded,
+  AlertKind.budgetLimitReached => Symbols.donut_large_rounded,
   AlertKind.other => Symbols.notifications_rounded,
 };
 
@@ -157,6 +163,23 @@ final Map<AlertKind, _Builder> _builders = {
     title: l10n.alertTextInvoiceMissingTitle,
     body: l10n.alertTextInvoiceMissingBody(d['client'], d['amount'], d['day']),
   ),
+  AlertKind.budgetNearLimit: (l10n, d) => (
+    title: l10n.alertTextBudgetNearTitle,
+    body: l10n.alertTextBudgetNearBody(
+      _category(l10n, d),
+      d['spent'],
+      d['limit'],
+      d['percent'],
+    ),
+  ),
+  AlertKind.budgetLimitReached: (l10n, d) => (
+    title: l10n.alertTextBudgetReachedTitle,
+    body: l10n.alertTextBudgetReachedBody(
+      _category(l10n, d),
+      d['spent'],
+      d['limit'],
+    ),
+  ),
 };
 
 AlertText _subscriptionChanged(AppLocalizations l10n, _AlertData d) {
@@ -177,6 +200,19 @@ AlertText _subscriptionChanged(AppLocalizations l10n, _AlertData d) {
       d['previous'],
       d['amount'],
       d['percent'],
+    ),
+  );
+}
+
+/// A built-in category in the app language, from the key the alert carries.
+String _category(AppLocalizations l10n, _AlertData d) {
+  final key = d.fields['categoryKey'];
+  return categoryName(
+    l10n,
+    Category(
+      id: d.fields['categoryId'] ?? '',
+      key: key == null || key.isEmpty ? null : key,
+      name: d['category'],
     ),
   );
 }

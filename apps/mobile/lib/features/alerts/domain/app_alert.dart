@@ -21,6 +21,8 @@ enum AlertKind {
   cardBillAboveAverage('CARD_BILL_ABOVE_AVERAGE'),
   bankSyncStale('BANK_SYNC_STALE'),
   invoiceNotIssued('INVOICE_NOT_ISSUED'),
+  budgetNearLimit('BUDGET_NEAR_LIMIT'),
+  budgetLimitReached('BUDGET_LIMIT_REACHED'),
   other('OTHER');
 
   new(this.wire);

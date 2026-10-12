@@ -101,6 +101,9 @@ describe('alert text', () => {
       average: 'R$ 1,00',
       institution: 'Bank',
       hours: '50',
+      category: 'Groceries',
+      spent: 'R$ 400,00',
+      limit: 'R$ 500,00',
     }
     for (const type of ALERT_TYPES) {
       for (const text of [

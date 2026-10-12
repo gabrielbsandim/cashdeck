@@ -1574,6 +1574,266 @@
   "railUnavailable": "Não oferecido",
   "budgetsEmpty": "Nenhum orçamento neste mês. Peça no Chat para criar um.",
   "budgetsAskChat": "Abrir o Chat",
+  "goalsTitle": "Metas",
+  "goalsEmptyTitle": "Nenhuma meta ainda",
+  "goalsEmptyMessage": "Crie uma meta para acompanhar quanto falta e quando você chega lá.",
+  "goalsStart": "Crie uma meta e acompanhe quanto falta para chegar lá.",
+  "goalNew": "Nova meta",
+  "goalEdit": "Editar meta",
+  "goalName": "Nome da meta",
+  "goalTarget": "Valor da meta",
+  "goalInitial": "Já guardado (opcional)",
+  "goalDeadlineNone": "Sem prazo",
+  "goalDeadlineOn": "Prazo: {date}",
+  "@goalDeadlineOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "goalDeadlineClear": "Tirar o prazo",
+  "goalAccount": "Conta vinculada",
+  "goalAccountNone": "Nenhuma, registro os aportes",
+  "goalAccountManualHelp": "O progresso soma os aportes que você registrar.",
+  "goalAccountHelp": "O progresso segue o saldo dessa conta.",
+  "goalSave": "Salvar meta",
+  "goalNameMissing": "Dê um nome para a meta.",
+  "goalTargetMissing": "Informe quanto quer juntar.",
+  "goalDeadlinePast": "O prazo precisa ser hoje ou depois.",
+  "goalStatusDone": "Concluída",
+  "goalStatusOnTrack": "No ritmo",
+  "goalStatusBehind": "Atrasada",
+  "goalProgress": "{saved} de {target}",
+  "@goalProgress": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "goalRemaining": "Faltam {amount}",
+  "@goalRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goalRequired": "Guarde {amount} por mês para chegar até {date}.",
+  "@goalRequired": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "goalProjectionTitle": "Projeção",
+  "goalProjection": "No ritmo atual de {pace} por mês, você chega lá em {month}.",
+  "@goalProjection": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "goalProjectionUnknown": "Ainda não há ritmo suficiente para projetar quando você chega lá.",
+  "goalProjectionDone": "Meta alcançada. Parabéns!",
+  "goalLinked": "Segue o saldo de {name}.",
+  "@goalLinked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goalRingSemantics": "{name}: {percent}% da meta",
+  "@goalRingSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "goalArchive": "Arquivar",
+  "goalArchived": "Meta arquivada",
+  "goalDelete": "Excluir meta",
+  "goalDeleted": "Meta excluída",
+  "goalDeleteTitle": "Excluir {name}?",
+  "@goalDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goalDeleteMessage": "A meta e os aportes registrados saem do app.",
+  "goalContributionAdd": "Guardar",
+  "goalContributionWithdraw": "Retirar",
+  "goalContributionAmount": "Valor",
+  "goalContributionNote": "Observação (opcional)",
+  "goalContributionMissing": "Informe um valor.",
+  "goalContributionSaved": "Aporte registrado",
+  "goalContributionRemove": "Desfazer aporte",
+  "goalContributionRemoved": "Aporte desfeito",
+  "goalContributionsTitle": "Aportes",
+  "goalContributionsEmpty": "Nenhum aporte ainda.",
+  "goalReachedTitle": "Meta alcançada!",
+  "goalReachedMessage": "Você chegou a 100% de {name}.",
+  "@goalReachedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "goalReachedClose": "Continuar",
+  "budgetsTitle": "Orçamento",
+  "budgetsPreviousMonth": "Mês anterior",
+  "budgetsNextMonth": "Próximo mês",
+  "budgetsEmptyTitle": "Nenhum orçamento neste mês",
+  "budgetsEmptyMessage": "Monte um orçamento automático a partir dos seus últimos meses ou defina um limite por categoria.",
+  "budgetsSuggest": "Montar orçamento automático",
+  "budgetsCategories": "Categorias",
+  "budgetsCopy": "Copiar para {month}",
+  "@budgetsCopy": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsCopied": "Orçamento copiado para o próximo mês",
+  "budgetsUnbudgeted": "Sem orçamento",
+  "budgetsUnbudgetedHelp": "Categorias com gastos neste mês e sem limite.",
+  "budgetsSpentSoFar": "{amount} gastos até agora",
+  "@budgetsSpentSoFar": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsTotal": "{spent} de {total}",
+  "@budgetsTotal": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsLeft": "Restam {amount} no mês",
+  "@budgetsLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsOver": "{amount} acima do orçamento",
+  "@budgetsOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsSuggestTitle": "Orçamento automático",
+  "budgetsSuggestIntro": "Limites pela mediana dos gastos de {months}, arredondados. Ajuste o que quiser antes de aceitar.",
+  "@budgetsSuggestIntro": {
+    "placeholders": {
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsSuggestCurrent": "Hoje: {amount}",
+  "@budgetsSuggestCurrent": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsSuggestEmptyTitle": "Ainda sem histórico",
+  "budgetsSuggestEmptyMessage": "Depois de alguns meses de gastos categorizados, o app sugere um limite por categoria.",
+  "budgetsAcceptAll": "Aceitar tudo · {total}",
+  "@budgetsAcceptAll": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsAccepted": "Orçamento montado",
+  "budgetLimit": "Limite do mês",
+  "budgetLimitMissing": "Informe um limite.",
+  "budgetCarried": "Mais {amount} que sobraram do mês anterior",
+  "@budgetCarried": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetRollover": "Levar a sobra para o próximo mês",
+  "budgetRolloverHelp": "Ao copiar o orçamento, o que não for gasto soma no limite seguinte.",
+  "budgetSave": "Salvar limite",
+  "budgetSaved": "Limite salvo",
+  "budgetDelete": "Remover orçamento",
+  "budgetDeleted": "Orçamento removido",
+  "homeBudgetEmpty": "Nenhum orçamento neste mês. Monte um a partir dos seus últimos meses.",
+  "homeBudgetAllCalm": "Nenhuma categoria perto do limite.",
+  "alertKindBudgetNearLimit": "Orçamento perto do limite",
+  "alertKindBudgetLimitReached": "Orçamento no limite",
+  "alertTextBudgetNearTitle": "Orçamento perto do limite",
+  "alertTextBudgetNearBody": "{category}: {spent} de {limit} ({percent}%) neste mês.",
+  "@alertTextBudgetNearBody": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextBudgetReachedTitle": "Orçamento no limite",
+  "alertTextBudgetReachedBody": "{category}: {spent} de {limit} neste mês.",
+  "@alertTextBudgetReachedBody": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
   "cardImportUpload": "Enviar fatura",
   "cardImportUploadedToast": "Fatura lida",
   "cardImportReadingTitle": "Lendo a fatura",

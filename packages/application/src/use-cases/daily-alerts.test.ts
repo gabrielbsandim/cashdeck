@@ -42,7 +42,11 @@ describe('daily alerts', () => {
     }
     const run = makeRunDailyAlerts(deps)
 
-    expect(await run(TENANT)).toMatchObject({ dueSoon: 4, lowBalance: 1 })
+    expect(await run(TENANT)).toMatchObject({
+      dueSoon: 4,
+      lowBalance: 1,
+      budgets: 0,
+    })
     expect(
       deps.alerts.emitted.map(alert => [alert.type, alert.billId ?? null]),
     ).toEqual([
@@ -56,7 +60,11 @@ describe('daily alerts', () => {
       shortfall: 'R$ 20,00',
       dueDate: '09/10',
     })
-    expect(await run(TENANT)).toMatchObject({ dueSoon: 0, lowBalance: 0 })
+    expect(await run(TENANT)).toMatchObject({
+      dueSoon: 0,
+      lowBalance: 0,
+      budgets: 0,
+    })
   })
 
   it('stays quiet about a bill the bank debits by itself', async () => {

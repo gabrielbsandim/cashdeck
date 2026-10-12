@@ -20,6 +20,9 @@ abstract final class AppRoutes {
   static const cards = '/cards';
   static const investments = '/investments';
   static const categoryReview = '/category-review';
+  static const goals = '/goals';
+  static const budgets = '/budgets';
+  static const budgetSuggestions = '$budgets/suggestions';
 
   static const entityProfiles = '$settings/profiles';
   static const settingsConnections = '$settings/connections';
@@ -65,6 +68,11 @@ abstract final class AppRoutes {
 
   static String investment(String positionId) =>
       '$investments/${Uri.encodeComponent(positionId)}';
+
+  static String goal(String goalId) => '$goals/${Uri.encodeComponent(goalId)}';
+
+  static String budgetSuggestionsFor(String month) =>
+      '$budgetSuggestions?month=${Uri.encodeQueryComponent(month)}';
 
   static String rail(String railId) => '$rails/${Uri.encodeComponent(railId)}';
 }

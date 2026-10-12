@@ -9,6 +9,7 @@ import {
 } from '@cashdeck/domain'
 import { billAlert, formatDay, formatMoney } from '@/use-cases/alert-events'
 import { loadAutoDebit } from '@/use-cases/auto-debit'
+import { makeRunBudgetAlerts } from '@/use-cases/budget-alerts'
 import { type Deps } from '@/use-cases/deps'
 import { allPages } from '@/use-cases/shared'
 import {
@@ -26,12 +27,18 @@ type DailyAlertDeps = Pick<
   | 'documents'
   | 'funder'
   | 'entities'
+  | 'transactions'
+  | 'categories'
+  | 'budgets'
+  | 'audit'
+  | 'ids'
 > &
   WatchAlertDeps
 
 export type DailyAlertsResult = {
   dueSoon: number
   lowBalance: number
+  budgets: number
 } & WatchAlertsResult
 
 const UNPAID: readonly BillStatus[] = [
@@ -47,6 +54,7 @@ const FUNDED: readonly BillStatus[] = ['OPEN', 'NEEDS_CONFIRMATION']
 
 export function makeRunDailyAlerts(deps: DailyAlertDeps) {
   const runWatchAlerts = makeWatchAlerts(deps)
+  const runBudgetAlerts = makeRunBudgetAlerts(deps)
 
   async function dueBetween(
     tenantId: string,
@@ -156,6 +164,7 @@ export function makeRunDailyAlerts(deps: DailyAlertDeps) {
         ? 1
         : 0
     }
-    return { ...result, ...(await runWatchAlerts(tenantId)) }
+    const budgets = await runBudgetAlerts(tenantId)
+    return { ...result, budgets, ...(await runWatchAlerts(tenantId)) }
   }
 }

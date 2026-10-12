@@ -1,4 +1,3 @@
-import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
@@ -7,15 +6,15 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
-import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/charts/cd_line_chart.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_icon_tile.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_amount.dart';
-import 'package:cashdeck/core/widgets/money/cd_budget_bar.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
+import 'package:cashdeck/features/budgets/presentation/home_budget_card.dart';
+import 'package:cashdeck/features/goals/presentation/home_goals_strip.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_funding_card.dart';
 import 'package:cashdeck/features/home/presentation/home_insights.dart';
@@ -28,16 +27,14 @@ import 'package:cashdeck/features/outlook/presentation/safe_to_spend_card.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Início for the person: balance, reserve, investments, what is due, the 30
-/// day forecast, budgets and alerts.
+/// day forecast, goals, budgets and alerts.
 class PersonalHome extends ConsumerWidget {
   const new({required this.summary, super.key});
 
   static const alertsSeeAllKey = Key('home-alerts-see-all');
-  static const budgetsChatKey = Key('home-budgets-chat');
 
   final PersonalSummary summary;
 
@@ -46,7 +43,6 @@ class PersonalHome extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final today = homeToday(ref);
     final bills = ref.watch(billsControllerProvider).value?.bills ?? const [];
-    final month = monthName(context, today);
     return HomeScroll(
       children: [
         const PausedBanner(),
@@ -65,6 +61,7 @@ class PersonalHome extends ConsumerWidget {
         const SafeToSpendCard(),
         if (summary.reserve case final reserve?)
           _ReserveCard(reserve: reserve, today: today),
+        const HomeGoalsStrip(),
         const HomeFundingCard(),
         const HomeInvestmentsCard(),
         const NetWorthCard(),
@@ -74,31 +71,7 @@ class PersonalHome extends ConsumerWidget {
         HomeSummaryGrid(reserve: summary.reserve?.balance),
         DueSoonSection(bills: billsDueWithin(bills, today, 7), today: today),
         _ForecastSection(forecast: summary.forecast),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CdSectionHeader(title: l10n.budgetsOfMonth(month)),
-            const SizedBox(height: AppSpacing.md),
-            CdCard(
-              child: summary.budgets.isEmpty
-                  ? const _NoBudgets()
-                  : Column(
-                      children: [
-                        for (final (index, budget)
-                            in summary.budgets.indexed) ...[
-                          if (index > 0) const SizedBox(height: AppSpacing.lg),
-                          CdBudgetBar(
-                            icon: budgetCategoryIcon(budget.category),
-                            name: budgetCategoryLabel(l10n, budget),
-                            spent: budget.spent,
-                            limit: budget.limit,
-                          ),
-                        ],
-                      ],
-                    ),
-            ),
-          ],
-        ),
+        const HomeBudgetCard(),
         if (summary.alerts.isNotEmpty)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -114,35 +87,6 @@ class PersonalHome extends ConsumerWidget {
                 HomeAlertRow(key: Key('home-alert-$index'), alert: alert),
             ],
           ),
-      ],
-    );
-  }
-}
-
-class _NoBudgets extends StatelessWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final palette = context.palette;
-    return Row(
-      children: [
-        Icon(Symbols.donut_small_rounded, color: palette.onSurfaceVariant),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Text(
-            l10n.budgetsEmpty,
-            style: AppTextStyles.bodyMd.copyWith(
-              color: palette.onSurfaceVariant,
-            ),
-          ),
-        ),
-        CdButton.text(
-          key: PersonalHome.budgetsChatKey,
-          label: l10n.budgetsAskChat,
-          onPressed: () => context.push(AppRoutes.chatNew),
-        ),
       ],
     );
   }
