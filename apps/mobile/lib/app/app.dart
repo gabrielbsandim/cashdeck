@@ -48,6 +48,7 @@ class _CashdeckAppState extends ConsumerState<CashdeckApp> {
     );
     safeMode.check().ignore();
     clearHomeWidgetOnSignOut(ref);
+    enableHomeWidgetRefresh(ref);
     _shared = ref.read(shareIntakeProvider).received().listen(_open);
   }
 

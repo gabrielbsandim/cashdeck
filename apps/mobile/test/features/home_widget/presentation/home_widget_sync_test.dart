@@ -4,6 +4,7 @@ import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/session/server_session.dart';
 import 'package:cashdeck/features/home_widget/domain/widget_snapshot.dart';
 import 'package:cashdeck/features/home_widget/home_widget_providers.dart';
+import 'package:cashdeck/features/home_widget/presentation/widget_values_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/app_harness.dart';
@@ -45,11 +46,10 @@ void main() {
     expect(publisher.published, hasLength(published));
   });
 
-  testWidgets('a saved safe zone masks the widget even inside it', (
-    tester,
-  ) async {
+  testWidgets('a saved safe zone masks the widget until the user shows its '
+      'amounts', (tester) async {
     final publisher = FakeHomeWidgetPublisher();
-    await pumpRoute(
+    final app = await pumpRoute(
       tester,
       AppRoutes.home,
       overrides: [
@@ -60,5 +60,24 @@ void main() {
 
     expect(publisher.last!.values[WidgetKeys.hidden], isTrue);
     expect(publisher.last!.values[WidgetKeys.safeAmount], _masked);
+
+    app.read(widgetValuesProvider.notifier).toggle();
+    await settle(tester);
+
+    expect(publisher.last!.values[WidgetKeys.hidden], isFalse);
+    expect(publisher.last!.values[WidgetKeys.safeAmount], isNot(_masked));
+  });
+
+  testWidgets('the app lets Android refresh the widget while closed', (
+    tester,
+  ) async {
+    final publisher = FakeHomeWidgetPublisher();
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      overrides: [homeWidgetPublisherProvider.overrideWithValue(publisher)],
+    );
+
+    expect(publisher.enabled, 1);
   });
 }

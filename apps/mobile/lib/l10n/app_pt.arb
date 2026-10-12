@@ -3582,5 +3582,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "widgetValuesSetting": "Mostrar valores no widget",
+  "widgetValuesHint": "Fica na tela inicial, visível sem desbloquear o app."
 }

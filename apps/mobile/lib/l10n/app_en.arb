@@ -1437,5 +1437,7 @@
   "alertTextJobPartialTitle": "Scheduled job partly failed",
   "alertTextJobPartialBody": "{job} finished, but {count, plural, =1{1 item} other{{count} items}} failed.",
   "alertTextRecapCompanyTitle": "Your company's {month} recap",
-  "recapTitleCompany": "Company {month} recap"
+  "recapTitleCompany": "Company {month} recap",
+  "widgetValuesSetting": "Show amounts on the widget",
+  "widgetValuesHint": "It sits on the home screen, visible without unlocking the app."
 }

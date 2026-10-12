@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The period only redraws the update line from saved values; the app writes the numbers. -->
+<!-- The period only redraws the update line from saved values; WidgetRefreshWorker fetches the numbers. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/cashdeck_widget"

@@ -7,19 +7,20 @@ class EntityScopeController extends Notifier<EntityScope> {
   static const storeKey = 'entity_scope';
 
   @override
-  EntityScope build() {
-    final saved = ref.read(keyValueStoreProvider).getString(storeKey);
-    return EntityScope.values
-            .where((scope) => scope.name == saved)
-            .firstOrNull ??
-        EntityScope.personal;
-  }
+  EntityScope build() => savedEntityScope(ref.read(keyValueStoreProvider));
 
   void select(EntityScope scope) {
     if (scope == state) return;
     state = scope;
     ref.read(keyValueStoreProvider).setString(storeKey, scope.name).ignore();
   }
+}
+
+/// The scope [EntityScopeController] saved in [store], personal until one is.
+EntityScope savedEntityScope(KeyValueStore store) {
+  final saved = store.getString(EntityScopeController.storeKey);
+  return EntityScope.values.where((scope) => scope.name == saved).firstOrNull ??
+      EntityScope.personal;
 }
 
 final entityScopeProvider =

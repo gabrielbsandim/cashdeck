@@ -49,7 +49,7 @@ lib/
     entities/               PF, PJ, consolidated scope and the switcher
     bills/                  bills list, bill detail, the payment ladder
     home/                   tab placeholder until the design lands
-    home_widget/            the Android home screen widget, fed by Início
+    home_widget/            the Android home screen widget, fed by Início and a background refresh
     transactions/           list by day, filters, detail, category and note, transfers
     chat/                   threads, conversation, attachments, action cards
     alerts/                 inbox, mute settings, push listener and token registration
@@ -150,14 +150,25 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
 - Android home screen widget: `widget/CashdeckWidgetProvider` (a
   `home_widget` `HomeWidgetProvider`, RemoteViews layout
   `res/layout/cashdeck_widget.xml`, 4x2 and resizable) shows what is free to
-  spend today, the next open bill and the current card bill, plus when the
-  app last wrote them. The app writes them, nothing fetches in the
-  background: `HomeWidgetSync`, mounted by Início, maps the loaded
-  safe-to-spend, bills and insights overview into a `WidgetSnapshot`
-  (`features/home_widget`) every time one of them loads or privacy changes.
-  Amounts are masked while `hideAmountsProvider` is on and whenever a safe
-  zone is saved, since the home screen cannot check where the phone is. The
-  session ending (sign-out or a 401) clears it. Tapping opens the app on
+  spend today, the next open bill and the current card bill, plus when they
+  were last written. While the app is open, `HomeWidgetSync`, mounted by
+  Início, maps the loaded safe-to-spend, bills and insights overview into a
+  `WidgetSnapshot` (`features/home_widget`) every time one of them loads or
+  privacy changes. While it is closed, `widget/WidgetRefreshWorker`
+  (WorkManager, every 3 hours with a connection, once more on boot, on an
+  app update and when the first widget is added; cancelled when the last
+  one is removed) wakes `refreshHomeWidgetInBackground` through the
+  `home_widget` background callback, which the app registers at launch.
+  That isolate reads the session from secure storage only for the request
+  (never into the widget's preferences), and `RefreshHomeWidget` fetches the
+  same three sources through the regular repositories: a 401 empties the
+  widget so it asks to open the app, a failed request keeps the last numbers
+  and their time. Amounts follow "Mostrar valores no widget" in Ajustes,
+  Segurança (`widgetShowsAmountsProvider`): privacy mode always masks them,
+  otherwise the user's choice decides, and until there is one a saved safe
+  zone masks them, since the home screen cannot check where the phone is.
+  Masked, the background refresh fetches nothing. The session ending
+  (sign-out or a 401) clears it. Tapping opens the app on
   Início; the bill and card parts open `/bills` and `/cards` through
   `cashdeck://widget/<path>` and Flutter's deep linking. Labels live in
   `res/values` (Portuguese, the default) and `res/values-en`, colors in

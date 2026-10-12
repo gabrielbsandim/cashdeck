@@ -4,6 +4,7 @@ import 'package:cashdeck/features/category_review/domain/category_review.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/home/domain/home_repository.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
+import 'package:cashdeck/features/outlook/domain/outlook_repository.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,6 +25,8 @@ final class MockCategoriesRepository extends Mock
 final class MockChatRepository extends Mock implements ChatRepository;
 
 final class MockInsightsRepository extends Mock implements InsightsRepository;
+
+final class MockOutlookRepository extends Mock implements OutlookRepository;
 
 final class MockPixContactsRepository extends Mock
     implements PixContactsRepository;

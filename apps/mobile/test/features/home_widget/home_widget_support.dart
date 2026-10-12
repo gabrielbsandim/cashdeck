@@ -11,6 +11,7 @@ import '../../support/builders.dart';
 final class FakeHomeWidgetPublisher implements HomeWidgetPublisher {
   final List<WidgetSnapshot> published = [];
   int cleared = 0;
+  int enabled = 0;
 
   WidgetSnapshot? get last => published.lastOrNull;
 
@@ -20,6 +21,9 @@ final class FakeHomeWidgetPublisher implements HomeWidgetPublisher {
 
   @override
   Future<void> clear() async => cleared++;
+
+  @override
+  Future<void> enableBackgroundRefresh() async => enabled++;
 }
 
 SafeToSpend safeToSpendOf({

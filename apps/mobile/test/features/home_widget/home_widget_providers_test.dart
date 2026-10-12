@@ -23,5 +23,6 @@ void main() {
       container.read(homeWidgetPublisherProvider),
       isA<NoHomeWidgetPublisher>(),
     );
+    expect(container.read(homeWidgetAvailableProvider), isFalse);
   });
 }
