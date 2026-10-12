@@ -44,7 +44,11 @@ function pushData(alert: Alert): Record<string, string> {
   const present = Object.entries(refs).filter(
     (entry): entry is [string, string] => entry[1] !== null,
   )
-  return { ...alert.data, ...Object.fromEntries(present) }
+  return {
+    ...alert.data,
+    ...Object.fromEntries(present),
+    alertType: alert.type,
+  }
 }
 
 export type AlertEmitterDeps = Pick<

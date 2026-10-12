@@ -4,6 +4,12 @@ import { ok, readJson } from '@/server/api/respond'
 
 export const dynamic = 'force-dynamic'
 
+export const GET = route(
+  'categories:rules:list',
+  async ({ tenantId, container }) =>
+    ok(await container.categoryRules.list(tenantId)),
+)
+
 export const POST = route(
   'categories:rules:create',
   async ({ request, tenantId, container }) => {

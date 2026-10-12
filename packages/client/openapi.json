@@ -8594,6 +8594,978 @@
             "$ref": "#/components/responses/Error"
           }
         }
+      },
+      "get": {
+        "operationId": "listCategoryRules",
+        "summary": "Category rules, by the words or document they match",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Category rules, by the words or document they match",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "entityKind": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "PF",
+                              "PJ"
+                            ]
+                          },
+                          "pattern": {
+                            "type": "string"
+                          },
+                          "counterparty": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "direction": {
+                            "nullable": true,
+                            "type": "string",
+                            "enum": [
+                              "IN",
+                              "OUT"
+                            ]
+                          },
+                          "categoryId": {
+                            "type": "string"
+                          },
+                          "priority": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "entityKind",
+                          "pattern",
+                          "counterparty",
+                          "direction",
+                          "categoryId",
+                          "priority",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/categories/rules/{id}": {
+      "patch": {
+        "operationId": "updateCategoryRule",
+        "summary": "Change what a rule matches or its category, relabel the matches",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "direction": {
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "IN",
+                      "OUT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Change what a rule matches or its category, relabel the matches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rule": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "entityKind": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "PF",
+                                "PJ"
+                              ]
+                            },
+                            "pattern": {
+                              "type": "string"
+                            },
+                            "counterparty": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "direction": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "IN",
+                                "OUT"
+                              ]
+                            },
+                            "categoryId": {
+                              "type": "string"
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "entityKind",
+                            "pattern",
+                            "counterparty",
+                            "direction",
+                            "categoryId",
+                            "priority",
+                            "createdAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "updated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "rule",
+                        "updated"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeCategoryRule",
+        "summary": "Forget a category rule; labels it gave stay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forget a category rule; labels it gave stay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/categories/review": {
+      "get": {
+        "operationId": "getCategoryReview",
+        "summary": "Transactions to review grouped by merchant, and rules to suggest",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PF",
+                "PJ"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions to review grouped by merchant, and rules to suggest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pending": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "groups": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "merchant": {
+                                "type": "string"
+                              },
+                              "pattern": {
+                                "type": "string"
+                              },
+                              "counterparty": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "IN",
+                                  "OUT"
+                                ]
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "total": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "reasons": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "UNCATEGORIZED",
+                                    "LOW_CONFIDENCE",
+                                    "INCONSISTENT"
+                                  ]
+                                }
+                              },
+                              "suggestedCategoryId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "confidence": {
+                                "nullable": true,
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "canCreateRule": {
+                                "type": "boolean"
+                              },
+                              "lastBookedOn": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "transactionIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "entityKind",
+                              "merchant",
+                              "pattern",
+                              "counterparty",
+                              "direction",
+                              "count",
+                              "total",
+                              "reasons",
+                              "suggestedCategoryId",
+                              "confidence",
+                              "canCreateRule",
+                              "lastBookedOn",
+                              "transactionIds"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "suggestions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "entityKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PF",
+                                  "PJ"
+                                ]
+                              },
+                              "merchant": {
+                                "type": "string"
+                              },
+                              "pattern": {
+                                "type": "string"
+                              },
+                              "counterparty": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "IN",
+                                  "OUT"
+                                ]
+                              },
+                              "categoryId": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "entityKind",
+                              "merchant",
+                              "pattern",
+                              "counterparty",
+                              "direction",
+                              "categoryId",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "pending",
+                        "groups",
+                        "suggestions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/categories/review/groups": {
+      "post": {
+        "operationId": "categorizeReviewGroup",
+        "summary": "Label a group in one call and optionally learn its rule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transactionIds": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "createRule": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "transactionIds",
+                  "categoryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Label a group in one call and optionally learn its rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "updated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "similarUpdated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "rule": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "entityKind": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "PF",
+                                "PJ"
+                              ]
+                            },
+                            "pattern": {
+                              "type": "string"
+                            },
+                            "counterparty": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "direction": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "IN",
+                                "OUT"
+                              ]
+                            },
+                            "categoryId": {
+                              "type": "string"
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "entityKind",
+                            "pattern",
+                            "counterparty",
+                            "direction",
+                            "categoryId",
+                            "priority",
+                            "createdAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "updated",
+                        "similarUpdated",
+                        "rule"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/categories/review/suggestions/accept": {
+      "post": {
+        "operationId": "acceptRuleSuggestion",
+        "summary": "Turn a rule suggestion into a rule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Turn a rule suggestion into a rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "updated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "similarUpdated": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "rule": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "entityKind": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "PF",
+                                "PJ"
+                              ]
+                            },
+                            "pattern": {
+                              "type": "string"
+                            },
+                            "counterparty": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "direction": {
+                              "nullable": true,
+                              "type": "string",
+                              "enum": [
+                                "IN",
+                                "OUT"
+                              ]
+                            },
+                            "categoryId": {
+                              "type": "string"
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "entityKind",
+                            "pattern",
+                            "counterparty",
+                            "direction",
+                            "categoryId",
+                            "priority",
+                            "createdAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "updated",
+                        "similarUpdated",
+                        "rule"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/categories/review/suggestions/dismiss": {
+      "post": {
+        "operationId": "dismissRuleSuggestion",
+        "summary": "Stop suggesting a rule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stop suggesting a rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
       }
     },
     "/transfers": {
@@ -19043,7 +20015,12 @@
                               "LOW_BALANCE",
                               "INVOICE_ISSUED",
                               "INVOICE_FAILED",
-                              "CARD_BILL_CLOSED"
+                              "CARD_BILL_CLOSED",
+                              "UNUSUAL_PURCHASE",
+                              "SUBSCRIPTION_CHANGED",
+                              "CARD_BILL_ABOVE_AVERAGE",
+                              "BANK_SYNC_STALE",
+                              "INVOICE_NOT_ISSUED"
                             ]
                           },
                           "entityId": {
@@ -19245,7 +20222,12 @@
                             "LOW_BALANCE",
                             "INVOICE_ISSUED",
                             "INVOICE_FAILED",
-                            "CARD_BILL_CLOSED"
+                            "CARD_BILL_CLOSED",
+                            "UNUSUAL_PURCHASE",
+                            "SUBSCRIPTION_CHANGED",
+                            "CARD_BILL_ABOVE_AVERAGE",
+                            "BANK_SYNC_STALE",
+                            "INVOICE_NOT_ISSUED"
                           ]
                         },
                         "entityId": {
@@ -19434,7 +20416,12 @@
                                   "LOW_BALANCE",
                                   "INVOICE_ISSUED",
                                   "INVOICE_FAILED",
-                                  "CARD_BILL_CLOSED"
+                                  "CARD_BILL_CLOSED",
+                                  "UNUSUAL_PURCHASE",
+                                  "SUBSCRIPTION_CHANGED",
+                                  "CARD_BILL_ABOVE_AVERAGE",
+                                  "BANK_SYNC_STALE",
+                                  "INVOICE_NOT_ISSUED"
                                 ]
                               },
                               "muted": {
@@ -19547,7 +20534,12 @@
                                   "LOW_BALANCE",
                                   "INVOICE_ISSUED",
                                   "INVOICE_FAILED",
-                                  "CARD_BILL_CLOSED"
+                                  "CARD_BILL_CLOSED",
+                                  "UNUSUAL_PURCHASE",
+                                  "SUBSCRIPTION_CHANGED",
+                                  "CARD_BILL_ABOVE_AVERAGE",
+                                  "BANK_SYNC_STALE",
+                                  "INVOICE_NOT_ISSUED"
                                 ]
                               },
                               "muted": {

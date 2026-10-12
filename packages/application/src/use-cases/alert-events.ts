@@ -92,6 +92,34 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
     title: 'Fatura do cartão fechou',
     body: `${d.card}: fechou em ${d.closing}, vence em ${d.dueDate}.`,
   }),
+  UNUSUAL_PURCHASE: d => ({
+    title: 'Compra fora do padrão',
+    body: `${d.merchant} · ${d.amount} em ${d.day}, cerca de ${d.times}x o habitual (${d.usual}).`,
+  }),
+  SUBSCRIPTION_CHANGED: d =>
+    d.change === 'DUPLICATE'
+      ? {
+          title: 'Assinatura cobrada em dobro',
+          body: `${d.name} foi cobrada ${d.count} vezes no mesmo mês (${d.amount} cada).`,
+        }
+      : {
+          title: 'Assinatura ficou mais cara',
+          body: `${d.name} passou de ${d.previous} para ${d.amount} (+${d.percent}%).`,
+        },
+  CARD_BILL_ABOVE_AVERAGE: d => ({
+    title: 'Fatura acima da média',
+    body: `${d.card}: ${d.amount}, ${d.percent}% acima da média de ${d.average}; vence em ${d.dueDate}.`,
+  }),
+  BANK_SYNC_STALE: d => ({
+    title: 'Banco sem sincronizar',
+    body: d.hours
+      ? `${d.institution} não sincroniza há ${d.hours} h; reconecte em Ajustes.`
+      : `${d.institution} precisa de atenção para voltar a sincronizar.`,
+  }),
+  INVOICE_NOT_ISSUED: d => ({
+    title: 'Nota não emitida',
+    body: `A nota de ${d.client} · ${d.amount} costuma sair até ${d.day} e ainda não foi emitida.`,
+  }),
 }
 
 export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
@@ -142,6 +170,34 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
   CARD_BILL_CLOSED: d => ({
     title: 'Card bill closed',
     body: `${d.card}: closed on ${d.closing}, due ${d.dueDate}.`,
+  }),
+  UNUSUAL_PURCHASE: d => ({
+    title: 'Unusual purchase',
+    body: `${d.merchant} · ${d.amount} on ${d.day}, about ${d.times}x the usual (${d.usual}).`,
+  }),
+  SUBSCRIPTION_CHANGED: d =>
+    d.change === 'DUPLICATE'
+      ? {
+          title: 'Subscription charged twice',
+          body: `${d.name} was charged ${d.count} times in the same month (${d.amount} each).`,
+        }
+      : {
+          title: 'Subscription got pricier',
+          body: `${d.name} went from ${d.previous} to ${d.amount} (+${d.percent}%).`,
+        },
+  CARD_BILL_ABOVE_AVERAGE: d => ({
+    title: 'Card bill above average',
+    body: `${d.card}: ${d.amount}, ${d.percent}% above the ${d.average} average; due ${d.dueDate}.`,
+  }),
+  BANK_SYNC_STALE: d => ({
+    title: 'Bank not syncing',
+    body: d.hours
+      ? `${d.institution} has not synced for ${d.hours} h; reconnect it in Settings.`
+      : `${d.institution} needs attention to sync again.`,
+  }),
+  INVOICE_NOT_ISSUED: d => ({
+    title: 'Invoice not issued',
+    body: `The invoice to ${d.client} · ${d.amount} usually goes out by ${d.day} and was not issued yet.`,
   }),
 }
 

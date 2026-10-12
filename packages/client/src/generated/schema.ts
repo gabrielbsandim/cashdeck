@@ -506,10 +506,97 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Category rules, by the words or document they match */
+        get: operations["listCategoryRules"];
         put?: never;
         /** Learn a rule from merchant words and relabel the matches */
         post: operations["createCategoryRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a category rule; labels it gave stay */
+        delete: operations["removeCategoryRule"];
+        options?: never;
+        head?: never;
+        /** Change what a rule matches or its category, relabel the matches */
+        patch: operations["updateCategoryRule"];
+        trace?: never;
+    };
+    "/categories/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transactions to review grouped by merchant, and rules to suggest */
+        get: operations["getCategoryReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/review/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Label a group in one call and optionally learn its rule */
+        post: operations["categorizeReviewGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/review/suggestions/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn a rule suggestion into a rule */
+        post: operations["acceptRuleSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/review/suggestions/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop suggesting a rule */
+        post: operations["dismissRuleSuggestion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4069,6 +4156,48 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    listCategoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Category rules, by the words or document they match */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            /** @enum {string|null} */
+                            entityKind: "PF" | "PJ" | null;
+                            pattern: string;
+                            counterparty: string | null;
+                            /** @enum {string|null} */
+                            direction: "IN" | "OUT" | null;
+                            categoryId: string;
+                            priority: number;
+                            createdAt: string;
+                        }[];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     createCategoryRule: {
         parameters: {
             query?: never;
@@ -4101,6 +4230,311 @@ export interface operations {
                             pattern: string;
                             categoryId: string;
                             updated: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removeCategoryRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forget a category rule; labels it gave stay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updateCategoryRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pattern?: string;
+                    categoryId?: string;
+                    /** @enum {string|null} */
+                    direction?: "IN" | "OUT" | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Change what a rule matches or its category, relabel the matches */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            rule: {
+                                id: string;
+                                /** @enum {string|null} */
+                                entityKind: "PF" | "PJ" | null;
+                                pattern: string;
+                                counterparty: string | null;
+                                /** @enum {string|null} */
+                                direction: "IN" | "OUT" | null;
+                                categoryId: string;
+                                priority: number;
+                                createdAt: string;
+                            };
+                            updated: number;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCategoryReview: {
+        parameters: {
+            query?: {
+                entity?: "PF" | "PJ";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transactions to review grouped by merchant, and rules to suggest */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pending: number;
+                            groups: {
+                                id: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                merchant: string;
+                                pattern: string;
+                                counterparty: string | null;
+                                /** @enum {string} */
+                                direction: "IN" | "OUT";
+                                count: number;
+                                total: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                reasons: ("UNCATEGORIZED" | "LOW_CONFIDENCE" | "INCONSISTENT")[];
+                                suggestedCategoryId: string | null;
+                                confidence: number | null;
+                                canCreateRule: boolean;
+                                lastBookedOn: string;
+                                transactionIds: string[];
+                            }[];
+                            suggestions: {
+                                id: string;
+                                /** @enum {string} */
+                                entityKind: "PF" | "PJ";
+                                merchant: string;
+                                pattern: string;
+                                counterparty: string | null;
+                                /** @enum {string} */
+                                direction: "IN" | "OUT";
+                                categoryId: string;
+                                count: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    categorizeReviewGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    transactionIds: string[];
+                    categoryId: string;
+                    /** @default true */
+                    createRule?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Label a group in one call and optionally learn its rule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            updated: number;
+                            similarUpdated: number;
+                            rule: {
+                                id: string;
+                                /** @enum {string|null} */
+                                entityKind: "PF" | "PJ" | null;
+                                pattern: string;
+                                counterparty: string | null;
+                                /** @enum {string|null} */
+                                direction: "IN" | "OUT" | null;
+                                categoryId: string;
+                                priority: number;
+                                createdAt: string;
+                            } | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    acceptRuleSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Turn a rule suggestion into a rule */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            updated: number;
+                            similarUpdated: number;
+                            rule: {
+                                id: string;
+                                /** @enum {string|null} */
+                                entityKind: "PF" | "PJ" | null;
+                                pattern: string;
+                                counterparty: string | null;
+                                /** @enum {string|null} */
+                                direction: "IN" | "OUT" | null;
+                                categoryId: string;
+                                priority: number;
+                                createdAt: string;
+                            } | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    dismissRuleSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Stop suggesting a rule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
                         };
                     };
                 };
@@ -7607,7 +8041,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7688,7 +8122,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -7766,7 +8200,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED";
                                 muted: boolean;
                             }[];
                         };
@@ -7811,7 +8245,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED";
                                 muted: boolean;
                             }[];
                         };

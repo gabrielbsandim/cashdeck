@@ -82,6 +82,10 @@ export class PrismaCategoryRepository implements CategoryRepository {
       update: rule,
     })
   }
+
+  async deleteRule(tenantId: string, id: string): Promise<void> {
+    await this.db.categoryRule.deleteMany({ where: { tenantId, id } })
+  }
 }
 
 const directionFrom = (value: string | null): RuleDirection | null =>

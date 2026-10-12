@@ -75,9 +75,12 @@ export function makeListCategories(deps: CategoryDeps) {
   }
 }
 
-type RuleDeps = Pick<Deps, 'categories' | 'transactions' | 'clock' | 'ids'>
+export type RuleDeps = Pick<
+  Deps,
+  'categories' | 'transactions' | 'clock' | 'ids'
+>
 
-async function learnRule(
+export async function learnRule(
   deps: RuleDeps,
   tenantId: string,
   entityId: string | null,
@@ -120,7 +123,7 @@ async function learnRule(
 
 // A user's own choice is never overwritten by a rule; transfers carry no
 // category.
-async function applyRule(
+export async function applyRule(
   deps: RuleDeps,
   tenantId: string,
   rule: CategoryRule,
@@ -148,7 +151,7 @@ async function applyRule(
   return matching.length
 }
 
-async function accountIdsOf(
+export async function accountIdsOf(
   deps: Pick<Deps, 'accounts'>,
   tenantId: string,
   entityId: string | null,

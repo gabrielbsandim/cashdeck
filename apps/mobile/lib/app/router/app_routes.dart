@@ -18,12 +18,14 @@ abstract final class AppRoutes {
   static const subscriptions = '/subscriptions';
   static const cards = '/cards';
   static const investments = '/investments';
+  static const categoryReview = '/category-review';
 
   static const entityProfiles = '$settings/profiles';
   static const settingsConnections = '$settings/connections';
   static const settingsPayments = '$settings/payments';
   static const settingsCompany = '$settings/company';
   static const settingsSecurity = '$settings/security';
+  static const categoryRules = '$settings/category-rules';
 
   static const connectItemId = '$settingsConnections/item-id';
   static const captureSources = '$settingsConnections/capture';

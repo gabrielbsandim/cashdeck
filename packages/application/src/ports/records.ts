@@ -307,6 +307,7 @@ export interface CategoryRepository {
   save(category: Category): Promise<void>
   listRules(tenantId: string): Promise<CategoryRule[]>
   saveRule(rule: CategoryRule): Promise<void>
+  deleteRule(tenantId: string, id: string): Promise<void>
 }
 
 // People the user sends Pix to, so the next transfer needs only a name.
