@@ -152,6 +152,16 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   `receive_sharing_intent` README (extension target, shared App Group,
   `AppGroupId` in both `Info.plist` files). Until then iOS opens files only
   through the file picker.
+- Hardening: Android sets `FLAG_SECURE` in `MainActivity`, turns backups
+  off (`allowBackup="false"` plus `res/xml/backup_rules.xml` and
+  `data_extraction_rules.xml` excluding every domain) and refuses cleartext
+  in `res/xml/network_security_config.xml`; the debug build overrides it to
+  allow `localhost`, `127.0.0.1` and `10.0.2.2`. iOS blurs the window when
+  the scene enters the background (`PrivacyCover` in `SceneDelegate.swift`)
+  and `Info.plist` sets no App Transport Security exception.
+- Sessions: sign-in trades the server's static token for a device session
+  (`POST /api/v1/sessions`) and keeps only the session token. A static token
+  stored by an older version is exchanged once at startup and deleted.
 - Icon and splash come from `assets/brand/`, rendered from `CdMarkPainter`.
   Regenerate with `dart run flutter_launcher_icons` and
   `dart run flutter_native_splash:create` after changing them.

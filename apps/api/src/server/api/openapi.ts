@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import {
   createPixContactSchema,
+  createSessionSchema,
+  createdSessionSchema,
+  sessionViewSchema,
   pixContactQuerySchema,
   pixContactViewSchema,
   regenerateSchema,
@@ -135,6 +138,7 @@ type Operation = {
   response: z.ZodType | 'file' | 'redirect'
   page?: boolean
   public?: boolean
+  staticToken?: boolean
 }
 
 const errorSchema = z.object({
@@ -179,7 +183,7 @@ const OPERATIONS: Operation[] = [
     method: 'get',
     path: '/auth/check',
     id: 'checkAuth',
-    summary: 'Token is valid; server name and entities',
+    summary: 'Session is valid; server name and entities',
     response: authCheckSchema,
   },
   {
@@ -992,6 +996,38 @@ const OPERATIONS: Operation[] = [
     response: removeDeviceViewSchema,
   },
   {
+    method: 'post',
+    path: '/sessions',
+    id: 'createSession',
+    summary:
+      'Sign a device in: trade the static API token for a session token that expires after 30 idle days',
+    body: createSessionSchema,
+    status: '201',
+    response: createdSessionSchema,
+    staticToken: true,
+  },
+  {
+    method: 'get',
+    path: '/sessions',
+    id: 'listSessions',
+    summary: 'Signed-in devices, the calling one marked current',
+    response: z.array(sessionViewSchema),
+  },
+  {
+    method: 'delete',
+    path: '/sessions/current',
+    id: 'signOutSession',
+    summary: 'Sign this device out',
+    response: idSchema,
+  },
+  {
+    method: 'delete',
+    path: '/sessions/{id}',
+    id: 'revokeSession',
+    summary: 'Sign another device out',
+    response: idSchema,
+  },
+  {
     method: 'get',
     path: '/chat/threads',
     id: 'listChatThreads',
@@ -1163,6 +1199,7 @@ function describe(operation: Operation) {
     operationId: operation.id,
     summary: operation.summary,
     ...(operation.public ? { security: [] } : {}),
+    ...(operation.staticToken ? { security: [{ staticToken: [] }] } : {}),
     parameters: parameters(operation),
     ...(operation.body
       ? {
@@ -1193,7 +1230,19 @@ export function buildOpenApiDocument() {
     security: [{ bearer: [] }],
     paths,
     components: {
-      securitySchemes: { bearer: { type: 'http', scheme: 'bearer' } },
+      securitySchemes: {
+        bearer: {
+          type: 'http',
+          scheme: 'bearer',
+          description: 'A device session token from POST /sessions',
+        },
+        staticToken: {
+          type: 'http',
+          scheme: 'bearer',
+          description:
+            'The server CASHDECK_API_TOKEN, only to sign a device in',
+        },
+      },
       responses: { Error: json('Error envelope', errorSchema) },
     },
   }

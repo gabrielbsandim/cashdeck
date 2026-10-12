@@ -31,18 +31,35 @@ machine-readable version of this file.
 
 ## Auth
 
-Self-hosted and single-household: the server has one access token, set in the
-`CASHDECK_API_TOKEN` environment variable. Every request sends
-`Authorization: Bearer <token>`. The only routes that skip it are
-`GET /health`, `GET /openapi` and the mailbox OAuth callback (which checks a
-signed `state` instead). Crons and provider webhooks live outside `/api/v1`
-and have their own checks (see [Crons](#crons) and [Webhooks](#webhooks)). If the server has no token configured, every guarded
-route answers 503 `NOT_CONFIGURED`. Biometric unlock is local to the app.
+Self-hosted and single-household: the server has one static token, set in the
+`CASHDECK_API_TOKEN` environment variable, and it only signs a device in.
+`POST /sessions` trades it for a device session token; every other request
+sends `Authorization: Bearer <session token>`, and the static token is refused
+there. Sessions are stored as a sha256 hash, expire after 30 days without use
+(each use slides the expiry, written at most once an hour) and can be revoked
+one by one. The only routes that skip auth are `GET /health`, `GET /openapi`
+and the mailbox OAuth callback (which checks a signed `state` instead). Crons
+and provider webhooks live outside `/api/v1` and have their own checks (see
+[Crons](#crons) and [Webhooks](#webhooks)). If the server has no static token
+configured, every guarded route answers 503 `NOT_CONFIGURED`. Biometric unlock
+is local to the app.
+
+### POST /sessions
+
+Sent with `Authorization: Bearer <CASHDECK_API_TOKEN>` and
+`{ "deviceName": "Pixel 9", "platform": "ANDROID" | "IOS" | "WEB" }`. Answers
+201 with `{ "token", "expiresAt", "session" }`; the token is shown only here.
+Creating and revoking a session each write an audit event, whose actor is
+`session:<id>` for every request made with a session.
+
+### GET /sessions, DELETE /sessions/{id}, DELETE /sessions/current
+
+The active devices, the calling one with `current: true`; revoke another
+device; sign this device out. A revoked or expired session answers 401.
 
 ### GET /auth/check
 
-Validates the token; the app calls it when the user signs in with server URL
-plus token, and on every cold start.
+Validates the session; the app calls it on every cold start.
 
 ```json
 {

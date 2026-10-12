@@ -770,7 +770,7 @@
   "signInBody": "Informe o endereço do seu servidor Cashdeck e o token de acesso configurado nele.",
   "fieldServerUrl": "Endereço do servidor",
   "fieldAccessToken": "Token de acesso",
-  "accessTokenHint": "É o valor de CASHDECK_API_TOKEN no servidor.",
+  "accessTokenHint": "É o valor de CASHDECK_API_TOKEN no servidor. O app o troca por um acesso só deste aparelho e não o guarda.",
   "errorServerUrlInvalid": "Confira o endereço, por exemplo cashdeck.suacasa.com.br.",
   "errorTokenRequired": "Cole o token de acesso.",
   "signInButton": "Conectar",
@@ -2790,5 +2790,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "deviceSessionsTitle": "Dispositivos conectados",
+  "deviceSessionsHint": "Aparelhos com acesso ao seu servidor",
+  "deviceSessionsCurrent": "Este aparelho",
+  "deviceSessionsSubtitle": "Último uso em {lastUsed} · desde {since}",
+  "@deviceSessionsSubtitle": {
+    "placeholders": {
+      "lastUsed": {
+        "type": "String"
+      },
+      "since": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceSessionsRevokeTitle": "Desconectar {device}?",
+  "@deviceSessionsRevokeTitle": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceSessionsRevokeCurrent": "Você vai sair neste aparelho",
+  "deviceSessionsLastUsed": "Último uso",
+  "deviceSessionsRevoke": "Desconectar",
+  "deviceSessionsRevoked": "Dispositivo desconectado",
+  "resumeAutomationReason": "Retomar os pagamentos automáticos"
 }

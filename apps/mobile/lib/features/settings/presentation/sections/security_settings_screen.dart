@@ -47,6 +47,13 @@ class SecuritySettingsScreen extends ConsumerWidget {
           ),
           onTap: limited ? null : controller.toggleHideAmounts,
         ),
+        if (!limited)
+          SettingsLink(
+            icon: Symbols.devices_rounded,
+            title: l10n.deviceSessionsTitle,
+            subtitle: l10n.deviceSessionsHint,
+            route: AppRoutes.deviceSessions,
+          ),
         CdListRow(
           key: lockKey,
           icon: Symbols.lock_rounded,

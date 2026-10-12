@@ -36,6 +36,7 @@ abstract final class AppRoutes {
   static const payroll = '$settingsCompany/payroll';
   static const accountantExport = '$settingsCompany/accountant-export';
   static const safeZone = '$settingsSecurity/safe-zone';
+  static const deviceSessions = '$settingsSecurity/devices';
 
   /// The tab roots, the only places the bottom navigation shows.
   static const List<String> tabs = [home, transactions, bills, insights];

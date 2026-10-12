@@ -1,5 +1,10 @@
 import { generateKeyPairSync } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  restartTestDevice,
+  signInTestDevice,
+  STATIC_TOKEN,
+} from '@/app/api/sign-in.test-helpers'
 import { resetContainer } from '@/server/container'
 import { POST as captureBill } from '@/app/api/v1/bills/route'
 import { POST as payBill } from '@/app/api/v1/bills/[id]/pay/route'
@@ -15,8 +20,8 @@ import { POST as registerDevice } from '@/app/api/v1/devices/route'
 import { DELETE as removeDevice } from '@/app/api/v1/devices/[token]/route'
 import { GET as alertsCron } from '@/app/api/cron/alerts/route'
 
-const TOKEN = 'test-token-0123456789'
-const AUTH = { authorization: `Bearer ${TOKEN}` }
+let session = ''
+const auth = () => ({ authorization: `Bearer ${session}` })
 const TAX_BARCODE = '85600000001500003282026102000000000000123000'
 const DEVICE = 'fcm:device-token_1'
 
@@ -35,7 +40,7 @@ async function call(
     `http://localhost/api/v1/test${options.query ?? ''}`,
     {
       method,
-      headers: AUTH,
+      headers: auth(),
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     },
@@ -59,8 +64,9 @@ async function captureAndPay() {
   return id
 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -173,6 +179,7 @@ describe('alerts api', () => {
         )
       }),
     )
+    session = await restartTestDevice()
     await call(registerDevice, 'POST', {
       body: { token: DEVICE, platform: 'ANDROID', locale: 'en' },
     })

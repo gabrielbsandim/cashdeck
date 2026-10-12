@@ -1,5 +1,6 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
+import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
 import 'package:cashdeck/features/automation/presentation/automation_controller.dart';
@@ -15,6 +16,23 @@ class PaymentsSettingsScreen extends ConsumerWidget {
   const new({super.key});
 
   static const pauseKey = Key('settings-pause');
+
+  /// Resuming lets the ladder pay bills on its own again, so it takes the
+  /// same device check as paying one; pausing never does.
+  Future<bool> _allowed(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool paused,
+  }) async {
+    if (paused) return true;
+    final l10n = AppLocalizations.of(context);
+    final passed = await ref
+        .read(biometricAuthenticatorProvider)
+        .authenticate(l10n.resumeAutomationReason);
+    if (passed || !context.mounted) return passed;
+    showCdToast(context, message: l10n.confirmDenied).ignore();
+    return false;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +52,7 @@ class PaymentsSettingsScreen extends ConsumerWidget {
             onChanged: paused == null
                 ? null
                 : (value) async {
+                    if (!await _allowed(context, ref, paused: value)) return;
                     final failure = await ref
                         .read(automationControllerProvider.notifier)
                         .setPaused(paused: value);

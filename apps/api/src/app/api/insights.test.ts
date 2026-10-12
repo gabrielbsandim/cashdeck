@@ -1,4 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  restartTestDevice,
+  signInTestDevice,
+  STATIC_TOKEN,
+} from '@/app/api/sign-in.test-helpers'
 import { type FakeLlmProvider } from '@cashdeck/application'
 import {
   createCategoryRule,
@@ -50,7 +55,7 @@ import {
 import { POST as dismissSubscription } from '@/app/api/v1/subscriptions/dismiss/route'
 import { DELETE as removeSubscription } from '@/app/api/v1/subscriptions/[id]/route'
 
-const TOKEN = 'test-token-0123456789'
+let session = ''
 
 type Handler = (request: Request, context: never) => Promise<Response>
 
@@ -67,7 +72,7 @@ async function call(
     `http://localhost/api/v1/test${options.query ?? ''}`,
     {
       method,
-      headers: { authorization: `Bearer ${TOKEN}` },
+      headers: { authorization: `Bearer ${session}` },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     },
@@ -81,8 +86,9 @@ const llm = () => getContainer().deps.llm as FakeLlmProvider
 
 const usage = { inputTokens: 1, outputTokens: 1, costMillicents: 10 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -371,6 +377,7 @@ describe('chat', () => {
 
   it('validates the input and answers 429 once the quota is used', async () => {
     vi.stubEnv('CHAT_DAILY_TURN_LIMIT', '1')
+    session = await restartTestDevice()
     const thread = await call(createThread, 'POST', { body: {} })
     expect(thread.body.data.scope).toBe('ALL')
     const params = { id: thread.body.data.id as string }

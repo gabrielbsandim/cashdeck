@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { signInTestDevice, STATIC_TOKEN } from '@/app/api/sign-in.test-helpers'
 import { Money } from '@cashdeck/domain'
 import { getContainer, resetContainer } from '@/server/container'
 import { POST as asaas } from '@/app/api/webhooks/asaas/route'
@@ -21,7 +22,7 @@ import {
 import { GET as homeCompany } from '@/app/api/v1/home/company/route'
 import { GET as invoicesCron } from '@/app/api/cron/invoices/route'
 
-const TOKEN = 'test-token-0123456789'
+let session = ''
 
 function hook(
   path: string,
@@ -44,7 +45,7 @@ async function call(
 ) {
   const request = new Request('http://localhost/api/v1/test', {
     method,
-    headers: { authorization: `Bearer ${TOKEN}` },
+    headers: { authorization: `Bearer ${session}` },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
   const context = { params: Promise.resolve(options.params ?? {}) }
@@ -60,13 +61,14 @@ async function json(response: Response) {
   return { status: response.status, body: await response.json() }
 }
 
-beforeEach(() => {
-  vi.stubEnv('CASHDECK_API_TOKEN', TOKEN)
+beforeEach(async () => {
+  vi.stubEnv('CASHDECK_API_TOKEN', STATIC_TOKEN)
   vi.stubEnv('CRON_SECRET', 'cron-secret')
   vi.stubEnv('ASAAS_WEBHOOK_TOKEN', 'asaas-token')
   vi.stubEnv('INTER_WEBHOOK_TOKEN', 'inter-token')
   vi.stubEnv('PLUGGY_WEBHOOK_SECRET', 'pluggy-secret')
   vi.stubEnv('NOTAAS_WEBHOOK_SECRET', 'notaas-secret')
+  session = await signInTestDevice()
 })
 
 afterEach(() => {
@@ -77,7 +79,7 @@ afterEach(() => {
 
 describe('webhook routes', () => {
   it('reject unauthenticated calls with 401 and ignore the bearer token', async () => {
-    const bearer = { authorization: `Bearer ${TOKEN}` }
+    const bearer = { authorization: `Bearer ${session}` }
     for (const handler of [asaas, inter, pluggy, notaas]) {
       const anonymous = await json(await handler(hook('x', {})))
       expect([anonymous.status, anonymous.body.error.code]).toEqual([

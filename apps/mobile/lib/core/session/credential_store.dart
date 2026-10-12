@@ -1,18 +1,26 @@
 import 'package:cashdeck/core/session/server_credentials.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Keeps the server address and this device's session token. Older versions
+/// kept the server's static token instead; [readLegacy] finds it so it can be
+/// exchanged once and deleted.
 abstract interface class CredentialStore {
   Future<ServerCredentials?> read();
 
   Future<void> write(ServerCredentials credentials);
 
   Future<void> clear();
+
+  Future<ServerCredentials?> readLegacy();
+
+  Future<void> clearLegacy();
 }
 
 final class InMemoryCredentialStore implements CredentialStore {
-  new([this._credentials]);
+  new([this._credentials, this._legacy]);
 
   ServerCredentials? _credentials;
+  ServerCredentials? _legacy;
 
   @override
   Future<ServerCredentials?> read() async => _credentials;
@@ -22,7 +30,16 @@ final class InMemoryCredentialStore implements CredentialStore {
       _credentials = credentials;
 
   @override
-  Future<void> clear() async => _credentials = null;
+  Future<void> clear() async {
+    _credentials = null;
+    _legacy = null;
+  }
+
+  @override
+  Future<ServerCredentials?> readLegacy() async => _legacy;
+
+  @override
+  Future<void> clearLegacy() async => _legacy = null;
 }
 
 /// The Keychain on iOS and the Keystore-backed storage on Android.
@@ -32,15 +49,20 @@ final class SecureCredentialStore implements CredentialStore {
   final FlutterSecureStorage _storage;
 
   static const urlKey = 'server_url';
-  static const tokenKey = 'access_token';
+  static const tokenKey = 'session_token';
 
-  @override
-  Future<ServerCredentials?> read() async {
+  /// Where versions before device sessions kept the static API token.
+  static const legacyTokenKey = 'access_token';
+
+  Future<ServerCredentials?> _readWith(String key) async {
     final url = await _storage.read(key: urlKey);
-    final token = await _storage.read(key: tokenKey);
+    final token = await _storage.read(key: key);
     if (url == null || token == null) return null;
     return ServerCredentials(baseUrl: url, token: token);
   }
+
+  @override
+  Future<ServerCredentials?> read() => _readWith(tokenKey);
 
   @override
   Future<void> write(ServerCredentials credentials) async {
@@ -52,5 +74,12 @@ final class SecureCredentialStore implements CredentialStore {
   Future<void> clear() async {
     await _storage.delete(key: urlKey);
     await _storage.delete(key: tokenKey);
+    await clearLegacy();
   }
+
+  @override
+  Future<ServerCredentials?> readLegacy() => _readWith(legacyTokenKey);
+
+  @override
+  Future<void> clearLegacy() => _storage.delete(key: legacyTokenKey);
 }
