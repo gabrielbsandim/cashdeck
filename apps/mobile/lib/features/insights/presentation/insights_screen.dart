@@ -163,12 +163,6 @@ class _Analysis extends ConsumerWidget {
                 Symbols.autorenew_rounded,
               ),
               (AppRoutes.cards, l10n.cardsTitle, Symbols.credit_card_rounded),
-              (AppRoutes.loans, l10n.loansTitle, Symbols.home_work_rounded),
-              (
-                AppRoutes.assets,
-                l10n.assetsTitle,
-                Symbols.real_estate_agent_rounded,
-              ),
             ])
               CdListRow(
                 key: InsightsScreen.linkKey(route),

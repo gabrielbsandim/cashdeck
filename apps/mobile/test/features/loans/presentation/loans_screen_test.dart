@@ -33,7 +33,9 @@ void main() {
     await pumpRoute(tester, AppRoutes.loans);
 
     expect(find.byKey(LoansScreen.cardKey(_seeded)), findsOneWidget);
-    expect(find.text(l10n.loanProgress(12, 360)), findsOneWidget);
+    expect(find.text(l10n.loanProgress(12, 360, 3)), findsOneWidget);
+    expect(find.text(l10n.loanPaidTotal), findsOneWidget);
+    expect(find.textContaining('24.000,00'), findsOneWidget);
     expect(find.textContaining('multa e juros de atraso'), findsOneWidget);
     expect(find.text(l10n.loanRateValue('11,50', 'TR')), findsOneWidget);
 

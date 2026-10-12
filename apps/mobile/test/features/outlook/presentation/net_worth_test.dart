@@ -276,4 +276,17 @@ void main() {
     await settle(tester);
     expect(app.location, AppRoutes.assets);
   });
+
+  testWidgets('opens the loans from the net worth', (tester) async {
+    final app = await pumpRoute(
+      tester,
+      AppRoutes.netWorth,
+      screenHeight: _height,
+    );
+
+    await tester.ensureVisible(find.byKey(NetWorthScreen.loansKey));
+    await tester.tap(find.byKey(NetWorthScreen.loansKey));
+    await settle(tester);
+    expect(app.location, AppRoutes.loans);
+  });
 }

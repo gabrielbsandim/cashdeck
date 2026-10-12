@@ -192,7 +192,11 @@ class _LoanCard extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            l10n.loanProgress(loan.paidCount, loan.termMonths),
+            l10n.loanProgress(
+              loan.paidCount,
+              loan.termMonths,
+              (loan.progress * 100).round(),
+            ),
             style: muted,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -206,6 +210,10 @@ class _LoanCard extends ConsumerWidget {
                 ),
               ),
             ),
+          CdKeyValueRow(
+            label: l10n.loanPaidTotal,
+            value: CdAmount(loan.paid.total, size: CdAmountSize.row),
+          ),
           CdKeyValueRow(
             label: l10n.loanRemainingInterest,
             value: CdAmount(loan.remaining.interest, size: CdAmountSize.row),

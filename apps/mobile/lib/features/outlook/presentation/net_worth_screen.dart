@@ -42,6 +42,7 @@ class NetWorthScreen extends ConsumerWidget {
   static const totalKey = Key('net-worth-total');
   static const periodKey = Key('net-worth-period');
   static const assetsKey = Key('net-worth-assets');
+  static const loansKey = Key('net-worth-loans');
   static Key entityKey(EntityKind kind) => Key('net-worth-entity-${kind.name}');
 
   @override
@@ -145,14 +146,34 @@ class _History extends ConsumerWidget {
         ],
         const SizedBox(height: AppSpacing.md),
         CdInsightCard(
-          child: CdListRow(
-            key: NetWorthScreen.assetsKey,
-            title: l10n.assetsTitle,
-            subtitle: l10n.netWorthAssetsLink,
-            icon: Symbols.real_estate_agent_rounded,
-            chevron: true,
-            padding: EdgeInsets.zero,
-            onTap: () => context.push(AppRoutes.assets).ignore(),
+          child: Column(
+            children: [
+              for (final (key, route, title, subtitle, icon) in [
+                (
+                  NetWorthScreen.assetsKey,
+                  AppRoutes.assets,
+                  l10n.assetsTitle,
+                  l10n.netWorthAssetsLink,
+                  Symbols.real_estate_agent_rounded,
+                ),
+                (
+                  NetWorthScreen.loansKey,
+                  AppRoutes.loans,
+                  l10n.loansTitle,
+                  l10n.netWorthLoansLink,
+                  Symbols.home_work_rounded,
+                ),
+              ])
+                CdListRow(
+                  key: key,
+                  title: title,
+                  subtitle: subtitle,
+                  icon: icon,
+                  chevron: true,
+                  padding: EdgeInsets.zero,
+                  onTap: () => context.push(route).ignore(),
+                ),
+            ],
           ),
         ),
       ],

@@ -3673,13 +3673,16 @@
   "loansEmptyTitle": "Nenhum financiamento ainda",
   "loansEmptyMessage": "Baixe o extrato do financiamento em PDF no app do banco e importe aqui. O app lê cada parcela, os juros e os seguros.",
   "loanBalance": "Saldo devedor",
-  "loanProgress": "{paid} de {term} parcelas pagas",
+  "loanProgress": "{paid} de {term} parcelas pagas ({percent}%)",
   "@loanProgress": {
     "placeholders": {
       "paid": {
         "type": "int"
       },
       "term": {
+        "type": "int"
+      },
+      "percent": {
         "type": "int"
       }
     }
@@ -3696,6 +3699,7 @@
       }
     }
   },
+  "loanPaidTotal": "Já pago",
   "loanRemainingInterest": "Juros a pagar",
   "loanRate": "Taxa efetiva",
   "loanRateValue": "{rate}% ao ano + {indexer}",
@@ -3767,7 +3771,8 @@
   "netWorthVehicles": "Veículos",
   "netWorthOtherAssets": "Outros bens",
   "netWorthLoanDebt": "Financiamentos",
-  "netWorthAssetsLink": "Imóveis, veículos e o que os financiamentos ainda devem",
+  "netWorthAssetsLink": "Imóveis, veículos e outros bens",
+  "netWorthLoansLink": "Saldo devedor, parcelas e amortização",
   "assetsTitle": "Bens",
   "assetAdd": "Adicionar bem",
   "assetAdded": "Bem adicionado",
