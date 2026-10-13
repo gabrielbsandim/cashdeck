@@ -49,17 +49,19 @@ const Set<AccountType> _savingTypes = {
   AccountType.wallet,
 };
 
-/// Creates a goal, or edits [goal]; [save] decides where the draft goes.
+/// Creates a goal, starting from [initial] when given, or edits [goal];
+/// [save] decides where the draft goes.
 Future<void> showGoalEditor(
   BuildContext context, {
   required SaveGoalDraft save,
   Goal? goal,
+  GoalDraft? initial,
 }) async {
   final l10n = AppLocalizations.of(context);
   final outcome = await showCdBottomSheet<GoalOutcome>(
     context,
     title: goal == null ? l10n.goalNew : l10n.goalEdit,
-    builder: (_) => GoalEditor(goal: goal, save: save),
+    builder: (_) => GoalEditor(goal: goal, initial: initial, save: save),
   );
   if (outcome == null || !context.mounted) return;
   if (outcome.reached) {
@@ -68,7 +70,7 @@ Future<void> showGoalEditor(
 }
 
 class GoalEditor extends ConsumerStatefulWidget {
-  const new({required this.save, this.goal, super.key});
+  const new({required this.save, this.goal, this.initial, super.key});
 
   static const nameKey = Key('goal-name');
   static const targetKey = Key('goal-target');
@@ -82,6 +84,7 @@ class GoalEditor extends ConsumerStatefulWidget {
   static const errorKey = Key('goal-error');
 
   final Goal? goal;
+  final GoalDraft? initial;
   final SaveGoalDraft save;
 
   @override
@@ -89,10 +92,14 @@ class GoalEditor extends ConsumerStatefulWidget {
 }
 
 class _GoalEditorState extends ConsumerState<GoalEditor> {
-  late final _name = TextEditingController(text: widget.goal?.name);
-  late Money _target = widget.goal?.target ?? const Money(0);
+  late final _name = TextEditingController(
+    text: widget.goal?.name ?? widget.initial?.name,
+  );
+  late Money _target =
+      widget.goal?.target ?? widget.initial?.target ?? const Money(0);
   var _initial = const Money(0);
-  late CalendarDate? _deadline = widget.goal?.deadline;
+  late CalendarDate? _deadline =
+      widget.goal?.deadline ?? widget.initial?.deadline;
   late GoalLink? _link = switch (widget.goal) {
     Goal(accountId: final id?) => (GoalSource.account, id),
     Goal(investmentId: final id?) => (GoalSource.investment, id),

@@ -43,6 +43,18 @@ void main() {
       ).problem,
       PlanGoalProblem.window,
     );
+    for (final installments in [0, maxPlanInstallments + 1]) {
+      expect(
+        PlanGoalDraft(
+          kind: PlanGoalKind.purchase,
+          name: 'Celular',
+          price: const Money(1),
+          payment: PlanPayment.card,
+          installments: installments,
+        ).problem,
+        PlanGoalProblem.installments,
+      );
+    }
   });
 
   test('a draft starts from a goal and a milestone shows its progress', () {
@@ -53,7 +65,16 @@ void main() {
     expect(draft.by, const YearMonth(2028, 1));
     expect(draft.metric, MilestoneMetric.netWorth);
     expect(draft.yearly, const Money(0));
-    expect(draft.props, hasLength(14));
+    expect(draft.payment, PlanPayment.card);
+    expect(draft.installments, 10);
+    expect(draft.goalId, 'goal-car');
+    expect(draft.props, hasLength(17));
+    expect(draft.linkedTo('goal-new').goalId, 'goal-new');
+    expect(
+      draft.linkedTo('goal-car'),
+      draft,
+      reason: 'linking keeps every other field',
+    );
 
     const blank = PlanGoal(
       id: 'm',
@@ -77,7 +98,7 @@ void main() {
       current: Money(100),
     );
     expect(half.progress, 0.5);
-    expect(testPlanGoal.props, hasLength(21));
+    expect(testPlanGoal.props, hasLength(24));
   });
 
   test('settings name their problem and come from the plan', () {

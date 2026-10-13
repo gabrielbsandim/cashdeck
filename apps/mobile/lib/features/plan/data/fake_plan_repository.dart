@@ -46,6 +46,17 @@ final class FakePlanRepository implements PlanRepository {
         target: Money(100_000_000),
       ),
     ),
+    _seed(
+      const PlanGoalDraft(
+        kind: PlanGoalKind.purchase,
+        name: 'Notebook novo',
+        icon: 'devices',
+        price: Money(600_000),
+        payment: PlanPayment.card,
+        installments: 10,
+        goalId: 'goal-laptop',
+      ),
+    ),
   ];
 
   (String, PlanGoalDraft) _seed(PlanGoalDraft draft) =>
@@ -77,6 +88,9 @@ final class FakePlanRepository implements PlanRepository {
           ? draft.monthlyCost
           : null,
       keepsValue: draft.keepsValue,
+      payment: draft.payment,
+      installments: draft.installments,
+      goalId: draft.goalId,
       notBefore: draft.notBefore,
       by: draft.by,
       yearly: draft.kind == PlanGoalKind.yearly ? draft.yearly : null,

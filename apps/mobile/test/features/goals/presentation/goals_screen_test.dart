@@ -8,7 +8,6 @@ import 'package:cashdeck/features/goals/presentation/goal_celebration.dart';
 import 'package:cashdeck/features/goals/presentation/goal_detail_screen.dart';
 import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
 import 'package:cashdeck/features/goals/presentation/goals_screen.dart';
-import 'package:cashdeck/features/goals/presentation/home_goals_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -295,35 +294,5 @@ void main() {
     expect(find.text(l10n.errorNotFound), findsOneWidget);
     await _tap(tester, find.text(l10n.retryButton));
     verify(() => repository.get('gone')).called(2);
-  });
-
-  group('home strip', () {
-    testWidgets('shows each goal and opens it', (tester) async {
-      final app = await pumpRoute(tester, AppRoutes.home, screenHeight: 5200);
-
-      expect(find.byKey(HomeGoalsStrip.cardKey('goal-reserve')), findsOne);
-      await _tap(tester, find.byKey(HomeGoalsStrip.cardKey('goal-reserve')));
-      expect(app.location, AppRoutes.goal('goal-reserve'));
-      app.router.pop();
-      await settle(tester);
-
-      await _tap(tester, find.byKey(HomeGoalsStrip.seeAllKey));
-      expect(app.location, AppRoutes.goals);
-    });
-
-    testWidgets('without goals invites to set one', (tester) async {
-      final repository = MockGoalsRepository();
-      when(repository.list).thenAnswer((_) async => const Ok([]));
-      final app = await pumpRoute(
-        tester,
-        AppRoutes.home,
-        screenHeight: 5200,
-        overrides: [goalsRepositoryProvider.overrideWithValue(repository)],
-      );
-
-      await _tap(tester, find.byKey(HomeGoalsStrip.startKey));
-      expect(app.location, AppRoutes.goals);
-      expect(find.text(l10n.goalsEmptyTitle), findsOneWidget);
-    });
   });
 }

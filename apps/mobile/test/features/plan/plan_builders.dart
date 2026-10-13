@@ -28,6 +28,9 @@ Map<String, Object?> planGoalJson({
   'financed': kind == 'PURCHASE' ? moneyJson(0) : null,
   'monthlyCost': kind == 'PURCHASE' ? moneyJson(0) : null,
   'keepsValue': kind == 'PURCHASE',
+  'payment': kind == 'PURCHASE' ? 'CARD' : null,
+  'installments': kind == 'PURCHASE' ? 10 : null,
+  'goalId': kind == 'PURCHASE' ? 'goal-car' : null,
   'notBefore': null,
   'by': kind == 'PURCHASE' ? '2028-01' : null,
   'yearly': kind == 'YEARLY' ? moneyJson(1_200_000) : null,
@@ -79,5 +82,8 @@ const testPlanGoal = PlanGoal(
   financed: Money(0),
   monthlyCost: Money(0),
   keepsValue: true,
+  payment: PlanPayment.card,
+  installments: 10,
+  goalId: 'goal-car',
   by: YearMonth(2028, 1),
 );

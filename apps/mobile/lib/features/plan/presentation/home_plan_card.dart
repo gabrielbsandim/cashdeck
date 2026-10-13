@@ -1,4 +1,7 @@
 import 'package:cashdeck/app/router/app_routes.dart';
+import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/money/money_format.dart';
+import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
@@ -6,6 +9,7 @@ import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_shimmer.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
 import 'package:cashdeck/features/plan/presentation/plan_controller.dart';
 import 'package:cashdeck/features/plan/presentation/plan_labels.dart';
@@ -15,7 +19,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// The next purchase of the plan and when the milestones come, on Início.
+/// The plan on Início in one card: the next purchase, when the milestones
+/// come and what the caixinhas hold; the plan screen has the rest.
 /// Holds its place while loading, so the cards below do not jump when it
 /// lands, and steps aside when the plan cannot load.
 class HomePlanCard extends ConsumerWidget {
@@ -60,7 +65,19 @@ class HomePlanCard extends ConsumerWidget {
       );
     }
     if (plan == null) return const SizedBox.shrink();
-    final lines = linesOf(l10n, plan);
+    final caixinhas = ref.watch(goalsControllerProvider).value ?? const [];
+    final saved = caixinhas.fold(
+      const Money(0),
+      (total, caixinha) => total + caixinha.saved,
+    );
+    final lines = [
+      ...linesOf(l10n, plan),
+      if (caixinhas.isNotEmpty)
+        l10n.planHomeCaixinhas(
+          caixinhas.length,
+          MoneyFormat.whole(saved, hide: ref.watch(hideAmountsProvider)),
+        ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -11561,6 +11561,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {
@@ -11701,6 +11705,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {
@@ -11837,6 +11845,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {
@@ -11906,6 +11918,15 @@ export interface operations {
                     monthlyCost?: number;
                     /** @default false */
                     keepsValue?: boolean;
+                    /**
+                     * @default CASH
+                     * @enum {string}
+                     */
+                    payment?: "CASH" | "CARD";
+                    /** @default 1 */
+                    installments?: number;
+                    /** @default null */
+                    goalId?: string | null;
                     /** @default null */
                     notBefore?: string | null;
                     /** @default null */
@@ -12010,6 +12031,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {
@@ -12081,6 +12106,15 @@ export interface operations {
                     monthlyCost?: number;
                     /** @default false */
                     keepsValue?: boolean;
+                    /**
+                     * @default CASH
+                     * @enum {string}
+                     */
+                    payment?: "CASH" | "CARD";
+                    /** @default 1 */
+                    installments?: number;
+                    /** @default null */
+                    goalId?: string | null;
                     /** @default null */
                     notBefore?: string | null;
                     /** @default null */
@@ -12185,6 +12219,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {
@@ -12317,6 +12355,10 @@ export interface operations {
                                     currency: string;
                                 } | null;
                                 keepsValue: boolean | null;
+                                /** @enum {string|null} */
+                                payment: "CASH" | "CARD" | null;
+                                installments: number | null;
+                                goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
                                 yearly: {

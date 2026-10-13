@@ -1,3 +1,4 @@
+import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/money/money_format.dart';
@@ -5,13 +6,19 @@ import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/widgets/charts/cd_line_chart.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
+import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/goals/domain/goal.dart';
+import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
+import 'package:cashdeck/features/goals/presentation/goal_ring.dart';
+import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
 import 'package:cashdeck/features/plan/presentation/plan_controller.dart';
 import 'package:cashdeck/features/plan/presentation/plan_goal_editor.dart';
@@ -20,10 +27,12 @@ import 'package:cashdeck/features/plan/presentation/plan_settings_sheet.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// The life goals in their order, each with the month it fits and what it
-/// costs the milestones.
+/// The life goals in their order, each with the month it fits, what it costs
+/// the milestones and the caixinha saving for it; the other caixinhas close
+/// the list.
 class PlanScreen extends ConsumerWidget {
   const new({super.key});
 
@@ -31,7 +40,13 @@ class PlanScreen extends ConsumerWidget {
   static const settingsKey = Key('plan-settings');
   static const summaryKey = Key('plan-summary');
 
+  static const newCaixinhaKey = Key('plan-caixinha-new');
+  static const allCaixinhasKey = Key('plan-caixinhas-all');
+
   static Key tileKey(String id) => Key('plan-goal-$id');
+  static Key caixinhaKey(String id) => Key('plan-caixinha-$id');
+  static Key createCaixinhaKey(String id) => Key('plan-caixinha-create-$id');
+  static Key otherCaixinhaKey(String id) => Key('plan-caixinha-other-$id');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -131,6 +146,7 @@ class _PlanBody extends ConsumerWidget {
         96,
       ),
       header: header,
+      footer: _OtherCaixinhas(plan: plan),
       itemCount: plan.goals.length,
       onReorderItem: (from, to) => _move(context, ref, from, to),
       itemBuilder: (_, index) {
@@ -262,6 +278,9 @@ class _GoalTile extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(planWhenLine(l10n, goal, hide: hide), style: secondary),
                 if (amount != null) Text(amount, style: secondary),
+                if (goal.kind == PlanGoalKind.purchase &&
+                    goal.payment == PlanPayment.card)
+                  Text(l10n.planCardLine(goal.installments), style: secondary),
                 for (final delay in goal.delays)
                   Text(planDelayLine(l10n, delay), style: secondary),
                 if (goal.kind == PlanGoalKind.milestone) ...[
@@ -275,12 +294,197 @@ class _GoalTile extends ConsumerWidget {
                     label: planStatusLabel(l10n, goal.status),
                   ),
                 ],
+                if (goal.kind == PlanGoalKind.purchase)
+                  _CaixinhaRow(goal: goal),
               ],
             ),
           ),
           Icon(Symbols.drag_indicator_rounded, color: palette.onSurfaceVariant),
         ],
       ),
+    );
+  }
+}
+
+String _progressOf(
+  AppLocalizations l10n,
+  Goal caixinha, {
+  required bool hide,
+}) => l10n.planCaixinhaProgress(
+  MoneyFormat.whole(caixinha.saved, hide: hide),
+  MoneyFormat.whole(caixinha.target, hide: hide),
+);
+
+/// The caixinha saving for a purchase, or a way to start one sized to the
+/// cash the purchase takes and due by its month.
+class _CaixinhaRow extends ConsumerWidget {
+  const new({required this.goal});
+
+  final PlanGoal goal;
+
+  Future<void> _create(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final month = goal.month;
+    final caixinhas = ref.read(goalsControllerProvider.notifier);
+    final plan = ref.read(planControllerProvider.notifier);
+    var linked = false;
+    await showGoalEditor(
+      context,
+      initial: GoalDraft(
+        name: goal.name,
+        target: goal.cash,
+        deadline: month == null
+            ? null
+            : CalendarDate.fromDateTime(
+                DateTime(month.year, month.month + 1, 0),
+              ),
+      ),
+      save: (draft) async {
+        final outcome = await caixinhas.create(draft);
+        final created = outcome.goal;
+        if (created == null) return outcome;
+        final failure = await plan.save(
+          PlanGoalDraft.of(goal).linkedTo(created.id),
+          id: goal.id,
+        );
+        linked = failure == null;
+        return outcome;
+      },
+    );
+    if (!linked || !context.mounted) return;
+    await showCdToast(
+      context,
+      icon: Symbols.savings_rounded,
+      message: l10n.planCaixinhaLinked,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final palette = context.palette;
+    final hide = ref.watch(hideAmountsProvider);
+    final caixinhas = ref.watch(goalsControllerProvider).value;
+    if (caixinhas == null) return const SizedBox.shrink();
+    final linked = caixinhas
+        .where((item) => item.id == goal.goalId)
+        .firstOrNull;
+    if (linked != null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: InkWell(
+          key: PlanScreen.caixinhaKey(goal.id),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          onTap: () => context.push(AppRoutes.goal(linked.id)),
+          child: Row(
+            children: [
+              GoalRing(goal: linked, size: 32),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  _progressOf(l10n, linked, hide: hide),
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: palette.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (goal.status == PlanStatus.outOfReach) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: PlanScreen.createCaixinhaKey(goal.id),
+        onPressed: () => _create(context, ref),
+        icon: const Icon(Symbols.savings_rounded),
+        label: Text(l10n.planCaixinhaCreate),
+      ),
+    );
+  }
+}
+
+/// The caixinhas no purchase of the plan points at.
+class _OtherCaixinhas extends ConsumerWidget {
+  const new({required this.plan});
+
+  final LifePlan plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final palette = context.palette;
+    final hide = ref.watch(hideAmountsProvider);
+    final caixinhas = ref.watch(goalsControllerProvider).value;
+    if (caixinhas == null) return const SizedBox.shrink();
+    final linked = {for (final goal in plan.goals) ?goal.goalId};
+    final others = [
+      for (final caixinha in caixinhas)
+        if (!linked.contains(caixinha.id)) caixinha,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        CdSectionHeader(
+          title: l10n.planCaixinhasTitle,
+          actionLabel: caixinhas.isEmpty ? null : l10n.seeAllButton,
+          actionKey: PlanScreen.allCaixinhasKey,
+          onAction: () => context.push(AppRoutes.goals),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          l10n.planCaixinhasHelp,
+          style: AppTextStyles.bodyMd.copyWith(color: palette.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        for (final caixinha in others) ...[
+          CdCard(
+            key: PlanScreen.otherCaixinhaKey(caixinha.id),
+            onTap: () => context.push(AppRoutes.goal(caixinha.id)),
+            child: Row(
+              children: [
+                GoalRing(goal: caixinha, size: 40),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        caixinha.name,
+                        style: AppTextStyles.titleSm.copyWith(
+                          color: palette.onSurface,
+                        ),
+                      ),
+                      Text(
+                        _progressOf(l10n, caixinha, hide: hide),
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: palette.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: PlanScreen.newCaixinhaKey,
+            onPressed: () => showGoalEditor(
+              context,
+              save: ref.read(goalsControllerProvider.notifier).create,
+            ),
+            icon: const Icon(Symbols.add_rounded),
+            label: Text(l10n.planCaixinhaNew),
+          ),
+        ),
+      ],
     );
   }
 }

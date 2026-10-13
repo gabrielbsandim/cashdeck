@@ -491,7 +491,9 @@ A goal is one of three kinds, amounts in cents:
 - `PURCHASE`: `price`, `tradeIn` (or `tradeInAssetId`, whose value less its
   loan is read live), `financed`, `monthlyCost` added from then on (negative
   when it saves), `keepsValue` (a car or a house stays in net worth),
-  `notBefore` and `by` months.
+  `payment` (`CASH` leaves savings that month, `CARD` with the bills after it,
+  split in `installments`), `goalId` (the caixinha saving for it, null once
+  archived), `notBefore` and `by` months.
 - `YEARLY`: `yearly`, like trips.
 - `MILESTONE`: `metric` (`NET_WORTH` or `INVESTED`), `target` and `by`.
 

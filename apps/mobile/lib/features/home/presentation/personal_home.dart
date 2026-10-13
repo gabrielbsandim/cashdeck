@@ -14,7 +14,6 @@ import 'package:cashdeck/core/widgets/money/cd_amount.dart';
 import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/budgets/presentation/home_budget_card.dart';
-import 'package:cashdeck/features/goals/presentation/home_goals_strip.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/presentation/home_funding_card.dart';
 import 'package:cashdeck/features/home/presentation/home_insights.dart';
@@ -63,7 +62,6 @@ class PersonalHome extends ConsumerWidget {
         if (summary.reserve case final reserve?)
           _ReserveCard(reserve: reserve, today: today),
         const HomePlanCard(),
-        const HomeGoalsStrip(),
         const HomeFundingCard(),
         const HomeInvestmentsCard(),
         const NetWorthCard(),

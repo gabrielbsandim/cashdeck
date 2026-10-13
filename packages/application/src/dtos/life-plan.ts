@@ -2,6 +2,7 @@ import { z } from 'zod'
 import {
   MILESTONE_METRICS,
   PLAN_GOAL_KINDS,
+  PLAN_PAYMENTS,
   PLAN_STATUSES,
 } from '@cashdeck/domain'
 import { isoMonth, moneyViewSchema } from '@/dtos/common'
@@ -22,6 +23,11 @@ const purchaseSchema = z
     financed: z.int().min(0).default(0),
     monthlyCost: z.int().default(0),
     keepsValue: z.boolean().default(false),
+    // On the card the cash leaves with the next bills, one per installment.
+    payment: z.enum(PLAN_PAYMENTS).default('CASH'),
+    installments: z.int().min(1).max(24).default(1),
+    // The caixinha that saves for it.
+    goalId: z.string().min(1).nullable().default(null),
     notBefore: isoMonth.nullable().default(null),
     by: isoMonth.nullable().default(null),
   })
@@ -102,6 +108,10 @@ export const planGoalViewSchema = z.object({
   financed: moneyViewSchema.nullable(),
   monthlyCost: moneyViewSchema.nullable(),
   keepsValue: z.boolean().nullable(),
+  payment: z.enum(PLAN_PAYMENTS).nullable(),
+  installments: z.int().nullable(),
+  // Null once the caixinha is archived or deleted.
+  goalId: z.string().nullable(),
   notBefore: isoMonth.nullable(),
   by: isoMonth.nullable(),
   yearly: moneyViewSchema.nullable(),

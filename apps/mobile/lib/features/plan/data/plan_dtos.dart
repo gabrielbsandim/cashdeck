@@ -16,6 +16,11 @@ const Map<String, PlanStatus> planStatuses = {
   'OUT_OF_REACH': PlanStatus.outOfReach,
 };
 
+const Map<String, PlanPayment> planPayments = {
+  'CASH': PlanPayment.cash,
+  'CARD': PlanPayment.card,
+};
+
 const Map<String, MilestoneMetric> milestoneMetrics = {
   'NET_WORTH': MilestoneMetric.netWorth,
   'INVESTED': MilestoneMetric.invested,
@@ -36,6 +41,7 @@ YearMonth? _optionalMonth(JsonMap json, String key) {
 
 PlanGoal planGoalFromJson(JsonMap json) {
   final metric = readOptionalString(json, 'metric');
+  final payment = readOptionalString(json, 'payment');
   return PlanGoal(
     id: readString(json, 'id'),
     kind: readEnum(json, 'kind', planGoalKinds),
@@ -59,6 +65,11 @@ PlanGoal planGoalFromJson(JsonMap json) {
     financed: _optionalMoney(json, 'financed'),
     monthlyCost: _optionalMoney(json, 'monthlyCost'),
     keepsValue: json['keepsValue'] == true,
+    payment: payment == null
+        ? PlanPayment.cash
+        : lookupValue(planPayments, payment),
+    installments: readOptionalInt(json, 'installments') ?? 1,
+    goalId: readOptionalString(json, 'goalId'),
     notBefore: _optionalMonth(json, 'notBefore'),
     by: _optionalMonth(json, 'by'),
     yearly: _optionalMoney(json, 'yearly'),
@@ -113,6 +124,9 @@ JsonMap planGoalToJson(PlanGoalDraft draft) {
       'financed': draft.financed.cents,
       'monthlyCost': draft.monthlyCost.cents,
       'keepsValue': draft.keepsValue,
+      'payment': _keyOf(planPayments, draft.payment),
+      'installments': draft.installments,
+      'goalId': draft.goalId,
       'notBefore': draft.notBefore?.iso,
       'by': draft.by?.iso,
     },

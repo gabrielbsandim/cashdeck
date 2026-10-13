@@ -7,6 +7,8 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/year_month.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
+import 'package:cashdeck/features/goals/presentation/goal_detail_screen.dart';
+import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
 import 'package:cashdeck/features/goals/presentation/goals_screen.dart';
 import 'package:cashdeck/features/plan/data/plan_dtos.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
@@ -50,6 +52,9 @@ Future<void> _pickMonth(WidgetTester tester, Key row) async {
   await tester.tap(find.text(labels.okButtonLabel));
   await settle(tester);
 }
+
+Future<void> _reach(WidgetTester tester, Finder finder) => tester
+    .scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
 
 Finder _tile(String name) => find.ancestor(
   of: find.text(name),
@@ -263,6 +268,7 @@ void main() {
       find.text(l10n.planHomeNext('Trocar de carro', 'Outubro 2027')),
       findsOneWidget,
     );
+    expect(find.textContaining('3 caixinhas com'), findsOneWidget);
     await _tap(tester, find.byKey(HomePlanCard.cardKey));
     expect(find.byType(PlanScreen), findsOneWidget);
   });
@@ -293,6 +299,73 @@ void main() {
     pending.complete(const Err(ServerFailure()));
     await settle(tester);
     expect(find.byKey(HomePlanCard.loadingKey), findsNothing);
+  });
+
+  testWidgets('pays on the card and saves in a caixinha', (tester) async {
+    await pumpRoute(tester, AppRoutes.plan);
+
+    await _tap(tester, find.byKey(PlanScreen.addKey));
+    await _type(tester, PlanGoalEditor.nameKey, 'Celular');
+    await _type(tester, PlanGoalEditor.priceKey, '600000');
+    expect(find.byKey(PlanGoalEditor.installmentsKey), findsNothing);
+    await _tap(tester, find.text(l10n.planPaymentCard));
+    await _tap(tester, find.byKey(PlanGoalEditor.installmentsKey));
+    await _tap(tester, find.text(l10n.planInstallmentsOption(12)).last);
+    await _tap(tester, find.byKey(PlanGoalEditor.caixinhaKey));
+    await _tap(tester, find.text('Viagem de férias').last);
+    await _tap(tester, find.byKey(PlanGoalEditor.saveKey));
+
+    expect(find.text(l10n.planSaved), findsOneWidget);
+    await _reach(tester, find.text(l10n.planCardLine(12)));
+    expect(find.text(l10n.planCardLine(12)), findsOneWidget);
+    await _reach(tester, find.byKey(PlanScreen.newCaixinhaKey));
+    expect(find.byKey(PlanScreen.otherCaixinhaKey('goal-trip')), findsNothing);
+    expect(find.byKey(PlanScreen.otherCaixinhaKey('goal-reserve')), findsOne);
+  });
+
+  testWidgets('opens the caixinha of a purchase and starts one for another', (
+    tester,
+  ) async {
+    final app = await pumpRoute(tester, AppRoutes.plan);
+
+    await _reach(tester, find.byKey(PlanScreen.caixinhaKey('plan-3')));
+    await _tap(tester, find.byKey(PlanScreen.caixinhaKey('plan-3')));
+    expect(app.location, AppRoutes.goal('goal-laptop'));
+    app.router.pop();
+    await settle(tester);
+
+    await _reach(tester, find.byKey(PlanScreen.createCaixinhaKey('plan-1')));
+    await _tap(tester, find.byKey(PlanScreen.createCaixinhaKey('plan-1')));
+    expect(
+      tester.widget<EditableText>(_input(GoalEditor.nameKey)).controller.text,
+      'Trocar de carro',
+    );
+    await _tap(tester, find.byKey(GoalEditor.saveKey));
+    expect(find.text(l10n.planCaixinhaLinked), findsOneWidget);
+    expect(find.byKey(PlanScreen.caixinhaKey('plan-1')), findsOneWidget);
+    expect(find.byKey(PlanScreen.createCaixinhaKey('plan-1')), findsNothing);
+  });
+
+  testWidgets('lists the other caixinhas and adds one', (tester) async {
+    final app = await pumpRoute(tester, AppRoutes.plan);
+
+    await _reach(tester, find.byKey(PlanScreen.newCaixinhaKey));
+    await _tap(tester, find.byKey(PlanScreen.otherCaixinhaKey('goal-reserve')));
+    expect(find.byType(GoalDetailScreen), findsOneWidget);
+    app.router.pop();
+    await settle(tester);
+
+    await _reach(tester, find.byKey(PlanScreen.newCaixinhaKey));
+    await _tap(tester, find.byKey(PlanScreen.newCaixinhaKey));
+    expect(find.byType(GoalEditor), findsOneWidget);
+    await _type(tester, GoalEditor.nameKey, 'Presentes');
+    await _type(tester, GoalEditor.targetKey, '100000');
+    await _tap(tester, find.byKey(GoalEditor.saveKey));
+    await _reach(tester, find.text('Presentes'));
+    expect(find.text('Presentes'), findsOneWidget);
+
+    await _tap(tester, find.byKey(PlanScreen.allCaixinhasKey));
+    expect(app.location, AppRoutes.goals);
   });
 
   testWidgets('the goals screen opens the plan', (tester) async {

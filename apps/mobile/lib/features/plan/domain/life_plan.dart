@@ -9,6 +9,11 @@ enum PlanStatus { now, planned, late, outOfReach }
 
 enum MilestoneMetric { netWorth, invested }
 
+/// On the card, the cash leaves with the bills after the purchase.
+enum PlanPayment { cash, card }
+
+const maxPlanInstallments = 24;
+
 /// How many months a goal pushes a milestone; null when it keeps the
 /// milestone out of reach.
 final class MilestoneDelay extends Equatable {
@@ -44,6 +49,9 @@ final class PlanGoal extends Equatable {
     this.financed,
     this.monthlyCost,
     this.keepsValue = false,
+    this.payment = PlanPayment.cash,
+    this.installments = 1,
+    this.goalId,
     this.notBefore,
     this.by,
     this.yearly,
@@ -71,6 +79,11 @@ final class PlanGoal extends Equatable {
   final Money? financed;
   final Money? monthlyCost;
   final bool keepsValue;
+  final PlanPayment payment;
+  final int installments;
+
+  /// The caixinha saving for it.
+  final String? goalId;
   final YearMonth? notBefore;
   final YearMonth? by;
   final Money? yearly;
@@ -105,6 +118,9 @@ final class PlanGoal extends Equatable {
     financed,
     monthlyCost,
     keepsValue,
+    payment,
+    installments,
+    goalId,
     notBefore,
     by,
     yearly,
@@ -246,6 +262,9 @@ final class PlanGoalDraft extends Equatable {
     this.financed = const Money(0),
     this.monthlyCost = const Money(0),
     this.keepsValue = false,
+    this.payment = PlanPayment.cash,
+    this.installments = 1,
+    this.goalId,
     this.notBefore,
     this.by,
     this.yearly = const Money(0),
@@ -263,6 +282,9 @@ final class PlanGoalDraft extends Equatable {
     financed: goal.financed ?? const Money(0),
     monthlyCost: goal.monthlyCost ?? const Money(0),
     keepsValue: goal.keepsValue,
+    payment: goal.payment,
+    installments: goal.installments,
+    goalId: goal.goalId,
     notBefore: goal.notBefore,
     by: goal.by,
     yearly: goal.yearly ?? const Money(0),
@@ -279,11 +301,35 @@ final class PlanGoalDraft extends Equatable {
   final Money financed;
   final Money monthlyCost;
   final bool keepsValue;
+  final PlanPayment payment;
+  final int installments;
+  final String? goalId;
   final YearMonth? notBefore;
   final YearMonth? by;
   final Money yearly;
   final MilestoneMetric metric;
   final Money target;
+
+  /// The same goal saved by the caixinha [goalId].
+  PlanGoalDraft linkedTo(String goalId) => PlanGoalDraft(
+    kind: kind,
+    name: name,
+    icon: icon,
+    price: price,
+    tradeIn: tradeIn,
+    tradeInAssetId: tradeInAssetId,
+    financed: financed,
+    monthlyCost: monthlyCost,
+    keepsValue: keepsValue,
+    payment: payment,
+    installments: installments,
+    goalId: goalId,
+    notBefore: notBefore,
+    by: by,
+    yearly: yearly,
+    metric: metric,
+    target: target,
+  );
 
   Money get _amount => switch (kind) {
     PlanGoalKind.purchase => price,
@@ -294,6 +340,9 @@ final class PlanGoalDraft extends Equatable {
   PlanGoalProblem? get problem {
     if (name.trim().isEmpty) return PlanGoalProblem.name;
     if (_amount.cents <= 0) return PlanGoalProblem.amount;
+    if (installments < 1 || installments > maxPlanInstallments) {
+      return PlanGoalProblem.installments;
+    }
     final notBefore = this.notBefore;
     final by = this.by;
     final purchase = kind == PlanGoalKind.purchase;
@@ -317,6 +366,9 @@ final class PlanGoalDraft extends Equatable {
     financed,
     monthlyCost,
     keepsValue,
+    payment,
+    installments,
+    goalId,
     notBefore,
     by,
     yearly,
@@ -325,7 +377,7 @@ final class PlanGoalDraft extends Equatable {
   ];
 }
 
-enum PlanGoalProblem { name, amount, window }
+enum PlanGoalProblem { name, amount, installments, window }
 
 abstract interface class PlanRepository {
   Future<Result<LifePlan>> load();

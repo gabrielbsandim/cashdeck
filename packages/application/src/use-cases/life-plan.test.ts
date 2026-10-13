@@ -6,6 +6,7 @@ import { account, fullDeps, transaction } from '@/testing/deps.test-helpers'
 import { importLoan } from '@/testing/loans.test-helpers'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { makeAssets } from '@/use-cases/assets'
+import { makeGoals } from '@/use-cases/goals'
 import { makeLifePlan } from '@/use-cases/life-plan'
 import { makeSetSpendingPlan } from '@/use-cases/spending-plan'
 
@@ -136,6 +137,9 @@ describe('life plan', () => {
       financed: { cents: 0 },
       monthlyCost: { cents: 0 },
       keepsValue: true,
+      payment: 'CASH',
+      installments: 1,
+      goalId: null,
       notBefore: null,
       by: null,
       yearly: null,
@@ -229,6 +233,53 @@ describe('life plan', () => {
     })
   })
 
+  it('links a purchase to the caixinha saving for it', async () => {
+    const { deps, plan } = await seed()
+    const caixinhas = makeGoals(deps)
+    const saving = await caixinhas.create(TENANT, {
+      entity: 'PF',
+      name: 'Phone',
+      targetCents: 500_000,
+    })
+    const phone = goal({
+      kind: 'PURCHASE',
+      name: 'Phone',
+      price: 500_000,
+      payment: 'CARD',
+      installments: 10,
+      goalId: saving.id,
+    })
+    const linked = await plan.create(TENANT, phone)
+    expect(linked.goals[0]).toMatchObject({
+      payment: 'CARD',
+      installments: 10,
+      goalId: saving.id,
+    })
+    await caixinhas.update(TENANT, saving.id, { archived: true })
+    expect((await plan.view(TENANT)).goals[0]?.goalId).toBeNull()
+    await expect(
+      plan.create(TENANT, goal({ ...phone, goalId: 'ghost' })),
+    ).rejects.toThrow(NotFoundError)
+  })
+
+  it('reads goals stored before payment existed as cash', async () => {
+    const { deps, plan } = await seed()
+    await deps.documents.put(TENANT, 'plan-goals', 'old', {
+      id: 'old',
+      order: 0,
+      createdAt: '2026-10-01T00:00:00.000Z',
+      kind: 'PURCHASE',
+      name: 'Car',
+      price: 100,
+    })
+    expect((await plan.view(TENANT)).goals[0]).toMatchObject({
+      id: 'old',
+      payment: 'CASH',
+      installments: 1,
+      goalId: null,
+    })
+  })
+
   it('refuses unknown goals and assets', async () => {
     const { plan } = await seed()
     const ghost = goal({
@@ -255,6 +306,9 @@ describe('life plan', () => {
       financed: 0,
       monthlyCost: 0,
       keepsValue: false,
+      payment: 'CASH',
+      installments: 1,
+      goalId: null,
       notBefore: null,
       by: null,
     })

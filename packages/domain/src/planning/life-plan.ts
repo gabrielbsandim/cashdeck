@@ -6,6 +6,9 @@ export type PlanGoalKind = (typeof PLAN_GOAL_KINDS)[number]
 export const MILESTONE_METRICS = ['NET_WORTH', 'INVESTED'] as const
 export type MilestoneMetric = (typeof MILESTONE_METRICS)[number]
 
+export const PLAN_PAYMENTS = ['CASH', 'CARD'] as const
+export type PlanPayment = (typeof PLAN_PAYMENTS)[number]
+
 export const PLAN_STATUSES = ['NOW', 'PLANNED', 'LATE', 'OUT_OF_REACH'] as const
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
@@ -28,6 +31,9 @@ export type PurchaseGoal = PlanGoalBase & {
   readonly monthlyCostCents: number
   // A car or a house stays in net worth; a trip or a phone is spent.
   readonly keepsValue: boolean
+  // On the card the cash leaves with the bills that follow, one per installment.
+  readonly payment: PlanPayment
+  readonly installments: number
   readonly notBefore: string | null
   readonly by: string | null
 }
@@ -96,7 +102,7 @@ type MonthState = {
   invested: number
   netWorth: number
   belowReserve: boolean
-  // The month's purchases took more than the share allowed.
+  // What the month paid took more than the share allowed.
   overspent: boolean
 }
 
@@ -121,8 +127,30 @@ function yearlyProvision(goals: readonly PlanGoal[]): number {
   )
 }
 
+// What leaves savings each month: a cash purchase in full in its month, a
+// card one in equal bills from the month after.
+function outflowsOf(
+  purchases: readonly PurchaseGoal[],
+  schedule: Schedule,
+): Map<number, number> {
+  const outflows = new Map<number, number>()
+  for (const goal of purchases.filter(item => schedule.has(item.id))) {
+    const card = goal.payment === 'CARD'
+    const parts = card ? goal.installments : 1
+    const first = (schedule.get(goal.id) as number) + (card ? 1 : 0)
+    for (let part = 0; part < parts; part++) {
+      const month = first + part
+      outflows.set(
+        month,
+        (outflows.get(month) ?? 0) + purchaseCash(goal) / parts,
+      )
+    }
+  }
+  return outflows
+}
+
 // Month by month: the yield, the savings less the yearly provisions, then the
-// purchases of that month and the monthly cost they add from then on.
+// purchases of that month, what they cost from then on and the bills due.
 function simulate(
   start: PlanStart,
   goals: readonly PlanGoal[],
@@ -130,8 +158,10 @@ function simulate(
 ): MonthState[] {
   const purchases = purchasesOf(goals)
   const provision = yearlyProvision(goals)
+  const outflows = outflowsOf(purchases, schedule)
   let pot = start.cashCents + start.investedCents
   let kept = start.netWorthCents - pot
+  let owed = 0
   let savings = start.monthlySavingsCents
   let spending = start.monthlySpendingCents
   const states: MonthState[] = []
@@ -143,16 +173,19 @@ function simulate(
     const due = purchases.filter(goal => schedule.get(goal.id) === index)
     for (const goal of due) {
       const cash = purchaseCash(goal)
-      pot -= cash
+      owed += cash
       kept += goal.keepsValue ? cash : 0
       savings -= goal.monthlyCostCents
       spending += goal.monthlyCostCents
     }
+    const paid = outflows.get(index) ?? 0
+    pot -= paid
+    owed -= paid
     states.push({
       invested: pot - start.cashCents,
-      netWorth: kept + pot,
+      netWorth: kept + pot - owed,
       belowReserve: pot < start.reserveMonths * spending,
-      overspent: due.length > 0 && pot < before * start.keepShare,
+      overspent: paid > 0 && pot < before * start.keepShare,
     })
   }
   return states

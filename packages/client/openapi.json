@@ -30155,6 +30155,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -30253,6 +30271,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",
@@ -30773,6 +30794,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -30871,6 +30910,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",
@@ -31375,6 +31417,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -31473,6 +31533,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",
@@ -31663,6 +31726,26 @@
                       "keepsValue": {
                         "default": false,
                         "type": "boolean"
+                      },
+                      "payment": {
+                        "default": "CASH",
+                        "type": "string",
+                        "enum": [
+                          "CASH",
+                          "CARD"
+                        ]
+                      },
+                      "installments": {
+                        "default": 1,
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 24
+                      },
+                      "goalId": {
+                        "default": null,
+                        "nullable": true,
+                        "type": "string",
+                        "minLength": 1
                       },
                       "notBefore": {
                         "default": null,
@@ -32118,6 +32201,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -32216,6 +32317,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",
@@ -32415,6 +32519,26 @@
                       "keepsValue": {
                         "default": false,
                         "type": "boolean"
+                      },
+                      "payment": {
+                        "default": "CASH",
+                        "type": "string",
+                        "enum": [
+                          "CASH",
+                          "CARD"
+                        ]
+                      },
+                      "installments": {
+                        "default": 1,
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 24
+                      },
+                      "goalId": {
+                        "default": null,
+                        "nullable": true,
+                        "type": "string",
+                        "minLength": 1
                       },
                       "notBefore": {
                         "default": null,
@@ -32870,6 +32994,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -32968,6 +33110,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",
@@ -33456,6 +33601,24 @@
                                 "nullable": true,
                                 "type": "boolean"
                               },
+                              "payment": {
+                                "nullable": true,
+                                "type": "string",
+                                "enum": [
+                                  "CASH",
+                                  "CARD"
+                                ]
+                              },
+                              "installments": {
+                                "nullable": true,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "goalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
                               "notBefore": {
                                 "nullable": true,
                                 "type": "string",
@@ -33554,6 +33717,9 @@
                               "financed",
                               "monthlyCost",
                               "keepsValue",
+                              "payment",
+                              "installments",
+                              "goalId",
                               "notBefore",
                               "by",
                               "yearly",

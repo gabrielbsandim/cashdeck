@@ -30,6 +30,8 @@ const purchase = (overrides: Partial<PurchaseGoal>): PurchaseGoal => ({
   financedCents: 0,
   monthlyCostCents: 0,
   keepsValue: false,
+  payment: 'CASH',
+  installments: 1,
   notBefore: null,
   by: null,
   ...overrides,
@@ -206,6 +208,24 @@ describe('lifePlan', () => {
     expect(plan.p?.month).toBe('2026-12')
     // Bought earlier, the 1k would leave the 60k one short of its share.
     expect(plan.small?.month).toBe('2027-01')
+  })
+
+  it('pays a card purchase with the bills after it', () => {
+    const monthOf = (installments: number) =>
+      lifePlan({ ...start, keepShare: 0.5 }, [
+        purchase({ priceCents: 60_000, payment: 'CARD', installments }),
+      ]).goals[0]?.month
+    // The bill comes a month later, when the savings have grown by 10k.
+    expect(monthOf(1)).toBe('2026-11')
+    expect(monthOf(10)).toBe('2026-10')
+    const plan = lifePlan(start, [
+      purchase({ payment: 'CARD', installments: 1 }),
+    ])
+    expect(plan.timeline[0]).toEqual({
+      month: '2026-10',
+      netWorthCents: 250_000,
+      investedCents: 100_000,
+    })
   })
 
   it('takes the trade-in and the loan off the price', () => {

@@ -1572,14 +1572,13 @@
   "railUnavailable": "Não oferecido",
   "budgetsEmpty": "Nenhum orçamento neste mês. Peça no Chat para criar um.",
   "budgetsAskChat": "Abrir o Chat",
-  "goalsTitle": "Metas",
-  "goalsEmptyTitle": "Nenhuma meta ainda",
-  "goalsEmptyMessage": "Crie uma meta para acompanhar quanto falta e quando você chega lá.",
-  "goalsStart": "Crie uma meta e acompanhe quanto falta para chegar lá.",
-  "goalNew": "Nova meta",
-  "goalEdit": "Editar meta",
-  "goalName": "Nome da meta",
-  "goalTarget": "Valor da meta",
+  "goalsTitle": "Caixinhas",
+  "goalsEmptyTitle": "Nenhuma caixinha ainda",
+  "goalsEmptyMessage": "Crie uma caixinha para acompanhar quanto falta e quando você chega lá.",
+  "goalNew": "Nova caixinha",
+  "goalEdit": "Editar caixinha",
+  "goalName": "Nome da caixinha",
+  "goalTarget": "Valor da caixinha",
   "goalInitial": "Já guardado (opcional)",
   "goalDeadlineNone": "Sem prazo",
   "goalDeadlineOn": "Prazo: {date}",
@@ -1595,8 +1594,8 @@
   "goalAccountNone": "Nenhuma, registro os aportes",
   "goalAccountManualHelp": "O progresso soma os aportes que você registrar.",
   "goalAccountHelp": "O progresso segue o saldo dessa conta.",
-  "goalSave": "Salvar meta",
-  "goalNameMissing": "Dê um nome para a meta.",
+  "goalSave": "Salvar caixinha",
+  "goalNameMissing": "Dê um nome para a caixinha.",
   "goalTargetMissing": "Informe quanto quer juntar.",
   "goalDeadlinePast": "O prazo precisa ser hoje ou depois.",
   "goalStatusDone": "Concluída",
@@ -1645,7 +1644,7 @@
     }
   },
   "goalProjectionUnknown": "Ainda não há ritmo suficiente para projetar quando você chega lá.",
-  "goalProjectionDone": "Meta alcançada. Parabéns!",
+  "goalProjectionDone": "Caixinha alcançada. Parabéns!",
   "goalLinked": "Segue o saldo de {name}.",
   "@goalLinked": {
     "placeholders": {
@@ -1654,7 +1653,7 @@
       }
     }
   },
-  "goalRingSemantics": "{name}: {percent}% da meta",
+  "goalRingSemantics": "{name}: {percent}% da caixinha",
   "@goalRingSemantics": {
     "placeholders": {
       "name": {
@@ -1666,9 +1665,9 @@
     }
   },
   "goalArchive": "Arquivar",
-  "goalArchived": "Meta arquivada",
-  "goalDelete": "Excluir meta",
-  "goalDeleted": "Meta excluída",
+  "goalArchived": "Caixinha arquivada",
+  "goalDelete": "Excluir caixinha",
+  "goalDeleted": "Caixinha excluída",
   "goalDeleteTitle": "Excluir {name}?",
   "@goalDeleteTitle": {
     "placeholders": {
@@ -1677,7 +1676,7 @@
       }
     }
   },
-  "goalDeleteMessage": "A meta e os aportes registrados saem do app.",
+  "goalDeleteMessage": "A caixinha e os aportes registrados saem do app.",
   "goalContributionAdd": "Guardar",
   "goalContributionWithdraw": "Retirar",
   "goalContributionAmount": "Valor",
@@ -1688,7 +1687,7 @@
   "goalContributionRemoved": "Aporte desfeito",
   "goalContributionsTitle": "Aportes",
   "goalContributionsEmpty": "Nenhum aporte ainda.",
-  "goalReachedTitle": "Meta alcançada!",
+  "goalReachedTitle": "Caixinha alcançada!",
   "goalReachedMessage": "Você chegou a 100% de {name}.",
   "@goalReachedMessage": {
     "placeholders": {
@@ -4184,5 +4183,55 @@
     }
   },
   "planSettingsKeep": "Manter investido depois de cada compra (%)",
-  "planSettingsKeepHelp": "Uma compra só entra quando deixa essa parte das economias aplicada."
+  "planSettingsKeepHelp": "Uma compra só entra quando deixa essa parte das economias aplicada.",
+  "planPaymentCash": "À vista",
+  "planPaymentCard": "Cartão",
+  "planInstallments": "Parcelas no cartão",
+  "planInstallmentsOption": "{count}x",
+  "@planInstallmentsOption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planInstallmentsInvalid": "Escolha de 1 a 24 parcelas.",
+  "planCardLine": "{count, plural, =1{No cartão, sai na fatura seguinte} other{No cartão em {count}x, a partir da fatura seguinte}}",
+  "@planCardLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planCaixinha": "Caixinha",
+  "planCaixinhaHelp": "Onde vocês guardam o dinheiro para essa compra.",
+  "planCaixinhaNone": "Nenhuma",
+  "planCaixinhaCreate": "Criar caixinha",
+  "planCaixinhaProgress": "{saved} de {target} na caixinha",
+  "@planCaixinhaProgress": {
+    "placeholders": {
+      "saved": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "planCaixinhasTitle": "Outras caixinhas",
+  "planCaixinhasHelp": "Dinheiro guardado que não está ligado a uma compra do plano.",
+  "planCaixinhaNew": "Nova caixinha",
+  "planCaixinhaLinked": "Caixinha criada e ligada ao plano",
+  "planHomeCaixinhas": "{count, plural, =1{1 caixinha com {saved}} other{{count} caixinhas com {saved}}}",
+  "@planHomeCaixinhas": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "saved": {
+        "type": "String"
+      }
+    }
+  }
 }

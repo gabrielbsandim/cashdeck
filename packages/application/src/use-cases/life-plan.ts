@@ -8,6 +8,7 @@ import {
 } from '@cashdeck/domain'
 import { money } from '@/dtos/common'
 import {
+  planGoalInputSchema,
   type PlanGoalInput,
   type PlanGoalView,
   type PlanOrderInput,
@@ -41,7 +42,7 @@ export type StoredPlanGoal = PlanGoalInput & {
 
 type LifePlanDeps = Parameters<typeof makeSafeToSpend>[0] &
   Parameters<typeof makeNetWorthFromBalancesAndSnapshots>[0] &
-  Pick<Deps, 'ids'>
+  Pick<Deps, 'ids' | 'goals'>
 
 type Belongings = {
   assets: ReadonlyMap<string, StoredAsset>
@@ -83,6 +84,8 @@ function toDomain(goal: StoredPlanGoal, tradeIn: number): PlanGoal {
         financedCents: goal.financed,
         monthlyCostCents: goal.monthlyCost,
         keepsValue: goal.keepsValue,
+        payment: goal.payment,
+        installments: goal.installments,
         notBefore: goal.notBefore,
         by: goal.by,
       }
@@ -113,6 +116,9 @@ const EMPTY_FIELDS = {
   financed: null,
   monthlyCost: null,
   keepsValue: null,
+  payment: null,
+  installments: null,
+  goalId: null,
   notBefore: null,
   by: null,
   yearly: null,
@@ -126,6 +132,7 @@ function fieldsOf(
   tradeIn: number,
   asset: StoredAsset | null,
   worth: NetWorthView['current'],
+  saving: ReadonlySet<string>,
 ) {
   switch (goal.kind) {
     case 'PURCHASE':
@@ -138,6 +145,9 @@ function fieldsOf(
         financed: cents(goal.financed),
         monthlyCost: cents(goal.monthlyCost),
         keepsValue: goal.keepsValue,
+        payment: goal.payment,
+        installments: goal.installments,
+        goalId: saving.has(goal.goalId ?? '') ? goal.goalId : null,
         notBefore: goal.notBefore,
         by: goal.by,
       }
@@ -158,10 +168,18 @@ export function makeLifePlan(deps: LifePlanDeps) {
   const netWorth = makeNetWorthFromBalancesAndSnapshots(deps)
   const safeToSpend = makeSafeToSpend(deps)
 
+  // Goals stored before a field existed take its default.
   const loadGoals = async (tenantId: string) =>
-    (
-      await deps.documents.list<StoredPlanGoal>(tenantId, PLAN_GOALS_COLLECTION)
-    ).sort(byOrder)
+    (await deps.documents.list<StoredPlanGoal>(tenantId, PLAN_GOALS_COLLECTION))
+      .map(goal => ({ ...goal, ...planGoalInputSchema.parse(goal) }))
+      .sort(byOrder)
+
+  async function savingGoals(tenantId: string): Promise<Set<string>> {
+    const goals = await deps.goals.list(tenantId)
+    return new Set(
+      goals.filter(goal => goal.archivedAt === null).map(goal => goal.id),
+    )
+  }
 
   async function settings(tenantId: string): Promise<PlanSettings> {
     const stored = await deps.documents.get<PlanSettings>(
@@ -209,11 +227,13 @@ export function makeLifePlan(deps: LifePlanDeps) {
   }
 
   async function view(tenantId: string): Promise<PlanView> {
-    const [{ chosen, start, worth }, belongings, stored] = await Promise.all([
-      startOf(tenantId),
-      belongingsOf(tenantId),
-      loadGoals(tenantId),
-    ])
+    const [{ chosen, start, worth }, belongings, stored, saving] =
+      await Promise.all([
+        startOf(tenantId),
+        belongingsOf(tenantId),
+        loadGoals(tenantId),
+        savingGoals(tenantId),
+      ])
     const day = today(deps.clock.now())
     const assets = stored.map(goal => liveAsset(goal, belongings))
     const tradeIns = stored.map((goal, index) => {
@@ -247,6 +267,7 @@ export function makeLifePlan(deps: LifePlanDeps) {
           tradeIns[index] as number,
           assets[index] ?? null,
           worth,
+          saving,
         ),
       }
     })
@@ -283,6 +304,13 @@ export function makeLifePlan(deps: LifePlanDeps) {
     )
   }
 
+  async function assertGoal(tenantId: string, input: PlanGoalInput) {
+    if (input.kind !== 'PURCHASE' || input.goalId === null) {
+      return
+    }
+    required(await deps.goals.findById(tenantId, input.goalId), 'Goal')
+  }
+
   async function find(tenantId: string, id: string) {
     return required(
       await deps.documents.get<StoredPlanGoal>(
@@ -296,6 +324,7 @@ export function makeLifePlan(deps: LifePlanDeps) {
 
   async function create(tenantId: string, input: PlanGoalInput) {
     await assertAsset(tenantId, input)
+    await assertGoal(tenantId, input)
     const goals = await loadGoals(tenantId)
     const id = deps.ids.next()
     const goal: StoredPlanGoal = {
@@ -311,6 +340,7 @@ export function makeLifePlan(deps: LifePlanDeps) {
   async function update(tenantId: string, id: string, input: PlanGoalInput) {
     const current = await find(tenantId, id)
     await assertAsset(tenantId, input)
+    await assertGoal(tenantId, input)
     const goal: StoredPlanGoal = {
       ...input,
       id,

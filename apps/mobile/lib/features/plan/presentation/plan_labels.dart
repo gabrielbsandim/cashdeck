@@ -84,6 +84,7 @@ String planProblemMessage(AppLocalizations l10n, PlanGoalProblem problem) =>
     switch (problem) {
       PlanGoalProblem.name => l10n.planNameMissing,
       PlanGoalProblem.amount => l10n.planAmountMissing,
+      PlanGoalProblem.installments => l10n.planInstallmentsInvalid,
       PlanGoalProblem.window => l10n.planWindowInvalid,
     };
 

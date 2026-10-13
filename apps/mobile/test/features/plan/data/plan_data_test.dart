@@ -59,6 +59,8 @@ void main() {
       expect(plan.goals[1].yearly, const Money(1_200_000));
       expect(plan.goals[2].metric, MilestoneMetric.invested);
       expect(plan.goals[2].status, PlanStatus.outOfReach);
+      expect(plan.goals[1].payment, PlanPayment.cash);
+      expect(plan.goals[1].installments, 1);
       expect(plan.timeline.last.netWorth, const Money(84_000_000));
     });
 
@@ -80,6 +82,9 @@ void main() {
         'financed': 0,
         'monthlyCost': 0,
         'keepsValue': true,
+        'payment': 'CASH',
+        'installments': 1,
+        'goalId': null,
         'notBefore': '2027-01',
         'by': null,
       });
@@ -180,7 +185,10 @@ void main() {
         PlanGoalKind.yearly,
         PlanGoalKind.purchase,
         PlanGoalKind.milestone,
+        PlanGoalKind.purchase,
       ]);
+      expect(plan.goals[3].payment, PlanPayment.card);
+      expect(plan.goals[3].goalId, 'goal-laptop');
       expect(plan.goals[0].month, isNull);
       expect(plan.goals[0].cash, const Money(125_000));
       expect(plan.goals[1].month, const YearMonth(2027, 10));
@@ -209,7 +217,7 @@ void main() {
       final reordered = _ok(await repository.reorder([id]));
       expect(reordered.goals.first.id, id);
       final removed = _ok(await repository.remove(id));
-      expect(removed.goals, hasLength(3));
+      expect(removed.goals, hasLength(4));
       expect(
         (await repository.update(id, _car) as Err).failure,
         const NotFoundFailure(),
