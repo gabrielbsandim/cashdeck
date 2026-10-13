@@ -368,6 +368,28 @@ void main() {
     expect(app.location, AppRoutes.goals);
   });
 
+  testWidgets('Início keeps the plan once it scrolls away and back', (
+    tester,
+  ) async {
+    final repository = MockPlanRepository();
+    when(repository.load)
+        .thenAnswer((_) async => Ok(lifePlanFromJson(lifePlanJson())));
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      screenHeight: 800,
+      overrides: [planRepositoryProvider.overrideWithValue(repository)],
+    );
+    final scrollable = find.byType(Scrollable).first;
+    await _reach(tester, find.byKey(HomePlanCard.cardKey));
+    await tester.drag(scrollable, const Offset(0, -20000));
+    await settle(tester);
+    expect(find.byKey(HomePlanCard.cardKey, skipOffstage: false), findsOne);
+    await tester.drag(scrollable, const Offset(0, 20000));
+    await settle(tester);
+    verify(repository.load).called(1);
+  });
+
   testWidgets('the goals screen opens the plan', (tester) async {
     await pumpRoute(tester, AppRoutes.goals);
     await _tap(tester, find.byKey(GoalsScreen.planKey));

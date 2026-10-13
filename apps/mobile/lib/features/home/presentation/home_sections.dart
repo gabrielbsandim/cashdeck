@@ -31,6 +31,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// The scroll every Início variant shares: gutters and section gaps.
+/// A section stays alive once built, since dropping one scrolled away would
+/// drop its data too and fetch it again on the way back.
 class HomeScroll extends StatelessWidget {
   const new({required this.children, super.key});
 
@@ -49,10 +51,31 @@ class HomeScroll extends StatelessWidget {
       children: [
         for (final (index, child) in children.indexed) ...[
           if (index > 0) const SizedBox(height: AppSpacing.sectionGap),
-          child,
+          _KeptAlive(child: child),
         ],
       ],
     );
+  }
+}
+
+class _KeptAlive extends StatefulWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeptAlive> createState() => _KeptAliveState();
+}
+
+class _KeptAliveState extends State<_KeptAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
 
