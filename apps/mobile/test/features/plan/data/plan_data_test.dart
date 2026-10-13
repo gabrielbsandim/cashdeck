@@ -148,10 +148,14 @@ void main() {
         ('PUT', '/api/v1/plan/goals/g1') ||
         ('DELETE', '/api/v1/plan/goals/g1') ||
         ('PUT', '/api/v1/plan/order') ||
+        ('PUT', '/api/v1/plan/arrangement') ||
         (
           'PUT',
           '/api/v1/plan/settings',
         ) => StubResponse(200, {'data': lifePlanJson()}),
+        ('POST', '/api/v1/plan/advice') => StubResponse(200, {
+          'data': planAdviceJson(goalId: 'g1'),
+        }),
         _ => const StubResponse(404),
       },
     );
@@ -167,11 +171,20 @@ void main() {
       ),
       isA<Ok<LifePlan>>(),
     );
+    final advice = _ok(await repository.advise(goalId: 'g1'));
+    expect(advice.goalId, 'g1');
+    expect(await repository.arrange(advice), isA<Ok<LifePlan>>());
     final requests = adapterOf(dio).requests;
     expect(requests[4].data, {
       'ids': ['g1'],
     });
     expect((requests[5].data as Map)['monthlySavings'], isNull);
+    expect(requests[6].data, {'goalId': 'g1'});
+    expect(requests[7].data, {
+      'goals': [
+        {'id': 'g1', 'notBefore': null},
+      ],
+    });
   });
 
   group('fake', () {
@@ -238,6 +251,53 @@ void main() {
       expect(custom.savingsFromBudget, isFalse);
       expect(custom.reserve, const Money(4_000_000));
     });
+
+    test('advises the cheaper purchases first, or one goal last', () async {
+      final repository = fake();
+      final ids = _ok(await repository.load()).goals
+          .map((goal) => goal.id)
+          .toList();
+
+      final whole = _ok(await repository.advise());
+      expect(whole.goalId, isNull);
+      expect(whole.goals.map((goal) => goal.kind), [
+        PlanGoalKind.yearly,
+        PlanGoalKind.milestone,
+        PlanGoalKind.purchase,
+        PlanGoalKind.purchase,
+      ]);
+      expect(whole.goals.every((goal) => goal.reason != null), isTrue);
+
+      final one = _ok(await repository.advise(goalId: ids[1]));
+      expect(one.goals.last.id, ids[1]);
+      expect(one.goals.last.reason, isNotNull);
+      expect(one.goals.first.reason, isNull);
+      expect(
+        (await repository.advise(goalId: 'missing') as Err).failure,
+        const NotFoundFailure(),
+      );
+
+      final waiting = PlanAdvice(
+        summary: '',
+        goals: [
+          for (final goal in one.goals)
+            PlanAdviceGoal(
+              id: goal.id,
+              kind: goal.kind,
+              name: goal.name,
+              notBefore: goal.kind == PlanGoalKind.purchase
+                  ? const YearMonth(2028, 3)
+                  : null,
+              status: goal.status,
+              proposedStatus: goal.proposedStatus,
+            ),
+        ],
+      );
+      final arranged = _ok(await repository.arrange(waiting));
+      expect(arranged.goals.last.id, ids[1]);
+      expect(arranged.goals.last.notBefore, const YearMonth(2028, 3));
+      expect(arranged.goals.first.notBefore, isNull);
+    });
   });
 
   test('the backend picks the repository', () {
@@ -259,6 +319,8 @@ void main() {
       expect(container.read(savePlanGoalProvider), isNotNull);
       expect(container.read(removePlanGoalProvider), isNotNull);
       expect(container.read(reorderPlanProvider), isNotNull);
+      expect(container.read(advisePlanProvider), isNotNull);
+      expect(container.read(applyPlanAdviceProvider), isNotNull);
       expect(container.read(savePlanSettingsProvider), isNotNull);
     }
   });

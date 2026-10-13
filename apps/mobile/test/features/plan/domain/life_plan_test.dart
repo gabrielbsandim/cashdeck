@@ -186,5 +186,39 @@ void main() {
 
     expect([for (final goal in moved.goals) goal.id], ['g2', 'g3', 'g1']);
     expect(moved.moving(2, 0), plan);
+    expect(moved.datesDiffer(plan), isFalse);
+  });
+
+  test('a goal in another month or status makes the dates differ', () {
+    LifePlan planWith(String? month, String status) => lifePlanFromJson(
+      lifePlanJson(
+        goals: [planGoalJson(month: month, status: status)],
+      ),
+    );
+    final plan = planWith('2027-05', 'PLANNED');
+
+    expect(planWith('2027-06', 'PLANNED').datesDiffer(plan), isTrue);
+    expect(planWith('2027-05', 'LATE').datesDiffer(plan), isTrue);
+    expect(planWith('2027-05', 'PLANNED').datesDiffer(plan), isFalse);
+  });
+
+  test('an advice tells which goals move and a draft can wait', () {
+    final advice = planAdviceFromJson(
+      planAdviceJson(
+        goals: [
+          planAdviceGoalJson(notBefore: '2027-08'),
+          planAdviceGoalJson(id: 'g2', proposedMonth: '2027-05', reason: null),
+        ],
+      ),
+    );
+    expect(advice.goals.map((goal) => goal.moves), [true, false]);
+    expect(advice.goals.first.notBefore, const YearMonth(2027, 8));
+    expect(advice.props, [null, 'O carro espera o marco.', advice.goals]);
+    expect(advice.goals.last.props.first, 'g2');
+
+    const draft = PlanGoalDraft(kind: PlanGoalKind.purchase, name: 'Carro');
+    final waiting = draft.waitingUntil(const YearMonth(2028, 1));
+    expect(waiting.notBefore, const YearMonth(2028, 1));
+    expect(waiting.waitingUntil(null), draft);
   });
 }

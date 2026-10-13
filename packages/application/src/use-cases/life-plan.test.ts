@@ -233,6 +233,58 @@ describe('life plan', () => {
     })
   })
 
+  it('arranges the order and the waits, or previews them unwritten', async () => {
+    const { plan } = await seed()
+    await plan.create(TENANT, trips)
+    await plan.create(
+      TENANT,
+      goal({ kind: 'PURCHASE', name: 'Car', price: 9_000_000, by: '2028-01' }),
+    )
+    const before = await plan.create(
+      TENANT,
+      goal({
+        kind: 'PURCHASE',
+        name: 'Phone',
+        price: 500_000,
+        notBefore: '2027-03',
+      }),
+    )
+    const [tripId, carId, phoneId] = before.goals.map(item => item.id) as [
+      string,
+      string,
+      string,
+    ]
+    const arrangement = {
+      goals: [
+        { id: phoneId, notBefore: '2027-06' },
+        { id: carId, notBefore: '2029-01' },
+        { id: tripId, notBefore: '2027-01' },
+      ],
+    }
+    const waits = (view: Awaited<ReturnType<typeof plan.view>>) =>
+      view.goals.map(item => [item.name, item.notBefore])
+
+    expect(waits(await plan.preview(TENANT, arrangement))).toEqual([
+      ['Phone', '2027-06'],
+      ['Car', '2028-01'],
+      ['Trips', null],
+    ])
+    expect(waits(await plan.view(TENANT))).toEqual([
+      ['Trips', null],
+      ['Car', null],
+      ['Phone', '2027-03'],
+    ])
+
+    await plan.arrange(TENANT, arrangement)
+    const reordered = await plan.reorder(TENANT, { ids: [tripId] })
+    expect(waits(reordered)).toEqual([
+      ['Trips', null],
+      ['Phone', '2027-06'],
+      ['Car', '2028-01'],
+    ])
+    expect(waits(await plan.view(TENANT))).toEqual(waits(reordered))
+  })
+
   it('links a purchase to the caixinha saving for it', async () => {
     const { deps, plan } = await seed()
     const caixinhas = makeGoals(deps)

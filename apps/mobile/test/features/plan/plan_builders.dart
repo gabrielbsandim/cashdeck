@@ -87,3 +87,32 @@ const testPlanGoal = PlanGoal(
   goalId: 'goal-car',
   by: YearMonth(2028, 1),
 );
+
+Map<String, Object?> planAdviceGoalJson({
+  String id = 'g1',
+  String kind = 'PURCHASE',
+  String name = 'Carro',
+  String? notBefore,
+  String? reason = 'Cabe melhor depois.',
+  String? month = '2027-05',
+  String? proposedMonth = '2027-09',
+}) => {
+  'id': id,
+  'kind': kind,
+  'name': name,
+  'notBefore': notBefore,
+  'reason': reason,
+  'month': month,
+  'status': month == null ? 'OUT_OF_REACH' : 'PLANNED',
+  'proposedMonth': proposedMonth,
+  'proposedStatus': proposedMonth == null ? 'OUT_OF_REACH' : 'PLANNED',
+};
+
+Map<String, Object?> planAdviceJson({
+  String? goalId,
+  List<Map<String, Object?>>? goals,
+}) => {
+  'goalId': goalId,
+  'summary': 'O carro espera o marco.',
+  'goals': goals ?? [planAdviceGoalJson()],
+};

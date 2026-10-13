@@ -40,6 +40,20 @@ final class ApiPlanRepository implements PlanRepository {
       _read(_dio.put<Object?>('$path/order', data: {'ids': ids}));
 
   @override
+  Future<Result<PlanAdvice>> advise({String? goalId}) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      '$path/advice',
+      data: {'goalId': goalId},
+    );
+    return planAdviceFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
+  Future<Result<LifePlan>> arrange(PlanAdvice advice) => _read(
+    _dio.put<Object?>('$path/arrangement', data: planArrangementToJson(advice)),
+  );
+
+  @override
   Future<Result<LifePlan>> saveSettings(PlanSettings settings) => _read(
     _dio.put<Object?>('$path/settings', data: planSettingsToJson(settings)),
   );

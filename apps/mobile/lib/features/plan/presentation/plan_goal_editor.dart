@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/money/money.dart';
@@ -18,6 +20,7 @@ import 'package:cashdeck/features/assets/presentation/assets_controller.dart';
 import 'package:cashdeck/features/goals/domain/goal.dart';
 import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
+import 'package:cashdeck/features/plan/presentation/plan_advice_sheet.dart';
 import 'package:cashdeck/features/plan/presentation/plan_controller.dart';
 import 'package:cashdeck/features/plan/presentation/plan_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -25,16 +28,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Adds a goal to the plan, or edits [goal].
+/// What closing the editor tells: a message to show, and a goal to ask the
+/// model about.
+typedef PlanEditorOutcome = ({String? message, String? advise});
+
+/// Adds a goal to the plan, or edits [goal]. A new goal, and one sent for a
+/// new look, open the model's advice on where it fits.
 Future<void> showPlanGoalEditor(BuildContext context, {PlanGoal? goal}) async {
   final l10n = AppLocalizations.of(context);
-  final message = await showCdBottomSheet<String>(
+  final outcome = await showCdBottomSheet<PlanEditorOutcome>(
     context,
     title: goal == null ? l10n.planNew : l10n.planEdit,
     builder: (_) => PlanGoalEditor(goal: goal),
   );
-  if (message == null || !context.mounted) return;
-  await showCdToast(context, icon: Symbols.task_alt_rounded, message: message);
+  if (outcome == null || !context.mounted) return;
+  final message = outcome.message;
+  if (message != null) {
+    unawaited(
+      showCdToast(context, icon: Symbols.task_alt_rounded, message: message),
+    );
+  }
+  final advise = outcome.advise;
+  if (advise == null) return;
+  await showPlanAdvice(context, goalId: advise);
 }
 
 class PlanGoalEditor extends ConsumerStatefulWidget {
@@ -55,6 +71,8 @@ class PlanGoalEditor extends ConsumerStatefulWidget {
   static const keepsValueKey = Key('plan-keeps-value');
   static const notBeforeKey = Key('plan-not-before');
   static const byKey = Key('plan-by');
+  static const advancedKey = Key('plan-advanced');
+  static const adviseKey = Key('plan-advise');
   static const yearlyKey = Key('plan-yearly');
   static const metricKey = Key('plan-metric');
   static const targetKey = Key('plan-target');
@@ -75,6 +93,7 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     name: '',
   );
   var _saving = false;
+  var _advanced = false;
   String? _error;
 
   @override
@@ -84,6 +103,7 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     if (goal == null) return;
     _draft = PlanGoalDraft.of(goal);
     _name.text = goal.name;
+    _advanced = _usesAdvanced(_draft);
   }
 
   @override
@@ -153,12 +173,25 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     if (problem != null) return;
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
+    final known = {
+      for (final goal
+          in ref.read(planControllerProvider).value?.goals ??
+              const <PlanGoal>[])
+        goal.id,
+    };
     final failure = await ref
         .read(planControllerProvider.notifier)
         .save(draft, id: widget.goal?.id);
     if (!mounted) return;
     if (failure == null) {
-      navigator.pop(l10n.planSaved);
+      final goals =
+          ref.read(planControllerProvider).value?.goals ?? const <PlanGoal>[];
+      final added = goals.where((goal) => !known.contains(goal.id));
+      final ordered = draft.kind != PlanGoalKind.yearly && widget.goal == null;
+      navigator.pop((
+        message: l10n.planSaved,
+        advise: ordered ? added.firstOrNull?.id : null,
+      ));
       return;
     }
     setState(() {
@@ -174,7 +207,7 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     final failure = await ref.read(planControllerProvider.notifier).remove(id);
     if (!mounted) return;
     if (failure == null) {
-      navigator.pop(l10n.planDeleted);
+      navigator.pop((message: l10n.planDeleted, advise: null));
       return;
     }
     setState(() {
@@ -264,58 +297,6 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
         ),
       ],
       ..._caixinhaField(l10n),
-      if (assets.isNotEmpty) ...[
-        const SizedBox(height: AppSpacing.md),
-        DropdownButtonFormField<String?>(
-          key: PlanGoalEditor.assetKey,
-          isExpanded: true,
-          initialValue: assets.any((asset) => asset.id == assetId)
-              ? assetId
-              : null,
-          decoration: InputDecoration(
-            labelText: l10n.planTradeInAsset,
-            helperText: l10n.planTradeInAssetHelp,
-            helperMaxLines: 2,
-          ),
-          items: [
-            DropdownMenuItem(child: Text(l10n.planTradeInNone)),
-            for (final asset in assets)
-              DropdownMenuItem(
-                value: asset.id,
-                child: Text(asset.name, overflow: TextOverflow.ellipsis),
-              ),
-          ],
-          onChanged: (value) =>
-              _edit((draft) => _with(draft, tradeInAssetId: () => value)),
-        ),
-      ],
-      if (assetId == null)
-        _money(
-          PlanGoalEditor.tradeInKey,
-          l10n.planTradeIn,
-          _draft.tradeIn,
-          (value) => _edit((draft) => _with(draft, tradeIn: value)),
-        ),
-      _money(
-        PlanGoalEditor.financedKey,
-        l10n.planFinanced,
-        _draft.financed,
-        (value) => _edit((draft) => _with(draft, financed: value)),
-      ),
-      _money(
-        PlanGoalEditor.monthlyCostKey,
-        l10n.planMonthlyCost,
-        _draft.monthlyCost,
-        (value) => _edit((draft) => _with(draft, monthlyCost: value)),
-      ),
-      SwitchListTile(
-        key: PlanGoalEditor.keepsValueKey,
-        contentPadding: EdgeInsets.zero,
-        title: Text(l10n.planKeepsValue),
-        subtitle: Text(l10n.planKeepsValueHelp),
-        value: _draft.keepsValue,
-        onChanged: (value) => _edit((draft) => _with(draft, keepsValue: value)),
-      ),
       _monthRow(
         key: PlanGoalEditor.notBeforeKey,
         field: 'not-before',
@@ -327,8 +308,95 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
         onClear: () => _edit((draft) => _with(draft, notBefore: () => null)),
       ),
       _byRow(l10n, by),
+      const SizedBox(height: AppSpacing.sm),
+      _advancedSection(l10n, [
+        if (assets.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          DropdownButtonFormField<String?>(
+            key: PlanGoalEditor.assetKey,
+            isExpanded: true,
+            initialValue: assets.any((asset) => asset.id == assetId)
+                ? assetId
+                : null,
+            decoration: InputDecoration(
+              labelText: l10n.planTradeInAsset,
+              helperText: l10n.planTradeInAssetHelp,
+              helperMaxLines: 2,
+            ),
+            items: [
+              DropdownMenuItem(child: Text(l10n.planTradeInNone)),
+              for (final asset in assets)
+                DropdownMenuItem(
+                  value: asset.id,
+                  child: Text(asset.name, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (value) =>
+                _edit((draft) => _with(draft, tradeInAssetId: () => value)),
+          ),
+        ],
+        if (assetId == null)
+          _money(
+            PlanGoalEditor.tradeInKey,
+            l10n.planTradeIn,
+            _draft.tradeIn,
+            (value) => _edit((draft) => _with(draft, tradeIn: value)),
+          ),
+        _money(
+          PlanGoalEditor.financedKey,
+          l10n.planFinanced,
+          _draft.financed,
+          (value) => _edit((draft) => _with(draft, financed: value)),
+        ),
+        _money(
+          PlanGoalEditor.monthlyCostKey,
+          l10n.planMonthlyCost,
+          _draft.monthlyCost,
+          (value) => _edit((draft) => _with(draft, monthlyCost: value)),
+        ),
+        SwitchListTile(
+          key: PlanGoalEditor.keepsValueKey,
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.planKeepsValue),
+          subtitle: Text(l10n.planKeepsValueHelp),
+          value: _draft.keepsValue,
+          onChanged: (value) =>
+              _edit((draft) => _with(draft, keepsValue: value)),
+        ),
+      ]),
     ];
   }
+
+  /// Fields most goals leave at their default, folded until asked for.
+  Widget _advancedSection(AppLocalizations l10n, List<Widget> fields) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      CdListRow(
+        key: PlanGoalEditor.advancedKey,
+        title: l10n.planAdvanced,
+        subtitle: l10n.planAdvancedHelp,
+        icon: Symbols.tune_rounded,
+        padding: EdgeInsets.zero,
+        onTap: () => setState(() => _advanced = !_advanced),
+        trailing: AnimatedRotation(
+          turns: _advanced ? 0.5 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: const Icon(Symbols.expand_more_rounded),
+        ),
+      ),
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: _advanced
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: fields,
+              )
+            : const SizedBox(width: double.infinity),
+      ),
+    ],
+  );
 
   List<Widget> _caixinhaField(AppLocalizations l10n) {
     final caixinhas =
@@ -447,6 +515,20 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
           loading: _saving,
           onPressed: _save,
         ),
+        if (goal != null && goal.kind != PlanGoalKind.yearly) ...[
+          const SizedBox(height: AppSpacing.sm),
+          CdButton.tonal(
+            key: PlanGoalEditor.adviseKey,
+            expand: true,
+            icon: Symbols.auto_awesome_rounded,
+            label: l10n.planAdviceAction,
+            onPressed: _saving
+                ? null
+                : () =>
+                      Navigator.of(context)
+                          .pop((message: null, advise: goal.id)),
+          ),
+        ],
         if (goal != null) ...[
           const SizedBox(height: AppSpacing.sm),
           CdButton.danger(
@@ -501,3 +583,10 @@ PlanGoalDraft _with(
   metric: metric ?? draft.metric,
   target: target ?? draft.target,
 );
+
+bool _usesAdvanced(PlanGoalDraft draft) =>
+    draft.tradeInAssetId != null ||
+    draft.tradeIn.cents != 0 ||
+    draft.financed.cents != 0 ||
+    draft.monthlyCost.cents != 0 ||
+    draft.keepsValue;

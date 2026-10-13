@@ -5,6 +5,8 @@ import { GET as viewPlan } from '@/app/api/v1/plan/route'
 import { PUT as saveSettings } from '@/app/api/v1/plan/settings/route'
 import { PUT as reorder } from '@/app/api/v1/plan/order/route'
 import { POST as createGoal } from '@/app/api/v1/plan/goals/route'
+import { POST as advise } from '@/app/api/v1/plan/advice/route'
+import { PUT as arrange } from '@/app/api/v1/plan/arrangement/route'
 import {
   DELETE as removeGoal,
   PUT as updateGoal,
@@ -61,6 +63,25 @@ describe('life plan routes', () => {
 
     const ordered = await call(reorder, 'PUT', { body: { ids: [phoneId] } })
     expect(names(ordered.body)).toEqual(['Phone', 'Trips'])
+
+    const waiting = await call(arrange, 'PUT', {
+      body: {
+        goals: [
+          { id: tripId, notBefore: null },
+          { id: phoneId, notBefore: '2027-05' },
+        ],
+      },
+    })
+    expect(
+      waiting.body.goals.map(
+        (goal: { notBefore: string | null }) => goal.notBefore,
+      ),
+    ).toEqual([null, '2027-05'])
+    const unknown = await call(advise, 'POST', { body: { goalId: 'missing' } })
+    expect(unknown.status).toBe(404)
+    const noModel = await call(advise, 'POST', { body: {} })
+    expect(noModel.status).toBe(502)
+    await call(reorder, 'PUT', { body: { ids: [phoneId] } })
 
     const edited = await call(updateGoal, 'PUT', {
       params: { id: tripId },

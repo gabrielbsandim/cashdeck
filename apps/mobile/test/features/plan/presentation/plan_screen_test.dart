@@ -14,6 +14,7 @@ import 'package:cashdeck/features/plan/data/plan_dtos.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
 import 'package:cashdeck/features/plan/plan_providers.dart';
 import 'package:cashdeck/features/plan/presentation/home_plan_card.dart';
+import 'package:cashdeck/features/plan/presentation/plan_advice_sheet.dart';
 import 'package:cashdeck/features/plan/presentation/plan_goal_editor.dart';
 import 'package:cashdeck/features/plan/presentation/plan_labels.dart';
 import 'package:cashdeck/features/plan/presentation/plan_screen.dart';
@@ -93,6 +94,8 @@ void main() {
     expect(find.text(l10n.planAmountMissing), findsOneWidget);
 
     await _type(tester, PlanGoalEditor.priceKey, '600000');
+    expect(find.byKey(PlanGoalEditor.tradeInKey), findsNothing);
+    await _tap(tester, find.byKey(PlanGoalEditor.advancedKey));
     await _type(tester, PlanGoalEditor.tradeInKey, '50000');
     await _type(tester, PlanGoalEditor.financedKey, '0');
     await _type(tester, PlanGoalEditor.monthlyCostKey, '0');
@@ -111,6 +114,9 @@ void main() {
 
     await _tap(tester, find.byKey(PlanGoalEditor.saveKey));
     expect(find.text(l10n.planSaved), findsOneWidget);
+    expect(find.text('Exemplo sem conexão.'), findsOneWidget);
+    await _tap(tester, find.byKey(PlanAdviceSheet.applyKey));
+    expect(find.text(l10n.planAdviceApplied), findsOneWidget);
     expect(find.text('Celular'), findsOneWidget);
   });
 
@@ -130,6 +136,7 @@ void main() {
     await _type(tester, PlanGoalEditor.targetKey, '100000000');
     await _pickMonth(tester, PlanGoalEditor.byKey);
     await _tap(tester, find.byKey(PlanGoalEditor.saveKey));
+    await _tap(tester, find.byKey(PlanAdviceSheet.keepKey));
     expect(find.text('Reserva grande'), findsOneWidget);
 
     await _tap(tester, find.byKey(PlanScreen.addKey));
@@ -158,6 +165,17 @@ void main() {
         )
         .toList();
     expect(names, ['Patrimônio de 1 milhão', 'Viagens do ano']);
+  });
+
+  testWidgets('the advanced fields open on a purchase that uses them', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.plan);
+
+    await _tap(tester, _tile('Trocar de carro'));
+    expect(find.byKey(PlanGoalEditor.tradeInKey), findsOneWidget);
+    await _tap(tester, find.byKey(PlanGoalEditor.advancedKey));
+    expect(find.byKey(PlanGoalEditor.tradeInKey), findsNothing);
   });
 
   testWidgets('changes the assumptions', (tester) async {
@@ -317,6 +335,7 @@ void main() {
     await _tap(tester, find.byKey(PlanGoalEditor.caixinhaKey));
     await _tap(tester, find.text('Viagem de férias').last);
     await _tap(tester, find.byKey(PlanGoalEditor.saveKey));
+    await _tap(tester, find.byKey(PlanAdviceSheet.keepKey));
 
     expect(find.text(l10n.planSaved), findsOneWidget);
     await _reach(tester, find.text(l10n.planCardLine(12)));

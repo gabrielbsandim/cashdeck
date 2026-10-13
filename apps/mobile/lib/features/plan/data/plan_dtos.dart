@@ -146,3 +146,29 @@ JsonMap planSettingsToJson(PlanSettings settings) => {
   'keepInvested': settings.keepInvested,
   'monthlySavings': settings.monthlySavings?.cents,
 };
+
+PlanAdvice planAdviceFromJson(JsonMap json) => PlanAdvice(
+  goalId: readOptionalString(json, 'goalId'),
+  summary: readString(json, 'summary'),
+  goals: [
+    for (final goal in readMapList(json, 'goals'))
+      PlanAdviceGoal(
+        id: readString(goal, 'id'),
+        kind: readEnum(goal, 'kind', planGoalKinds),
+        name: readString(goal, 'name'),
+        notBefore: _optionalMonth(goal, 'notBefore'),
+        reason: readOptionalString(goal, 'reason'),
+        month: _optionalMonth(goal, 'month'),
+        status: readEnum(goal, 'status', planStatuses),
+        proposedMonth: _optionalMonth(goal, 'proposedMonth'),
+        proposedStatus: readEnum(goal, 'proposedStatus', planStatuses),
+      ),
+  ],
+);
+
+JsonMap planArrangementToJson(PlanAdvice advice) => {
+  'goals': [
+    for (final goal in advice.goals)
+      {'id': goal.id, 'notBefore': goal.notBefore?.iso},
+  ],
+};

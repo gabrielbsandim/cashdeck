@@ -34,6 +34,10 @@ void main() {
     when(() => repository.remove(any())).thenAnswer((_) async => plan);
     when(() => repository.reorder(any())).thenAnswer((_) async => plan);
     when(() => repository.saveSettings(any())).thenAnswer((_) async => plan);
+    final advice = Ok(planAdviceFromJson(planAdviceJson()));
+    when(() => repository.advise(goalId: any(named: 'goalId')))
+        .thenAnswer((_) async => advice);
+    when(() => repository.arrange(advice.value)).thenAnswer((_) async => plan);
 
     expect(await LoadPlan(repository).call(), plan);
     expect(await SavePlanGoal(repository).call(_phone), plan);
@@ -41,7 +45,10 @@ void main() {
     expect(await RemovePlanGoal(repository).call('g1'), plan);
     expect(await ReorderPlan(repository).call(['g1']), plan);
     expect(await SavePlanSettings(repository).call(_settings), plan);
+    expect(await AdvisePlan(repository).call(goalId: 'g1'), advice);
+    expect(await ApplyPlanAdvice(repository).call(advice.value), plan);
     verify(() => repository.update('g1', _phone)).called(1);
+    verify(() => repository.advise(goalId: 'g1')).called(1);
   });
 
   test('a draft or settings with a problem never leave the app', () async {

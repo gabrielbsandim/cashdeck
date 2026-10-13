@@ -4055,7 +4055,34 @@
       }
     }
   },
+  "planAdviceAction": "Reanalisar com IA",
+  "planAdviceTitle": "Sugestão da IA",
+  "planAdviceLoading": "Analisando o plano",
+  "planAdviceRetry": "Tentar de novo",
+  "planAdviceApply": "Aplicar sugestão",
+  "planAdviceKeep": "Manter como está",
+  "planAdviceApplied": "Sugestão aplicada",
+  "planAdviceMoves": "{from} → {to}",
+  "@planAdviceMoves": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "planAdviceStays": "Sem mudança: {month}",
+  "@planAdviceStays": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "planReordered": "Prioridade atualizada",
+  "planReorderedSameDates": "Prioridade atualizada, nenhuma data mudou: a ordem só decide entre compras que disputam o mesmo dinheiro",
   "planRecalculating": "Refazendo o plano",
   "planMilestonePercent": "{percent}% alcançado",
   "@planMilestonePercent": {
@@ -4074,6 +4101,8 @@
   "planKindMilestone": "Marco",
   "planName": "Nome",
   "planPrice": "Quanto custa",
+  "planAdvanced": "Avançado",
+  "planAdvancedHelp": "Vender um bem para pagar, financiamento, gasto depois e patrimônio",
   "planTradeInAsset": "Vende um bem para pagar",
   "planTradeInNone": "Nenhum",
   "planTradeInAssetHelp": "O valor do bem, menos o que ainda deve dele, entra no pagamento.",

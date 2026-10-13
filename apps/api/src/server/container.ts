@@ -60,6 +60,7 @@ import {
   makeGetCardTimeline,
   makeGoals,
   makeLifePlan,
+  makePlanAdvice,
   makeListInvestments,
   makeInvestmentPerformance,
   makeNetWorthFromBalancesAndSnapshots,
@@ -462,6 +463,7 @@ export function buildContainer(
     runDailyAlerts: makeRunDailyAlerts(deps),
     goals: makeGoals(deps),
     lifePlan: makeLifePlan(deps),
+    planAdvice: makePlanAdvice(deps),
     budgets: makeBudgets(deps),
   }
 }

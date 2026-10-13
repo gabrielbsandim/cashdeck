@@ -26,6 +26,7 @@ import 'package:cashdeck/features/goals/presentation/goal_editor.dart';
 import 'package:cashdeck/features/goals/presentation/goal_ring.dart';
 import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
+import 'package:cashdeck/features/plan/presentation/plan_advice_sheet.dart';
 import 'package:cashdeck/features/plan/presentation/plan_controller.dart';
 import 'package:cashdeck/features/plan/presentation/plan_goal_editor.dart';
 import 'package:cashdeck/features/plan/presentation/plan_labels.dart';
@@ -44,6 +45,7 @@ class PlanScreen extends ConsumerWidget {
 
   static const addKey = Key('plan-add');
   static const settingsKey = Key('plan-settings');
+  static const adviceKey = Key('plan-advice');
   static const summaryKey = Key('plan-summary');
   static const savingsKey = Key('plan-savings');
   static const recalculatingKey = Key('plan-recalculating');
@@ -66,6 +68,13 @@ class PlanScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.planTitle),
         actions: [
+          if (value != null && value.goals.isNotEmpty)
+            IconButton(
+              key: adviceKey,
+              tooltip: l10n.planAdviceAction,
+              icon: const Icon(Symbols.auto_awesome_rounded),
+              onPressed: () => showPlanAdvice(context),
+            ),
           if (value != null)
             IconButton(
               key: settingsKey,
@@ -110,6 +119,7 @@ class _PlanBodyState extends ConsumerState<_PlanBody> {
     final l10n = AppLocalizations.of(context);
     CdHaptics.confirm();
     setState(() => _saving++);
+    final before = ref.read(planControllerProvider).requireValue;
     final failure = await ref
         .read(planControllerProvider.notifier)
         .move(from, to);
@@ -125,10 +135,13 @@ class _PlanBodyState extends ConsumerState<_PlanBody> {
       return;
     }
     if (!undoable) return;
+    final after = ref.read(planControllerProvider).requireValue;
     await showCdToast(
       context,
       icon: Symbols.swap_vert_rounded,
-      message: l10n.planReordered,
+      message: after.datesDiffer(before)
+          ? l10n.planReordered
+          : l10n.planReorderedSameDates,
       actionLabel: l10n.undoButton,
       onAction: () => unawaited(_move(to, from, undoable: false)),
     );

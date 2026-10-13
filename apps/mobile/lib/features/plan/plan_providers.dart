@@ -29,6 +29,14 @@ final reorderPlanProvider = Provider<ReorderPlan>(
   (ref) => ReorderPlan(ref.watch(planRepositoryProvider)),
 );
 
+final advisePlanProvider = Provider<AdvisePlan>(
+  (ref) => AdvisePlan(ref.watch(planRepositoryProvider)),
+);
+
+final applyPlanAdviceProvider = Provider<ApplyPlanAdvice>(
+  (ref) => ApplyPlanAdvice(ref.watch(planRepositoryProvider)),
+);
+
 final savePlanSettingsProvider = Provider<SavePlanSettings>(
   (ref) => SavePlanSettings(ref.watch(planRepositoryProvider)),
 );

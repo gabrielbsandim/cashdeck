@@ -184,6 +184,66 @@ final class FakePlanRepository implements PlanRepository {
     return _answer();
   }
 
+  /// Offline the advice puts the cheaper purchases first, or the goal
+  /// [goalId] last, so the screens have a change to show.
+  @override
+  Future<Result<PlanAdvice>> advise({String? goalId}) async {
+    await Future<void>.delayed(latency);
+    final before = _plan();
+    final target = goalId == null ? null : _indexOf(goalId);
+    if (target == -1) return const Err(NotFoundFailure());
+    final ordered = [..._goals];
+    if (target == null) {
+      int priceOf((String, PlanGoalDraft) goal) =>
+          goal.$2.kind == PlanGoalKind.purchase ? goal.$2.price.cents : 0;
+      ordered.sort((a, b) => priceOf(a).compareTo(priceOf(b)));
+    } else {
+      ordered.add(ordered.removeAt(target));
+    }
+    final now = {for (final goal in before.goals) goal.id: goal};
+    final asOf = before.asOf;
+    return Ok(
+      PlanAdvice(
+        goalId: goalId,
+        summary: 'Sugestão de exemplo, feita sem conexão.',
+        goals: [
+          for (final (index, (id, draft)) in ordered.indexed)
+            PlanAdviceGoal(
+              id: id,
+              kind: draft.kind,
+              name: draft.name,
+              notBefore: draft.notBefore,
+              reason: goalId == null || goalId == id
+                  ? 'Exemplo sem conexão.'
+                  : null,
+              month: now[id]!.month,
+              status: now[id]!.status,
+              proposedMonth: _goal(id, draft, index + 1, asOf).month,
+              proposedStatus: PlanStatus.planned,
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Future<Result<LifePlan>> arrange(PlanAdvice advice) {
+    final drafts = {for (final (id, draft) in _goals) id: draft};
+    _goals
+      ..clear()
+      ..addAll([
+        for (final goal in advice.goals)
+          if (drafts[goal.id] case final draft?)
+            (
+              goal.id,
+              draft.kind == PlanGoalKind.purchase
+                  ? draft.waitingUntil(goal.notBefore)
+                  : draft,
+            ),
+      ]);
+    return _answer();
+  }
+
   @override
   Future<Result<LifePlan>> saveSettings(PlanSettings settings) {
     _settings = settings;

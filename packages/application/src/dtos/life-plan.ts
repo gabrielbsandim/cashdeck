@@ -148,3 +148,46 @@ export const planViewSchema = z.object({
 })
 
 export type PlanView = z.infer<typeof planViewSchema>
+
+export const planAdviceInputSchema = z.object({
+  // The goal to place among the others; the whole plan when null.
+  goalId: z.string().min(1).nullable().default(null),
+})
+
+export type PlanAdviceInput = z.infer<typeof planAdviceInputSchema>
+
+export const planAdviceGoalSchema = z.object({
+  id: z.string(),
+  kind: z.enum(PLAN_GOAL_KINDS),
+  name: z.string(),
+  // The wait the advice sets; always null for a goal that is not a purchase.
+  notBefore: isoMonth.nullable(),
+  reason: z.string().nullable(),
+  month: isoMonth.nullable(),
+  status: z.enum(PLAN_STATUSES),
+  // Where the goal lands once the advice is applied.
+  proposedMonth: isoMonth.nullable(),
+  proposedStatus: z.enum(PLAN_STATUSES),
+})
+
+// The goals come in the order the advice proposes.
+export const planAdviceSchema = z.object({
+  goalId: z.string().nullable(),
+  summary: z.string(),
+  goals: z.array(planAdviceGoalSchema),
+})
+
+export type PlanAdvice = z.infer<typeof planAdviceSchema>
+
+export const planArrangementSchema = z.object({
+  goals: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        notBefore: isoMonth.nullable(),
+      }),
+    )
+    .max(100),
+})
+
+export type PlanArrangement = z.infer<typeof planArrangementSchema>

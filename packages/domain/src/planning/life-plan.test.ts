@@ -102,7 +102,6 @@ describe('lifePlan', () => {
   it('places each purchase after the ones before it and keeps the reserve', () => {
     const plan = byId(
       lifePlan(start, [
-        milestone({}),
         purchase({}),
         purchase({
           id: 'car',
@@ -110,6 +109,7 @@ describe('lifePlan', () => {
           tradeInCents: 40_000,
           keepsValue: true,
         }),
+        milestone({}),
       ]),
     )
     expect(plan.p).toEqual({
@@ -127,6 +127,20 @@ describe('lifePlan', () => {
       delays: [],
     })
     expect(plan.m?.month).toBe('2028-01')
+  })
+
+  it('holds the purchases below a milestone until it is reached', () => {
+    const plan = byId(
+      lifePlan(start, [
+        milestone({ id: 'far', targetCents: 10 ** 9 }),
+        milestone({}),
+        purchase({}),
+      ]),
+    )
+    expect(plan.m?.month).toBe('2027-08')
+    expect(plan.p).toMatchObject({ status: 'PLANNED', month: '2027-09' })
+    expect(plan.p?.delays).toEqual([])
+    expect(plan.far?.status).toBe('OUT_OF_REACH')
   })
 
   it('waits for the earliest month and counts the monthly cost after it', () => {
@@ -174,9 +188,9 @@ describe('lifePlan', () => {
       delays: [{ milestoneId: 'm', months: 3 }],
     })
     const stuck = lifePlan(start, [
-      milestone({}),
       trips,
       purchase({ id: 'stop', priceCents: 0, monthlyCostCents: 8_000 }),
+      milestone({}),
     ])
     expect(byId(stuck).stop).toMatchObject({
       status: 'NOW',

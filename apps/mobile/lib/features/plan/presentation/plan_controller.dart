@@ -50,6 +50,9 @@ class PlanController extends AsyncNotifier<LifePlan> {
     return failure;
   }
 
+  Future<AppFailure?> applyAdvice(PlanAdvice advice) =>
+      _apply(ref.read(applyPlanAdviceProvider).call(advice));
+
   Future<AppFailure?> saveSettings(PlanSettings settings) =>
       _apply(ref.read(savePlanSettingsProvider).call(settings));
 }

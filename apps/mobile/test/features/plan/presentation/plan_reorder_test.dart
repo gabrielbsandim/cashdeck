@@ -114,7 +114,15 @@ void main() {
         'g3',
       ]);
 
-      answer.complete(Ok(_plan([_trips, _car, _million])));
+      answer.complete(
+        Ok(
+          _plan([
+            _trips,
+            {..._car, 'month': '2027-09'},
+            _million,
+          ]),
+        ),
+      );
       await settle(tester);
       expect(_order(tester), ['g2', 'g1', 'g3']);
       expect(find.byKey(PlanScreen.recalculatingKey), findsNothing);
@@ -150,6 +158,19 @@ void main() {
 
     expect(_order(tester), ['g2', 'g1', 'g3']);
     verify(() => repository.reorder(['g2', 'g1', 'g3'])).called(1);
+  });
+
+  testWidgets('an order that moves no date says why', (tester) async {
+    await _open(
+      tester,
+      reorder: () async => Ok(_plan([_trips, _car, _million])),
+    );
+
+    await _dragDown(tester, 'g1', find.byKey(PlanScreen.handleKey('g1')));
+    await settle(tester);
+
+    expect(find.text(l10n.planReorderedSameDates), findsOneWidget);
+    expect(find.text(l10n.planReordered), findsNothing);
   });
 
   testWidgets('a refused order puts the goal back and says why', (

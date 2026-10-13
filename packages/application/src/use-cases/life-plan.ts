@@ -10,6 +10,7 @@ import { money } from '@/dtos/common'
 import {
   planGoalInputSchema,
   type PlanGoalInput,
+  type PlanArrangement,
   type PlanGoalView,
   type PlanOrderInput,
   type PlanSettings,
@@ -50,6 +51,22 @@ type Belongings = {
 }
 
 const byOrder = (a: StoredPlanGoal, b: StoredPlanGoal) => a.order - b.order
+
+const notBeforeOf = (goal: StoredPlanGoal) =>
+  goal.kind === 'PURCHASE' ? goal.notBefore : null
+
+// Only a purchase waits, and never past its own deadline.
+function waiting(
+  goal: StoredPlanGoal,
+  waits: ReadonlyMap<string, string | null>,
+): StoredPlanGoal {
+  const wait = waits.get(goal.id)
+  if (goal.kind !== 'PURCHASE' || wait === undefined) {
+    return goal
+  }
+  const late = wait !== null && goal.by !== null && wait > goal.by
+  return { ...goal, notBefore: late ? goal.by : wait }
+}
 
 const cents = (value: number) => money(Money.of(Math.round(value)))
 
@@ -366,24 +383,60 @@ export function makeLifePlan(deps: LifePlanDeps) {
   }
 
   // Goals left out of the list keep their turn after the listed ones.
-  async function reorder(tenantId: string, input: PlanOrderInput) {
+  async function arranged(
+    tenantId: string,
+    ids: readonly string[],
+    waits: ReadonlyMap<string, string | null>,
+  ) {
     const goals = await loadGoals(tenantId)
     const rank = (goal: StoredPlanGoal) => {
-      const index = input.ids.indexOf(goal.id)
-      return index < 0 ? input.ids.length + goal.order : index
+      const index = ids.indexOf(goal.id)
+      return index < 0 ? ids.length + goal.order : index
     }
     const sorted = [...goals].sort((a, b) => rank(a) - rank(b))
-    const moved = sorted.flatMap((goal, order) =>
-      goal.order === order ? [] : [{ ...goal, order }],
-    )
-    const ranked = sorted.map((goal, order) => ({ ...goal, order }))
+    const ranked = sorted.map((goal, order) => ({
+      ...waiting(goal, waits),
+      order,
+    }))
+    const changed = ranked.filter((goal, index) => {
+      const before = sorted[index] as StoredPlanGoal
+      return (
+        goal.order !== before.order || notBeforeOf(goal) !== notBeforeOf(before)
+      )
+    })
+    return { ranked, changed }
+  }
+
+  async function rearrange(
+    tenantId: string,
+    ids: readonly string[],
+    waits: ReadonlyMap<string, string | null>,
+  ) {
+    const { ranked, changed } = await arranged(tenantId, ids, waits)
     const [plan] = await Promise.all([
       view(tenantId, ranked),
-      ...moved.map(goal =>
+      ...changed.map(goal =>
         deps.documents.put(tenantId, PLAN_GOALS_COLLECTION, goal.id, goal),
       ),
     ])
     return plan
+  }
+
+  const idsOf = (input: PlanArrangement) => input.goals.map(goal => goal.id)
+
+  const waitsOf = (input: PlanArrangement) =>
+    new Map(input.goals.map(goal => [goal.id, goal.notBefore]))
+
+  const reorder = (tenantId: string, input: PlanOrderInput) =>
+    rearrange(tenantId, input.ids, new Map())
+
+  const arrange = (tenantId: string, input: PlanArrangement) =>
+    rearrange(tenantId, idsOf(input), waitsOf(input))
+
+  // The plan as an arrangement would leave it, with nothing written.
+  async function preview(tenantId: string, input: PlanArrangement) {
+    const { ranked } = await arranged(tenantId, idsOf(input), waitsOf(input))
+    return view(tenantId, ranked)
   }
 
   async function saveSettings(tenantId: string, input: PlanSettings) {
@@ -396,5 +449,14 @@ export function makeLifePlan(deps: LifePlanDeps) {
     return view(tenantId)
   }
 
-  return { view, create, update, remove, reorder, saveSettings }
+  return {
+    view,
+    create,
+    update,
+    remove,
+    reorder,
+    arrange,
+    preview,
+    saveSettings,
+  }
 }

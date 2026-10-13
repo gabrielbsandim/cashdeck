@@ -210,6 +210,15 @@ final class LifePlan extends Equatable {
     );
   }
 
+  /// Whether some goal falls in another month, or with another status, than
+  /// in [other].
+  bool datesDiffer(LifePlan other) {
+    final before = {
+      for (final goal in other.goals) goal.id: (goal.month, goal.status),
+    };
+    return goals.any((goal) => before[goal.id] != (goal.month, goal.status));
+  }
+
   PlanSettings get settings => PlanSettings(
     reserveMonths: reserveMonths,
     yearlyYield: yearlyYield,
@@ -315,6 +324,27 @@ final class PlanGoalDraft extends Equatable {
     target: goal.target ?? const Money(0),
   );
 
+  /// The same goal waiting until [month] to happen.
+  PlanGoalDraft waitingUntil(YearMonth? month) => PlanGoalDraft(
+    kind: kind,
+    name: name,
+    icon: icon,
+    price: price,
+    tradeIn: tradeIn,
+    tradeInAssetId: tradeInAssetId,
+    financed: financed,
+    monthlyCost: monthlyCost,
+    keepsValue: keepsValue,
+    payment: payment,
+    installments: installments,
+    goalId: goalId,
+    notBefore: month,
+    by: by,
+    yearly: yearly,
+    metric: metric,
+    target: target,
+  );
+
   final PlanGoalKind kind;
   final String name;
   final String? icon;
@@ -402,11 +432,68 @@ final class PlanGoalDraft extends Equatable {
 
 enum PlanGoalProblem { name, amount, installments, window }
 
+/// What the model proposes for one goal, and where the goal lands with it.
+final class PlanAdviceGoal extends Equatable {
+  const new({
+    required this.id,
+    required this.kind,
+    required this.name,
+    required this.status,
+    required this.proposedStatus,
+    this.notBefore,
+    this.reason,
+    this.month,
+    this.proposedMonth,
+  });
+
+  final String id;
+  final PlanGoalKind kind;
+  final String name;
+
+  /// The wait the advice sets; null for a goal that is not a purchase.
+  final YearMonth? notBefore;
+  final String? reason;
+  final YearMonth? month;
+  final PlanStatus status;
+  final YearMonth? proposedMonth;
+  final PlanStatus proposedStatus;
+
+  bool get moves => month != proposedMonth || status != proposedStatus;
+
+  @override
+  List<Object?> get props => [
+    id,
+    kind,
+    name,
+    notBefore,
+    reason,
+    month,
+    status,
+    proposedMonth,
+    proposedStatus,
+  ];
+}
+
+/// The model's proposal for the whole plan, or for the goal [goalId] in it,
+/// with the goals in the proposed order.
+final class PlanAdvice extends Equatable {
+  const new({required this.summary, required this.goals, this.goalId});
+
+  final String? goalId;
+  final String summary;
+  final List<PlanAdviceGoal> goals;
+
+  @override
+  List<Object?> get props => [goalId, summary, goals];
+}
+
 abstract interface class PlanRepository {
   Future<Result<LifePlan>> load();
   Future<Result<LifePlan>> create(PlanGoalDraft draft);
   Future<Result<LifePlan>> update(String id, PlanGoalDraft draft);
   Future<Result<LifePlan>> remove(String id);
   Future<Result<LifePlan>> reorder(List<String> ids);
+  Future<Result<PlanAdvice>> advise({String? goalId});
+  Future<Result<LifePlan>> arrange(PlanAdvice advice);
   Future<Result<LifePlan>> saveSettings(PlanSettings settings);
 }

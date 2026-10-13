@@ -205,10 +205,11 @@ function earliest(
   goals: readonly PlanGoal[],
   schedule: Schedule,
   goal: PurchaseGoal,
+  floor: number,
 ): number | null {
   const from = goal.notBefore
-    ? Math.max(0, monthsFrom(start.month, goal.notBefore))
-    : 0
+    ? Math.max(floor, monthsFrom(start.month, goal.notBefore))
+    : floor
   for (let index = from; index <= PLAN_HORIZON_MONTHS; index++) {
     const tried = new Map(schedule).set(goal.id, index)
     if (fits(simulate(start, goals, tried), tried)) {
@@ -219,11 +220,21 @@ function earliest(
 }
 
 // Purchases take their turn in the order given, each at the first month that
-// leaves every earlier one where it was.
+// leaves every earlier one where it was. A milestone holds the purchases below
+// it until the month after it is reached, unless it is out of reach.
 function scheduleOf(start: PlanStart, goals: readonly PlanGoal[]): Schedule {
   const schedule = new Map<string, number>()
-  for (const goal of purchasesOf(goals)) {
-    const index = earliest(start, goals, schedule, goal)
+  let floor = 0
+  for (const goal of goals) {
+    if (goal.kind === 'MILESTONE') {
+      const reached = reachedAt(simulate(start, goals, schedule), goal)
+      floor = reached === null ? floor : Math.max(floor, reached + 1)
+      continue
+    }
+    if (goal.kind !== 'PURCHASE') {
+      continue
+    }
+    const index = earliest(start, goals, schedule, goal, floor)
     if (index !== null) {
       schedule.set(goal.id, index)
     }

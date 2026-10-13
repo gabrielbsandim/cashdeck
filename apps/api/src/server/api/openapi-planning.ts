@@ -11,6 +11,9 @@ import {
   goalDetailSchema,
   goalQuerySchema,
   goalViewSchema,
+  planAdviceInputSchema,
+  planAdviceSchema,
+  planArrangementSchema,
   planGoalInputSchema,
   planOrderSchema,
   planSettingsSchema,
@@ -42,6 +45,23 @@ export const PLANNING_OPERATIONS: Operation[] = [
     id: 'reorderPlanGoals',
     summary: 'Set which goals take their turn first',
     body: planOrderSchema,
+    response: planViewSchema,
+  },
+  {
+    method: 'post',
+    path: '/plan/advice',
+    id: 'advisePlan',
+    summary:
+      'Ask the model for the order and waits of the goals, or of one goal, with what each change does',
+    body: planAdviceInputSchema,
+    response: planAdviceSchema,
+  },
+  {
+    method: 'put',
+    path: '/plan/arrangement',
+    id: 'arrangePlan',
+    summary: 'Set the order of the goals and how long each purchase waits',
+    body: planArrangementSchema,
     response: planViewSchema,
   },
   {
