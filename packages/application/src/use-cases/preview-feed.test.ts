@@ -332,6 +332,45 @@ describe('makePreviewFeed', () => {
     })
   })
 
+  it('places the feed on a renamed account by the movements it holds', async () => {
+    const renamed = [
+      account({ id: 'a1', name: 'Card A', connectionId: 'c1' }),
+      account({ id: 'a2', name: 'Card B', connectionId: 'c1' }),
+    ]
+    const held = await setup(
+      [offer()],
+      [
+        feedTx({ externalId: 'pierre:1' }),
+        feedTx({ externalId: 'pierre:2', amountCents: -100 }),
+      ],
+      renamed,
+    )
+    await held.deps.transactions.save(
+      transaction({
+        id: 'stored',
+        accountId: 'a2',
+        amount: Money.of(-500),
+        bookedOn: '2026-10-07',
+      }),
+    )
+    expect(await held.feed.sync(TENANT)).toEqual({ accounts: 1, previews: 1 })
+    expect(
+      await held.deps.transactions.all(TENANT, { provisional: true }),
+    ).toEqual([
+      expect.objectContaining({ accountId: 'a2', amount: Money.of(-100) }),
+    ])
+
+    const unheld = await setup(
+      [offer(), offer({ externalId: 'pa-3', institutionName: 'Other Bank' })],
+      [feedTx({ externalId: 'pierre:1' })],
+      renamed,
+    )
+    expect(await unheld.feed.sync(TENANT)).toEqual({
+      accounts: 0,
+      previews: 0,
+    })
+  })
+
   it('stays off without credentials and passes other failures through', async () => {
     const { preview, feed } = await setup([offer()], [])
     const listAccounts = vi.spyOn(preview, 'listAccounts')

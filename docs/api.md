@@ -910,7 +910,10 @@ Pluggy collects free items once a day, so a second feed (Pierre) of the same
 accounts fills the gap. Its movements of the last 7 days that no stored one
 pairs with are stored as `provisional`; each preview account is placed on the
 connected account with the same bank, type and name (two with the same name are
-told apart by the movements they already hold, then by balance). Two movements
+told apart by the movements they already hold, then by balance). When none
+keeps the name, because it was renamed, the one of the same bank and type that
+holds the most of the feed's movements takes it, and none when no one holds
+more than the others. Two movements
 pair when they have the same amount within 2 days, else the same merchant words
 and direction within 2 days, closest day first.
 

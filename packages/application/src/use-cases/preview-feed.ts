@@ -184,10 +184,17 @@ export function makePreviewFeed(deps: PreviewDeps) {
   function pick(
     offer: PreviewAccount,
     candidates: readonly Candidate[],
+    renamed: boolean,
   ): Candidate | null {
     const [best, next] = [...candidates].sort((a, b) => b.pairs - a.pairs)
-    if (!best || !next || best.pairs > next.pairs) {
-      return best ?? null
+    if (!best) {
+      return null
+    }
+    if (renamed) {
+      return best.pairs > (next?.pairs ?? 0) ? best : null
+    }
+    if (!next || best.pairs > next.pairs) {
+      return best
     }
     const balanced = candidates.filter(
       candidate => candidate.account.balance.cents === offer.balanceCents,
@@ -214,13 +221,19 @@ export function makePreviewFeed(deps: PreviewDeps) {
       const movements = fetched
         .filter(tx => tx.accountExternalId === offer.externalId)
         .map(tx => ({ tx, ...movementOf(tx) }))
-      const candidates: Candidate[] = []
-      for (const account of accounts.filter(
+      const sameKind = accounts.filter(
         candidate =>
           candidate.type === offer.type &&
-          candidate.name.trim() === offer.name.trim() &&
           names.get(candidate.id) === offer.institutionName,
-      )) {
+      )
+      const named = sameKind.filter(
+        candidate => candidate.name.trim() === offer.name.trim(),
+      )
+      // A renamed account no longer carries the feed's name, so only the
+      // movements it already holds can place the feed on it.
+      const renamed = named.length === 0
+      const candidates: Candidate[] = []
+      for (const account of renamed ? sameKind : named) {
         const stored = await deps.transactions.all(tenantId, {
           accountIds: [account.id],
           from: addDays(range.from, -PAIRING_DAYS),
@@ -231,7 +244,7 @@ export function makePreviewFeed(deps: PreviewDeps) {
           pairs: pairMovements(movements, stored).length,
         })
       }
-      const chosen = pick(offer, candidates)
+      const chosen = pick(offer, candidates, renamed)
       if (!chosen) {
         continue
       }
