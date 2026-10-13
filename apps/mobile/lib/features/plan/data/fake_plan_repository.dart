@@ -1,0 +1,178 @@
+import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
+import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/plan/domain/life_plan.dart';
+
+const _savings = 1_500_000;
+const _spending = 2_000_000;
+const _netWorth = 40_000_000;
+const _invested = 15_000_000;
+
+/// A fictional plan in memory. It spaces the goals out instead of running
+/// the server's month by month search, enough for the screens offline.
+final class FakePlanRepository implements PlanRepository {
+  new(this._clock, {this.latency = const Duration(milliseconds: 300)});
+
+  final Clock _clock;
+  final Duration latency;
+  var _settings = const PlanSettings(reserveMonths: 6, yearlyYield: 6);
+  var _next = 0;
+  late final List<(String, PlanGoalDraft)> _goals = [
+    _seed(
+      const PlanGoalDraft(
+        kind: PlanGoalKind.yearly,
+        name: 'Viagens do ano',
+        icon: 'flight',
+        yearly: Money(1_500_000),
+      ),
+    ),
+    _seed(
+      const PlanGoalDraft(
+        kind: PlanGoalKind.purchase,
+        name: 'Trocar de carro',
+        icon: 'directions_car',
+        price: Money(9_000_000),
+        tradeIn: Money(4_000_000),
+        keepsValue: true,
+      ),
+    ),
+    _seed(
+      const PlanGoalDraft(
+        kind: PlanGoalKind.milestone,
+        name: 'Patrimônio de 1 milhão',
+        target: Money(100_000_000),
+      ),
+    ),
+  ];
+
+  (String, PlanGoalDraft) _seed(PlanGoalDraft draft) =>
+      ('plan-${_next++}', draft);
+
+  YearMonth get _month => YearMonth.of(CalendarDate.brazilToday(_clock.now()));
+
+  PlanGoal _goal(String id, PlanGoalDraft draft, int turn, YearMonth asOf) {
+    final cash = switch (draft.kind) {
+      PlanGoalKind.purchase => Money(
+        draft.price.cents - draft.tradeIn.cents - draft.financed.cents,
+      ),
+      PlanGoalKind.yearly => Money((draft.yearly.cents / 12).round()),
+      PlanGoalKind.milestone => const Money(0),
+    };
+    final milestone = draft.kind == PlanGoalKind.milestone;
+    return PlanGoal(
+      id: id,
+      kind: draft.kind,
+      name: draft.name.trim(),
+      icon: draft.icon,
+      status: PlanStatus.planned,
+      month: draft.kind == PlanGoalKind.yearly ? null : asOf.add(6 * turn),
+      cash: cash,
+      price: draft.kind == PlanGoalKind.purchase ? draft.price : null,
+      tradeIn: draft.kind == PlanGoalKind.purchase ? draft.tradeIn : null,
+      financed: draft.kind == PlanGoalKind.purchase ? draft.financed : null,
+      monthlyCost: draft.kind == PlanGoalKind.purchase
+          ? draft.monthlyCost
+          : null,
+      keepsValue: draft.keepsValue,
+      notBefore: draft.notBefore,
+      by: draft.by,
+      yearly: draft.kind == PlanGoalKind.yearly ? draft.yearly : null,
+      metric: milestone ? draft.metric : null,
+      target: milestone ? draft.target : null,
+      current: milestone
+          ? Money(
+              draft.metric == MilestoneMetric.netWorth ? _netWorth : _invested,
+            )
+          : null,
+    );
+  }
+
+  LifePlan _plan() {
+    final asOf = _month;
+    final provision = _goals.fold<int>(
+      0,
+      (total, goal) => goal.$2.kind == PlanGoalKind.yearly
+          ? total + (goal.$2.yearly.cents / 12).round()
+          : total,
+    );
+    final savings = _settings.monthlySavings?.cents ?? _savings;
+    return LifePlan(
+      asOf: asOf,
+      monthlySavings: Money(savings),
+      savingsFromBudget: _settings.monthlySavings == null,
+      monthlySpending: const Money(_spending),
+      reserveMonths: _settings.reserveMonths,
+      reserve: Money(_settings.reserveMonths * _spending),
+      yearlyYield: _settings.yearlyYield,
+      keepInvested: _settings.keepInvested,
+      netWorth: const Money(_netWorth),
+      invested: const Money(_invested),
+      yearlyProvision: Money(provision),
+      free: Money(savings - provision),
+      goals: [
+        for (final (index, (id, draft)) in _goals.indexed)
+          _goal(id, draft, index + 1, asOf),
+      ],
+      timeline: [
+        for (var year = 0; year <= 10; year++)
+          PlanPoint(
+            month: asOf.add(year * 12),
+            netWorth: Money(_netWorth + year * 12 * (savings - provision)),
+            invested: Money(_invested + year * 12 * (savings - provision)),
+          ),
+      ],
+    );
+  }
+
+  Future<Result<LifePlan>> _answer() async {
+    await Future<void>.delayed(latency);
+    return Ok(_plan());
+  }
+
+  int _indexOf(String id) => _goals.indexWhere((goal) => goal.$1 == id);
+
+  @override
+  Future<Result<LifePlan>> load() => _answer();
+
+  @override
+  Future<Result<LifePlan>> create(PlanGoalDraft draft) {
+    _goals.add(_seed(draft));
+    return _answer();
+  }
+
+  @override
+  Future<Result<LifePlan>> update(String id, PlanGoalDraft draft) {
+    final index = _indexOf(id);
+    if (index < 0) return Future.value(const Err(NotFoundFailure()));
+    _goals[index] = (id, draft);
+    return _answer();
+  }
+
+  @override
+  Future<Result<LifePlan>> remove(String id) {
+    final index = _indexOf(id);
+    if (index < 0) return Future.value(const Err(NotFoundFailure()));
+    _goals.removeAt(index);
+    return _answer();
+  }
+
+  @override
+  Future<Result<LifePlan>> reorder(List<String> ids) {
+    int rank((String, PlanGoalDraft) goal) {
+      final index = ids.indexOf(goal.$1);
+      return index < 0 ? ids.length : index;
+    }
+
+    _goals.sort((a, b) => rank(a).compareTo(rank(b)));
+    return _answer();
+  }
+
+  @override
+  Future<Result<LifePlan>> saveSettings(PlanSettings settings) {
+    _settings = settings;
+    return _answer();
+  }
+}

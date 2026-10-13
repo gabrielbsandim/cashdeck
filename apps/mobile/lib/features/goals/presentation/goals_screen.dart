@@ -28,6 +28,7 @@ class GoalsScreen extends ConsumerWidget {
   const new({super.key});
 
   static const addKey = Key('goals-add');
+  static const planKey = Key('goals-plan');
 
   static Key tileKey(String id) => Key('goal-$id');
 
@@ -40,7 +41,17 @@ class GoalsScreen extends ConsumerWidget {
       save: ref.read(goalsControllerProvider.notifier).create,
     );
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.goalsTitle)),
+      appBar: AppBar(
+        title: Text(l10n.goalsTitle),
+        actions: [
+          IconButton(
+            key: planKey,
+            tooltip: l10n.planTitle,
+            icon: const Icon(Symbols.route_rounded),
+            onPressed: () => context.push(AppRoutes.plan),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: addKey,
         onPressed: create,

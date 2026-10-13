@@ -280,7 +280,7 @@ void main() {
       await pumpRoute(
         tester,
         AppRoutes.home,
-        screenHeight: 5200,
+        screenHeight: 5400,
         overrides: [budgetsRepositoryProvider.overrideWithValue(repository)],
       );
       expect(find.text(l10n.homeBudgetAllCalm), findsOneWidget);
@@ -297,7 +297,7 @@ void main() {
       final app = await pumpRoute(
         tester,
         AppRoutes.home,
-        screenHeight: 5200,
+        screenHeight: 5400,
         overrides: [budgetsRepositoryProvider.overrideWithValue(repository)],
       );
       expect(find.text(l10n.homeBudgetEmpty), findsOneWidget);

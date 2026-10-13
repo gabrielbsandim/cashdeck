@@ -3944,5 +3944,245 @@
         "type": "String"
       }
     }
-  }
+  },
+  "planTitle": "Plano de vida",
+  "planHomeEmpty": "Contem o que querem e o app mostra quando cada objetivo cabe.",
+  "planHomeNext": "Próximo: {name}, {month}",
+  "@planHomeNext": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planHomeNextNow": "Próximo: {name}, já cabe",
+  "@planHomeNextNow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planHomeMilestone": "{name}: {month}",
+  "@planHomeMilestone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planSavings": "Guardando {amount} por mês",
+  "@planSavings": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "planSavingsFromBudget": "A meta de poupança do mês.",
+  "planSavingsCustom": "Valor fixado nas premissas.",
+  "planFree": "Livre para os objetivos: {amount} por mês",
+  "@planFree": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "planReserve": "Reserva de emergência: {amount} ({months} meses de gastos)",
+  "@planReserve": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "planAssumptions": "Em reais de hoje, rendendo {rate}% ao ano acima da inflação.",
+  "@planAssumptions": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "planChartTitle": "Patrimônio nos próximos 10 anos",
+  "planChartSemantics": "Patrimônio projetado de {from} a {to}",
+  "@planChartSemantics": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "planOrderTitle": "Por prioridade",
+  "planOrderHelp": "Segure e arraste para mudar a ordem. Um objetivo nunca é adiado pelos que vêm depois dele.",
+  "planEmptyTitle": "Nenhum objetivo ainda",
+  "planEmptyMessage": "Adicione uma compra, um gasto de todo ano ou um marco de patrimônio.",
+  "planNew": "Novo objetivo",
+  "planEdit": "Editar objetivo",
+  "planKindPurchase": "Compra",
+  "planKindYearly": "Todo ano",
+  "planKindMilestone": "Marco",
+  "planName": "Nome",
+  "planPrice": "Quanto custa",
+  "planTradeInAsset": "Vende um bem para pagar",
+  "planTradeInNone": "Nenhum",
+  "planTradeInAssetHelp": "O valor do bem, menos o que ainda deve dele, entra no pagamento.",
+  "planTradeIn": "Valor de troca (opcional)",
+  "planFinanced": "Financiado (opcional)",
+  "planMonthlyCost": "Gasto a mais por mês depois (opcional)",
+  "planKeepsValue": "Continua no patrimônio",
+  "planKeepsValueHelp": "Carro ou casa sim; celular e viagem não.",
+  "planNotBefore": "Não antes de {month}",
+  "@planNotBefore": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planNotBeforeNone": "Não antes de: quando couber",
+  "planBy": "Até {month}",
+  "@planBy": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planByNone": "Sem prazo",
+  "planMonthClear": "Tirar",
+  "planYearly": "Quanto por ano",
+  "planMetricNetWorth": "Patrimônio",
+  "planMetricInvested": "Investido",
+  "planTarget": "Valor do marco",
+  "planSave": "Salvar",
+  "planSaved": "Plano atualizado",
+  "planDelete": "Excluir objetivo",
+  "planDeleted": "Objetivo excluído",
+  "planNameMissing": "Dê um nome ao objetivo.",
+  "planAmountMissing": "Informe o valor.",
+  "planWindowInvalid": "O \"não antes de\" precisa vir antes do prazo.",
+  "planPurchaseNow": "Cabe agora",
+  "planPurchaseOn": "Cabe em {month}",
+  "@planPurchaseOn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planPurchaseLate": "Só cabe em {month}, depois do prazo",
+  "@planPurchaseLate": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planOutOfReach": "Não cabe com a poupança de hoje",
+  "planMilestoneNow": "Já alcançado",
+  "planMilestoneOn": "Chega em {month}",
+  "@planMilestoneOn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planMilestoneLate": "Chega em {month}, depois do prazo",
+  "@planMilestoneLate": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "planYearlyLine": "Separa {amount} por mês",
+  "@planYearlyLine": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "planCashOut": "Sai {amount} das economias",
+  "@planCashOut": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "planCashIn": "Entra {amount} nas economias",
+  "@planCashIn": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "planMilestoneProgress": "{current} de {target}",
+  "@planMilestoneProgress": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "planDelay": "Atrasa {name} em {months, plural, =1{1 mês} other{{months} meses}}",
+  "@planDelay": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "planBlocks": "Deixa {name} fora de alcance",
+  "@planBlocks": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planSettingsTitle": "Premissas",
+  "planSettingsReserve": "Reserva de emergência, em meses de gastos",
+  "planSettingsYield": "Rendimento real ao ano (%)",
+  "planSettingsYieldHelp": "Acima da inflação, depois do imposto.",
+  "planSettingsFromBudget": "Usar a meta de poupança do mês",
+  "planSettingsSavings": "Quanto guardam por mês",
+  "planSettingsInvalid": "A reserva vai de 0 a 24 meses, o rendimento de 0 a 20% e o investido mantido de 0 a 100%.",
+  "planStatusNow": "Agora",
+  "planStatusPlanned": "No plano",
+  "planStatusLate": "Depois do prazo",
+  "planStatusOutOfReach": "Fora de alcance",
+  "planKeep": "Cada compra deixa pelo menos {percent}% investido",
+  "@planKeep": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "planSettingsKeep": "Manter investido depois de cada compra (%)",
+  "planSettingsKeepHelp": "Uma compra só entra quando deixa essa parte das economias aplicada."
 }

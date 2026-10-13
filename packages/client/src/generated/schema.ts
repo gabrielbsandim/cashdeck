@@ -2184,6 +2184,92 @@ export interface paths {
         patch: operations["updatePixContact"];
         trace?: never;
     };
+    "/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** When each life goal fits, month by month, and what it delays */
+        get: operations["getLifePlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the reserve, the real yield and the monthly savings */
+        put: operations["savePlanSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set which goals take their turn first */
+        put: operations["reorderPlanGoals"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a purchase, a yearly goal or a milestone to the plan */
+        post: operations["createPlanGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan/goals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace a goal of the plan */
+        put: operations["updatePlanGoal"];
+        post?: never;
+        /** Drop a goal from the plan */
+        delete: operations["removePlanGoal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/goals": {
         parameters: {
             query?: never;
@@ -11373,6 +11459,892 @@ export interface operations {
                             timesPaid: number;
                             lastPaidAt: string | null;
                             createdAt: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getLifePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description When each life goal fits, month by month, and what it delays */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    savePlanSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reserveMonths: number;
+                    yearlyYield: number;
+                    /** @default 0 */
+                    keepInvested?: number;
+                    monthlySavings: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Set the reserve, the real yield and the monthly savings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    reorderPlanGoals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ids: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Set which goals take their turn first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    createPlanGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "PURCHASE";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    price: number;
+                    /** @default 0 */
+                    tradeIn?: number;
+                    /** @default null */
+                    tradeInAssetId?: string | null;
+                    /** @default 0 */
+                    financed?: number;
+                    /** @default 0 */
+                    monthlyCost?: number;
+                    /** @default false */
+                    keepsValue?: boolean;
+                    /** @default null */
+                    notBefore?: string | null;
+                    /** @default null */
+                    by?: string | null;
+                } | {
+                    /** @enum {string} */
+                    kind: "YEARLY";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    yearly: number;
+                } | {
+                    /** @enum {string} */
+                    kind: "MILESTONE";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    /** @enum {string} */
+                    metric: "NET_WORTH" | "INVESTED";
+                    target: number;
+                    /** @default null */
+                    by?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Add a purchase, a yearly goal or a milestone to the plan */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    updatePlanGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "PURCHASE";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    price: number;
+                    /** @default 0 */
+                    tradeIn?: number;
+                    /** @default null */
+                    tradeInAssetId?: string | null;
+                    /** @default 0 */
+                    financed?: number;
+                    /** @default 0 */
+                    monthlyCost?: number;
+                    /** @default false */
+                    keepsValue?: boolean;
+                    /** @default null */
+                    notBefore?: string | null;
+                    /** @default null */
+                    by?: string | null;
+                } | {
+                    /** @enum {string} */
+                    kind: "YEARLY";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    yearly: number;
+                } | {
+                    /** @enum {string} */
+                    kind: "MILESTONE";
+                    name: string;
+                    /** @default null */
+                    icon?: string | null;
+                    /** @enum {string} */
+                    metric: "NET_WORTH" | "INVESTED";
+                    target: number;
+                    /** @default null */
+                    by?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Replace a goal of the plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    removePlanGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Drop a goal from the plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            asOf: string;
+                            monthlySavings: {
+                                cents: number;
+                                currency: string;
+                            };
+                            savingsFromBudget: boolean;
+                            monthlySpending: {
+                                cents: number;
+                                currency: string;
+                            };
+                            reserveMonths: number;
+                            reserve: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyYield: number;
+                            keepInvested: number;
+                            netWorth: {
+                                cents: number;
+                                currency: string;
+                            };
+                            invested: {
+                                cents: number;
+                                currency: string;
+                            };
+                            yearlyProvision: {
+                                cents: number;
+                                currency: string;
+                            };
+                            free: {
+                                cents: number;
+                                currency: string;
+                            };
+                            goals: {
+                                id: string;
+                                /** @enum {string} */
+                                kind: "PURCHASE" | "YEARLY" | "MILESTONE";
+                                name: string;
+                                icon: string | null;
+                                /** @enum {string} */
+                                status: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                month: string | null;
+                                cash: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                delays: {
+                                    milestoneId: string;
+                                    name: string;
+                                    months: number | null;
+                                }[];
+                                price: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeIn: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                tradeInAssetId: string | null;
+                                tradeInAssetName: string | null;
+                                financed: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                monthlyCost: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                keepsValue: boolean | null;
+                                notBefore: string | null;
+                                by: string | null;
+                                yearly: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                /** @enum {string|null} */
+                                metric: "NET_WORTH" | "INVESTED" | null;
+                                target: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                                current: {
+                                    cents: number;
+                                    currency: string;
+                                } | null;
+                            }[];
+                            timeline: {
+                                month: string;
+                                netWorth: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                invested: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                            }[];
                         };
                     };
                 };

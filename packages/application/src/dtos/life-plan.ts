@@ -1,0 +1,140 @@
+import { z } from 'zod'
+import {
+  MILESTONE_METRICS,
+  PLAN_GOAL_KINDS,
+  PLAN_STATUSES,
+} from '@cashdeck/domain'
+import { isoMonth, moneyViewSchema } from '@/dtos/common'
+
+const nameSchema = z.string().trim().min(1).max(60)
+const iconSchema = z.string().trim().min(1).max(40).nullable().default(null)
+
+// Amounts in cents and in today's money.
+const purchaseSchema = z
+  .object({
+    kind: z.literal('PURCHASE'),
+    name: nameSchema,
+    icon: iconSchema,
+    price: z.int().positive(),
+    tradeIn: z.int().min(0).default(0),
+    // An asset sold to pay for it; its value less its loan replaces tradeIn.
+    tradeInAssetId: z.string().min(1).nullable().default(null),
+    financed: z.int().min(0).default(0),
+    monthlyCost: z.int().default(0),
+    keepsValue: z.boolean().default(false),
+    notBefore: isoMonth.nullable().default(null),
+    by: isoMonth.nullable().default(null),
+  })
+  .refine(
+    input =>
+      input.notBefore === null ||
+      input.by === null ||
+      input.notBefore <= input.by,
+    { message: 'notBefore must not come after by.', path: ['by'] },
+  )
+
+const yearlySchema = z.object({
+  kind: z.literal('YEARLY'),
+  name: nameSchema,
+  icon: iconSchema,
+  yearly: z.int().positive(),
+})
+
+const milestoneSchema = z.object({
+  kind: z.literal('MILESTONE'),
+  name: nameSchema,
+  icon: iconSchema,
+  metric: z.enum(MILESTONE_METRICS),
+  target: z.int().positive(),
+  by: isoMonth.nullable().default(null),
+})
+
+export const planGoalInputSchema = z.discriminatedUnion('kind', [
+  purchaseSchema,
+  yearlySchema,
+  milestoneSchema,
+])
+
+export type PlanGoalInput = z.infer<typeof planGoalInputSchema>
+
+export const planOrderSchema = z.object({
+  ids: z.array(z.string().min(1)).max(100),
+})
+
+export type PlanOrderInput = z.infer<typeof planOrderSchema>
+
+export const planSettingsSchema = z.object({
+  // Months of spending kept aside before anything is bought.
+  reserveMonths: z.int().min(0).max(24),
+  // Real yield a year, in percent: above inflation, after tax.
+  yearlyYield: z.number().min(0).max(20),
+  // Percent of the savings a month's purchases must leave invested.
+  keepInvested: z.int().min(0).max(100).default(0),
+  // Null follows the savings target of the monthly plan.
+  monthlySavings: z.int().min(0).nullable(),
+})
+
+export type PlanSettings = z.infer<typeof planSettingsSchema>
+
+const delayViewSchema = z.object({
+  milestoneId: z.string(),
+  name: z.string(),
+  // Null when the goal keeps the milestone out of reach.
+  months: z.int().nullable(),
+})
+
+// One shape for every kind; the fields of the other kinds come back null.
+export const planGoalViewSchema = z.object({
+  id: z.string(),
+  kind: z.enum(PLAN_GOAL_KINDS),
+  name: z.string(),
+  icon: z.string().nullable(),
+  status: z.enum(PLAN_STATUSES),
+  // When it happens or is reached.
+  month: isoMonth.nullable(),
+  // What leaves savings: once for a purchase, every month for a yearly goal.
+  cash: moneyViewSchema,
+  delays: z.array(delayViewSchema),
+  price: moneyViewSchema.nullable(),
+  tradeIn: moneyViewSchema.nullable(),
+  tradeInAssetId: z.string().nullable(),
+  tradeInAssetName: z.string().nullable(),
+  financed: moneyViewSchema.nullable(),
+  monthlyCost: moneyViewSchema.nullable(),
+  keepsValue: z.boolean().nullable(),
+  notBefore: isoMonth.nullable(),
+  by: isoMonth.nullable(),
+  yearly: moneyViewSchema.nullable(),
+  metric: z.enum(MILESTONE_METRICS).nullable(),
+  target: moneyViewSchema.nullable(),
+  // Where a milestone stands today.
+  current: moneyViewSchema.nullable(),
+})
+
+export type PlanGoalView = z.infer<typeof planGoalViewSchema>
+
+export const planViewSchema = z.object({
+  asOf: isoMonth,
+  monthlySavings: moneyViewSchema,
+  savingsFromBudget: z.boolean(),
+  monthlySpending: moneyViewSchema,
+  reserveMonths: z.int(),
+  reserve: moneyViewSchema,
+  yearlyYield: z.number(),
+  keepInvested: z.int(),
+  netWorth: moneyViewSchema,
+  invested: moneyViewSchema,
+  yearlyProvision: moneyViewSchema,
+  // The savings left once the yearly goals take their share.
+  free: moneyViewSchema,
+  goals: z.array(planGoalViewSchema),
+  timeline: z.array(
+    z.object({
+      month: isoMonth,
+      netWorth: moneyViewSchema,
+      invested: moneyViewSchema,
+    }),
+  ),
+})
+
+export type PlanView = z.infer<typeof planViewSchema>

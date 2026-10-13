@@ -474,6 +474,37 @@ Net worth adds the goods by kind (`realEstate`, `vehicles`, `otherAssets`)
 and takes off `loanDebt`, every stored loan's balance at the end of each day
 read from its schedule.
 
+## Life plan
+
+`GET /plan` answers when each life goal fits. It starts from the person's net
+worth, cash and investments, the savings target of the monthly plan (or
+`monthlySavings` from the settings) and the spending that plan leaves, and
+walks month by month for forty years in today's money: the savings grow by a
+real `yearlyYield`, the yearly goals take a twelfth of their amount every
+month, and each purchase happens at the first month that never lets the
+savings fall below `reserveMonths` of spending afterwards and that leaves at
+least `keepInvested` percent of the savings in place that month. Purchases take
+their turn in the plan's order, so a later one never moves an earlier one.
+
+A goal is one of three kinds, amounts in cents:
+
+- `PURCHASE`: `price`, `tradeIn` (or `tradeInAssetId`, whose value less its
+  loan is read live), `financed`, `monthlyCost` added from then on (negative
+  when it saves), `keepsValue` (a car or a house stays in net worth),
+  `notBefore` and `by` months.
+- `YEARLY`: `yearly`, like trips.
+- `MILESTONE`: `metric` (`NET_WORTH` or `INVESTED`), `target` and `by`.
+
+Each goal in the view has a `status` (`NOW`, `PLANNED`, `LATE` past its `by`,
+`OUT_OF_REACH`), the `month` it happens or is reached, the `cash` it takes and
+`delays`: how many months it pushes each milestone (null when it keeps one out
+of reach). `timeline` gives net worth and investments every year for ten years.
+
+`POST /plan/goals`, `PUT` and `DELETE /plan/goals/{id}` edit the goals,
+`PUT /plan/order` takes `ids` in the order they take their turn, and
+`PUT /plan/settings` takes `reserveMonths`, `yearlyYield`, `keepInvested`
+and `monthlySavings` (null follows the monthly plan). Each answers the plan.
+
 ## Transactions
 
 ### GET /transactions?entity=&accountId=&categoryId=&uncategorized=&search=&from=&to=&cursor=&limit=

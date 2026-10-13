@@ -42,6 +42,7 @@ import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_s
 import 'package:cashdeck/features/outlook/presentation/net_worth_screen.dart';
 import 'package:cashdeck/features/payroll/presentation/payroll_input_screen.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_screen.dart';
+import 'package:cashdeck/features/plan/presentation/plan_routes.dart';
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
 import 'package:cashdeck/features/rails/presentation/rail_detail_screen.dart';
@@ -291,6 +292,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       _page(AppRoutes.loans, const LoansScreen()),
       _page(AppRoutes.assets, const AssetsScreen()),
       ...goalRoutes,
+      ...planRoutes,
       ...budgetRoutes,
       ...recapRoutes,
       GoRoute(

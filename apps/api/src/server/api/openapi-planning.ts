@@ -11,12 +11,63 @@ import {
   goalDetailSchema,
   goalQuerySchema,
   goalViewSchema,
+  planGoalInputSchema,
+  planOrderSchema,
+  planSettingsSchema,
+  planViewSchema,
   updateBudgetSchema,
   updateGoalSchema,
 } from '@cashdeck/application'
 import { type Operation } from '@/server/api/openapi-operation'
 
 export const PLANNING_OPERATIONS: Operation[] = [
+  {
+    method: 'get',
+    path: '/plan',
+    id: 'getLifePlan',
+    summary: 'When each life goal fits, month by month, and what it delays',
+    response: planViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/plan/settings',
+    id: 'savePlanSettings',
+    summary: 'Set the reserve, the real yield and the monthly savings',
+    body: planSettingsSchema,
+    response: planViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/plan/order',
+    id: 'reorderPlanGoals',
+    summary: 'Set which goals take their turn first',
+    body: planOrderSchema,
+    response: planViewSchema,
+  },
+  {
+    method: 'post',
+    path: '/plan/goals',
+    id: 'createPlanGoal',
+    summary: 'Add a purchase, a yearly goal or a milestone to the plan',
+    body: planGoalInputSchema,
+    status: '201',
+    response: planViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/plan/goals/{id}',
+    id: 'updatePlanGoal',
+    summary: 'Replace a goal of the plan',
+    body: planGoalInputSchema,
+    response: planViewSchema,
+  },
+  {
+    method: 'delete',
+    path: '/plan/goals/{id}',
+    id: 'removePlanGoal',
+    summary: 'Drop a goal from the plan',
+    response: planViewSchema,
+  },
   {
     method: 'get',
     path: '/goals',
