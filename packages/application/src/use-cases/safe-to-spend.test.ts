@@ -477,6 +477,65 @@ describe('safe to spend', () => {
     expect(paidOff.map(([kind]) => kind)).not.toContain('LOAN')
   })
 
+  it('keeps owing a debit whose day passed this month without it', async () => {
+    const deps = await seed()
+    const internet = transaction({
+      id: 'net1',
+      accountId: 'chk',
+      bookedOn: '2026-09-05',
+      amount: Money.of(-7000),
+      description: 'Internet Co',
+    })
+    await deps.transactions.save(internet)
+    await deps.recurrences.save(
+      recurrence({
+        id: 'r7',
+        key: recurrenceKey(internet),
+        name: 'Internet Co',
+        amount: Money.of(7000),
+        dayOfMonth: 5,
+      }),
+    )
+    const lines = rows(await makeSafeToSpend(deps)(TENANT))
+    expect(lines).toContainEqual([
+      'SUBSCRIPTION',
+      'Internet Co',
+      -7000,
+      '2026-10-05',
+    ])
+  })
+
+  it('counts a payment made days early in the month it pays', async () => {
+    const deps = await seed()
+    const tenant = '11144477735'
+    for (const [id, bookedOn] of [
+      ['rent-aug', '2026-08-05'],
+      ['rent-sep', '2026-08-30'],
+      ['rent-oct', '2026-10-05'],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'chk',
+          bookedOn,
+          amount: Money.of(100000),
+          counterparty: tenant,
+        }),
+      )
+    }
+    await makeSetSpendingPlan(deps)(TENANT, {
+      incomeSources: [
+        { taxId: EMPLOYER, name: 'Employer' },
+        { taxId: tenant, name: 'Tenant' },
+      ],
+    })
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(view.plan).toMatchObject({
+      typical: { cents: 900000 },
+      received: { cents: 100000 },
+    })
+  })
+
   it('drops a subscription whose charge was captured as a bill that month', async () => {
     const deps = await seed()
     await deps.bills.save(

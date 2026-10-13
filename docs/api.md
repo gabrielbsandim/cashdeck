@@ -229,6 +229,11 @@ fixed Asaas items (person only) and the budgets left this month.
   of the window inside the month. An overspent budget reserves nothing.
 - `RESERVE` is the share of the bills paid from the reserve its balance
   covers, as a positive line.
+- A recurring debit whose usual day passed this month without it is still
+  owed, on that day.
+- On the monthly plan, a credit from an income source in the last 5 days of a
+  month counts in the next one when that payer sent nothing booked there, so a
+  tenant paying on the 31st fills the month the rent is for.
 
 ### GET /home/consolidated
 

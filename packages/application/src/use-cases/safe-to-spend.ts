@@ -143,11 +143,38 @@ const isCard = (account: Account) => account.type === 'CREDIT_CARD'
 const centsOf = (entries: readonly FlowEntry[]) =>
   entries.reduce((total, entry) => total + entry.cents, 0)
 
+const EARLY_DAYS = 5
+
+// A payer who pays a month a few days early, as a tenant paying on the 31st,
+// leaves that month empty; the credit counts there, never past this month.
+function incomeMonthOf(
+  incomes: readonly FlowEntry[],
+  month: string,
+): (entry: FlowEntry) => string {
+  const payerOf = (entry: FlowEntry) => entry.transaction.counterparty ?? ''
+  const paid = new Set(
+    incomes.map(
+      entry => `${payerOf(entry)}|${monthOf(entry.transaction.bookedOn)}`,
+    ),
+  )
+  return entry => {
+    const booked = monthOf(entry.transaction.bookedOn)
+    const next = addMonths(booked, 1)
+    const early =
+      daysBetween(entry.transaction.bookedOn, lastDay(booked)) < EARLY_DAYS
+    return early && next <= month && !paid.has(`${payerOf(entry)}|${next}`)
+      ? next
+      : booked
+  }
+}
+
 function closedMonths(
   entries: readonly FlowEntry[],
   month: string,
   isIncome: (entry: FlowEntry) => boolean,
 ): MonthFlow[] {
+  const incomes = entries.filter(isIncome)
+  const incomeMonth = incomeMonthOf(incomes, month)
   const months = Array.from({ length: PLAN_MONTHS }, (_, index) =>
     addMonths(month, index - PLAN_MONTHS),
   )
@@ -161,7 +188,7 @@ function closedMonths(
     return [
       {
         month: closed,
-        income: centsOf(inMonth.filter(isIncome)),
+        income: centsOf(incomes.filter(entry => incomeMonth(entry) === closed)),
         expenses: centsOf(inMonth.filter(entry => entry.kind === 'EXPENSE')),
       },
     ]
@@ -326,9 +353,10 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     return running.flatMap(recurrence => {
       const lastMonth = lastMonthOf(recurrence)
       const loan = loanOf(recurrence)
+      // One whose day passed this month without the debit is late, still owed.
       return monthlyDatesBetween(
         recurrence.dayOfMonth,
-        context.day,
+        firstDay(monthOf(context.day)),
         context.until,
       )
         .filter(on => monthOf(on) !== lastMonth && !billed(recurrence.name, on))
@@ -531,15 +559,12 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       return null
     }
     const target = stored.savings
+    const incomes = entries.filter(isIncome)
+    const incomeMonth = incomeMonthOf(incomes, month)
     return {
       typical,
       received: Money.of(
-        centsOf(
-          entries.filter(
-            entry =>
-              monthOf(entry.transaction.bookedOn) === month && isIncome(entry),
-          ),
-        ),
+        centsOf(incomes.filter(entry => incomeMonth(entry) === month)),
       ),
       sources: stored.incomeSources.length,
       savings: target ? Money.of(target.cents) : typical.saved,
