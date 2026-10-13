@@ -56,6 +56,9 @@ Future<void> _pickMonth(WidgetTester tester, Key row) async {
 Future<void> _reach(WidgetTester tester, Finder finder) => tester
     .scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
 
+String? _savings(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(PlanScreen.savingsKey)).data;
+
 Finder _tile(String name) => find.ancestor(
   of: find.text(name),
   matching: find.byWidgetPredicate(
@@ -75,7 +78,7 @@ void main() {
     await pumpRoute(tester, AppRoutes.plan);
 
     expect(find.byKey(PlanScreen.summaryKey), findsOneWidget);
-    expect(find.text(l10n.planSavings(_brl(15_000))), findsOneWidget);
+    expect(_savings(tester), _brl(15_000));
     expect(find.text(l10n.planSavingsFromBudget), findsOneWidget);
     expect(find.text(l10n.planPurchaseOn('Outubro 2027')), findsOneWidget);
     expect(find.text(l10n.planMilestoneOn('Abril 2028')), findsOneWidget);
@@ -176,7 +179,7 @@ void main() {
     expect(find.text(l10n.planSavingsCustom), findsOneWidget);
     expect(find.text(l10n.planAssumptions('5,5')), findsOneWidget);
     expect(find.text(l10n.planKeep(50)), findsOneWidget);
-    expect(find.text(l10n.planSavings(_brl(10_000))), findsOneWidget);
+    expect(_savings(tester), _brl(10_000));
 
     await _tap(tester, find.byKey(PlanScreen.settingsKey));
     expect(
@@ -349,7 +352,8 @@ void main() {
   testWidgets('lists the other caixinhas and adds one', (tester) async {
     final app = await pumpRoute(tester, AppRoutes.plan);
 
-    await _reach(tester, find.byKey(PlanScreen.newCaixinhaKey));
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -5000));
+    await settle(tester);
     await _tap(tester, find.byKey(PlanScreen.otherCaixinhaKey('goal-reserve')));
     expect(find.byType(GoalDetailScreen), findsOneWidget);
     app.router.pop();

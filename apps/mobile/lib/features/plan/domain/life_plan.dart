@@ -187,6 +187,29 @@ final class LifePlan extends Equatable {
   final List<PlanGoal> goals;
   final List<PlanPoint> timeline;
 
+  /// The same plan with the goal at [from] in place [to]. Months and statuses
+  /// stay as they were until the server lays the new order out.
+  LifePlan moving(int from, int to) {
+    final ordered = [...goals];
+    ordered.insert(to, ordered.removeAt(from));
+    return LifePlan(
+      asOf: asOf,
+      monthlySavings: monthlySavings,
+      savingsFromBudget: savingsFromBudget,
+      monthlySpending: monthlySpending,
+      reserveMonths: reserveMonths,
+      reserve: reserve,
+      yearlyYield: yearlyYield,
+      keepInvested: keepInvested,
+      netWorth: netWorth,
+      invested: invested,
+      yearlyProvision: yearlyProvision,
+      free: free,
+      goals: List.unmodifiable(ordered),
+      timeline: timeline,
+    );
+  }
+
   PlanSettings get settings => PlanSettings(
     reserveMonths: reserveMonths,
     yearlyYield: yearlyYield,

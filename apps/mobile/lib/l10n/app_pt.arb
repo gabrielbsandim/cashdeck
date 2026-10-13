@@ -3997,30 +3997,21 @@
       }
     }
   },
-  "planSavings": "Guardando {amount} por mês",
-  "@planSavings": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
+  "planSavingsLabel": "Guardando por mês",
   "planSavingsFromBudget": "A meta de poupança do mês.",
   "planSavingsCustom": "Valor fixado nas premissas.",
-  "planFree": "Livre para os objetivos: {amount} por mês",
-  "@planFree": {
+  "planFreeLabel": "Livre para os objetivos",
+  "planPerMonth": "{amount}/mês",
+  "@planPerMonth": {
     "placeholders": {
       "amount": {
         "type": "String"
       }
     }
   },
-  "planReserve": "Reserva de emergência: {amount} ({months} meses de gastos)",
-  "@planReserve": {
+  "planReserveLabel": "Reserva de emergência ({months} meses de gastos)",
+  "@planReserveLabel": {
     "placeholders": {
-      "amount": {
-        "type": "String"
-      },
       "months": {
         "type": "int"
       }
@@ -4047,7 +4038,33 @@
     }
   },
   "planOrderTitle": "Por prioridade",
-  "planOrderHelp": "Segure e arraste para mudar a ordem. Um objetivo nunca é adiado pelos que vêm depois dele.",
+  "planOrderHelp": "Arraste pela alça, ou segure o card, para mudar a ordem. Um objetivo nunca é adiado pelos que vêm depois dele.",
+  "planPosition": "{position}º",
+  "@planPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "planDragHandle": "Mudar a prioridade de {name}",
+  "@planDragHandle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planReordered": "Prioridade atualizada",
+  "planRecalculating": "Refazendo o plano",
+  "planMilestonePercent": "{percent}% alcançado",
+  "@planMilestonePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "planEmptyTitle": "Nenhum objetivo ainda",
   "planEmptyMessage": "Adicione uma compra, um gasto de todo ano ou um marco de patrimônio.",
   "planNew": "Novo objetivo",

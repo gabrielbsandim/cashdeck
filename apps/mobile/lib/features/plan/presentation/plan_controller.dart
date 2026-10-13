@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The plan, replaced by the one the server answers after every change.
 class PlanController extends AsyncNotifier<LifePlan> {
+  var _moves = 0;
+
   @override
   Future<LifePlan> build() async =>
       (await ref.watch(loadPlanProvider).call()).orThrow;
@@ -27,13 +29,25 @@ class PlanController extends AsyncNotifier<LifePlan> {
   Future<AppFailure?> remove(String id) =>
       _apply(ref.read(removePlanGoalProvider).call(id));
 
-  /// Puts the goal at [from] in place [to]; the server answers the new plan.
-  Future<AppFailure?> move(int from, int to) {
-    final plan = state.requireValue;
-    final ids = [for (final goal in plan.goals) goal.id];
-    final moved = ids.removeAt(from);
-    ids.insert(to, moved);
-    return _apply(ref.read(reorderPlanProvider).call(ids));
+  /// Puts the goal at [from] in place [to] at once, so the dropped card
+  /// stays where it fell while the server lays the plan out again.
+  Future<AppFailure?> move(int from, int to) async {
+    final before = state.requireValue;
+    final moved = before.moving(from, to);
+    state = AsyncData(moved);
+    _moves++;
+    final result = await ref.read(reorderPlanProvider).call([
+      for (final goal in moved.goals) goal.id,
+    ]);
+    _moves--;
+    final (plan, failure) = switch (result) {
+      Ok(:final value) => (value, null),
+      Err(:final failure) => (before, failure),
+    };
+    // A later drag already sent the whole order; its answer is the one to show.
+    if (!ref.mounted || _moves > 0) return failure;
+    state = AsyncData(plan);
+    return failure;
   }
 
   Future<AppFailure?> saveSettings(PlanSettings settings) =>

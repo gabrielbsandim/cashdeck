@@ -1,5 +1,6 @@
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/time/year_month.dart';
+import 'package:cashdeck/features/plan/data/plan_dtos.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -168,5 +169,22 @@ void main() {
     expect(plan(fromBudget: true).props, hasLength(14));
     expect(point.props, hasLength(3));
     expect(delay.props, ['m', 'Milhão', 2]);
+  });
+
+  test('moving a goal keeps the rest of the plan', () {
+    final plan = lifePlanFromJson(
+      lifePlanJson(
+        goals: [
+          planGoalJson(),
+          planGoalJson(id: 'g2', kind: 'YEARLY', month: null),
+          planGoalJson(id: 'g3', kind: 'MILESTONE', metric: 'NET_WORTH'),
+        ],
+      ),
+    );
+
+    final moved = plan.moving(0, 2);
+
+    expect([for (final goal in moved.goals) goal.id], ['g2', 'g3', 'g1']);
+    expect(moved.moving(2, 0), plan);
   });
 }
