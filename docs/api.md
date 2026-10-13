@@ -88,6 +88,15 @@ The tax id may be formatted; it must be a valid CPF for `PF` and CNPJ for
 `PJ`, and a `PJ` keeps a regime. Answers the updated entity and writes an
 `entity.update` audit event. 404 for an unknown id, 422 for an invalid tax id.
 
+### GET /household, PUT /household
+
+The people of the family besides the personal entity, whose accounts are
+connected under `PF`. Body and `data`: `{ members: [{ name, taxId }] }`, at most
+10, replacing the list. A member's Pix moves the household's own money, so it
+is neither income nor spending once the `PF` accounts are counted, and it never
+counts toward the expected income. Only a CPF is accepted (422 otherwise): a
+member's company pays a salary, which stays income.
+
 ## Home
 
 ### GET /home/personal
@@ -250,7 +259,7 @@ every transaction linked to an internal transfer, so nothing counts twice.
   "type": "CHECKING"|"SAVINGS"|"CREDIT_CARD"|"INVESTMENT"|"WALLET",
   "origin": "CONNECTED"|"MANUAL", "isReserve": bool, "balance": Money,
   "cdiPercent": int | null, "connectionId": string | null,
-  "numberSuffix": string | null,
+  "numberSuffix": string | null, "holder": string | null,
   "logo": { "imageUrl": string, "color": string | null } | null,
   "credit": { "limit": Money, "available": Money, "usedPercent": int | null,
               "closesOn": date | null, "dueOn": date | null, "brand": string | null } | null,
@@ -279,8 +288,11 @@ Returns the account, 201.
 
 ### PATCH /accounts/{id}
 
-Body: `{ name?: string, isReserve?: bool, cdiPercent?: int | null, balanceCents?: int }`
+Body: `{ name?: string, isReserve?: bool, cdiPercent?: int | null, balanceCents?: int, holder?: string | null }`
 (`balanceCents` only for manual accounts). Returns the account.
+
+`holder` names who in the household holds it, to tell apart two accounts at
+the same bank; a blank one clears it.
 
 `name` renames any account, connected ones included; an Open Finance sync
 never overwrites it.
@@ -463,6 +475,9 @@ latest captured bill of that payee: the lines passed on, the `total` to ask
 the tenant for, the `ownerCost` left with the owner, the linked loan's
 `installment` due that month and the month's `result` (rent less both). Its
 `attachmentId` is the bill's PDF, at `GET /bills/{billId}/attachments/{id}`.
+`received` is `{ on: date, amount: Money }` once a credit of exactly `total`
+lands on any checking, savings or wallet account within 25 days of the bill's
+due date (the closest one), else `null`.
 `rental: null` stops renting it out.
 
 The Gmail reader asks the model for the lines a bill itemizes and keeps them,

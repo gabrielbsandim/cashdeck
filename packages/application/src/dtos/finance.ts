@@ -41,6 +41,7 @@ export const accountViewSchema = z.object({
   cdiPercent: z.int().nullable(),
   connectionId: z.string().nullable(),
   numberSuffix: z.string().nullable(),
+  holder: z.string().nullable(),
   logo: z
     .object({ imageUrl: z.string(), color: z.string().nullable() })
     .nullable(),
@@ -84,6 +85,8 @@ export const updateAccountSchema = z.object({
   isReserve: z.boolean().optional(),
   cdiPercent: z.int().min(0).max(1000).nullable().optional(),
   balanceCents: z.int().optional(),
+  // A blank holder clears it.
+  holder: z.string().trim().max(40).nullable().optional(),
 })
 
 export const transactionViewSchema = z.object({

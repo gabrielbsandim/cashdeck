@@ -106,7 +106,8 @@ const List<Widget> _skeleton = [
 
 String _cardName(TransactionAccount card) {
   final suffix = card.numberSuffix;
-  return suffix == null ? card.name : '${card.name} •• $suffix';
+  final name = suffix == null ? card.name : '${card.name} •• $suffix';
+  return withHolder(name, card.holder);
 }
 
 EdgeInsets get _listPadding => const EdgeInsets.fromLTRB(
@@ -164,6 +165,12 @@ class _BillsState extends ConsumerState<_Bills> {
     final palette = context.palette;
     final index = _bill ?? card.focus;
     final bill = index == null ? null : card.bills[index];
+    final holders = {
+      for (final account
+          in ref.watch(transactionAccountsProvider).value ??
+              const <TransactionAccount>[])
+        account.id: account.holder,
+    };
     return CdRefresh(
       providers: [
         cardBillsProvider,
@@ -180,7 +187,7 @@ class _BillsState extends ConsumerState<_Bills> {
               for (final (position, item) in cards.indexed)
                 CdFilterChip(
                   key: CardsScreen.cardKey(item.accountId),
-                  label: _billCardName(item),
+                  label: _billCardName(item, holders[item.accountId]),
                   selected: position == _card,
                   onTap: () => setState(() {
                     _card = position;
@@ -219,9 +226,10 @@ class _BillsState extends ConsumerState<_Bills> {
   }
 }
 
-String _billCardName(CardBills card) {
+String _billCardName(CardBills card, String? holder) {
   final suffix = card.suffix;
-  return suffix == null ? card.name : '${card.name} •• $suffix';
+  final name = suffix == null ? card.name : '${card.name} •• $suffix';
+  return withHolder(name, holder);
 }
 
 class _BillCard extends ConsumerWidget {

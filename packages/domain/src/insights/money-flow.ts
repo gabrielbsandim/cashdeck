@@ -24,7 +24,8 @@ export type FlowContext = {
   // The tenant's own entity names: a Pix to or from one moves money between
   // own accounts, even when the other account is not connected.
   readonly ownNames: readonly string[]
-  // Their CPF or CNPJ digits, for a Pix whose description names no one.
+  // Their CPF or CNPJ digits and those of the household members, for a Pix
+  // whose description names no one.
   readonly ownTaxIds?: readonly string[]
 }
 

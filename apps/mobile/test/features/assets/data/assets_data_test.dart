@@ -108,6 +108,26 @@ void main() {
       expect(waiting.rental?.charge, isNull);
     });
 
+    test('reads the rent received for a charge, absent or null as none', () {
+      final paid = assetFromJson(
+        assetJson(
+          rental: rentalJson(
+            received: {'on': '2026-10-08', 'amount': _money(173_665)},
+          ),
+        ),
+      );
+      expect(paid.rental?.charge?.received, testReceived);
+      final absent = assetFromJson(assetJson(rental: rentalJson()));
+      expect(absent.rental?.charge?.received, isNull);
+      final json = rentalJson();
+      final charge = Map.of(json['charge']! as Map<String, Object?>)
+        ..['received'] = null;
+      final cleared = assetFromJson(
+        assetJson(rental: {...json, 'charge': charge}),
+      );
+      expect(cleared.rental?.charge?.received, isNull);
+    });
+
     test('an edit sends the rental only when it changed', () {
       const rental = RentalDraft(
         rent: Money(160_000),

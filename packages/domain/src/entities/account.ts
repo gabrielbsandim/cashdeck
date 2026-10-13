@@ -43,6 +43,8 @@ export type Account = {
   // Last digits of the account or card number, as the bank shows them.
   readonly numberSuffix: string | null
   readonly credit: CreditLine | null
+  // Who in the household holds it, to tell apart two accounts at one bank.
+  readonly holder: string | null
 }
 
 export type CreateAccountInput = Omit<
@@ -54,6 +56,7 @@ export type CreateAccountInput = Omit<
   | 'cdiPercent'
   | 'numberSuffix'
   | 'credit'
+  | 'holder'
 > & {
   name: string
   isReserve?: boolean
@@ -62,6 +65,7 @@ export type CreateAccountInput = Omit<
   cdiPercent?: number | null
   numberSuffix?: string | null
   credit?: CreditLine | null
+  holder?: string | null
 }
 
 export const CASH_ACCOUNT_TYPES: readonly AccountType[] = [
@@ -88,6 +92,7 @@ export function createAccount(input: CreateAccountInput): Account {
     cdiPercent: input.cdiPercent ?? null,
     numberSuffix: input.numberSuffix ?? null,
     credit,
+    holder: input.holder?.trim() || null,
   }
 }
 

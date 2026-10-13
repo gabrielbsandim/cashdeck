@@ -74,6 +74,8 @@ const rentChargeViewSchema = z.object({
   attachmentId: z.string().nullable(),
   installment: moneyViewSchema.nullable(),
   result: moneyViewSchema,
+  // The credit of exactly the charge near the due date, once it lands.
+  received: z.object({ on: isoDate, amount: moneyViewSchema }).nullable(),
 })
 
 const rentalViewSchema = z.object({

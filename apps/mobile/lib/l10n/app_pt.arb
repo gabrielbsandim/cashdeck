@@ -2690,10 +2690,12 @@
   "balancesOutsideTotal": "fora do total",
   "balancesConnect": "Conectar conta",
   "balancesOpenBill": "fatura aberta",
-  "accountRenameTitle": "Renomear conta",
+  "accountEditTitle": "Editar conta",
   "accountRenameLabel": "Nome",
   "accountRenameHelper": "A sincronização com o banco não muda este nome.",
-  "accountRenamed": "Nome atualizado",
+  "accountHolderLabel": "Titular",
+  "accountHolderHelper": "Quem da família tem a conta, para separar duas do mesmo banco.",
+  "accountUpdated": "Conta atualizada",
   "billsNoneOnDay": "Nada vence neste dia",
   "billsCalendarClear": "Ver o mês todo",
   "billsLegendNeedsYou": "Precisa de você",
@@ -2785,7 +2787,7 @@
       }
     }
   },
-  "cardTimelineRename": "Renomear cartão",
+  "cardTimelineRename": "Editar cartão",
   "payrollAnnexTitle": "Anexo informado pela contadora",
   "payrollAnnexHint": "O ISS das notas e a estimativa do DAS usam este anexo. Em Folha, o app calcula pelo Fator R quando houver 12 meses.",
   "payrollAnnexFromPayroll": "Folha",
@@ -3926,6 +3928,15 @@
   "rentChargeTotal": "Cobrar do inquilino",
   "rentChargeSend": "Enviar cobrança",
   "rentChargeNoBill": "O boleto do condomínio ainda não chegou.",
+  "rentReceivedOn": "Recebido em {date}",
+  "@rentReceivedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "rentNotReceived": "Aguardando pagamento",
   "rentInstallment": "Parcela do financiamento",
   "rentOwnerCost": "Condomínio (sua parte)",
   "rentResult": "Sobra do aluguel no mês",

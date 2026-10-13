@@ -10,3 +10,15 @@ final class RenameAccount {
   Future<Result<TransactionAccount>> call(String id, String name) =>
       _repository.rename(id, name.trim());
 }
+
+final class SetAccountHolder {
+  const new(this._repository);
+
+  final AccountsRepository _repository;
+
+  /// A blank holder clears it.
+  Future<Result<TransactionAccount>> call(String id, String? holder) {
+    final trimmed = holder?.trim() ?? '';
+    return _repository.setHolder(id, trimmed.isEmpty ? null : trimmed);
+  }
+}

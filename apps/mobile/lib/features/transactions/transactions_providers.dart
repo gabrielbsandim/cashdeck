@@ -60,3 +60,7 @@ final accountsRepositoryProvider = Provider<AccountsRepository>((ref) {
 final renameAccountProvider = Provider<RenameAccount>(
   (ref) => RenameAccount(ref.watch(accountsRepositoryProvider)),
 );
+
+final setAccountHolderProvider = Provider<SetAccountHolder>(
+  (ref) => SetAccountHolder(ref.watch(accountsRepositoryProvider)),
+);

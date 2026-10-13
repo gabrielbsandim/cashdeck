@@ -186,6 +186,7 @@ final class TransactionAccount extends Equatable {
     this.balance = const Money(0),
     this.isReserve = false,
     this.numberSuffix,
+    this.holder,
     this.logo,
     this.credit,
     this.openBill,
@@ -205,6 +206,9 @@ final class TransactionAccount extends Equatable {
 
   /// The last digits of the account or card number.
   final String? numberSuffix;
+
+  /// Who in the household holds it, to tell apart accounts at the same bank.
+  final String? holder;
   final AccountLogo? logo;
   final CreditLine? credit;
 
@@ -234,21 +238,28 @@ final class TransactionAccount extends Equatable {
     null => balance,
   };
 
-  TransactionAccount renamed(String name) => TransactionAccount(
-    id: id,
-    name: name,
-    owner: owner,
-    institution: institution,
-    type: type,
-    balance: balance,
-    isReserve: isReserve,
-    numberSuffix: numberSuffix,
-    logo: logo,
-    credit: credit,
-    openBill: openBill,
-    sync: sync,
-    connectionId: connectionId,
-  );
+  TransactionAccount renamed(String name) => _copy(name: name, holder: holder);
+
+  TransactionAccount heldBy(String? holder) =>
+      _copy(name: name, holder: holder);
+
+  TransactionAccount _copy({required String name, required String? holder}) =>
+      TransactionAccount(
+        id: id,
+        name: name,
+        owner: owner,
+        institution: institution,
+        type: type,
+        balance: balance,
+        isReserve: isReserve,
+        numberSuffix: numberSuffix,
+        holder: holder,
+        logo: logo,
+        credit: credit,
+        openBill: openBill,
+        sync: sync,
+        connectionId: connectionId,
+      );
 
   @override
   List<Object?> get props => [
@@ -260,6 +271,7 @@ final class TransactionAccount extends Equatable {
     balance,
     isReserve,
     numberSuffix,
+    holder,
     logo,
     credit,
     openBill,

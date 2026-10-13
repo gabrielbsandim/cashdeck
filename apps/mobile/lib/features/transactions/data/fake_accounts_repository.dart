@@ -4,7 +4,7 @@ import 'package:cashdeck/features/transactions/data/fake_transactions_repository
 import 'package:cashdeck/features/transactions/domain/accounts_repository.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
 
-/// Answers with the renamed fictional account; the list keeps its names.
+/// Answers with the edited fictional account; the list keeps its own.
 final class FakeAccountsRepository implements AccountsRepository {
   const new({this.latency = const Duration(milliseconds: 250)});
 
@@ -15,6 +15,18 @@ final class FakeAccountsRepository implements AccountsRepository {
     await Future<void>.delayed(latency);
     for (final account in FakeTransactionsRepository.accountsList) {
       if (account.id == id) return Ok(account.renamed(name));
+    }
+    return const Err(NotFoundFailure());
+  }
+
+  @override
+  Future<Result<TransactionAccount>> setHolder(
+    String id,
+    String? holder,
+  ) async {
+    await Future<void>.delayed(latency);
+    for (final account in FakeTransactionsRepository.accountsList) {
+      if (account.id == id) return Ok(account.heldBy(holder));
     }
     return const Err(NotFoundFailure());
   }

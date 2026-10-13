@@ -111,7 +111,8 @@ void main() {
     );
     expect(_rental.props, hasLength(3));
     expect(rental.props, hasLength(4));
-    expect(testRental.charge?.props, hasLength(9));
+    expect(testRental.charge?.props, hasLength(10));
+    expect(testReceived.props, hasLength(2));
     expect(testRental.charge?.passedOn.single.props, hasLength(2));
   });
 

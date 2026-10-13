@@ -140,6 +140,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The people whose CPF moves the household own money */
+        get: operations["getHousehold"];
+        /** Replace the household members */
+        put: operations["setHousehold"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/personal/income-sources": {
         parameters: {
             query?: never;
@@ -3009,6 +3027,87 @@ export interface operations {
             503: components["responses"]["Error"];
         };
     };
+    getHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The people whose CPF moves the household own money */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            members: {
+                                name: string;
+                                taxId: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    setHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    members: {
+                        name: string;
+                        taxId: string;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Replace the household members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            members: {
+                                name: string;
+                                taxId: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getIncomeSources: {
         parameters: {
             query?: never;
@@ -3528,6 +3627,13 @@ export interface operations {
                                             cents: number;
                                             currency: string;
                                         };
+                                        received: {
+                                            on: string;
+                                            amount: {
+                                                cents: number;
+                                                currency: string;
+                                            };
+                                        } | null;
                                     } | null;
                                 } | null;
                             }[];
@@ -3681,6 +3787,13 @@ export interface operations {
                                         cents: number;
                                         currency: string;
                                     };
+                                    received: {
+                                        on: string;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                    } | null;
                                 } | null;
                             } | null;
                         };
@@ -3851,6 +3964,13 @@ export interface operations {
                                         cents: number;
                                         currency: string;
                                     };
+                                    received: {
+                                        on: string;
+                                        amount: {
+                                            cents: number;
+                                            currency: string;
+                                        };
+                                    } | null;
                                 } | null;
                             } | null;
                         };
@@ -5746,6 +5866,7 @@ export interface operations {
                             cdiPercent: number | null;
                             connectionId: string | null;
                             numberSuffix: string | null;
+                            holder: string | null;
                             logo: {
                                 imageUrl: string;
                                 color: string | null;
@@ -5838,6 +5959,7 @@ export interface operations {
                             cdiPercent: number | null;
                             connectionId: string | null;
                             numberSuffix: string | null;
+                            holder: string | null;
                             logo: {
                                 imageUrl: string;
                                 color: string | null;
@@ -5895,6 +6017,7 @@ export interface operations {
                     isReserve?: boolean;
                     cdiPercent?: number | null;
                     balanceCents?: number;
+                    holder?: string | null;
                 };
             };
         };
@@ -5924,6 +6047,7 @@ export interface operations {
                             cdiPercent: number | null;
                             connectionId: string | null;
                             numberSuffix: string | null;
+                            holder: string | null;
                             logo: {
                                 imageUrl: string;
                                 color: string | null;

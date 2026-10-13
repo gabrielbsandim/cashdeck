@@ -49,12 +49,23 @@ final class _Renames implements AccountsRepository {
 
   final bool fails;
   final calls = <(String, String)>[];
+  final holders = <(String, String?)>[];
 
   @override
   Future<Result<TransactionAccount>> rename(String id, String name) async {
     calls.add((id, name));
     if (fails) return const Err(NetworkFailure());
     return Ok(_checking.renamed(name));
+  }
+
+  @override
+  Future<Result<TransactionAccount>> setHolder(
+    String id,
+    String? holder,
+  ) async {
+    holders.add((id, holder));
+    if (fails) return const Err(NetworkFailure());
+    return Ok(_checking.heldBy(holder));
   }
 }
 
@@ -121,6 +132,11 @@ const _billedCard = TransactionAccount(
 
 Finder _nameField() => find.descendant(
   of: find.byKey(AccountRenameSheet.fieldKey),
+  matching: find.byType(TextFormField),
+);
+
+Finder _holderField() => find.descendant(
+  of: find.byKey(AccountRenameSheet.holderFieldKey),
   matching: find.byType(TextFormField),
 );
 
@@ -241,7 +257,7 @@ void main() {
 
     await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
     await settle(tester);
-    expect(find.text(l10n.accountRenameTitle), findsOneWidget);
+    expect(find.text(l10n.accountEditTitle), findsOneWidget);
     expect(find.text(l10n.accountRenameHelper), findsOneWidget);
     final save = find.byKey(AccountRenameSheet.saveKey);
     expect(tester.widget<CdButton>(save).onPressed, isNull);
@@ -256,7 +272,94 @@ void main() {
     await settle(tester);
 
     expect(renames.calls, [('checking', 'Viagem')]);
-    expect(find.text(l10n.accountRenamed), findsOneWidget);
+    expect(renames.holders, isEmpty);
+    expect(find.text(l10n.accountUpdated), findsOneWidget);
+  });
+
+  testWidgets('the row names the holder and the sheet edits it', (
+    tester,
+  ) async {
+    final renames = _Renames();
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(Ok([_checking.heldBy('Ana')])),
+        ),
+        accountsRepositoryProvider.overrideWithValue(renames),
+      ],
+    );
+
+    expect(find.text('Corrente Exemplo · Ana'), findsOneWidget);
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
+    await settle(tester);
+    expect(find.text(l10n.accountHolderLabel), findsOneWidget);
+    final save = find.byKey(AccountRenameSheet.saveKey);
+
+    await tester.enterText(_holderField(), ' Ana ');
+    await tester.pump();
+    expect(tester.widget<CdButton>(save).onPressed, isNull);
+
+    await tester.enterText(_holderField(), '   ');
+    await tester.pump();
+    await tester.tap(save);
+    await settle(tester);
+
+    expect(renames.calls, isEmpty);
+    expect(renames.holders, [('checking', null)]);
+    expect(find.text(l10n.accountUpdated), findsOneWidget);
+  });
+
+  testWidgets('a failed rename keeps the holder unsent', (tester) async {
+    final renames = _Renames(fails: true);
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_checking])),
+        ),
+        accountsRepositoryProvider.overrideWithValue(renames),
+      ],
+    );
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
+    await settle(tester);
+    await tester.enterText(_nameField(), 'Viagem');
+    await tester.enterText(_holderField(), 'Bia');
+    await tester.pump();
+    await tester.tap(find.byKey(AccountRenameSheet.saveKey));
+    await settle(tester);
+
+    expect(renames.calls, [('checking', 'Viagem')]);
+    expect(renames.holders, isEmpty);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
+  });
+
+  testWidgets('a failed holder says why', (tester) async {
+    final renames = _Renames(fails: true);
+    await pumpRoute(
+      tester,
+      AppRoutes.balances,
+      overrides: [
+        transactionsRepositoryProvider.overrideWithValue(
+          _Accounts(const Ok([_checking])),
+        ),
+        accountsRepositoryProvider.overrideWithValue(renames),
+      ],
+    );
+
+    await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));
+    await settle(tester);
+    await tester.enterText(_holderField(), ' Bia ');
+    await tester.pump();
+    await tester.tap(find.byKey(AccountRenameSheet.saveKey));
+    await settle(tester);
+
+    expect(renames.calls, isEmpty);
+    expect(renames.holders, [('checking', 'Bia')]);
+    expect(find.text(l10n.errorNetwork), findsOneWidget);
   });
 
   testWidgets('a dismissed sheet renames nothing and a failure says why', (
@@ -278,7 +381,7 @@ void main() {
     await settle(tester);
     await tester.tapAt(const Offset(10, 10));
     await settle(tester);
-    expect(find.text(l10n.accountRenameTitle), findsNothing);
+    expect(find.text(l10n.accountEditTitle), findsNothing);
     expect(renames.calls, isEmpty);
 
     await tester.tap(find.byKey(BalancesScreen.rowKey('checking')));

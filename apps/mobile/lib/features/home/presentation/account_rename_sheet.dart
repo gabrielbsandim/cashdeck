@@ -13,17 +13,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The new name for [account], trimmed, or null when the sheet is dismissed.
-Future<String?> askAccountName(
+/// What the sheet saves: the trimmed name and the holder, null when blank.
+typedef AccountEdit = ({String name, String? holder});
+
+/// The edited name and holder of [account], or null when dismissed.
+Future<AccountEdit?> askAccountEdit(
   BuildContext context,
   TransactionAccount account,
-) => showCdBottomSheet<String>(
+) => showCdBottomSheet<AccountEdit>(
   context,
-  title: AppLocalizations.of(context).accountRenameTitle,
-  builder: (_) => AccountRenameSheet(current: account.name),
+  title: AppLocalizations.of(context).accountEditTitle,
+  builder: (_) => AccountRenameSheet(current: account),
 );
 
-/// Asks for a new name, saves it and says how it went.
+/// Asks for a new name and holder, saves what changed and says how it went.
 Future<void> renameAccount(
   BuildContext context,
   WidgetRef ref,
@@ -31,17 +34,23 @@ Future<void> renameAccount(
 ) async {
   final l10n = AppLocalizations.of(context);
   final rename = ref.read(renameAccountProvider);
-  final name = await askAccountName(context, account);
-  if (name == null || !context.mounted) return;
-  final result = await rename(account.id, name);
+  final setHolder = ref.read(setAccountHolderProvider);
+  final edit = await askAccountEdit(context, account);
+  if (edit == null || !context.mounted) return;
+  final renamed = edit.name == account.name
+      ? null
+      : await rename(account.id, edit.name);
+  final held = renamed is Err || edit.holder == account.holder
+      ? null
+      : await setHolder(account.id, edit.holder);
   if (!context.mounted) return;
   ref
     ..invalidate(transactionAccountsProvider)
     ..invalidate(homeControllerProvider);
-  await showOutcomeToast(context, switch (result) {
-    Ok() => null,
-    Err(:final failure) => failure,
-  }, success: l10n.accountRenamed);
+  await showOutcomeToast(context, switch ((renamed, held)) {
+    (Err(:final failure), _) || (_, Err(:final failure)) => failure,
+    _ => null,
+  }, success: l10n.accountUpdated);
 }
 
 class AccountRenameSheet extends StatefulWidget {
@@ -50,22 +59,31 @@ class AccountRenameSheet extends StatefulWidget {
   static const fieldKey = Key('account-rename-field');
   static const saveKey = Key('account-rename-save');
 
-  /// The server's limit on an account name.
-  static const maxLength = 80;
+  static const holderFieldKey = Key('account-holder-field');
 
-  final String current;
+  /// The server's limits on an account name and its holder.
+  static const maxLength = 80;
+  static const holderMaxLength = 40;
+
+  final TransactionAccount current;
 
   @override
   State<AccountRenameSheet> createState() => _AccountRenameSheetState();
 }
 
 class _AccountRenameSheetState extends State<AccountRenameSheet> {
-  late String _name = widget.current;
+  late String _name = widget.current.name;
+  late String _holder = widget.current.holder ?? '';
 
   VoidCallback? get _save {
     final name = _name.trim();
-    if (name.isEmpty || name == widget.current) return null;
-    return () => Navigator.of(context).pop(name);
+    final trimmed = _holder.trim();
+    final holder = trimmed.isEmpty ? null : trimmed;
+    final current = widget.current;
+    if (name.isEmpty) return null;
+    if (name == current.name && holder == current.holder) return null;
+    return () =>
+        Navigator.of(context).pop<AccountEdit>((name: name, holder: holder));
   }
 
   @override
@@ -77,13 +95,27 @@ class _AccountRenameSheetState extends State<AccountRenameSheet> {
         CdTextField(
           key: AccountRenameSheet.fieldKey,
           label: l10n.accountRenameLabel,
-          initialValue: widget.current,
+          initialValue: widget.current.name,
           helperText: l10n.accountRenameHelper,
-          textInputAction: TextInputAction.done,
+          textInputAction: TextInputAction.next,
           inputFormatters: [
             LengthLimitingTextInputFormatter(AccountRenameSheet.maxLength),
           ],
           onChanged: (value) => setState(() => _name = value),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        CdTextField(
+          key: AccountRenameSheet.holderFieldKey,
+          label: l10n.accountHolderLabel,
+          initialValue: widget.current.holder,
+          helperText: l10n.accountHolderHelper,
+          textInputAction: TextInputAction.done,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(
+              AccountRenameSheet.holderMaxLength,
+            ),
+          ],
+          onChanged: (value) => setState(() => _holder = value),
         ),
         const SizedBox(height: AppSpacing.md),
         CdButton.filled(

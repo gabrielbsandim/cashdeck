@@ -169,6 +169,7 @@ export function makeAccountViews(
         cdiPercent: account.cdiPercent,
         connectionId: account.connectionId,
         numberSuffix: account.numberSuffix,
+        holder: account.holder,
         logo: logoView(institution),
         credit: creditView(account.credit),
         openBill: openBillView(account),
@@ -292,6 +293,7 @@ export function makeUpdateAccount(
       isReserve: input.isReserve ?? account.isReserve,
       cdiPercent:
         input.cdiPercent === undefined ? account.cdiPercent : input.cdiPercent,
+      holder: input.holder === undefined ? account.holder : input.holder,
       balance,
     })
     await deps.accounts.save(updated)

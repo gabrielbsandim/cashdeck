@@ -230,6 +230,7 @@ model Account {
   currency             String        @default("BRL") @db.Char(3)
   cdiPercent           Int?          @map("cdi_percent")
   numberSuffix         String?       @map("number_suffix")
+  holder               String?
   // A card's credit line, all null on cash accounts.
   creditLimitCents     BigInt?       @map("credit_limit_cents")
   creditAvailableCents BigInt?       @map("credit_available_cents")

@@ -196,7 +196,7 @@ class _FilterBar extends ConsumerWidget {
         for (final account in accounts)
           PickerOption(
             value: account.id,
-            label: account.name,
+            label: accountName(account),
             subtitle: accountTypeLabel(l10n, account.type),
             key: TransactionsScreen.optionKey(account.id),
             icon: accountTypeIcon(account.type),
@@ -301,7 +301,9 @@ class _FilterBar extends ConsumerWidget {
             ],
             CdFilterChip(
               key: TransactionsScreen.accountFilterKey,
-              label: account?.name ?? l10n.transactionsFilterAccount,
+              label: account == null
+                  ? l10n.transactionsFilterAccount
+                  : accountName(account),
               icon: Symbols.account_balance_rounded,
               dropdown: true,
               selected: filters.accountId != null,

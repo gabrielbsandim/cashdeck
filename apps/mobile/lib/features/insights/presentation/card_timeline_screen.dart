@@ -101,9 +101,10 @@ String _title(
 ) {
   final name = account?.name ?? timeline?.name;
   if (name == null) return l10n.cardsTitle;
+  final holder = account?.holder;
   final suffix = timeline?.suffix ?? account?.numberSuffix;
-  if (suffix == null || name.contains(suffix)) return name;
-  return '$name •• $suffix';
+  if (suffix == null || name.contains(suffix)) return withHolder(name, holder);
+  return withHolder('$name •• $suffix', holder);
 }
 
 String _stateLabel(AppLocalizations l10n, TimelineBillState state) =>

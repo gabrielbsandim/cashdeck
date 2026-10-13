@@ -69,6 +69,17 @@ final class BillLine extends Equatable {
   List<Object?> get props => [description, amount];
 }
 
+/// The tenant's payment found for a charge.
+final class RentReceived extends Equatable {
+  const new({required this.on, required this.amount});
+
+  final CalendarDate on;
+  final Money amount;
+
+  @override
+  List<Object?> get props => [on, amount];
+}
+
 /// The latest bill of the rented building: what to ask the tenant for and
 /// what the month leaves once the loan and the owner's share are paid.
 final class RentCharge extends Equatable {
@@ -82,6 +93,7 @@ final class RentCharge extends Equatable {
     required this.result,
     this.attachmentId,
     this.installment,
+    this.received,
   });
 
   final String billId;
@@ -96,6 +108,9 @@ final class RentCharge extends Equatable {
   final String? attachmentId;
   final Money? installment;
 
+  /// Null until the tenant's payment of [total] shows up on an account.
+  final RentReceived? received;
+
   @override
   List<Object?> get props => [
     billId,
@@ -107,6 +122,7 @@ final class RentCharge extends Equatable {
     result,
     attachmentId,
     installment,
+    received,
   ];
 }
 

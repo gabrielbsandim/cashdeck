@@ -26,6 +26,7 @@ import 'package:cashdeck/features/card_notifications/card_notifications_provider
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_scope_controller.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -398,7 +399,7 @@ class _ReviewState extends ConsumerState<_Review> {
       for (final card in cards)
         CdCheckboxRow(
           key: ManualCardBillImportScreen.postCardKey(card.id),
-          title: card.name,
+          title: accountName(card),
           subtitle: Text(card.institution, style: secondary),
           value: card.id == accountId,
           onChanged: (_) => setState(() => _accountId = card.id),

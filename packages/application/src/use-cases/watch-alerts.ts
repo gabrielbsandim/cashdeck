@@ -25,6 +25,7 @@ import { lastDay, monthOf, today } from '@/use-cases/shared'
 
 export type WatchAlertDeps = Pick<
   Deps,
+  | 'documents'
   | 'entities'
   | 'accounts'
   | 'transactions'

@@ -1,6 +1,8 @@
 import {
+  addDays,
   type AssetKind,
   assetValueOn,
+  CASH_ACCOUNT_TYPES,
   type EntityKind,
   installmentIn,
   isRentalBill,
@@ -10,6 +12,8 @@ import {
   netWorthChange,
   type Rental,
   rentCharge,
+  type RentCredit,
+  rentReceived,
   ValidationError,
   type Valuation,
   withValuation,
@@ -29,6 +33,9 @@ import { LOANS_COLLECTION, loadLoans, type StoredLoan } from '@/use-cases/loans'
 import { requireEntity, required, today } from '@/use-cases/shared'
 
 export const ASSETS_COLLECTION = 'assets'
+
+// Covers the latest building bill and the days around its due date.
+const RENT_HISTORY_DAYS = 60
 
 export type StoredAsset = {
   id: string
@@ -50,11 +57,18 @@ export type StoredAsset = {
 export type AssetContext = {
   loans: ReadonlyMap<string, StoredLoan>
   bills: readonly StoredBillLines[]
+  credits: readonly RentCredit[]
 }
 
 type AssetDeps = Pick<
   Deps,
-  'entities' | 'documents' | 'vehiclePrices' | 'clock' | 'ids'
+  | 'entities'
+  | 'accounts'
+  | 'transactions'
+  | 'documents'
+  | 'vehiclePrices'
+  | 'clock'
+  | 'ids'
 >
 
 const ORDER: Record<AssetKind, number> = { PROPERTY: 0, VEHICLE: 1, OTHER: 2 }
@@ -75,17 +89,20 @@ const latestBill = (rental: Rental, bills: readonly StoredBillLines[]) =>
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     .at(-1)
 
+const receivedView = (credit: RentCredit | null) =>
+  credit ? { on: credit.bookedOn, amount: money(Money.of(credit.cents)) } : null
+
 export function rentalView(
   rental: Rental,
   loan: StoredLoan | undefined,
-  bills: readonly StoredBillLines[],
+  context: AssetContext,
 ): RentalView {
   const base = {
     rent: money(Money.of(rental.rent)),
     passThrough: [...rental.passThrough],
     billFrom: rental.billFrom,
   }
-  const bill = latestBill(rental, bills)
+  const bill = latestBill(rental, context.bills)
   if (!bill) {
     return { ...base, charge: null }
   }
@@ -109,6 +126,9 @@ export function rentalView(
       attachmentId: bill.attachmentId,
       installment: installment ? money(Money.of(installment.total)) : null,
       result: money(Money.of(rental.rent - owed - charge.ownerCost)),
+      received: receivedView(
+        rentReceived(charge.total, bill.dueDate, context.credits),
+      ),
     },
   }
 }
@@ -149,7 +169,7 @@ export function assetView(
         }
       : null,
     equity: money(value.subtract(owed)),
-    rental: rental ? rentalView(rental, loan, context.bills) : null,
+    rental: rental ? rentalView(rental, loan, context) : null,
   }
 }
 
@@ -173,11 +193,36 @@ export function makeAssets(deps: AssetDeps) {
     )
   }
 
+  // The rent lands on any cash account, the tenant's or a relative's.
+  async function rentCredits(tenantId: string): Promise<RentCredit[]> {
+    const rented = (await loadAssets(deps, tenantId)).some(
+      asset => asset.rental,
+    )
+    if (!rented) {
+      return []
+    }
+    const accounts = (await deps.accounts.list(tenantId)).filter(account =>
+      CASH_ACCOUNT_TYPES.includes(account.type),
+    )
+    const transactions = await deps.transactions.all(tenantId, {
+      accountIds: accounts.map(account => account.id),
+      from: addDays(day(), -RENT_HISTORY_DAYS),
+      to: day(),
+    })
+    return transactions
+      .filter(transaction => transaction.amount.isPositive())
+      .map(transaction => ({
+        bookedOn: transaction.bookedOn,
+        cents: transaction.amount.cents,
+      }))
+  }
+
   async function contextOf(tenantId: string): Promise<AssetContext> {
     const loans = await loadLoans(deps, tenantId)
     return {
       loans: new Map(loans.map(loan => [loan.id, loan])),
       bills: await loadBillLines(deps, tenantId),
+      credits: await rentCredits(tenantId),
     }
   }
 

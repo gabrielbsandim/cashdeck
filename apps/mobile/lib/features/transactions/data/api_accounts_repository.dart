@@ -22,4 +22,14 @@ final class ApiAccountsRepository implements AccountsRepository {
         );
         return accountFromJson(asJsonMap(unwrapData(response.data)));
       });
+
+  @override
+  Future<Result<TransactionAccount>> setHolder(String id, String? holder) =>
+      guardRequest(() async {
+        final response = await _dio.patch<Object?>(
+          '$path/${Uri.encodeComponent(id)}',
+          data: {'holder': holder},
+        );
+        return accountFromJson(asJsonMap(unwrapData(response.data)));
+      });
 }

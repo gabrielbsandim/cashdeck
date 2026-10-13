@@ -38,6 +38,7 @@ final class FakeTransactionsRepository implements TransactionsRepository {
       type: AccountType.checking,
       balance: Money(482_015),
       numberSuffix: '4410',
+      holder: 'Ana',
       sync: AccountSync(state: SyncState.updated),
       connectionId: 'conn-aurora',
     ),

@@ -200,6 +200,14 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.rentInstallment), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(AssetsScreen.rentReceivedKey),
+        matching: find.textContaining(l10n.rentReceivedOn('')),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.rentNotReceived), findsNothing);
 
     await _tap(tester, find.byKey(AssetsScreen.rentSendKey));
 
@@ -259,6 +267,7 @@ void main() {
     final sharer = app.read(fileSharerProvider) as FakeFileSharer;
 
     expect(find.text(l10n.rentChargeNoBill), findsOneWidget);
+    expect(find.text(l10n.rentNotReceived), findsNWidgets(2));
     await _tap(tester, find.byKey(AssetsScreen.rentSendKey).first);
     expect(sharer.texts.single, contains('Consumo de gás'));
     await _tap(tester, find.byKey(AssetsScreen.rentSendKey).last);

@@ -7,6 +7,7 @@ import {
   transaction,
 } from '@/testing/deps.test-helpers'
 import { company, TENANT } from '@/testing/scenario.test-helpers'
+import { makeHousehold } from '@/use-cases/household'
 import {
   cardsSummary,
   flowEntries,
@@ -350,5 +351,46 @@ describe('insight helpers', () => {
     expect(
       Object.fromEntries(entries.map(e => [e.transaction.id, e.kind])),
     ).toEqual({ ads: 'NEUTRAL', gift: 'EXPENSE' })
+  })
+
+  it('counts a household member moving money as own once the personal accounts count', async () => {
+    const deps = fullDeps()
+    await deps.entities.save(company)
+    await makeHousehold(deps).set(TENANT, {
+      members: [{ name: 'Ana Lima', taxId: '111.444.777-35' }],
+    })
+    await deps.transactions.save(
+      transaction({
+        id: 'member',
+        accountId: 'checking',
+        amount: Money.of(200_000),
+        bookedOn: '2026-10-05',
+        description: 'Pix recebido de Ana Lima',
+        counterparty: '11144477735',
+      }),
+    )
+    await deps.transactions.save(
+      transaction({
+        id: 'salary',
+        accountId: 'checking',
+        amount: Money.of(500_000),
+        bookedOn: '2026-10-06',
+        description: 'Pix recebido de Ana Lima Consultoria',
+        counterparty: '11444777000161',
+      }),
+    )
+    const kinds = async (accountId: string, entityId: string) =>
+      (
+        await flowEntries(
+          deps,
+          TENANT,
+          [account({ id: accountId, entityId })],
+          new Map(),
+          { from: '2026-10-01', to: '2026-10-08' },
+        )
+      ).map(entry => entry.kind)
+
+    expect(await kinds('checking', 'pf')).toEqual(['INCOME', 'NEUTRAL'])
+    expect(await kinds('checking', 'pj')).toEqual(['INCOME', 'INCOME'])
   })
 })

@@ -1,3 +1,5 @@
+import { daysBetween, type LocalDate } from '@/calendar/local-date'
+
 // Amounts in cents. The tenant pays the rent plus the lines of the building's
 // bill that are theirs to pay, like the gas they used.
 export type Rental = {
@@ -47,4 +49,26 @@ export function rentCharge(
     total: rental.rent + passed,
     ownerCost: billTotal - passed,
   }
+}
+
+export type RentCredit = {
+  readonly bookedOn: LocalDate
+  readonly cents: number
+}
+
+// The tenant pays the month's charge some days around the building's due
+// date, before it as often as after.
+const RENT_WINDOW_DAYS = 25
+
+export function rentReceived(
+  total: number,
+  dueDate: LocalDate,
+  credits: readonly RentCredit[],
+): RentCredit | null {
+  const gap = (credit: RentCredit) =>
+    Math.abs(daysBetween(dueDate, credit.bookedOn))
+  const [closest] = credits
+    .filter(credit => credit.cents === total && gap(credit) <= RENT_WINDOW_DAYS)
+    .sort((a, b) => gap(a) - gap(b))
+  return closest ?? null
 }

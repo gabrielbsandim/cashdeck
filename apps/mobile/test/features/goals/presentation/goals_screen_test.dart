@@ -78,7 +78,7 @@ void main() {
     await _type(tester, GoalEditor.nameKey, 'Casa');
     await _type(tester, GoalEditor.targetKey, '5000000');
     await _tap(tester, find.byKey(GoalEditor.accountKey));
-    await _tap(tester, find.text('Corrente Aurora ••4410').last);
+    await _tap(tester, find.text('Corrente Aurora ••4410 · Ana').last);
     expect(find.text(l10n.goalAccountHelp), findsOneWidget);
     expect(find.byKey(GoalEditor.initialKey), findsNothing);
     await _tap(tester, find.byKey(GoalEditor.saveKey));

@@ -217,7 +217,7 @@ class _Balances extends ConsumerWidget {
                   institutions.indexOf(account.institution),
                 ),
               ),
-        title: account.name,
+        title: accountName(account),
         subtitle: [
           account.institution,
           ?type,

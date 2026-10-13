@@ -239,7 +239,9 @@ class _Body extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.sm),
                     Flexible(
                       child: Text(
-                        account?.name ?? l10n.transactionAccountUnknown,
+                        account == null
+                            ? l10n.transactionAccountUnknown
+                            : accountName(account),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

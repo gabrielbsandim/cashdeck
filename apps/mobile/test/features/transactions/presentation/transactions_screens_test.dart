@@ -296,7 +296,7 @@ void main() {
     );
     expect(find.text(l10n.categorySourceRule), findsOneWidget);
     expect(find.text(l10n.transactionCategoryUnknown), findsOneWidget);
-    expect(find.text('Corrente Aurora ••4410'), findsOneWidget);
+    expect(find.text('Corrente Aurora ••4410 · Ana'), findsOneWidget);
 
     await tester.tap(find.byKey(TransactionDetailScreen.transferKey));
     await settle(tester);

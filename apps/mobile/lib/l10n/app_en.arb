@@ -1046,10 +1046,12 @@
   "balancesOutsideTotal": "outside the total",
   "balancesConnect": "Connect an account",
   "balancesOpenBill": "open bill",
-  "accountRenameTitle": "Rename account",
+  "accountEditTitle": "Edit account",
   "accountRenameLabel": "Name",
   "accountRenameHelper": "Syncing with the bank never changes this name.",
-  "accountRenamed": "Name updated",
+  "accountHolderLabel": "Holder",
+  "accountHolderHelper": "Who in the family holds it, to tell apart two at the same bank.",
+  "accountUpdated": "Account updated",
   "billsNoneOnDay": "Nothing is due on this day",
   "billsCalendarClear": "See the whole month",
   "billsLegendNeedsYou": "Needs you",
@@ -1083,7 +1085,7 @@
   "cardTimelinePrevious": "Previous bill",
   "cardTimelineNext": "Next bill",
   "cardTimelinePage": "Bill {index} of {count}",
-  "cardTimelineRename": "Rename card",
+  "cardTimelineRename": "Edit card",
   "payrollAnnexTitle": "Annex from your accountant",
   "payrollAnnexHint": "The invoice ISS and the DAS estimate use this annex. On Payroll, the app computes Fator R once 12 months exist.",
   "payrollAnnexFromPayroll": "Payroll",
@@ -1610,6 +1612,15 @@
   "rentChargeTotal": "Ask the tenant for",
   "rentChargeSend": "Send the charge",
   "rentChargeNoBill": "The building's bill has not arrived yet.",
+  "rentReceivedOn": "Received on {date}",
+  "@rentReceivedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "rentNotReceived": "Not received yet",
   "rentInstallment": "Loan installment",
   "rentOwnerCost": "Building fee (your part)",
   "rentResult": "Rent left this month",

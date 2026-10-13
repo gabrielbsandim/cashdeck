@@ -44,11 +44,69 @@ void main() {
   });
 
   test('a renamed account keeps everything but the name', () {
-    final card = accountFromJson(_card);
+    final card = accountFromJson({..._card, 'holder': 'Ana'});
     final renamed = card.renamed('Viagem');
 
     expect(renamed.name, 'Viagem');
+    expect(renamed.holder, 'Ana');
     expect(renamed.renamed(card.name), card);
+  });
+
+  test('reads the holder, absent or null as none', () {
+    expect(accountFromJson({..._card, 'holder': 'Ana'}).holder, 'Ana');
+    expect(accountFromJson({..._card, 'holder': null}).holder, isNull);
+    expect(accountFromJson(_card).holder, isNull);
+  });
+
+  test('a held account keeps everything but the holder', () {
+    final card = accountFromJson(_card);
+    final held = card.heldBy('Ana');
+
+    expect(held.holder, 'Ana');
+    expect(held.name, card.name);
+    expect(held, isNot(card));
+    expect(held.heldBy(null), card);
+  });
+
+  test('sets the holder over the api, a blank one cleared', () async {
+    final dio = stubDio(
+      (options) => switch ('${options.method} ${options.path}') {
+        'PATCH /api/v1/accounts/card' => StubResponse(200, {
+          'data': Map.of(_card)..['holder'] = 'Ana',
+        }),
+        _ => const StubResponse(404),
+      },
+    );
+    final setHolder = SetAccountHolder(ApiAccountsRepository(dio));
+
+    final result = await setHolder('card', '  Ana ');
+    await setHolder('card', '   ');
+    await setHolder('card', null);
+
+    expect((result as Ok<TransactionAccount>).value.holder, 'Ana');
+    expect(
+      [for (final request in adapterOf(dio).requests) request.data],
+      [
+        {'holder': 'Ana'},
+        {'holder': null},
+        {'holder': null},
+      ],
+    );
+    expect(
+      await ApiAccountsRepository(dio).setHolder('gone', 'Ana'),
+      const Err<TransactionAccount>(NotFoundFailure()),
+    );
+  });
+
+  test('the fake sets the holder of a known account only', () async {
+    const repository = FakeAccountsRepository(latency: Duration.zero);
+
+    final held = await repository.setHolder('acc-pf-card', 'Bia');
+    expect((held as Ok<TransactionAccount>).value.holder, 'Bia');
+    expect(
+      await repository.setHolder('gone', 'Bia'),
+      const Err<TransactionAccount>(NotFoundFailure()),
+    );
   });
 
   test('renames over the api and answers the account', () async {
@@ -102,5 +160,6 @@ void main() {
     );
     expect(api.read(accountsRepositoryProvider), isA<ApiAccountsRepository>());
     expect(api.read(renameAccountProvider), isA<RenameAccount>());
+    expect(api.read(setAccountHolderProvider), isA<SetAccountHolder>());
   });
 }

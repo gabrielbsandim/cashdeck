@@ -44,6 +44,7 @@ import {
 
 export type BudgetDeps = Pick<
   Deps,
+  | 'documents'
   | 'entities'
   | 'accounts'
   | 'transactions'

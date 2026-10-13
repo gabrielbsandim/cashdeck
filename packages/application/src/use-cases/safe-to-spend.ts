@@ -35,6 +35,7 @@ import { loadAutoDebit } from '@/use-cases/auto-debit'
 import { type BudgetDeps, makeBudgets } from '@/use-cases/budgets'
 import { cardBillsOf } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
+import { householdTaxIds } from '@/use-cases/household'
 import { FUNDING_ITEMS_COLLECTION } from '@/use-cases/funding-plan'
 import {
   categoryIndex,
@@ -275,12 +276,12 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     const kinds = new Map(
       transfers.map(transfer => [transfer.id, transfer.kind]),
     )
+    const members =
+      entity.kind === 'PF' ? await householdTaxIds(deps, tenantId) : []
+    const own = new Set([entity.taxId.value, ...members])
     return expectedIncome(
       recent
-        .filter(
-          tx =>
-            tx.amount.isPositive() && tx.counterparty !== entity.taxId.value,
-        )
+        .filter(tx => tx.amount.isPositive() && !own.has(tx.counterparty ?? ''))
         .map(tx => ({
           key: incomeKey(tx, kinds),
           on: tx.bookedOn,

@@ -4,6 +4,7 @@ import {
   plainText,
   type Rental,
   rentCharge,
+  rentReceived,
 } from '@/net-worth/rental'
 
 const rental: Rental = {
@@ -57,5 +58,21 @@ describe('rentCharge', () => {
       total: 160000,
       ownerCost: 59769,
     })
+  })
+})
+
+describe('rentReceived', () => {
+  it('takes the credit of the exact charge closest to the due date', () => {
+    const credits = [
+      { bookedOn: '2026-09-14', cents: 173665 },
+      { bookedOn: '2026-10-05', cents: 173665 },
+      { bookedOn: '2026-10-09', cents: 173600 },
+      { bookedOn: '2026-10-16', cents: 173665 },
+    ]
+    expect(rentReceived(173665, '2026-10-10', credits)).toEqual({
+      bookedOn: '2026-10-05',
+      cents: 173665,
+    })
+    expect(rentReceived(173665, '2026-12-10', credits)).toBeNull()
   })
 })

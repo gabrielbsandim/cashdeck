@@ -235,6 +235,21 @@ describe('entities and accounts', () => {
     expect(await update(TENANT, 'pf-1', { name: 'Daily' })).toMatchObject({
       name: 'Daily',
       isReserve: false,
+      holder: null,
+    })
+  })
+
+  it('names who holds an account and clears it when blank', async () => {
+    const deps = await seeded()
+    const update = makeUpdateAccount(deps)
+    expect(await update(TENANT, 'pf-1', { holder: ' Ana ' })).toMatchObject({
+      holder: 'Ana',
+    })
+    expect(await update(TENANT, 'pf-1', { name: 'Daily' })).toMatchObject({
+      holder: 'Ana',
+    })
+    expect(await update(TENANT, 'pf-1', { holder: '' })).toMatchObject({
+      holder: null,
     })
   })
 

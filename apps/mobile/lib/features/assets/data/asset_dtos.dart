@@ -37,6 +37,7 @@ JsonMap fipeToJson(FipeVehicle fipe) => {
 
 RentCharge rentChargeFromJson(JsonMap json) {
   final installment = readOptionalMap(json, 'installment');
+  final received = readOptionalMap(json, 'received');
   return RentCharge(
     billId: readString(json, 'billId'),
     dueDate: readDate(json, 'dueDate'),
@@ -53,6 +54,12 @@ RentCharge rentChargeFromJson(JsonMap json) {
     result: readMoney(json, 'result'),
     attachmentId: readOptionalString(json, 'attachmentId'),
     installment: installment == null ? null : moneyFromJson(installment),
+    received: received == null
+        ? null
+        : RentReceived(
+            on: readDate(received, 'on'),
+            amount: readMoney(received, 'amount'),
+          ),
   );
 }
 

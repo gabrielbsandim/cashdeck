@@ -136,6 +136,15 @@ String daysLabel(
   return l10n.transactionsDaysRange(day(from), day(to));
 }
 
+/// The name with who holds the account, to tell apart two at the same bank.
+String accountName(TransactionAccount account) =>
+    withHolder(account.name, account.holder);
+
+String withHolder(String name, String? holder) => switch (holder) {
+  final String holder => '$name · $holder',
+  null => name,
+};
+
 String? accountTypeLabel(AppLocalizations l10n, AccountType? type) =>
     switch (type) {
       AccountType.checking => l10n.accountTypeChecking,

@@ -88,6 +88,11 @@ const testCharge = RentCharge(
   result: Money(5_396),
 );
 
+const testReceived = RentReceived(
+  on: CalendarDate(2026, 10, 8),
+  amount: Money(173_665),
+);
+
 const testRental = AssetRental(
   rent: Money(160_000),
   passThrough: ['gás'],
@@ -95,7 +100,11 @@ const testRental = AssetRental(
   charge: testCharge,
 );
 
-Map<String, Object?> rentalJson({bool billed = true, Object? installment}) => {
+Map<String, Object?> rentalJson({
+  bool billed = true,
+  Object? installment,
+  Map<String, Object?>? received,
+}) => {
   'rent': _money(160_000),
   'passThrough': ['gás'],
   'billFrom': 'Jardim Azul',
@@ -113,5 +122,6 @@ Map<String, Object?> rentalJson({bool billed = true, Object? installment}) => {
           'attachmentId': 'attachment-1',
           'installment': installment,
           'result': _money(5_396),
+          'received': ?received,
         },
 };

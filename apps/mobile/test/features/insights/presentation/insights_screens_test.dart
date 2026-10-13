@@ -857,6 +857,40 @@ void main() {
       expect(find.text(l10n.insightsPercent(10)), findsOneWidget);
     });
 
+    testWidgets('names the holder on the bill chips and the limits', (
+      tester,
+    ) async {
+      await pumpRoute(
+        tester,
+        AppRoutes.cards,
+        overrides: withBills(
+          [
+            CardBills(
+              accountId: 'a',
+              name: 'Cartão a',
+              suffix: '1234',
+              owner: EntityKind.personal,
+              bills: [bill(CardBillState.open, 20)],
+            ),
+            const CardBills(
+              accountId: 'b',
+              name: 'Cartão b',
+              owner: EntityKind.personal,
+              bills: [],
+            ),
+          ],
+          accounts: [card('a').heldBy('Ana'), card('b')],
+        ),
+      );
+
+      expect(find.text('Cartão a •• 1234 · Ana'), findsOneWidget);
+      expect(find.text('Cartão b'), findsOneWidget);
+
+      await tester.tap(find.byKey(CardsScreen.limitsTabKey));
+      await settle(tester);
+      expect(find.text('Cartão a · Ana'), findsOneWidget);
+    });
+
     testWidgets('asks for a card when there is none and retries a failure', (
       tester,
     ) async {

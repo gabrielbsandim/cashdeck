@@ -97,8 +97,11 @@ final _timeline = CardTimeline(
   ],
 );
 
-List<Override> _overrides(Future<CardTimeline> Function() load) => [
-  transactionAccountsProvider.overrideWith((ref) async => [_card]),
+List<Override> _overrides(
+  Future<CardTimeline> Function() load, {
+  TransactionAccount account = _card,
+}) => [
+  transactionAccountsProvider.overrideWith((ref) async => [account]),
   cardTimelineProvider.overrideWith((ref, _) => load()),
   billChargesProvider.overrideWith((ref, _) async => <Transaction>[]),
 ];
@@ -210,16 +213,20 @@ void main() {
     expect(find.text(l10n.cardsNoBills), findsOneWidget);
   });
 
-  testWidgets('the rename action opens the name sheet', (tester) async {
+  testWidgets('the edit action opens the account sheet', (tester) async {
     await pumpRoute(
       tester,
       AppRoutes.cardBills('card'),
-      overrides: _overrides(() async => _timeline),
+      overrides: _overrides(
+        () async => _timeline,
+        account: _card.heldBy('Ana'),
+      ),
     );
 
+    expect(find.text('Cartão Exemplo •• 4821 · Ana'), findsOneWidget);
     await tester.tap(find.byKey(CardTimelineScreen.renameKey));
     await settle(tester);
-    expect(find.text(l10n.accountRenameTitle), findsOneWidget);
+    expect(find.text(l10n.accountEditTitle), findsOneWidget);
   });
 
   testWidgets('the cards screen opens every bill of the fake card', (

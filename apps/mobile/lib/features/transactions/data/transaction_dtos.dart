@@ -79,6 +79,7 @@ TransactionAccount accountFromJson(JsonMap json) => TransactionAccount(
   balance: readMoney(json, 'balance'),
   isReserve: readBool(json, 'isReserve'),
   numberSuffix: readOptionalString(json, 'numberSuffix'),
+  holder: readOptionalString(json, 'holder'),
   logo: _logo(readOptionalMap(json, 'logo')),
   credit: _credit(readOptionalMap(json, 'credit')),
   openBill: switch (readOptionalMap(json, 'openBill')) {

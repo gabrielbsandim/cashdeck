@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ValidationError } from '@cashdeck/domain'
+import {
+  createAccount,
+  createTransaction,
+  Money,
+  ValidationError,
+} from '@cashdeck/domain'
 import { createAssetSchema, updateAssetSchema } from '@/dtos/assets'
 import { NotFoundError } from '@/errors/errors'
 import { fullDeps } from '@/testing/deps.test-helpers'
@@ -175,6 +180,7 @@ describe('assets', () => {
         attachmentId: 'b-oct-pdf',
         installment: { cents: 108500, currency: 'BRL' },
         result: { cents: 5396, currency: 'BRL' },
+        received: null,
       },
     })
 
@@ -191,6 +197,72 @@ describe('assets', () => {
     expect(kept.rental?.billFrom).toBe('Vila Nova')
     const ended = await assets.update(TENANT, rented.id, { rental: null })
     expect(ended.rental).toBeNull()
+  })
+
+  it('marks the rent received once a credit of the charge lands', async () => {
+    const { deps, assets } = setup()
+    await deps.documents.put(TENANT, BILL_LINES_COLLECTION, 'b-oct', {
+      billId: 'b-oct',
+      payee: 'CONDOMÍNIO JARDIM AZUL',
+      dueDate: '2026-10-10',
+      total: 59769,
+      lines: [{ description: 'Consumo de gás', cents: 13665 }],
+      attachmentId: null,
+    })
+    const rental = {
+      rent: 160000,
+      passThrough: ['gas'],
+      billFrom: 'Jardim Azul',
+    }
+    await assets.create(TENANT, { ...home, rental })
+    expect(
+      (await assets.list(TENANT)).items[0]?.rental?.charge?.received,
+    ).toBeNull()
+
+    for (const [accountId, type] of [
+      ['chk', 'CHECKING'],
+      ['card', 'CREDIT_CARD'],
+    ] as const) {
+      await deps.accounts.save(
+        createAccount({
+          id: accountId,
+          tenantId: TENANT,
+          entityId: 'pf',
+          institutionId: 'bank',
+          name: accountId,
+          type,
+          origin: 'MANUAL',
+          balance: Money.of(0),
+        }),
+      )
+    }
+    const credit = (
+      txId: string,
+      accountId: string,
+      bookedOn: string,
+      cents: number,
+    ) =>
+      createTransaction({
+        id: txId,
+        tenantId: TENANT,
+        accountId,
+        amount: Money.of(cents),
+        bookedOn,
+        description: 'Pix recebido',
+      })
+    await deps.transactions.saveNew([
+      credit('refund', 'card', '2026-10-09', 173665),
+      credit('short', 'chk', '2026-10-09', 173600),
+      credit('early', 'chk', '2026-09-12', 173665),
+      credit('rent', 'chk', '2026-10-05', 173665),
+    ])
+
+    expect(
+      (await assets.list(TENANT)).items[0]?.rental?.charge?.received,
+    ).toEqual({
+      on: '2026-10-05',
+      amount: { cents: 173665, currency: 'BRL' },
+    })
   })
 
   it('reads a good stored before renting out was tracked as not rented', async () => {

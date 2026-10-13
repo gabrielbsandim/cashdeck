@@ -51,6 +51,7 @@ export type AccountRow = {
   externalId: string | null
   cdiPercent: number | null
   numberSuffix: string | null
+  holder: string | null
   creditLimitCents: bigint | null
   creditAvailableCents: bigint | null
   creditClosesOn: Date | null
@@ -206,6 +207,7 @@ export function accountFromRow(row: AccountRow): Account {
     externalId: row.externalId,
     cdiPercent: row.cdiPercent,
     numberSuffix: row.numberSuffix,
+    holder: row.holder,
     credit: creditFromRow(row),
   })
 }
@@ -227,6 +229,7 @@ export function accountToRow(account: Account): AccountRow {
     externalId: account.externalId,
     cdiPercent: account.cdiPercent,
     numberSuffix: account.numberSuffix,
+    holder: account.holder,
     creditLimitCents: credit ? BigInt(credit.limit.cents) : null,
     creditAvailableCents: credit ? BigInt(credit.available.cents) : null,
     creditClosesOn: optionalDbDate(credit?.closesOn ?? null),

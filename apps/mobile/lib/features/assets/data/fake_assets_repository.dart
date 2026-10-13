@@ -57,6 +57,10 @@ final class FakeAssetsRepository implements AssetsRepository {
             attachmentId: 'attachment-condo',
             installment: const Money(108_500),
             result: const Money(5_396),
+            received: RentReceived(
+              on: CalendarDate(_today.year, _today.month, 8),
+              amount: const Money(173_665),
+            ),
           ),
         ),
       ),

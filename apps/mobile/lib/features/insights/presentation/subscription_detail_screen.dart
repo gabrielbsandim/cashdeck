@@ -528,7 +528,10 @@ class _Where extends ConsumerWidget {
           if (account != null)
             CdKeyValueRow(
               label: l10n.transactionAccountLabel,
-              value: Text(account.name, overflow: TextOverflow.ellipsis),
+              value: Text(
+                accountName(account),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           if (category != null)
             CdKeyValueRow(

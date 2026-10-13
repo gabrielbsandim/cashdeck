@@ -14,6 +14,7 @@ import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/card_notifications/presentation/card_notifications_controller.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -140,7 +141,7 @@ class _CardNotificationsScreenState
         for (final card in view.cards)
           CdCheckboxRow(
             key: CardNotificationsScreen.cardKey(card.id),
-            title: card.name,
+            title: accountName(card),
             subtitle: Text(card.institution, style: hint),
             value: card.id == status.accountId,
             onChanged: (_) =>

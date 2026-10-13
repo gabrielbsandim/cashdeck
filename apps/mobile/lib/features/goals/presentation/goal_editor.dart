@@ -20,6 +20,7 @@ import 'package:cashdeck/features/goals/presentation/goals_controller.dart';
 import 'package:cashdeck/features/investments/domain/investments.dart';
 import 'package:cashdeck/features/investments/investments_providers.dart';
 import 'package:cashdeck/features/transactions/domain/transaction.dart';
+import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/features/transactions/presentation/transactions_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -268,7 +269,10 @@ class _GoalEditorState extends ConsumerState<GoalEditor> {
             for (final account in accounts)
               DropdownMenuItem(
                 value: (GoalSource.account, account.id),
-                child: Text(account.name, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  accountName(account),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             for (final position in investments)
               DropdownMenuItem(

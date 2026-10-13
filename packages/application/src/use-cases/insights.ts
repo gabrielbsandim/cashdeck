@@ -27,6 +27,7 @@ import {
   type CardDues,
 } from '@/use-cases/card-timeline'
 import { type Deps } from '@/use-cases/deps'
+import { householdTaxIds } from '@/use-cases/household'
 import {
   addMonths,
   firstDay,
@@ -38,6 +39,7 @@ import {
 
 export type InsightsDeps = Pick<
   Deps,
+  | 'documents'
   | 'entities'
   | 'accounts'
   | 'transactions'
@@ -148,7 +150,7 @@ function flowKeyOf(
 }
 
 export async function flowEntries(
-  deps: Pick<InsightsDeps, 'transactions' | 'entities'>,
+  deps: Pick<InsightsDeps, 'transactions' | 'entities' | 'documents'>,
   tenantId: string,
   accounts: readonly Account[],
   categories: ReadonlyMap<string, Category>,
@@ -168,6 +170,9 @@ export async function flowEntries(
   const entities = (await deps.entities.list(tenantId)).filter(entity =>
     counted.has(entity.id),
   )
+  const members = entities.some(entity => entity.kind === 'PF')
+    ? await householdTaxIds(deps, tenantId)
+    : []
   const kinds = classifyFlow(
     transactions.map(transaction => ({
       transaction,
@@ -176,7 +181,7 @@ export async function flowEntries(
     })),
     {
       ownNames: entities.map(entity => entity.name),
-      ownTaxIds: entities.map(entity => entity.taxId.value),
+      ownTaxIds: [...entities.map(entity => entity.taxId.value), ...members],
     },
   )
   return transactions.map(transaction => ({

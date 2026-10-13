@@ -79,6 +79,7 @@ class AssetsScreen extends ConsumerWidget {
   static const revalueAmountKey = Key('asset-revalue-amount');
   static const revalueSaveKey = Key('asset-revalue-save');
   static const rentTotalKey = Key('asset-rent-total');
+  static const rentReceivedKey = Key('asset-rent-received');
   static const rentSendKey = Key('asset-rent-send');
   static const rentResultKey = Key('asset-rent-result');
 
@@ -415,6 +416,18 @@ class _RentalState extends ConsumerState<_Rental> {
           strong: true,
           value: CdAmount(charge.total, key: AssetsScreen.rentTotalKey),
         ),
+        switch (charge.received) {
+          RentReceived(:final on, :final amount) => CdKeyValueRow(
+            key: AssetsScreen.rentReceivedKey,
+            label: l10n.rentReceivedOn(on.dayMonth),
+            value: CdAmount(amount, kind: CdAmountKind.income),
+          ),
+          null => Text(
+            l10n.rentNotReceived,
+            key: AssetsScreen.rentReceivedKey,
+            style: muted,
+          ),
+        },
         const SizedBox(height: AppSpacing.sm),
         CdButton.tonal(
           key: AssetsScreen.rentSendKey,
