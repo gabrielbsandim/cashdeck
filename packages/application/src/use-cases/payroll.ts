@@ -1,4 +1,4 @@
-import { Money, type SimplesAnnex } from '@cashdeck/domain'
+import { estimateCpp, Money, type SimplesAnnex } from '@cashdeck/domain'
 import { type z } from 'zod'
 import { money } from '@/dtos/common'
 import {
@@ -143,14 +143,21 @@ export async function revenueMonths(
   return months
 }
 
-export async function issuedRevenue(
-  deps: Pick<Deps, 'invoices' | 'documents'>,
-  tenantId: string,
-  entityId: string,
-  range: { from: string; to: string },
-): Promise<Money> {
-  const months = await revenueMonths(deps, tenantId, entityId, range)
-  return sum(months.flatMap(month => [month.domestic, month.exports]))
+// The CPP inside the DAS of these months, which Fator R counts as payroll. It
+// uses the window's own RBT12, and Annex III when none is declared.
+export function cppOf(
+  months: readonly RevenueMonth[],
+  annex: SimplesAnnex,
+): Money {
+  const domestic = sum(months.map(month => month.domestic))
+  const exports = sum(months.map(month => month.exports))
+  return estimateCpp({
+    annex,
+    domesticRbt12: domestic,
+    exportRbt12: exports,
+    domestic,
+    exports,
+  })
 }
 
 export function makePayroll(
@@ -161,15 +168,17 @@ export function makePayroll(
     const month = monthOf(today(deps.clock.now()))
     const window = await payrollWindow(deps, tenantId, month)
     const current = window.find(entry => entry.month === month) ?? empty(month)
-    const revenue12 = await issuedRevenue(deps, tenantId, entity.id, {
+    const months = await revenueMonths(deps, tenantId, entity.id, {
       from: addMonths(month, -11),
       to: month,
     })
+    const declared = await declaredAnnex(deps, tenantId, entity.id)
     return {
       current: toView(current),
       history: window.filter(entry => entry.month !== month).map(toView),
-      revenue12: money(revenue12),
-      declaredAnnex: await declaredAnnex(deps, tenantId, entity.id),
+      revenue12: money(sum(months.flatMap(m => [m.domestic, m.exports]))),
+      cpp12: money(cppOf(months, declared ?? 'III')),
+      declaredAnnex: declared,
     }
   }
 

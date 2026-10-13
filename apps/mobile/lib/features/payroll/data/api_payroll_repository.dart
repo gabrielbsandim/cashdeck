@@ -1,3 +1,4 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
@@ -20,6 +21,10 @@ PayrollSheet payrollSheetFromJson(JsonMap json) => PayrollSheet(
   current: payrollMonthFromJson(readMap(json, 'current')),
   history: readMapList(json, 'history').map(payrollMonthFromJson).toList(),
   revenue12: readMoney(json, 'revenue12'),
+  cpp12: switch (readOptionalMap(json, 'cpp12')) {
+    null => const Money(0),
+    final cpp => moneyFromJson(cpp),
+  },
   declaredAnnex: _annexes[readOptionalString(json, 'declaredAnnex')],
 );
 

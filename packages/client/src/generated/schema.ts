@@ -9595,6 +9595,10 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            cpp12: {
+                                cents: number;
+                                currency: string;
+                            };
                             /** @enum {string|null} */
                             declaredAnnex: "III" | "V" | null;
                         };
@@ -9673,6 +9677,10 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             };
+                            cpp12: {
+                                cents: number;
+                                currency: string;
+                            };
                             /** @enum {string|null} */
                             declaredAnnex: "III" | "V" | null;
                         };
@@ -9745,6 +9753,10 @@ export interface operations {
                                 };
                             }[];
                             revenue12: {
+                                cents: number;
+                                currency: string;
+                            };
+                            cpp12: {
                                 cents: number;
                                 currency: string;
                             };

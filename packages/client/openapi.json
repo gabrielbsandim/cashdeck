@@ -24098,6 +24098,26 @@
                           ],
                           "additionalProperties": false
                         },
+                        "cpp12": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
                         "declaredAnnex": {
                           "nullable": true,
                           "type": "string",
@@ -24111,6 +24131,7 @@
                         "current",
                         "history",
                         "revenue12",
+                        "cpp12",
                         "declaredAnnex"
                       ],
                       "additionalProperties": false
@@ -24386,6 +24407,26 @@
                           ],
                           "additionalProperties": false
                         },
+                        "cpp12": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
                         "declaredAnnex": {
                           "nullable": true,
                           "type": "string",
@@ -24399,6 +24440,7 @@
                         "current",
                         "history",
                         "revenue12",
+                        "cpp12",
                         "declaredAnnex"
                       ],
                       "additionalProperties": false
@@ -24656,6 +24698,26 @@
                           ],
                           "additionalProperties": false
                         },
+                        "cpp12": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
                         "declaredAnnex": {
                           "nullable": true,
                           "type": "string",
@@ -24669,6 +24731,7 @@
                         "current",
                         "history",
                         "revenue12",
+                        "cpp12",
                         "declaredAnnex"
                       ],
                       "additionalProperties": false

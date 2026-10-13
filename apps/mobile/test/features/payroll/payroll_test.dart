@@ -66,13 +66,14 @@ void main() {
       current: sheet.current,
       history: sheet.history,
       revenue12: sheet.revenue12,
+      cpp12: sheet.cpp12,
     );
 
     expect(sheet.current.month, const CalendarDate(2026, 10, 1));
     expect(sheet.history.last.month, const CalendarDate(2025, 11, 1));
     expect(sheet.current.total, const Money(735_000));
-    expect(fator.payroll12, const Money(8_820_000));
-    expect(fator.ratio, closeTo(0.307, 0.001));
+    expect(fator.payroll12, const Money(9_810_800));
+    expect(fator.ratio, closeTo(0.341, 0.001));
     expect(fator.annex, SimplesAnnex.iii);
     expect(
       const FatorR(payroll12: Money(27), revenue12: Money(100)).annex,
@@ -80,7 +81,7 @@ void main() {
     );
     expect(const FatorR(payroll12: Money(1), revenue12: Money(0)).ratio, 0);
     expect(fator.props, hasLength(2));
-    expect(sheet.props, hasLength(4));
+    expect(sheet.props, hasLength(5));
     expect(sheet.annexOf(fator), SimplesAnnex.iii);
     expect(sheet.current.props, hasLength(4));
   });
@@ -135,7 +136,7 @@ void main() {
   testWidgets('edits the month, updates Fator R and saves', (tester) async {
     await pumpRoute(tester, AppRoutes.payroll);
     expect(find.text(l10n.payrollTitle('outubro')), findsOneWidget);
-    expect(find.text(l10n.fatorR('30,7')), findsOneWidget);
+    expect(find.text(l10n.fatorR('34,1')), findsOneWidget);
     expect(find.text(l10n.annexIii), findsNWidgets(2));
     expect(find.text('Setembro'), findsOneWidget);
     expect(find.byKey(PayrollInputScreen.annexIiiKey), findsOneWidget);
@@ -148,9 +149,9 @@ void main() {
       '0',
     );
     await settle(tester);
-    expect(find.text(l10n.fatorR('28,6')), findsOneWidget);
+    expect(find.text(l10n.fatorR('32,0')), findsOneWidget);
     expect(
-      find.text(MoneyFormat.format(const Money(8_220_000))),
+      find.text(MoneyFormat.format(const Money(9_210_800))),
       findsOneWidget,
     );
 

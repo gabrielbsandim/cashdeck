@@ -35,6 +35,7 @@ final class FakePayrollRepository implements PayrollRepository {
           _standard(_monthsBack(first, back)),
       ],
       revenue12: const Money(28_740_000),
+      cpp12: const Money(990_800),
       declaredAnnex: _declared,
     );
   }

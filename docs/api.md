@@ -1090,11 +1090,13 @@ keeps the month from being drafted again.
 
 `PayrollMonth`: `{ month: date (first day), proLabore: Money, salaries: Money, fgts: Money }`.
 
-- `GET /payroll`: `{ current: PayrollMonth, history: [PayrollMonth], revenue12: Money, declaredAnnex: 'III' | 'V' | null }`.
+- `GET /payroll`: `{ current: PayrollMonth, history: [PayrollMonth], revenue12: Money, cpp12: Money, declaredAnnex: 'III' | 'V' | null }`.
   `current` is this month (zeros until saved); `history` the eleven earlier
   months that have entries, most recent first; `revenue12` the company's
-  invoiced revenue of the last twelve months, in BRL; `declaredAnnex` the
-  annex the accountant reported, or null.
+  invoiced revenue of the last twelve months, in BRL; `cpp12` the employer
+  INSS (CPP) estimated inside the DAS of those months, at the declared annex
+  or Annex III, which Fator R adds to the payroll (LC 123/2006 art. 18,
+  par. 24); `declaredAnnex` the annex the accountant reported, or null.
 - `PUT /payroll/{YYYY-MM}`: body `{ proLaboreCents, salariesCents, fgtsCents }`.
   Returns the sheet.
 - `PUT /payroll/annex`: body `{ annex: 'III' | 'V' | null }`. The declared

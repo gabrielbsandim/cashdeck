@@ -114,6 +114,7 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
       current: _current,
       history: _sheet.history,
       revenue12: _sheet.revenue12,
+      cpp12: _sheet.cpp12,
     );
     final percent = (fator.ratio * 100).toStringAsFixed(1).replaceAll('.', ',');
     final annexIii = _sheet.annexOf(fator) == SimplesAnnex.iii;
@@ -183,6 +184,10 @@ class _PayrollFormState extends ConsumerState<_PayrollForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              line(
+                l10n.cpp12Months,
+                MoneyFormat.format(_sheet.cpp12, hide: hide),
+              ),
               line(
                 l10n.payroll12Months,
                 MoneyFormat.format(fator.payroll12, hide: hide),

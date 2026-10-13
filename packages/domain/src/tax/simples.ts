@@ -14,6 +14,7 @@ type Bracket = {
   // ISS, PIS and COFINS share of the rate, which an export does not pay.
   readonly domesticOnlyShare: number
   readonly issShare: number
+  readonly cppShare: number
 }
 
 const REAIS = 100
@@ -24,31 +25,33 @@ const bracket = (
   deduction: number,
   domesticOnlyShare: number,
   issShare: number,
+  cppShare: number,
 ): Bracket => ({
   upToCents: upTo * REAIS,
   rate,
   deductionCents: deduction * REAIS,
   domesticOnlyShare,
   issShare,
+  cppShare,
 })
 
 // LC 123/2006 Annexes III and V as amended by LC 155/2016.
 const ANNEXES: Record<SimplesAnnex, readonly Bracket[]> = {
   III: [
-    bracket(180_000, 0.06, 0, 0.491, 0.335),
-    bracket(360_000, 0.112, 9_360, 0.491, 0.32),
-    bracket(720_000, 0.135, 17_640, 0.491, 0.325),
-    bracket(1_800_000, 0.16, 35_640, 0.491, 0.325),
-    bracket(3_600_000, 0.21, 125_640, 0.491, 0.335),
-    bracket(4_800_000, 0.33, 648_000, 0.195, 0),
+    bracket(180_000, 0.06, 0, 0.491, 0.335, 0.434),
+    bracket(360_000, 0.112, 9_360, 0.491, 0.32, 0.434),
+    bracket(720_000, 0.135, 17_640, 0.491, 0.325, 0.434),
+    bracket(1_800_000, 0.16, 35_640, 0.491, 0.325, 0.434),
+    bracket(3_600_000, 0.21, 125_640, 0.491, 0.335, 0.434),
+    bracket(4_800_000, 0.33, 648_000, 0.195, 0, 0.305),
   ],
   V: [
-    bracket(180_000, 0.155, 0, 0.3115, 0.14),
-    bracket(360_000, 0.18, 4_500, 0.3415, 0.17),
-    bracket(720_000, 0.195, 9_900, 0.3715, 0.19),
-    bracket(1_800_000, 0.205, 17_100, 0.4015, 0.21),
-    bracket(3_600_000, 0.23, 62_100, 0.4065, 0.235),
-    bracket(4_800_000, 0.305, 540_000, 0.2, 0),
+    bracket(180_000, 0.155, 0, 0.3115, 0.14, 0.2885),
+    bracket(360_000, 0.18, 4_500, 0.3415, 0.17, 0.2785),
+    bracket(720_000, 0.195, 9_900, 0.3715, 0.19, 0.2385),
+    bracket(1_800_000, 0.205, 17_100, 0.4015, 0.21, 0.2385),
+    bracket(3_600_000, 0.23, 62_100, 0.4065, 0.235, 0.2385),
+    bracket(4_800_000, 0.305, 540_000, 0.2, 0, 0.295),
   ],
 }
 
@@ -95,15 +98,34 @@ export type DasEstimateInput = {
   exports: Money
 }
 
+type Share = (found: Bracket) => number
+
+function taxOn(annex: SimplesAnnex, rbt12: Money, billed: Money, share: Share) {
+  return (
+    billed.cents * effectiveRate(annex, rbt12) * share(bracketFor(annex, rbt12))
+  )
+}
+
+function dasPart(input: DasEstimateInput, domestic: Share, exports: Share) {
+  const total =
+    taxOn(input.annex, input.domesticRbt12, input.domestic, domestic) +
+    taxOn(input.annex, input.exportRbt12, input.exports, exports)
+  return Money.of(Math.round(total), input.domestic.currency)
+}
+
 export function estimateDas(input: DasEstimateInput): Money {
-  const exportBracket = bracketFor(input.annex, input.exportRbt12)
-  const domestic =
-    input.domestic.cents * effectiveRate(input.annex, input.domesticRbt12)
-  const exports =
-    input.exports.cents *
-    effectiveRate(input.annex, input.exportRbt12) *
-    (1 - exportBracket.domesticOnlyShare)
-  return Money.of(Math.round(domestic + exports), input.domestic.currency)
+  return dasPart(
+    input,
+    () => 1,
+    found => 1 - found.domesticOnlyShare,
+  )
+}
+
+// The employer social security (CPP) inside the DAS, exports included. Fator R
+// counts it as payroll (LC 123/2006 art. 18, par. 24).
+export function estimateCpp(input: DasEstimateInput): Money {
+  const cpp: Share = found => found.cppShare
+  return dasPart(input, cpp, cpp)
 }
 
 // The DAS of a competence is due on the 20th of the next month, moved back

@@ -1138,7 +1138,8 @@
   "payrollSalaries": "Salários",
   "payrollFgts": "FGTS",
   "payrollMonthTotal": "Folha do mês",
-  "payroll12Months": "Folha 12 meses",
+  "cpp12Months": "INSS patronal no DAS, 12 meses",
+  "payroll12Months": "Folha com INSS, 12 meses",
   "revenue12Months": "Receita 12 meses",
   "fatorR": "Fator R {percent}%",
   "@fatorR": {

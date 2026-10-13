@@ -155,6 +155,7 @@ final JsonMap _sheet = {
   },
   'history': <Object?>[],
   'revenue12': _money(1000000),
+  'cpp12': _money(26040),
 };
 
 final JsonMap _statement = {
@@ -1052,7 +1053,11 @@ void main() {
       final dio = _api({
         'GET /api/v1/payroll': _sheet,
         'PUT /api/v1/payroll/2026-10': _sheet,
-        'PUT /api/v1/payroll/annex': {..._sheet, 'declaredAnnex': 'III'},
+        'PUT /api/v1/payroll/annex': {
+          ..._sheet,
+          'cpp12': null,
+          'declaredAnnex': 'III',
+        },
       });
       final repository = ApiPayrollRepository(dio);
 
@@ -1069,6 +1074,7 @@ void main() {
       expect(sheet.declaredAnnex, isNull);
       final declared = _ok(await repository.declareAnnex(SimplesAnnex.iii));
       expect(declared.declaredAnnex, SimplesAnnex.iii);
+      expect([sheet.cpp12, declared.cpp12], const [Money(26040), Money(0)]);
       expect(_sent(dio, 2), {'annex': 'III'});
       await repository.declareAnnex(SimplesAnnex.v);
       expect(_sent(dio, 3), {'annex': 'V'});

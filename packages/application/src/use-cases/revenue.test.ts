@@ -10,7 +10,10 @@ const PREVIOUS_YEAR = Array.from({ length: 12 }, (_, i) =>
   addMonths('2026-10', -1 - i),
 )
 
-async function seedYear(deps: ReturnType<typeof fullDeps>) {
+async function seedYear(
+  deps: ReturnType<typeof fullDeps>,
+  proLaboreCents = 450_000,
+) {
   const revenue = makeRevenue(deps)
   const payroll = makePayroll(deps)
   for (const month of PREVIOUS_YEAR) {
@@ -19,7 +22,7 @@ async function seedYear(deps: ReturnType<typeof fullDeps>) {
       exportCents: 0,
     })
     await payroll.save(TENANT, month, {
-      proLaboreCents: 450_000,
+      proLaboreCents,
       salariesCents: 0,
       fgtsCents: 0,
     })
@@ -56,6 +59,16 @@ describe('revenue', () => {
     await deps.invoices.save(invoice({ id: 'i', competence: '2026-09' }))
     const mixed = await revenue.sheet(TENANT)
     expect(mixed.months[0]?.domestic.cents).toBe(1_700_000)
+  })
+
+  it('counts the CPP inside the DAS as payroll for Fator R', async () => {
+    const deps = fullDeps()
+    const above = await (await seedYear(deps, 420_000)).sheet(TENANT)
+    expect(above.annex).toBe('III')
+    const below = await (await seedYear(fullDeps(), 380_000)).sheet(TENANT)
+    expect(below.annex).toBe('V')
+    const sheet = await makePayroll(deps).sheet(TENANT)
+    expect(sheet.cpp12.cents).toBe(458_304)
   })
 
   it('prices ISS from the declared annex while payroll is short', async () => {

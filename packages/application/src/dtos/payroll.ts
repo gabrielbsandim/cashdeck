@@ -12,6 +12,8 @@ export const payrollSheetViewSchema = z.object({
   current: payrollMonthViewSchema,
   history: z.array(payrollMonthViewSchema),
   revenue12: moneyViewSchema,
+  // Estimated CPP paid inside the DAS over the same months, part of Fator R.
+  cpp12: moneyViewSchema,
   // Null when Fator R alone picks the annex.
   declaredAnnex: z.enum(['III', 'V']).nullable(),
 })

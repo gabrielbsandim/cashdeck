@@ -34,8 +34,9 @@ final class PayrollMonth extends Equatable {
 
 enum SimplesAnnex { iii, v }
 
-/// Fator R: twelve months of payroll over twelve months of revenue. At 28%
-/// or more the service falls in Anexo III of the Simples, else Anexo V.
+/// Fator R: twelve months of payroll, with the employer INSS paid inside the
+/// DAS, over twelve months of revenue. At 28% or more the service falls in
+/// Anexo III of the Simples, else Anexo V.
 final class FatorR extends Equatable {
   const new({required this.payroll12, required this.revenue12});
 
@@ -43,10 +44,11 @@ final class FatorR extends Equatable {
     required PayrollMonth current,
     required List<PayrollMonth> history,
     required Money revenue12,
+    Money cpp12 = const Money(0),
   }) => FatorR(
     payroll12: history
         .take(11)
-        .fold(current.total, (sum, month) => sum + month.total),
+        .fold(current.total + cpp12, (sum, month) => sum + month.total),
     revenue12: revenue12,
   );
 
@@ -70,6 +72,7 @@ final class PayrollSheet extends Equatable {
     required this.current,
     required this.history,
     required this.revenue12,
+    this.cpp12 = const Money(0),
     this.declaredAnnex,
   });
 
@@ -79,13 +82,22 @@ final class PayrollSheet extends Equatable {
   final List<PayrollMonth> history;
   final Money revenue12;
 
+  /// The employer INSS estimated inside the DAS of the same months.
+  final Money cpp12;
+
   /// The annex the accountant reported, which wins over the computed one.
   final SimplesAnnex? declaredAnnex;
 
   SimplesAnnex annexOf(FatorR fator) => declaredAnnex ?? fator.annex;
 
   @override
-  List<Object?> get props => [current, history, revenue12, declaredAnnex];
+  List<Object?> get props => [
+    current,
+    history,
+    revenue12,
+    cpp12,
+    declaredAnnex,
+  ];
 }
 
 abstract interface class PayrollRepository {

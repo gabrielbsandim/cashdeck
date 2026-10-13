@@ -4,6 +4,7 @@ import {
   annexFor,
   dasDueDate,
   effectiveRate,
+  estimateCpp,
   estimateDas,
   fatorR,
   issRate,
@@ -70,6 +71,27 @@ describe('estimateDas', () => {
     expect(das({ exportRbt12: reais(360_000), exports: reais(10_000) })).toBe(
       43_774,
     )
+  })
+})
+
+describe('estimateCpp', () => {
+  it('takes the CPP share of the DAS, which exports pay too', () => {
+    const cpp = (input: Partial<Parameters<typeof estimateCpp>[0]>) =>
+      estimateCpp({
+        annex: 'III',
+        domesticRbt12: reais(120_000),
+        exportRbt12: reais(120_000),
+        domestic: reais(10_000),
+        exports: reais(10_000),
+        ...input,
+      }).cents
+    expect(cpp({})).toBe(52_080)
+    expect(cpp({ domesticRbt12: reais(360_000), exports: Money.zero() })).toBe(
+      37_324,
+    )
+    expect(
+      cpp({ annex: 'V', domesticRbt12: reais(400_000), exports: Money.zero() }),
+    ).toBe(40_605)
   })
 })
 

@@ -4,6 +4,7 @@ import { money } from '@/dtos/common'
 import { type RevenueSheetView, type saveRevenueSchema } from '@/dtos/revenue'
 import { type Deps } from '@/use-cases/deps'
 import {
+  cppOf,
   declaredAnnex,
   payrollTotal,
   payrollWindow,
@@ -54,7 +55,7 @@ export async function issQuote(
     annexFor(
       Money.of(
         payroll.reduce((total, entry) => total + payrollTotal(entry), 0),
-      ),
+      ).add(cppOf(months, 'III')),
       domesticRbt12.add(exportRbt12),
     )
   const known = complete || declared !== null
