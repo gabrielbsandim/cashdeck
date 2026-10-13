@@ -8,9 +8,15 @@
     <string name="widget_updated_at">at %1$s</string>
     <string name="widget_safe_per_day">a day until %1$s</string>
     <string name="widget_safe_short">short until %1$s</string>
+    <string name="widget_safe_month">%1$s this month · %2$s</string>
+    <plurals name="widget_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
     <string name="widget_bill_due">%1$s · due %2$s</string>
     <string name="widget_bill_overdue">%1$s · was due %2$s</string>
+    <string name="widget_due_on">due %1$s</string>
+    <string name="widget_overdue_on">was due %1$s</string>
     <string name="widget_no_bill">None open</string>
-    <string name="widget_card_due">due %1$s</string>
     <string name="widget_no_card">No card</string>
 </resources>

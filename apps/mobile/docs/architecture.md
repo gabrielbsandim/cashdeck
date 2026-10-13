@@ -148,8 +148,8 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   the `io.cashdeck.app/card_notifications` channel
   (`features/card_notifications`).
 - Android home screen widget: `widget/CashdeckWidgetProvider` (a
-  `home_widget` `HomeWidgetProvider`, RemoteViews layout
-  `res/layout/cashdeck_widget.xml`, 4x2 and resizable) shows what is free to
+  `home_widget` `HomeWidgetProvider` with RemoteViews layouts,
+  4x2 and resizable down to 2x2) shows what is free to
   spend today, the next open bill and the current card bill, plus when they
   were last written. While the app is open, `HomeWidgetSync`, mounted by
   Início, maps the loaded safe-to-spend, bills and insights overview into a
@@ -172,7 +172,13 @@ Dio, `data` or `presentation`; a `presentation` file imports `data` or Dio; a
   Início; the bill and card parts open `/bills` and `/cards` through
   `cashdeck://widget/<path>` and Flutter's deep linking. Labels live in
   `res/values` (Portuguese, the default) and `res/values-en`, colors in
-  `widget_colors.xml` with a `values-night` twin. iOS has no widget: the
+  `widget_colors.xml` with a `values-night` twin. Three RemoteViews layouts
+  follow the size: `cashdeck_widget_small` (only the free amount, under 250dp
+  wide), `cashdeck_widget` (the 4x2 at its 110dp minimum, also the preview)
+  and `cashdeck_widget_full` (from 190dp tall: the free amount in its own
+  card with the month total and the days left, turning orange when short).
+  From Android 12 the launcher picks among them per size; before it,
+  `onAppWidgetOptionsChanged` does. iOS has no widget: the
   publisher is a no-op off Android.
 - Location: the Android manifest asks for coarse and fine location and
   `Info.plist` carries `NSLocationWhenInUseUsageDescription`; only the

@@ -13,9 +13,15 @@
     <string name="widget_updated_on">%1$s, %2$s</string>
     <string name="widget_safe_per_day">por dia até %1$s</string>
     <string name="widget_safe_short">falta até %1$s</string>
+    <string name="widget_safe_month">%1$s no mês · %2$s</string>
+    <plurals name="widget_days_left">
+        <item quantity="one">falta %d dia</item>
+        <item quantity="other">faltam %d dias</item>
+    </plurals>
     <string name="widget_bill_due">%1$s · vence %2$s</string>
     <string name="widget_bill_overdue">%1$s · venceu %2$s</string>
+    <string name="widget_due_on">vence %1$s</string>
+    <string name="widget_overdue_on">venceu %1$s</string>
     <string name="widget_no_bill">Nenhuma em aberto</string>
-    <string name="widget_card_due">vence %1$s</string>
     <string name="widget_no_card">Sem cartão</string>
 </resources>

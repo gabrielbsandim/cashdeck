@@ -5,6 +5,9 @@
     <color name="widget_on_surface">#EDEEF1</color>
     <color name="widget_on_surface_variant">#A7ABB1</color>
     <color name="widget_primary">#68A1FF</color>
-    <color name="widget_divider">#24272B</color>
     <color name="widget_overdue">#FCA676</color>
+    <color name="widget_hero">#072869</color>
+    <color name="widget_on_hero">#D6E5FF</color>
+    <color name="widget_hero_short">#422616</color>
+    <color name="widget_tile">#1E2228</color>
 </resources>

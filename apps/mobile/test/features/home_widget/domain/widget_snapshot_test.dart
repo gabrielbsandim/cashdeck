@@ -43,6 +43,8 @@ void main() {
         WidgetKeys.safeAmount: _brl('85,00'),
         WidgetKeys.safeUntil: '31/10',
         WidgetKeys.safeShort: false,
+        WidgetKeys.safeTotal: _brl('1.955,00'),
+        WidgetKeys.safeDays: 23,
         WidgetKeys.billPayee: 'Energia Exemplo',
         WidgetKeys.billAmount: _brl('189,90'),
         WidgetKeys.billDue: '12/10',
@@ -65,6 +67,8 @@ void main() {
 
       expect(snapshot.values[WidgetKeys.hidden], isTrue);
       expect(snapshot.values[WidgetKeys.safeAmount], _masked);
+      expect(snapshot.values[WidgetKeys.safeTotal], _masked);
+      expect(snapshot.values[WidgetKeys.safeDays], 23);
       expect(snapshot.values[WidgetKeys.billAmount], _masked);
       expect(snapshot.values[WidgetKeys.cardAmount], _masked);
       expect(snapshot.values[WidgetKeys.billPayee], 'Energia Exemplo');
@@ -181,6 +185,6 @@ void main() {
 
   test('lists every key once', () {
     expect(WidgetKeys.all.toSet(), hasLength(WidgetKeys.all.length));
-    expect(WidgetKeys.all, hasLength(12));
+    expect(WidgetKeys.all, hasLength(14));
   });
 }

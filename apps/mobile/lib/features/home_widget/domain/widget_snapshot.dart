@@ -15,6 +15,8 @@ abstract final class WidgetKeys {
   static const safeAmount = 'safe_amount';
   static const safeUntil = 'safe_until';
   static const safeShort = 'safe_short';
+  static const safeTotal = 'safe_total';
+  static const safeDays = 'safe_days';
   static const billPayee = 'bill_payee';
   static const billAmount = 'bill_amount';
   static const billDue = 'bill_due';
@@ -29,6 +31,8 @@ abstract final class WidgetKeys {
     safeAmount,
     safeUntil,
     safeShort,
+    safeTotal,
+    safeDays,
     billPayee,
     billAmount,
     billDue,
@@ -94,6 +98,8 @@ Map<String, Object> _safeToSpend(
   ),
   WidgetKeys.safeUntil: free.until.dayMonth,
   WidgetKeys.safeShort: free.isShort,
+  WidgetKeys.safeTotal: amount(free.total),
+  WidgetKeys.safeDays: free.days,
 };
 
 Map<String, Object> _nextBill(
