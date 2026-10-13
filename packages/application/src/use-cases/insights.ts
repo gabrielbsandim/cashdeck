@@ -126,11 +126,14 @@ export async function insightScope(
   tenantId: string,
   kind: EntityKind | undefined,
 ): Promise<InsightScope> {
-  const entities = kind
-    ? [await requireEntity(deps.entities, tenantId, kind)]
-    : await deps.entities.list(tenantId)
+  const [entities, all] = await Promise.all([
+    kind
+      ? requireEntity(deps.entities, tenantId, kind).then(entity => [entity])
+      : deps.entities.list(tenantId),
+    deps.accounts.list(tenantId),
+  ])
   const ids = new Set(entities.map(entity => entity.id))
-  const accounts = (await deps.accounts.list(tenantId)).filter(
+  const accounts = all.filter(
     account =>
       ids.has(account.entityId) &&
       FLOW_ACCOUNT_TYPES.has(account.type) &&
@@ -160,19 +163,19 @@ export async function flowEntries(
     return []
   }
   const types = new Map(accounts.map(account => [account.id, account.type]))
-  const transactions = await deps.transactions.all(tenantId, {
-    accountIds: accounts.map(account => account.id),
-    ...range,
-  })
+  const [transactions, all, household] = await Promise.all([
+    deps.transactions.all(tenantId, {
+      accountIds: accounts.map(account => account.id),
+      ...range,
+    }),
+    deps.entities.list(tenantId),
+    householdTaxIds(deps, tenantId),
+  ])
   // A Pix to an own entity moves money between own accounts only when that
   // entity's accounts are counted too; otherwise the money really left.
   const counted = new Set(accounts.map(account => account.entityId))
-  const entities = (await deps.entities.list(tenantId)).filter(entity =>
-    counted.has(entity.id),
-  )
-  const members = entities.some(entity => entity.kind === 'PF')
-    ? await householdTaxIds(deps, tenantId)
-    : []
+  const entities = all.filter(entity => counted.has(entity.id))
+  const members = entities.some(entity => entity.kind === 'PF') ? household : []
   const kinds = classifyFlow(
     transactions.map(transaction => ({
       transaction,
@@ -339,18 +342,14 @@ export async function billsDueIn(
   range: DayRange,
   keep: (bill: Bill) => boolean,
 ) {
-  const due = []
-  for (const entity of entities) {
-    const page = await deps.bills.list(
-      tenantId,
-      { entityId: entity.id },
-      BILL_PAGE,
-    )
-    due.push(
-      ...page.items.filter(bill => keep(bill) && inRange(bill.dueDate, range)),
-    )
-  }
-  return due
+  const pages = await Promise.all(
+    entities.map(entity =>
+      deps.bills.list(tenantId, { entityId: entity.id }, BILL_PAGE),
+    ),
+  )
+  return pages.flatMap(page =>
+    page.items.filter(bill => keep(bill) && inRange(bill.dueDate, range)),
+  )
 }
 
 export const openBillsDue = (
@@ -375,15 +374,21 @@ export function makeInsightsOverview(deps: InsightsDeps) {
   ): Promise<InsightsOverview> {
     const day = today(deps.clock.now())
     const { range, previousRange } = periodRanges(query.period, day)
-    const scope = await insightScope(deps, tenantId, query.entity)
-    const categories = await categoryIndex(deps, tenantId)
-    const entries = await flowEntries(
-      deps,
-      tenantId,
-      scope.accounts,
-      categories,
-      { from: previousRange.from, to: range.to },
-    )
+    const [scope, categories] = await Promise.all([
+      insightScope(deps, tenantId, query.entity),
+      categoryIndex(deps, tenantId),
+    ])
+    const [entries, bills, dues] = await Promise.all([
+      flowEntries(deps, tenantId, scope.accounts, categories, {
+        from: previousRange.from,
+        to: range.to,
+      }),
+      openBillsDue(deps, tenantId, scope.entities, {
+        from: day,
+        to: addDays(day, BILLS_DUE_DAYS),
+      }),
+      cardDues(deps, tenantId, scope.accounts, day),
+    ])
     const sameSpan = {
       from: previousRange.from,
       to: earlier(
@@ -401,10 +406,6 @@ export function makeInsightsOverview(deps: InsightsDeps) {
     const total = totalOf(expenses)
     const previous = totalOf(previousExpenses)
     const income = totalOf(within(entries, 'INCOME', range))
-    const bills = await openBillsDue(deps, tenantId, scope.entities, {
-      from: day,
-      to: addDays(day, BILLS_DUE_DAYS),
-    })
     return {
       period: query.period,
       range,
@@ -425,11 +426,7 @@ export function makeInsightsOverview(deps: InsightsDeps) {
         expenses: cents(total),
         result: cents(income - total),
       },
-      cards: cardsSummary(
-        scope.accounts,
-        await cardDues(deps, tenantId, scope.accounts, day),
-        day,
-      ),
+      cards: cardsSummary(scope.accounts, dues, day),
       billsDue: {
         days: BILLS_DUE_DAYS,
         total: cents(bills.reduce((sum, bill) => sum + bill.amount.cents, 0)),

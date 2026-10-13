@@ -44,12 +44,14 @@ export async function issQuote(
   competence: string,
 ): Promise<IssQuote> {
   const range = previousYear(competence)
-  const months = await revenueMonths(deps, tenantId, entityId, range)
+  const [months, payroll, declared] = await Promise.all([
+    revenueMonths(deps, tenantId, entityId, range),
+    payrollWindow(deps, tenantId, range.to),
+    declaredAnnex(deps, tenantId, entityId),
+  ])
   const domesticRbt12 = sum(months.map(month => month.domestic))
   const exportRbt12 = sum(months.map(month => month.exports))
-  const payroll = await payrollWindow(deps, tenantId, range.to)
   const complete = payroll.length >= MONTHS
-  const declared = await declaredAnnex(deps, tenantId, entityId)
   const annex =
     declared ??
     annexFor(

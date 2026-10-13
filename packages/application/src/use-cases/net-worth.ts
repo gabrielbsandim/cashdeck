@@ -130,27 +130,36 @@ export function makeNetWorthFromBalancesAndSnapshots(deps: NetWorthDeps) {
     const day = today(deps.clock.now())
     const ends = monthEnds(day, Math.max(query.months, YEAR_MONTHS))
     const first = ends[0] as LocalDate
-    const entities = await scopeOf(tenantId, query.entity)
-    const held = (await deps.investments.list(tenantId)).filter(
+    const [entities, investments, valued, owned, owed] = await Promise.all([
+      scopeOf(tenantId, query.entity),
+      deps.investments.list(tenantId),
+      valuation(tenantId, first, day),
+      loadAssets(deps, tenantId),
+      loadLoans(deps, tenantId),
+    ])
+    const held = investments.filter(
       position => position.balance.currency === CURRENCY,
     )
-    const valued = await valuation(tenantId, first, day)
-    const owned = await loadAssets(deps, tenantId)
-    const owed = await loadLoans(deps, tenantId)
-    const holdings: EntityHoldings[] = []
-    for (const entity of entities) {
-      holdings.push({
-        kind: entity.kind,
-        accounts: await accountsOf(tenantId, entity.id, addDays(first, 1), day),
-        positions: held
-          .filter(position => position.entityId === entity.id)
-          .map(valued),
-        belongings: {
-          assets: owned.filter(asset => asset.entityId === entity.id),
-          loans: owed.filter(loan => loan.entityId === entity.id),
-        },
-      })
-    }
+    const holdings = await Promise.all(
+      entities.map(
+        async (entity): Promise<EntityHoldings> => ({
+          kind: entity.kind,
+          accounts: await accountsOf(
+            tenantId,
+            entity.id,
+            addDays(first, 1),
+            day,
+          ),
+          positions: held
+            .filter(position => position.entityId === entity.id)
+            .map(valued),
+          belongings: {
+            assets: owned.filter(asset => asset.entityId === entity.id),
+            loans: owed.filter(loan => loan.entityId === entity.id),
+          },
+        }),
+      ),
+    )
     const accounts = holdings.flatMap(entity => entity.accounts)
     const positions = holdings.flatMap(entity => entity.positions)
     const belongings = {

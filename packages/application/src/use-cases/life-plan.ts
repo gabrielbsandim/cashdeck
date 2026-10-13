@@ -226,12 +226,16 @@ export function makeLifePlan(deps: LifePlanDeps) {
     return { chosen, start, worth: worth.current }
   }
 
-  async function view(tenantId: string): Promise<PlanView> {
+  // A caller that just wrote the goals passes them, so they are not read back.
+  async function view(
+    tenantId: string,
+    written?: readonly StoredPlanGoal[],
+  ): Promise<PlanView> {
     const [{ chosen, start, worth }, belongings, stored, saving] =
       await Promise.all([
         startOf(tenantId),
         belongingsOf(tenantId),
-        loadGoals(tenantId),
+        written ?? loadGoals(tenantId),
         savingGoals(tenantId),
       ])
     const day = today(deps.clock.now())
@@ -323,9 +327,11 @@ export function makeLifePlan(deps: LifePlanDeps) {
   }
 
   async function create(tenantId: string, input: PlanGoalInput) {
-    await assertAsset(tenantId, input)
-    await assertGoal(tenantId, input)
-    const goals = await loadGoals(tenantId)
+    const [goals] = await Promise.all([
+      loadGoals(tenantId),
+      assertAsset(tenantId, input),
+      assertGoal(tenantId, input),
+    ])
     const id = deps.ids.next()
     const goal: StoredPlanGoal = {
       ...input,
@@ -338,9 +344,11 @@ export function makeLifePlan(deps: LifePlanDeps) {
   }
 
   async function update(tenantId: string, id: string, input: PlanGoalInput) {
-    const current = await find(tenantId, id)
-    await assertAsset(tenantId, input)
-    await assertGoal(tenantId, input)
+    const [current] = await Promise.all([
+      find(tenantId, id),
+      assertAsset(tenantId, input),
+      assertGoal(tenantId, input),
+    ])
     const goal: StoredPlanGoal = {
       ...input,
       id,
@@ -364,14 +372,18 @@ export function makeLifePlan(deps: LifePlanDeps) {
       const index = input.ids.indexOf(goal.id)
       return index < 0 ? input.ids.length + goal.order : index
     }
-    const ranked = [...goals].sort((a, b) => rank(a) - rank(b))
-    for (const [order, goal] of ranked.entries()) {
-      await deps.documents.put(tenantId, PLAN_GOALS_COLLECTION, goal.id, {
-        ...goal,
-        order,
-      })
-    }
-    return view(tenantId)
+    const sorted = [...goals].sort((a, b) => rank(a) - rank(b))
+    const moved = sorted.flatMap((goal, order) =>
+      goal.order === order ? [] : [{ ...goal, order }],
+    )
+    const ranked = sorted.map((goal, order) => ({ ...goal, order }))
+    const [plan] = await Promise.all([
+      view(tenantId, ranked),
+      ...moved.map(goal =>
+        deps.documents.put(tenantId, PLAN_GOALS_COLLECTION, goal.id, goal),
+      ),
+    ])
+    return plan
   }
 
   async function saveSettings(tenantId: string, input: PlanSettings) {

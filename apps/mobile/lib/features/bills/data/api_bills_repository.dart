@@ -35,23 +35,64 @@ final class ApiBillsRepository implements BillsRepository {
       guardRequest(() async {
         final entityId = owner == null ? null : await _entities.idOf(owner);
         BillsCursor? position = BillsCursor.parse(cursor);
+        // The first page asks every status at once; an answer holding more than
+        // the page still needs is asked again so the cursor stays exact.
+        final ahead = cursor == null
+            ? await Future.wait([
+                for (final status in statusOrder)
+                  _page(status, pageSize, entityId, null),
+              ])
+            : const <_StatusPage>[];
         final bills = <Bill>[];
         while (position != null && bills.length < pageSize) {
-          final response = await _dio.get<Object?>(
-            path,
-            queryParameters: {
-              'status': statusOrder[position.status],
-              'limit': pageSize - bills.length,
-              'entityId': ?entityId,
-              'cursor': ?position.server,
-            },
-          );
-          final body = asJsonMap(response.data);
-          bills.addAll(readMapList(body, 'data').map(billFromJson));
-          position = position.next(readOptionalString(body, 'nextCursor'));
+          final wanted = pageSize - bills.length;
+          final page =
+              _reusable(ahead, position, wanted) ??
+              await _page(
+                statusOrder[position.status],
+                wanted,
+                entityId,
+                position.server,
+              );
+          bills.addAll(page.bills);
+          position = position.next(page.nextCursor);
         }
         return BillPage(bills: bills, nextCursor: position?.encode());
       });
+
+  Future<_StatusPage> _page(
+    String status,
+    int limit,
+    String? entityId,
+    String? cursor,
+  ) async {
+    final response = await _dio.get<Object?>(
+      path,
+      queryParameters: {
+        'status': status,
+        'limit': limit,
+        'entityId': ?entityId,
+        'cursor': ?cursor,
+      },
+    );
+    final body = asJsonMap(response.data);
+    return (
+      bills: readMapList(body, 'data').map(billFromJson).toList(),
+      nextCursor: readOptionalString(body, 'nextCursor'),
+    );
+  }
+
+  /// The prefetched answer, when it is exactly what the walk would ask for.
+  _StatusPage? _reusable(
+    List<_StatusPage> ahead,
+    BillsCursor position,
+    int wanted,
+  ) {
+    if (ahead.isEmpty || position.server != null) return null;
+    final page = ahead[position.status];
+    final whole = page.nextCursor == null && page.bills.length <= wanted;
+    return wanted == pageSize || whole ? page : null;
+  }
 
   @override
   Future<Result<Bill>> get(String id) => guardRequest(() async {
@@ -116,6 +157,8 @@ final class ApiBillsRepository implements BillsRepository {
     return billFromJson(asJsonMap(unwrapData(response.data)));
   });
 }
+
+typedef _StatusPage = ({List<Bill> bills, String? nextCursor});
 
 /// Where the walk over [ApiBillsRepository.statusOrder] stopped: the status
 /// index and the server's own cursor inside it. Travels as `index:cursor`.

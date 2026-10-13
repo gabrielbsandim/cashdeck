@@ -9,12 +9,13 @@ import {
   ValidationError,
 } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
-import { type Invoice } from '@/ports/records'
+import { type Institution, type Invoice } from '@/ports/records'
 import {
   type FinancialEntityRepository,
   type Page,
   type PageRequest,
 } from '@/ports/repositories'
+import { type Deps } from '@/use-cases/deps'
 
 export async function requireEntity(
   entities: FinancialEntityRepository,
@@ -121,4 +122,17 @@ export function brlOf(invoice: Invoice): Money {
     return invoice.amount
   }
   return Money.of(Math.round(invoice.amount.cents * (invoice.fxRate ?? 0)))
+}
+
+// Rows share few institutions, so each is read once and all at once.
+export async function institutionsOf(
+  deps: Pick<Deps, 'institutions'>,
+  tenantId: string,
+  rows: ReadonlyArray<{ institutionId: string }>,
+): Promise<Map<string, Institution | null>> {
+  const ids = [...new Set(rows.map(row => row.institutionId))]
+  const found = await Promise.all(
+    ids.map(id => deps.institutions.findById(tenantId, id)),
+  )
+  return new Map(ids.map((id, at) => [id, found[at] as Institution | null]))
 }

@@ -9,17 +9,22 @@ The API runs on Vercel and the database on Neon Postgres.
   root (`pnpm turbo run build --filter=@cashdeck/api`), so the workspace
   packages and the Prisma client are built first.
 - Node.js 24 (the root `engines` field).
+- Functions run in `gru1` (São Paulo), next to the Neon database in
+  `sa-east-1`: each query is a round trip, so a distant region adds about
+  130 ms per query. Change both together if you move the database.
 - `apps/api/vercel.json` declares the crons (UTC):
 
   | Path | Schedule |
   |---|---|
   | `/api/cron/open-finance-sync` | `0 15 * * *` |
+  | `/api/cron/preview-sync` | `0 11-23/3 * * *` |
   | `/api/cron/capture` | `30 9 * * *` |
   | `/api/cron/payment-ladder` | `0 11 * * 1-5` |
   | `/api/cron/reconcile-payments` | `0 21 * * 1-5` |
   | `/api/cron/invoices` | `0 12 * * 1-5` |
   | `/api/cron/alerts` | `0 12 * * *` |
   | `/api/cron/monthly-recap` | `30 15 1 * *` |
+  | `/api/cron/vehicle-prices` | `0 13 5 * *` |
 
   Vercel sends `Authorization: Bearer $CRON_SECRET`; a cron without the secret
   answers 401. Cron routes allow 300 seconds each.
@@ -53,6 +58,7 @@ read from are in [providers.md](providers.md).
 | Name | Required | What |
 |---|---|---|
 | `DATABASE_URL` | yes | Neon pooled connection string |
+| `DATABASE_URL_UNPOOLED` | no | Direct connection for migrations; without it the migration derives Neon's direct host by dropping `-pooler` |
 | `CASHDECK_API_TOKEN` | yes | Bearer token the app signs in with, 16+ characters; without it every route answers 503 `NOT_CONFIGURED` |
 | `CASHDECK_MASTER_KEY` | yes | Vault key that seals stored credentials |
 | `CRON_SECRET` | yes | Bearer token Vercel sends to the crons |

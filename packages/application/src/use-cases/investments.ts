@@ -12,7 +12,7 @@ import {
 import { type Institution } from '@/ports/records'
 import { type Deps } from '@/use-cases/deps'
 import { logoView } from '@/use-cases/finance'
-import { requireEntity } from '@/use-cases/shared'
+import { institutionsOf, requireEntity } from '@/use-cases/shared'
 
 type InvestmentDeps = Pick<Deps, 'entities' | 'institutions' | 'investments'>
 
@@ -111,29 +111,20 @@ export function positionView(
   }
 }
 
-export async function institutionsOf(
-  deps: Pick<Deps, 'institutions'>,
-  tenantId: string,
-  positions: readonly InvestmentPosition[],
-) {
-  const found = new Map<string, Institution | null>()
-  for (const id of new Set(positions.map(row => row.institutionId))) {
-    found.set(id, await deps.institutions.findById(tenantId, id))
-  }
-  return found
-}
-
 // The positions held by the entities in scope, with the kind of each owner.
 export async function heldPositions(
   deps: Pick<Deps, 'entities' | 'investments'>,
   tenantId: string,
   kind?: EntityKind,
 ) {
-  const entities = kind
-    ? [await requireEntity(deps.entities, tenantId, kind)]
-    : await deps.entities.list(tenantId)
+  const [entities, positions] = await Promise.all([
+    kind
+      ? requireEntity(deps.entities, tenantId, kind).then(entity => [entity])
+      : deps.entities.list(tenantId),
+    deps.investments.list(tenantId),
+  ])
   const kinds = new Map(entities.map(entity => [entity.id, entity.kind]))
-  const held = (await deps.investments.list(tenantId)).filter(
+  const held = positions.filter(
     position => kinds.has(position.entityId) && position.status !== 'CLOSED',
   )
   return { held, kinds }

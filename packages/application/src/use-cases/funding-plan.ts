@@ -1,4 +1,5 @@
 import {
+  type Account,
   addDays,
   type Bill,
   type BillStatus,
@@ -151,12 +152,13 @@ function withArrived(
   return [...known, ...fresh].sort((a, b) => a.on.localeCompare(b.on))
 }
 
-async function debitPlan(
+type DebitHistory = { account: Account; sent: Transaction[] }
+
+async function debitHistory(
   deps: Pick<Deps, 'accounts' | 'transactions' | 'documents'>,
   tenantId: string,
   day: LocalDate,
-  arrived: readonly Bill[],
-): Promise<FundingPlan['debit']> {
+): Promise<DebitHistory | null> {
   const setting = await deps.documents.get<DebitSetting>(
     tenantId,
     FUNDING_SETTINGS_COLLECTION,
@@ -173,6 +175,18 @@ async function debitPlan(
     from: `${addMonths(monthOf(day), -HISTORY_MONTHS)}-01`,
     to: day,
   })
+  return { account, sent }
+}
+
+function debitPlan(
+  history: DebitHistory | null,
+  day: LocalDate,
+  arrived: readonly Bill[],
+): FundingPlan['debit'] {
+  if (!history) {
+    return null
+  }
+  const { account, sent } = history
   const items = withArrived(nextDebits(sent, day), arrived)
   const total = sum(items.map(item => Money.of(item.amount.cents)))
   const shortfall = total.subtract(account.balance)
@@ -263,12 +277,18 @@ export function makeFundingPlan(
   return async function fundingPlan(tenantId: string): Promise<FundingPlan> {
     const entity = await requireEntity(deps.entities, tenantId, 'PF')
     const day = today(deps.clock.now())
-    const isAutoDebit = await loadAutoDebit(deps, tenantId)
-    const known = (
-      await allPages(request =>
-        deps.bills.list(tenantId, { entityId: entity.id }, request),
-      )
-    ).filter(bill => bill.status !== 'CANCELLED')
+    const [isAutoDebit, stored, items, pixReserve, balance, history] =
+      await Promise.all([
+        loadAutoDebit(deps, tenantId),
+        allPages(request =>
+          deps.bills.list(tenantId, { entityId: entity.id }, request),
+        ),
+        listItems(deps, tenantId),
+        loosePixReserve(deps, tenantId, entity, day),
+        balanceOf(tenantId, entity.id),
+        debitHistory(deps, tenantId, day),
+      ])
+    const known = stored.filter(bill => bill.status !== 'CANCELLED')
     const bills = known.filter(bill => !isAutoDebit(bill))
     const current = monthOf(day)
     const first = bills
@@ -297,13 +317,10 @@ export function makeFundingPlan(
         .map(bill => bill.amount),
     )
     // Every day of the month falls within the next 30 days.
-    const items = await listItems(deps, tenantId)
     const expected = sum([
       ...expectedBills(bills, day),
       ...items.map(item => Money.of(item.amount.cents)),
     ])
-    const pixReserve = await loosePixReserve(deps, tenantId, entity, day)
-    const balance = await balanceOf(tenantId, entity.id)
     const shortfall = upcoming
       .add(expected)
       .add(pixReserve)
@@ -317,9 +334,8 @@ export function makeFundingPlan(
       pixReserve: money(pixReserve),
       items,
       topUp: money(shortfall.isPositive() ? shortfall : Money.zero()),
-      debit: await debitPlan(
-        deps,
-        tenantId,
+      debit: debitPlan(
+        history,
         day,
         known.filter(
           bill =>

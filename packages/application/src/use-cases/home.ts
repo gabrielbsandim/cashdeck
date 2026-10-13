@@ -112,21 +112,21 @@ async function assistedAlerts(
     { entityId, status: 'ASSISTED' },
     BILL_PAGE,
   )
-  const alerts: PersonalSummary['alerts'] = []
-  for (const bill of page.items) {
-    const attempts = await deps.payments.listAttempts(tenantId, bill.id)
-    const failed = attempts
-      .filter(attempt => attempt.outcome === 'FAILED')
-      .at(-1)
-    alerts.push({
-      type: 'ASSISTED_PAYMENT',
-      at: (attempts.at(-1)?.at ?? bill.createdAt).toISOString(),
-      billId: bill.id,
-      payee: bill.payee ?? '',
-      reason: failed?.reason ?? 'NOT_CONFIGURED',
-    })
-  }
-  return alerts
+  return Promise.all(
+    page.items.map(async (bill): Promise<PersonalSummary['alerts'][number]> => {
+      const attempts = await deps.payments.listAttempts(tenantId, bill.id)
+      const failed = attempts
+        .filter(attempt => attempt.outcome === 'FAILED')
+        .at(-1)
+      return {
+        type: 'ASSISTED_PAYMENT',
+        at: (attempts.at(-1)?.at ?? bill.createdAt).toISOString(),
+        billId: bill.id,
+        payee: bill.payee ?? '',
+        reason: failed?.reason ?? 'NOT_CONFIGURED',
+      }
+    }),
+  )
 }
 
 export function makePersonalSummary(
@@ -154,13 +154,21 @@ export function makePersonalSummary(
     const spending = cash.filter(account => !account.isReserve)
     const reserveAccount = cash.find(account => account.isReserve) ?? null
     const balance = sum(spending.map(account => account.balance))
-    const bills = (await openBills(deps, tenantId, scope.entity.id)).map(
-      bill => ({ day: daysBetween(day, bill.dueDate), amount: bill.amount }),
-    )
-    const recent = await cashTransactions(deps, tenantId, spending, {
-      from: addDays(day, -FORECAST_DAYS),
-      to: day,
-    })
+    // Every read below depends only on the scope, so they share one round trip.
+    const [open, recent, budgets, sync, assisted] = await Promise.all([
+      openBills(deps, tenantId, scope.entity.id),
+      cashTransactions(deps, tenantId, spending, {
+        from: addDays(day, -FORECAST_DAYS),
+        to: day,
+      }),
+      budgetsOf(deps, tenantId, scope, month),
+      syncOf(deps, tenantId, scope),
+      assistedAlerts(deps, tenantId, scope.entity.id),
+    ])
+    const bills = open.map(bill => ({
+      day: daysBetween(day, bill.dueDate),
+      amount: bill.amount,
+    }))
     const flow = recent
       .filter(tx => tx.transferGroupId === null)
       .map(tx => tx.amount)
@@ -173,10 +181,9 @@ export function makePersonalSummary(
         .map(bill => ({ day: bill.day, amount: bill.amount.negate() })),
       days: FORECAST_DAYS,
     })
-    const budgets = await budgetsOf(deps, tenantId, scope, month)
     return {
       balance: money(balance),
-      sync: await syncOf(deps, tenantId, scope),
+      sync,
       reserve:
         reserveAccount &&
         (await reserveOf(deps, tenantId, reserveAccount, month, bills)),
@@ -187,7 +194,7 @@ export function makePersonalSummary(
       },
       budgets,
       alerts: [
-        ...(await assistedAlerts(deps, tenantId, scope.entity.id)),
+        ...assisted,
         ...budgets
           .filter(budget => budget.spent.cents > budget.limit.cents)
           .map(budget => ({
@@ -207,14 +214,13 @@ async function reserveOf(
   month: string,
   bills: Array<{ day: number; amount: Money }>,
 ) {
-  const institution = await deps.institutions.findById(
-    tenantId,
-    account.institutionId,
-  )
-  const credits = await deps.transactions.all(tenantId, {
-    accountIds: [account.id],
-    from: firstDay(month),
-  })
+  const [institution, credits] = await Promise.all([
+    deps.institutions.findById(tenantId, account.institutionId),
+    deps.transactions.all(tenantId, {
+      accountIds: [account.id],
+      from: firstDay(month),
+    }),
+  ])
   const yields = credits
     .filter(tx => tx.amount.isPositive() && tx.transferGroupId === null)
     .map(tx => tx.amount)
@@ -235,11 +241,13 @@ async function budgetsOf(
   scope: Scope,
   month: string,
 ) {
-  const limits = await deps.budgets.list(tenantId, scope.entity.id, month)
-  const spent = await cashTransactions(deps, tenantId, scope.accounts, {
-    from: firstDay(month),
-    to: lastDay(month),
-  })
+  const [limits, spent] = await Promise.all([
+    deps.budgets.list(tenantId, scope.entity.id, month),
+    cashTransactions(deps, tenantId, scope.accounts, {
+      from: firstDay(month),
+      to: lastDay(month),
+    }),
+  ])
   return limits.map(limit => ({
     category: limit.categoryName.toLowerCase(),
     spent: money(
@@ -274,33 +282,35 @@ export function makeCompanySummary(
     const month = monthOf(day)
     const scope = await scopeOf(deps, tenantId, 'PJ')
     const cash = scope.accounts.filter(isCash)
-    const issued = await deps.invoices.all(tenantId, {
-      entityId: scope.entity.id,
-      status: 'ISSUED',
-      competenceFrom: month,
-      competenceTo: month,
-    })
+    const [issued, quote, sync, inss, drafts, unbilled] = await Promise.all([
+      deps.invoices.all(tenantId, {
+        entityId: scope.entity.id,
+        status: 'ISSUED',
+        competenceFrom: month,
+        competenceTo: month,
+      }),
+      issQuote(deps, tenantId, scope.entity.id, month),
+      syncOf(deps, tenantId, scope),
+      inssOf(deps, tenantId, day),
+      draftsOf(deps, tenantId, scope.entity.id),
+      unbilledOf(deps, tenantId, cash, day),
+    ])
     const domestic = sum(issued.filter(i => !i.isExport).map(brlOf))
     const exports = sum(issued.filter(i => i.isExport).map(brlOf))
-    const { annex, domesticRbt12, exportRbt12 } = await issQuote(
-      deps,
-      tenantId,
-      scope.entity.id,
-      month,
-    )
+    const { annex, domesticRbt12, exportRbt12 } = quote
     return {
       cash: money(sum(cash.map(account => account.balance))),
-      sync: await syncOf(deps, tenantId, scope),
+      sync,
       billed: money(domestic.add(exports)),
       invoiceCount: issued.length,
       dasEstimate: money(
         estimateDas({ annex, domesticRbt12, exportRbt12, domestic, exports }),
       ),
       dasDue: dasDueDate(month),
-      inss: await inssOf(deps, tenantId, day),
+      inss,
       annex,
-      drafts: await draftsOf(deps, tenantId, scope.entity.id),
-      unbilled: await unbilledOf(deps, tenantId, cash, day),
+      drafts,
+      unbilled,
     }
   }
 }
@@ -335,18 +345,18 @@ async function draftsOf(
     entityId,
     status: 'DRAFT',
   })
-  const views: CompanySummary['drafts'] = []
-  for (const draft of drafts) {
-    const client = await deps.invoices.findClient(tenantId, draft.clientId)
-    views.push({
-      id: draft.id,
-      customer: client?.name ?? '',
-      amount: money(draft.amount),
-      recurring: draft.templateId !== null,
-      issueOn: draft.issueOn,
-    })
-  }
-  return views
+  return Promise.all(
+    drafts.map(async (draft): Promise<CompanySummary['drafts'][number]> => {
+      const client = await deps.invoices.findClient(tenantId, draft.clientId)
+      return {
+        id: draft.id,
+        customer: client?.name ?? '',
+        amount: money(draft.amount),
+        recurring: draft.templateId !== null,
+        issueOn: draft.issueOn,
+      }
+    }),
+  )
 }
 
 async function unbilledOf(
@@ -384,15 +394,17 @@ export function makeConsolidatedSummary(
     tenantId: string,
   ): Promise<ConsolidatedSummary> {
     const month = monthOf(today(deps.clock.now()))
-    const personal = await scopeOf(deps, tenantId, 'PF')
-    const company = await scopeOf(deps, tenantId, 'PJ')
+    const [personal, company, transfers] = await Promise.all([
+      scopeOf(deps, tenantId, 'PF'),
+      scopeOf(deps, tenantId, 'PJ'),
+      deps.transfers.list(tenantId, monthInstants(month)),
+    ])
     const cash = [...personal.accounts, ...company.accounts].filter(isCash)
     const moved = await cashTransactions(deps, tenantId, cash, {
       from: firstDay(month),
       to: lastDay(month),
     })
     const external = moved.filter(tx => tx.transferGroupId === null)
-    const transfers = await deps.transfers.list(tenantId, monthInstants(month))
     const total = (scope: Scope) =>
       money(sum(scope.accounts.filter(isCash).map(account => account.balance)))
     return {

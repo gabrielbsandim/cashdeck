@@ -58,27 +58,26 @@ export function makeAutomation(
   }
 
   async function get(tenantId: string): Promise<AutomationView> {
-    const status = await deps.documents.get<AutomationStatus>(
-      tenantId,
-      COLLECTION,
-      STATUS_ID,
+    const [status, entities] = await Promise.all([
+      deps.documents.get<AutomationStatus>(tenantId, COLLECTION, STATUS_ID),
+      deps.entities.list(tenantId),
+    ])
+    const views = await Promise.all(
+      entities
+        .sort((a, b) => a.kind.localeCompare(b.kind))
+        .map(async (entity): Promise<AutomationView['entities'][number]> => {
+          const settings = await deps.settings.get(tenantId, entity.id)
+          return {
+            entity: entity.kind,
+            confirmAboveCents: settings.confirmAboveCents,
+            dailyCapCents: settings.dailyCapCents,
+            entityDailyCapCents: settings.entityDailyCapCents,
+            paymentCapCents: settings.paymentCapCents,
+            maxDeviationPercent: settings.maxDeviationPercent,
+            approvalCutoff: settings.approvalCutoff,
+          }
+        }),
     )
-    const entities = await deps.entities.list(tenantId)
-    const views: AutomationView['entities'] = []
-    for (const entity of entities.sort((a, b) =>
-      a.kind.localeCompare(b.kind),
-    )) {
-      const settings = await deps.settings.get(tenantId, entity.id)
-      views.push({
-        entity: entity.kind,
-        confirmAboveCents: settings.confirmAboveCents,
-        dailyCapCents: settings.dailyCapCents,
-        entityDailyCapCents: settings.entityDailyCapCents,
-        paymentCapCents: settings.paymentCapCents,
-        maxDeviationPercent: settings.maxDeviationPercent,
-        approvalCutoff: settings.approvalCutoff,
-      })
-    }
     return { pausedSince: status?.pausedAt ?? null, entities: views }
   }
 

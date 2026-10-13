@@ -158,10 +158,14 @@ export function makeBudgets(deps: BudgetDeps) {
     kind: EntityKind,
     month: string,
   ): Promise<BudgetMonthView> {
-    const entity = await requireEntity(deps.entities, tenantId, kind)
-    const categories = await categoryIndex(deps, tenantId)
-    const budgets = await deps.budgets.listMonth(tenantId, entity.id, month)
-    const [spent] = await spendingByMonth(tenantId, kind, [month], categories)
+    const [entity, categories] = await Promise.all([
+      requireEntity(deps.entities, tenantId, kind),
+      categoryIndex(deps, tenantId),
+    ])
+    const [budgets, [spent]] = await Promise.all([
+      deps.budgets.listMonth(tenantId, entity.id, month),
+      spendingByMonth(tenantId, kind, [month], categories),
+    ])
     const spending = spent as Spending
     const items = budgets
       .map(budget => itemView(budget, spending, categories))

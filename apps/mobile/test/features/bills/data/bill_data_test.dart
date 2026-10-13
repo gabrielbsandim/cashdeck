@@ -223,15 +223,54 @@ void main() {
       expect(page.nextCursor, isNull);
       final requests = adapterOf(dio).requests.skip(1).toList();
       expect(requests.map((request) => request.queryParameters['status']), [
+        ...ApiBillsRepository.statusOrder,
         'NEEDS_CONFIRMATION',
-        'NEEDS_CONFIRMATION',
-        ...ApiBillsRepository.statusOrder.skip(1),
       ]);
       expect(requests.first.queryParameters['entityId'], 'personal');
-      expect(requests.first.queryParameters['limit'], 50);
-      expect(requests[1].queryParameters['cursor'], '1');
-      expect(requests[1].queryParameters['limit'], 49);
+      expect(
+        requests.take(7).map((request) => request.queryParameters['limit']),
+        everyElement(50),
+      );
+      expect(requests.last.queryParameters['cursor'], '1');
+      expect(requests.last.queryParameters['limit'], 49);
     });
+
+    test(
+      'asks a status again when its first answer overfills the page',
+      () async {
+        final dio = stubDio((options) {
+          final query = options.queryParameters;
+          final limit = query['limit'] as int;
+          return switch (query['status']) {
+            'NEEDS_CONFIRMATION' => StubResponse(200, {
+              'data': [billJson(id: 'a', status: 'NEEDS_CONFIRMATION')],
+              'nextCursor': null,
+            }),
+            'OPEN' => StubResponse(200, {
+              'data': [
+                for (var index = 0; index < limit; index++)
+                  billJson(id: 'open-$index'),
+              ],
+              'nextCursor': 'open-$limit',
+            }),
+            _ => const StubResponse(200, {
+              'data': <Object?>[],
+              'nextCursor': null,
+            }),
+          };
+        });
+
+        final page =
+            (await ApiBillsRepository(dio, pageSize: 3).list() as Ok<BillPage>)
+                .value;
+
+        expect(page.bills.map((bill) => bill.id), ['a', 'open-0', 'open-1']);
+        expect(page.nextCursor, '3:open-2');
+        final requests = adapterOf(dio).requests;
+        expect(requests, hasLength(8));
+        expect(requests.last.queryParameters, {'status': 'OPEN', 'limit': 2});
+      },
+    );
 
     test('stops at a full page and resumes from its cursor', () async {
       final dio = stubDio(
@@ -247,10 +286,14 @@ void main() {
       final first = (await repository.list() as Ok<BillPage>).value;
       expect(first.bills.single.id, 'x-NEEDS_CONFIRMATION');
       expect(first.nextCursor, '1');
-      expect(adapterOf(dio).requests.single.queryParameters, {
+      expect(adapterOf(dio).requests.first.queryParameters, {
         'status': 'NEEDS_CONFIRMATION',
         'limit': 1,
       });
+      expect(
+        adapterOf(dio).requests,
+        hasLength(ApiBillsRepository.statusOrder.length),
+      );
 
       final open = (await repository.list(cursor: '3') as Ok<BillPage>).value;
       expect(open.nextCursor, '3:open-2');

@@ -114,6 +114,8 @@ type Base = Omit<Context, 'until'> & {
   items: readonly FundingItemView[]
 }
 
+type Owner = Pick<Base, 'tenantId' | 'kind' | 'entity' | 'day'>
+
 // Which recurring charges count and since when their last charge must be.
 type RecurringScope = {
   charges: readonly Transaction[]
@@ -296,15 +298,16 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     recent: readonly Transaction[],
     day: LocalDate,
   ) {
-    const transfers = await deps.transfers.list(tenantId, {
-      from: startOfDay(addDays(day, -HISTORY_DAYS)),
-      to: startOfDay(addDays(day, 1)),
-    })
+    const [transfers, members] = await Promise.all([
+      deps.transfers.list(tenantId, {
+        from: startOfDay(addDays(day, -HISTORY_DAYS)),
+        to: startOfDay(addDays(day, 1)),
+      }),
+      entity.kind === 'PF' ? householdTaxIds(deps, tenantId) : [],
+    ])
     const kinds = new Map(
       transfers.map(transfer => [transfer.id, transfer.kind]),
     )
-    const members =
-      entity.kind === 'PF' ? await householdTaxIds(deps, tenantId) : []
     const own = new Set([entity.taxId.value, ...members])
     return expectedIncome(
       recent
@@ -424,10 +427,17 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     )
   }
 
-  async function load(tenantId: string, kind: EntityKind): Promise<Base> {
-    const day = today(deps.clock.now())
-    const entity = await requireEntity(deps.entities, tenantId, kind)
-    const accounts = await deps.accounts.listByEntity(tenantId, entity.id)
+  async function load(owner: Owner): Promise<Base> {
+    const { tenantId, kind, entity, day } = owner
+    const [accounts, bills, isAutoDebit, items, loans] = await Promise.all([
+      deps.accounts.listByEntity(tenantId, entity.id),
+      allPages(page =>
+        deps.bills.list(tenantId, { entityId: entity.id }, page),
+      ),
+      loadAutoDebit(deps, tenantId),
+      fixedItems(kind, tenantId),
+      loadLoans(deps, tenantId),
+    ])
     const cash = accounts.filter(isCash)
     const spending = cash.filter(account => !account.isReserve)
     const recent = (
@@ -437,13 +447,6 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         to: day,
       })
     ).filter(tx => !tx.provisional)
-    const open = (
-      await allPages(page =>
-        deps.bills.list(tenantId, { entityId: entity.id }, page),
-      )
-    ).filter(
-      bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
-    )
     return {
       tenantId,
       kind,
@@ -451,18 +454,18 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       entity,
       accounts,
       recent,
-      open,
+      open: bills.filter(
+        bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
+      ),
       checking: sum(spending.map(account => account.balance)),
       reserve: sum(
         cash
           .filter(account => account.isReserve)
           .map(account => account.balance),
       ),
-      isAutoDebit: await loadAutoDebit(deps, tenantId),
-      items: await fixedItems(kind, tenantId),
-      loans: (await loadLoans(deps, tenantId)).filter(
-        loan => loan.entityId === entity.id,
-      ),
+      isAutoDebit,
+      items,
+      loans: loans.filter(loan => loan.entityId === entity.id),
     }
   }
 
@@ -474,18 +477,18 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     recurring: Omit<RecurringScope, 'charges'>,
   ): Promise<Obligation[]> {
     const context: Context = { ...base, until }
+    const [recurrent, cards] = await Promise.all([
+      recurringObligations(base.tenantId, context, {
+        charges: base.recent,
+        ...recurring,
+      }),
+      cardObligations(base.tenantId, base.accounts.filter(isCard), context),
+    ])
     return [
       ...billObligations(base.open, base.isAutoDebit),
       ...fixedObligations(base.items, context),
-      ...(await recurringObligations(base.tenantId, context, {
-        charges: base.recent,
-        ...recurring,
-      })),
-      ...(await cardObligations(
-        base.tenantId,
-        base.accounts.filter(isCard),
-        context,
-      )),
+      ...recurrent,
+      ...cards,
     ]
   }
 
@@ -500,12 +503,10 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
 
   // Until the next income: for a company, or a person without a closed month.
   async function cashView(base: Base): Promise<SafeToSpendView> {
-    const income = await incomeOf(
-      base.tenantId,
-      base.entity,
-      base.recent,
-      base.day,
-    )
+    const [income, budgets] = await Promise.all([
+      incomeOf(base.tenantId, base.entity, base.recent, base.day),
+      budgetsLeft(base.tenantId, base.kind, base.day),
+    ])
     const { until } = spendingWindow(base.day, income)
     const result = safeToSpend({
       today: base.day,
@@ -516,7 +517,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         include: recurrence => recurrence.status === 'CONFIRMED',
         since: '',
       }),
-      budgets: await budgetsLeft(base.tenantId, base.kind, base.day),
+      budgets,
     })
     return {
       ...baseView(base),
@@ -536,17 +537,20 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     }
   }
 
-  async function planOf(base: Base): Promise<Plan | null> {
-    const scope = await insightScope(deps, base.tenantId, base.kind)
-    const month = monthOf(base.day)
+  async function planOf(owner: Owner): Promise<Plan | null> {
+    const month = monthOf(owner.day)
+    const [scope, categories, stored] = await Promise.all([
+      insightScope(deps, owner.tenantId, owner.kind),
+      categoryIndex(deps, owner.tenantId),
+      loadSpendingPlan(deps, owner.tenantId, owner.entity.id),
+    ])
     const entries = await flowEntries(
       deps,
-      base.tenantId,
+      owner.tenantId,
       scope.accounts,
-      await categoryIndex(deps, base.tenantId),
-      { from: firstDay(addMonths(month, -PLAN_MONTHS)), to: base.day },
+      categories,
+      { from: firstDay(addMonths(month, -PLAN_MONTHS)), to: owner.day },
     )
-    const stored = await loadSpendingPlan(deps, base.tenantId, base.entity.id)
     const cards = new Set(
       scope.accounts.filter(isCard).map(account => account.id),
     )
@@ -610,7 +614,18 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     const context: Context = { ...base, until: lastDay(month) }
     // Any recurring debit still running is owed, a dismissed subscription too.
     const running = { include: () => true, since: addMonths(month, -1) }
-    const cardBill = await cardBillTotals(base)
+    const until = addDays(base.day, CASH_ALERT_DAYS)
+    const [cardBill, recurrent, budgets, upcoming] = await Promise.all([
+      cardBillTotals(base),
+      recurringObligations(base.tenantId, context, {
+        charges: plan.entries
+          .filter(entry => entry.kind === 'EXPENSE')
+          .map(entry => entry.transaction),
+        ...running,
+      }),
+      budgetsLeft(base.tenantId, base.kind, base.day),
+      cashObligations(base, until, running),
+    ])
     const spent = plan.entries.filter(
       entry =>
         entry.kind === 'EXPENSE' &&
@@ -640,16 +655,10 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
           base.isAutoDebit,
         ),
         ...fixedObligations(base.items, context),
-        ...(await recurringObligations(base.tenantId, context, {
-          charges: plan.entries
-            .filter(entry => entry.kind === 'EXPENSE')
-            .map(entry => entry.transaction),
-          ...running,
-        })),
+        ...recurrent,
       ],
-      budgets: await budgetsLeft(base.tenantId, base.kind, base.day),
+      budgets,
     })
-    const until = addDays(base.day, CASH_ALERT_DAYS)
     return {
       ...baseView(base),
       basis: 'MONTH',
@@ -673,7 +682,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
           until,
           cash: base.checking,
           reserve: base.reserve,
-          obligations: await cashObligations(base, until, running),
+          obligations: upcoming,
         }),
       ),
       lines: result.lines.map(lineView),
@@ -686,8 +695,13 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     tenantId: string,
     kind: EntityKind = 'PF',
   ): Promise<SafeToSpendView> {
-    const base = await load(tenantId, kind)
-    const plan = kind === 'PF' ? await planOf(base) : null
+    const day = today(deps.clock.now())
+    const entity = await requireEntity(deps.entities, tenantId, kind)
+    const owner = { tenantId, kind, entity, day }
+    const [base, plan] = await Promise.all([
+      load(owner),
+      kind === 'PF' ? planOf(owner) : null,
+    ])
     if (!plan) {
       return cashView(base)
     }

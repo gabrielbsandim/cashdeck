@@ -1,5 +1,6 @@
 import {
   type Account,
+  type Category,
   addDays,
   detectRecurring,
   type EntityKind,
@@ -200,9 +201,9 @@ export function makeSubscriptions(deps: SubscriptionDeps) {
   async function expensesByEntity(
     tenantId: string,
     accounts: readonly Account[],
+    categories: ReadonlyMap<string, Category>,
     day: LocalDate,
   ): Promise<Map<string, Transaction[]>> {
-    const categories = await categoryIndex(deps, tenantId)
     const entries = await flowEntries(deps, tenantId, accounts, categories, {
       from: addDays(day, -HISTORY_DAYS),
       to: day,
@@ -226,9 +227,17 @@ export function makeSubscriptions(deps: SubscriptionDeps) {
     kind?: EntityKind,
   ): Promise<SubscriptionsView> {
     const day = today(deps.clock.now())
-    const scope = await insightScope(deps, tenantId, kind)
-    const expenses = await expensesByEntity(tenantId, scope.accounts, day)
-    const decided = await deps.recurrences.list(tenantId)
+    const [scope, categories, decided] = await Promise.all([
+      insightScope(deps, tenantId, kind),
+      categoryIndex(deps, tenantId),
+      deps.recurrences.list(tenantId),
+    ])
+    const expenses = await expensesByEntity(
+      tenantId,
+      scope.accounts,
+      categories,
+      day,
+    )
     const parts = scope.entities.map(entity =>
       entitySubscriptions({
         kind: entity.kind,

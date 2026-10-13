@@ -110,17 +110,16 @@ export async function revenueMonths(
   entityId: string,
   range: { from: string; to: string },
 ): Promise<RevenueMonth[]> {
-  const entered = new Map(
-    (await deps.documents.list<RevenueEntry>(tenantId, REVENUE_COLLECTION)).map(
-      entry => [entry.month, entry],
-    ),
-  )
-  const invoices = await deps.invoices.all(tenantId, {
-    entityId,
-    status: 'ISSUED',
-    competenceFrom: range.from,
-    competenceTo: range.to,
-  })
+  const [stored, invoices] = await Promise.all([
+    deps.documents.list<RevenueEntry>(tenantId, REVENUE_COLLECTION),
+    deps.invoices.all(tenantId, {
+      entityId,
+      status: 'ISSUED',
+      competenceFrom: range.from,
+      competenceTo: range.to,
+    }),
+  ])
+  const entered = new Map(stored.map(entry => [entry.month, entry]))
   const months: RevenueMonth[] = []
   for (
     let month = range.to;

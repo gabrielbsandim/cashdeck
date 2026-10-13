@@ -158,13 +158,13 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
     investmentId?: string,
   ): Promise<History> {
     const range = { from: window.from, to: window.to }
+    const [snapshots, movements] = await Promise.all([
+      deps.investments.listSnapshots(tenantId, range, investmentId),
+      deps.investments.listMovements(tenantId, investmentId),
+    ])
     return {
-      snapshots: groupByPosition(
-        await deps.investments.listSnapshots(tenantId, range, investmentId),
-      ),
-      movements: groupByPosition(
-        await deps.investments.listMovements(tenantId, investmentId),
-      ),
+      snapshots: groupByPosition(snapshots),
+      movements: groupByPosition(movements),
     }
   }
 
@@ -181,12 +181,13 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
     return round2((growth - 1) * 100)
   }
 
-  async function periodView(
+  function periodView(
     positions: readonly InvestmentPosition[],
     history: History,
     window: Window,
     currency: string,
-  ): Promise<InvestmentPeriodView> {
+    cdi: number | null,
+  ): InvestmentPeriodView {
     const figures = positions
       .map(position => figuresOf(position, history, window))
       .reduce(added, EMPTY)
@@ -201,7 +202,7 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
       withdrawals: cash(figures.withdrawals),
       yield: cash(yieldCents(figures)),
       yieldPercent: yieldPercent(figures),
-      cdiPercent: await cdiPercent(window),
+      cdiPercent: cdi,
       estimated: figures.estimated,
       series: seriesDays(window).map(day => ({
         day,
@@ -227,11 +228,14 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
     query: InvestmentPerformanceQuery,
   ): Promise<InvestmentPerformanceView> {
     const window = windowOf(query.period, deps.clock.now())
-    const { held } = await heldPositions(deps, tenantId, query.entity)
+    const [{ held }, history, cdi] = await Promise.all([
+      heldPositions(deps, tenantId, query.entity),
+      historyOf(tenantId, window),
+      cdiPercent(window),
+    ])
     const counted = held.filter(
       position => position.balance.currency === TOTAL_CURRENCY,
     )
-    const history = await historyOf(tenantId, window)
     const cash = (cents: number) => money(Money.of(cents, TOTAL_CURRENCY))
     const positions = counted
       .map(position => {
@@ -246,7 +250,7 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
       })
       .sort((a, b) => b.yield.cents - a.yield.cents)
     return {
-      ...(await periodView(counted, history, window, TOTAL_CURRENCY)),
+      ...periodView(counted, history, window, TOTAL_CURRENCY, cdi),
       positions,
     }
   }
@@ -262,26 +266,23 @@ export function makeInvestmentPerformance(deps: PerformanceDeps) {
       'Investment',
     )
     const window = windowOf(period, deps.clock.now())
-    const owner = await requireEntityById(
-      deps.entities,
-      tenantId,
-      position.entityId,
-    )
-    const institution = await deps.institutions.findById(
-      tenantId,
-      position.institutionId,
-    )
-    const history = await historyOf(tenantId, window, position.id)
+    const [owner, institution, history, cdi] = await Promise.all([
+      requireEntityById(deps.entities, tenantId, position.entityId),
+      deps.institutions.findById(tenantId, position.institutionId),
+      historyOf(tenantId, window, position.id),
+      cdiPercent(window),
+    ])
     const movements = [...(history.movements.get(position.id) ?? [])].sort(
       (a, b) => b.occurredOn.localeCompare(a.occurredOn),
     )
     return {
       position: positionView(position, owner.kind, institution, movements),
-      performance: await periodView(
+      performance: periodView(
         [position],
         history,
         window,
         position.balance.currency,
+        cdi,
       ),
       movements: movements.map(movement => ({
         id: movement.id,

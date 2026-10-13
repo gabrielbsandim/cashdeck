@@ -29,6 +29,7 @@ import { type Institution, type InternalTransfer } from '@/ports/records'
 import { type Page } from '@/ports/repositories'
 import { type Deps } from '@/use-cases/deps'
 import {
+  institutionsOf,
   monthInstants,
   monthOf,
   required,
@@ -146,18 +147,19 @@ export function makeAccountViews(
     tenantId: string,
     accounts: readonly Account[],
   ): Promise<AccountView[]> {
-    const index = await entityIndex(deps, tenantId)
-    const connections = await deps.connections.list(tenantId)
-    const views: AccountView[] = []
-    for (const account of accounts) {
-      const institution = await deps.institutions.findById(
-        tenantId,
+    const [index, connections, institutions] = await Promise.all([
+      entityIndex(deps, tenantId),
+      deps.connections.list(tenantId),
+      institutionsOf(deps, tenantId, accounts),
+    ])
+    return accounts.map((account): AccountView => {
+      const institution = institutions.get(
         account.institutionId,
-      )
+      ) as Institution | null
       const connection = connections.find(
         candidate => candidate.id === account.connectionId,
       )
-      views.push({
+      return {
         id: account.id,
         entityKind: kindOf(index, account.entityId),
         institution: institution?.name ?? '',
@@ -179,9 +181,8 @@ export function makeAccountViews(
               lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
             }
           : null,
-      })
-    }
-    return views
+      }
+    })
   }
 }
 
