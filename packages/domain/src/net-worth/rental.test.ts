@@ -14,10 +14,10 @@ const rental: Rental = {
 }
 
 const lines = [
-  { description: 'Taxas de condomínio 10/2026', cents: 37278 },
-  { description: 'Fundo de reserva 10/2026', cents: 1863 },
-  { description: 'Consumo de GAS 10/2026', cents: 13665 },
-  { description: 'Rateio segurança 06/30', cents: 6963 },
+  { description: 'Taxas de condomínio 10/2026', cents: 41020 },
+  { description: 'Fundo de reserva 10/2026', cents: 2051 },
+  { description: 'Consumo de GAS 10/2026', cents: 9870 },
+  { description: 'Rateio segurança 06/30', cents: 5000 },
 ]
 
 describe('plainText', () => {
@@ -44,19 +44,19 @@ describe('isRentalBill', () => {
 
 describe('rentCharge', () => {
   it('adds the lines the tenant pays to the rent', () => {
-    expect(rentCharge(rental, lines, 59769)).toEqual({
+    expect(rentCharge(rental, lines, 57941)).toEqual({
       passedOn: [lines[2]],
-      total: 173665,
-      ownerCost: 46104,
+      total: 169870,
+      ownerCost: 48071,
     })
   })
 
   it('asks for the rent alone when no line matches', () => {
     const none = { ...rental, passThrough: ['água', ' '] }
-    expect(rentCharge(none, lines, 59769)).toEqual({
+    expect(rentCharge(none, lines, 57941)).toEqual({
       passedOn: [],
       total: 160000,
-      ownerCost: 59769,
+      ownerCost: 57941,
     })
   })
 })
@@ -64,15 +64,15 @@ describe('rentCharge', () => {
 describe('rentReceived', () => {
   it('takes the credit of the exact charge closest to the due date', () => {
     const credits = [
-      { bookedOn: '2026-09-14', cents: 173665 },
-      { bookedOn: '2026-10-05', cents: 173665 },
-      { bookedOn: '2026-10-09', cents: 173600 },
-      { bookedOn: '2026-10-16', cents: 173665 },
+      { bookedOn: '2026-09-14', cents: 169870 },
+      { bookedOn: '2026-10-05', cents: 169870 },
+      { bookedOn: '2026-10-09', cents: 169800 },
+      { bookedOn: '2026-10-16', cents: 169870 },
     ]
-    expect(rentReceived(173665, '2026-10-10', credits)).toEqual({
+    expect(rentReceived(169870, '2026-10-10', credits)).toEqual({
       bookedOn: '2026-10-05',
-      cents: 173665,
+      cents: 169870,
     })
-    expect(rentReceived(173665, '2026-12-10', credits)).toBeNull()
+    expect(rentReceived(169870, '2026-12-10', credits)).toBeNull()
   })
 })

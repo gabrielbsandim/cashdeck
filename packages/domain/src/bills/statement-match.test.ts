@@ -34,26 +34,26 @@ const pairs = (matches: ReturnType<typeof matchBillsToStatement>) =>
 describe('matchBillsToStatement', () => {
   it('pays a bill with the outgoing transaction of the same amount', () => {
     const matches = matchBillsToStatement(
-      [bill('amil', 38963, '2026-10-06'), bill('desk', 9999, '2026-10-08')],
+      [bill('health', 41250, '2026-10-06'), bill('desk', 9999, '2026-10-08')],
       [
-        tx('t1', -38963, '2026-10-06'),
+        tx('t1', -41250, '2026-10-06'),
         tx('t2', -9999, '2026-10-08'),
         tx('t3', 9999, '2026-10-08'),
       ],
     )
     expect(pairs(matches)).toEqual([
-      ['amil', 't1'],
+      ['health', 't1'],
       ['desk', 't2'],
     ])
   })
 
   it('waits longer for a bank debit to post', () => {
-    const debit = bill('claro', 20880, '2026-10-08')
-    const late = [tx('late', -20880, '2026-10-22')]
+    const debit = bill('phone', 15990, '2026-10-08')
+    const late = [tx('late', -15990, '2026-10-22')]
     expect(matchBillsToStatement([debit], late)).toEqual([])
     expect(
-      pairs(matchBillsToStatement([debit], late, b => b.id === 'claro')),
-    ).toEqual([['claro', 'late']])
+      pairs(matchBillsToStatement([debit], late, b => b.id === 'phone')),
+    ).toEqual([['phone', 'late']])
   })
 
   it('keeps to the window around the due date and to the currency', () => {

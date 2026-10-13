@@ -1,7 +1,9 @@
 # Agent guide
 
-Read [docs/plan.md](docs/plan.md) for the product scope and
-[CONTRIBUTING.md](CONTRIBUTING.md) for the rules below in full.
+Read [docs/plan.md](docs/plan.md) for the product scope,
+[docs/architecture.md](docs/architecture.md) for where code goes and
+[CONTRIBUTING.md](CONTRIBUTING.md) for the rules below in full. The
+[docs index](docs/README.md) lists the rest.
 
 ## Rules
 

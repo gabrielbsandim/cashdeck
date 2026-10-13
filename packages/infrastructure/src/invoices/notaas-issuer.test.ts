@@ -54,7 +54,7 @@ describe('NotaasIssuer', () => {
       },
     )
     const result = await issuer(scripted, {
-      NOTAAS_LOCAL_PRESTACAO: '3530607',
+      NOTAAS_LOCAL_PRESTACAO: '3550308',
     }).issue(domestic, 'invoice-key')
     expect(result).toEqual({
       externalId: 'inv-1',
@@ -68,7 +68,7 @@ describe('NotaasIssuer', () => {
       servico: {
         descricao: 'Desenvolvimento de software',
         codigo: '010101',
-        localPrestacao: '3530607',
+        localPrestacao: '3550308',
       },
       valores: { total: 5000, aliquotaIss: 2 },
       competencia: '2026-10',

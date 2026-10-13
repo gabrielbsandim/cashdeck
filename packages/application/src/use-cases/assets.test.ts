@@ -143,15 +143,15 @@ describe('assets', () => {
         billId: id,
         payee,
         dueDate,
-        total: 46104 + gas,
+        total: 48071 + gas,
         lines: [
-          { description: 'Taxas de condomínio', cents: 46104 },
+          { description: 'Taxas de condomínio', cents: 48071 },
           { description: 'Consumo de gás', cents: gas },
         ],
         attachmentId: `${id}-pdf`,
       })
-    await bill('b-sep', 'CONDOMÍNIO JARDIM AZUL', '2026-09-10', 15597)
-    await bill('b-oct', 'CONDOMÍNIO JARDIM AZUL', '2026-10-10', 13665)
+    await bill('b-sep', 'CONDOMÍNIO JARDIM AZUL', '2026-09-10', 11230)
+    await bill('b-oct', 'CONDOMÍNIO JARDIM AZUL', '2026-10-10', 9870)
     await bill('b-other', 'Residencial Jardim Verde', '2026-11-10', 9000)
     const rental = {
       rent: 160000,
@@ -168,18 +168,18 @@ describe('assets', () => {
       charge: {
         billId: 'b-oct',
         dueDate: '2026-10-10',
-        billTotal: { cents: 59769, currency: 'BRL' },
+        billTotal: { cents: 57941, currency: 'BRL' },
         passedOn: [
           {
             description: 'Consumo de gás',
-            amount: { cents: 13665, currency: 'BRL' },
+            amount: { cents: 9870, currency: 'BRL' },
           },
         ],
-        total: { cents: 173665, currency: 'BRL' },
-        ownerCost: { cents: 46104, currency: 'BRL' },
+        total: { cents: 169870, currency: 'BRL' },
+        ownerCost: { cents: 48071, currency: 'BRL' },
         attachmentId: 'b-oct-pdf',
         installment: { cents: 108500, currency: 'BRL' },
-        result: { cents: 5396, currency: 'BRL' },
+        result: { cents: 3429, currency: 'BRL' },
         received: null,
       },
     })
@@ -187,7 +187,7 @@ describe('assets', () => {
     const unlinked = await assets.update(TENANT, rented.id, { loanId: null })
     expect(unlinked.rental?.charge).toMatchObject({
       installment: null,
-      result: { cents: 113896 },
+      result: { cents: 111929 },
     })
     const elsewhere = await assets.update(TENANT, rented.id, {
       rental: { ...rental, billFrom: 'Vila Nova' },
@@ -205,8 +205,8 @@ describe('assets', () => {
       billId: 'b-oct',
       payee: 'CONDOMÍNIO JARDIM AZUL',
       dueDate: '2026-10-10',
-      total: 59769,
-      lines: [{ description: 'Consumo de gás', cents: 13665 }],
+      total: 57941,
+      lines: [{ description: 'Consumo de gás', cents: 9870 }],
       attachmentId: null,
     })
     const rental = {
@@ -251,17 +251,17 @@ describe('assets', () => {
         description: 'Pix recebido',
       })
     await deps.transactions.saveNew([
-      credit('refund', 'card', '2026-10-09', 173665),
-      credit('short', 'chk', '2026-10-09', 173600),
-      credit('early', 'chk', '2026-09-12', 173665),
-      credit('rent', 'chk', '2026-10-05', 173665),
+      credit('refund', 'card', '2026-10-09', 169870),
+      credit('short', 'chk', '2026-10-09', 169800),
+      credit('early', 'chk', '2026-09-12', 169870),
+      credit('rent', 'chk', '2026-10-05', 169870),
     ])
 
     expect(
       (await assets.list(TENANT)).items[0]?.rental?.charge?.received,
     ).toEqual({
       on: '2026-10-05',
-      amount: { cents: 173665, currency: 'BRL' },
+      amount: { cents: 169870, currency: 'BRL' },
     })
   })
 

@@ -130,7 +130,7 @@ String billPayeeOf(AppLocalizations l10n, Bill bill) {
 }
 
 /// A bill captured from email can carry only the sender address as payee;
-/// the domain reads better: billing@amil.com.br shows as Amil.
+/// the domain reads better: billing@saude.com.br shows as Saude.
 String? _senderName(String payee) {
   final match = RegExp(r'^[^@\s]+@([a-z0-9-]+)\.')
       .firstMatch(payee.toLowerCase());

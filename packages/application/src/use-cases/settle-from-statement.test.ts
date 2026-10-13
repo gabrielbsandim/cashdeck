@@ -19,8 +19,8 @@ describe('settleFromStatement', () => {
     await deps.accounts.save(
       account({ id: 'card', entityId: 'pf', type: 'CREDIT_CARD' }),
     )
-    const due = { amount: Money.of(38963), dueDate: '2026-10-06' }
-    await deps.bills.save(bill({ id: 'amil', ...due }))
+    const due = { amount: Money.of(41250), dueDate: '2026-10-06' }
+    await deps.bills.save(bill({ id: 'health', ...due }))
     await deps.bills.save(
       bill({
         id: 'desk',
@@ -35,7 +35,7 @@ describe('settleFromStatement', () => {
       transaction({
         id: 't1',
         accountId: 'chk',
-        amount: Money.of(-38963),
+        amount: Money.of(-41250),
         bookedOn: '2026-10-06',
       }),
     )
@@ -51,7 +51,7 @@ describe('settleFromStatement', () => {
       transaction({
         id: 't3',
         accountId: 'card',
-        amount: Money.of(-38963),
+        amount: Money.of(-41250),
         bookedOn: '2026-10-06',
       }),
     )
@@ -66,8 +66,8 @@ describe('settleFromStatement', () => {
     const settled = await makeSettleFromStatement(deps)(TENANT, 'pf')
 
     expect(settled).toBe(2)
-    const amil = await deps.bills.findById(TENANT, 'amil')
-    expect(amil).toMatchObject({
+    const health = await deps.bills.findById(TENANT, 'health')
+    expect(health).toMatchObject({
       status: 'PAID',
       paidBy: 'STATEMENT',
       paidAt: NOW,
@@ -86,7 +86,7 @@ describe('settleFromStatement', () => {
         .filter(event => event.action === 'bill.settled_from_statement')
         .map(event => [event.subjectId, event.details]),
     ).toEqual([
-      ['amil', { transactionId: 't1' }],
+      ['health', { transactionId: 't1' }],
       ['desk', { transactionId: 't2' }],
     ])
   })
@@ -94,13 +94,13 @@ describe('settleFromStatement', () => {
   it('waits two weeks for a bank debit to post', async () => {
     const deps = fullDeps()
     await deps.accounts.save(account({ id: 'chk', entityId: 'pf' }))
-    const due = { amount: Money.of(20880), dueDate: '2026-10-08' }
+    const due = { amount: Money.of(15990), dueDate: '2026-10-08' }
     await deps.bills.save(bill({ id: 'phone', ...due }))
     await deps.transactions.save(
       transaction({
         id: 'debit',
         accountId: 'chk',
-        amount: Money.of(-20880),
+        amount: Money.of(-15990),
         bookedOn: '2026-10-22',
       }),
     )

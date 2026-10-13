@@ -79,18 +79,18 @@ AssetsSummary summaryOf(List<Asset> items) => AssetsSummary(
 const testCharge = RentCharge(
   billId: 'bill-1',
   dueDate: CalendarDate(2026, 10, 10),
-  billTotal: Money(59_769),
-  passedOn: [BillLine(description: 'Consumo de gás', amount: Money(13_665))],
-  total: Money(173_665),
-  ownerCost: Money(46_104),
+  billTotal: Money(57_941),
+  passedOn: [BillLine(description: 'Consumo de gás', amount: Money(9_870))],
+  total: Money(169_870),
+  ownerCost: Money(48_071),
   attachmentId: 'attachment-1',
   installment: Money(108_500),
-  result: Money(5_396),
+  result: Money(3_429),
 );
 
 const testReceived = RentReceived(
   on: CalendarDate(2026, 10, 8),
-  amount: Money(173_665),
+  amount: Money(169_870),
 );
 
 const testRental = AssetRental(
@@ -113,15 +113,15 @@ Map<String, Object?> rentalJson({
       : {
           'billId': 'bill-1',
           'dueDate': '2026-10-10',
-          'billTotal': _money(59_769),
+          'billTotal': _money(57_941),
           'passedOn': [
-            {'description': 'Consumo de gás', 'amount': _money(13_665)},
+            {'description': 'Consumo de gás', 'amount': _money(9_870)},
           ],
-          'total': _money(173_665),
-          'ownerCost': _money(46_104),
+          'total': _money(169_870),
+          'ownerCost': _money(48_071),
           'attachmentId': 'attachment-1',
           'installment': installment,
-          'result': _money(5_396),
+          'result': _money(3_429),
           'received': ?received,
         },
 };

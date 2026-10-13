@@ -119,7 +119,7 @@ describe('funding plan', () => {
         payee: 'Plano Saude',
         dueDate: '2026-10-06',
         status: 'PAID',
-        amount: Money.of(38_963),
+        amount: Money.of(41_250),
       }),
       bill({
         id: 'health-before',
@@ -199,7 +199,7 @@ describe('funding plan', () => {
 
     expect(await makeFundingPlan(deps)(TENANT)).toMatchObject({
       upcoming: cents(9_999),
-      expected: cents(93_963),
+      expected: cents(96_250),
       pixReserve: cents(2_250),
       items: [
         {
@@ -209,7 +209,7 @@ describe('funding plan', () => {
           dayOfMonth: 10,
         },
       ],
-      topUp: cents(86_212),
+      topUp: cents(88_499),
     })
   })
 
@@ -245,9 +245,9 @@ describe('funding plan', () => {
     const lines: Array<[string, LocalDate, number, Partial<Transaction>]> = [
       ['PRESTACAO DE CRED IMOB', '2026-08-17', -330_000, {}],
       ['PRESTACAO DE CRED IMOB', '2026-09-29', -330_000, {}],
-      ['CONTA DE LUZ EDP', '2026-07-16', -31_000, {}],
-      ['CONTA DE LUZ EDP', '2026-08-19', -33_000, {}],
-      ['CONTA DE LUZ EDP', '2026-09-16', -34_000, {}],
+      ['CONTA DE LUZ VOLT', '2026-07-16', -31_000, {}],
+      ['CONTA DE LUZ VOLT', '2026-08-19', -33_000, {}],
+      ['CONTA DE LUZ VOLT', '2026-09-16', -34_000, {}],
       ['LOJA UNICA', '2026-09-01', -9_000, {}],
       ['ACADEMIA', '2026-06-10', -10_000, {}],
       ['ACADEMIA', '2026-07-10', -10_000, {}],
@@ -280,12 +280,12 @@ describe('funding plan', () => {
       accountId: 'bank',
     })
     const arrived = [
-      bill({ id: 'power', payee: 'EDP Energia', dueDate: '2026-10-15' }),
+      bill({ id: 'power', payee: 'Volt Energia', dueDate: '2026-10-15' }),
       bill({ id: 'unnamed', payee: null, dueDate: '2026-10-20' }),
-      bill({ id: 'debited', payee: 'EDP Energia', dueDate: '2026-09-10' }),
+      bill({ id: 'debited', payee: 'Volt Energia', dueDate: '2026-09-10' }),
       bill({
         id: 'settled',
-        payee: 'EDP Energia',
+        payee: 'Volt Energia',
         dueDate: '2026-10-14',
         status: 'PAID',
       }),
@@ -305,7 +305,7 @@ describe('funding plan', () => {
       name: 'Account bank',
       balance: cents(30_000),
       items: [
-        { name: 'CONTA DE LUZ EDP', amount: cents(36_500), on: '2026-10-16' },
+        { name: 'CONTA DE LUZ VOLT', amount: cents(36_500), on: '2026-10-16' },
         { name: 'BOLETO', amount: cents(7_000), on: '2026-10-20' },
         {
           name: 'PRESTACAO DE CRED IMOB',

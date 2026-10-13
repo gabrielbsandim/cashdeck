@@ -112,7 +112,7 @@ void main() {
       final paid = assetFromJson(
         assetJson(
           rental: rentalJson(
-            received: {'on': '2026-10-08', 'amount': _money(173_665)},
+            received: {'on': '2026-10-08', 'amount': _money(169_870)},
           ),
         ),
       );
@@ -461,7 +461,7 @@ void main() {
       final repository = fake();
       final home = _ok(await repository.list()).items.first;
       final charge = home.rental?.charge;
-      expect(charge?.total, const Money(173_665));
+      expect(charge?.total, const Money(169_870));
 
       final bill = _ok(await repository.rentBill(charge!));
       expect(bill.mimeType, 'application/pdf');

@@ -1,7 +1,7 @@
 # Design brief: Cashdeck (for Claude Design)
 
-Copy the prompt below into Claude Design. The repository is not public yet, so the
-prompt is self-contained. Product context lives in [plan.md](./plan.md).
+Kept as a record of how the screens were first designed. The prompt below was
+written to be self-contained. Product context lives in [plan.md](./plan.md).
 
 ---
 

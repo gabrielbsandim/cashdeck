@@ -1,10 +1,36 @@
-Status: final
-
 # Cashdeck API contract (v1)
 
 Every path below is under `/api/v1`. The OpenAPI document at
 `/api/v1/openapi` is generated from the same Zod schemas and is the
 machine-readable version of this file.
+
+## Contents
+
+- [Conventions](#conventions)
+- [Auth](#auth)
+- [Entities](#entities)
+- [Home](#home)
+- [Accounts](#accounts)
+- [Investments](#investments)
+- [Goods](#goods)
+- [Life plan](#life-plan)
+- [Transactions](#transactions)
+- [Subscriptions](#subscriptions)
+- [Bills](#bills)
+- [Open Finance](#open-finance)
+- [Payment rails](#payment-rails)
+- [Automation](#automation)
+- [Capture sources](#capture-sources)
+- [Invoices (NFS-e)](#invoices-nfs-e)
+- [Payroll (Fator R)](#payroll-fator-r)
+- [Manual card bill import](#manual-card-bill-import)
+- [Card notifications](#card-notifications)
+- [Accountant export](#accountant-export)
+- [Monthly recap](#monthly-recap)
+- [Alerts](#alerts)
+- [AI chat](#ai-chat)
+- [Crons](#crons)
+- [Webhooks](#webhooks)
 
 ## Conventions
 
@@ -1390,6 +1416,7 @@ or that answers a non-empty `failures` list, raises a `JOB_FAILED` alert.
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
 | `/api/cron/monthly-recap` | day 1, 15:30 | after the sync, sends the `MONTHLY_RECAP` push of the month that closed for the personal entity and for the company, each when it moved money; answers `{ month, sent, entities }` with the entities pushed |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |
+| `/api/cron/vehicle-prices` | day 5, 13:00 | adds the new month of FIPE prices to every vehicle with a `fipe` code (see Goods) |
 
 ## Webhooks
 

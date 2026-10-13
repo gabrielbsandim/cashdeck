@@ -19,7 +19,7 @@ function phoneBill(id: string, dueDate: string) {
     kind: 'PIX_KEY',
     source: 'GMAIL',
     payee: 'Phone company',
-    amount: Money.of(20880),
+    amount: Money.of(15990),
     dueDate,
     code: 'billing@phone.example',
     createdAt: NOW,

@@ -188,14 +188,14 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(AssetsScreen.rentTotalKey),
-        matching: find.text(MoneyFormat.format(const Money(173_665))),
+        matching: find.text(MoneyFormat.format(const Money(169_870))),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
         of: find.byKey(AssetsScreen.rentResultKey),
-        matching: find.text(MoneyFormat.format(const Money(5_396))),
+        matching: find.text(MoneyFormat.format(const Money(3_429))),
       ),
       findsOneWidget,
     );
@@ -214,7 +214,7 @@ void main() {
     expect(sharer.files.single.name, 'boleto.pdf');
     final caption = sharer.captions.single ?? '';
     expect(caption, contains(r'Consumo de gás: R$'));
-    expect(caption, contains(MoneyFormat.format(const Money(173_665))));
+    expect(caption, contains(MoneyFormat.format(const Money(169_870))));
   });
 
   testWidgets('a rent with no bill yet, no PDF or a failed download', (
