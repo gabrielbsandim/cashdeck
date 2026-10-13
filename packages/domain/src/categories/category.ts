@@ -49,6 +49,9 @@ export type CategoryRule = {
   readonly counterparty: string | null
   // Null matches money in both directions.
   readonly direction: RuleDirection | null
+  // Size range, in cents of either sign, a match must fall in; null is open.
+  readonly minCents: number | null
+  readonly maxCents: number | null
   readonly categoryId: string
   readonly priority: number
   readonly createdAt: Date
@@ -96,12 +99,17 @@ export function normalizeDescription(text: string): string {
 
 export type CreateCategoryRuleInput = Omit<
   CategoryRule,
-  'priority' | 'counterparty' | 'direction'
+  'priority' | 'counterparty' | 'direction' | 'minCents' | 'maxCents'
 > & {
   priority?: number
   counterparty?: string | null
   direction?: RuleDirection | null
+  minCents?: number | null
+  maxCents?: number | null
 }
+
+const isAmount = (cents: number | null) =>
+  cents === null || (Number.isSafeInteger(cents) && cents > 0)
 
 export function createCategoryRule(
   input: CreateCategoryRuleInput,
@@ -111,11 +119,21 @@ export function createCategoryRule(
   if (pattern === '' && counterparty === null) {
     throw new ValidationError('A rule needs a merchant or description.')
   }
+  const minCents = input.minCents ?? null
+  const maxCents = input.maxCents ?? null
+  if (!isAmount(minCents) || !isAmount(maxCents)) {
+    throw new ValidationError('A rule amount must be a positive amount.')
+  }
+  if ((minCents ?? 0) > (maxCents ?? Infinity)) {
+    throw new ValidationError('A rule minimum must not exceed its maximum.')
+  }
   return {
     ...input,
     pattern,
     counterparty,
     direction: input.direction ?? null,
+    minCents,
+    maxCents,
     categoryId: guard.notEmpty(input.categoryId, 'Category'),
     priority: input.priority ?? 0,
   }
@@ -160,6 +178,10 @@ export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
   if (rule.direction !== null && rule.direction !== directionOf(subject)) {
     return false
   }
+  const size = Math.abs(subject.amount.cents)
+  if (size < (rule.minCents ?? 0) || size > (rule.maxCents ?? Infinity)) {
+    return false
+  }
   if (rule.counterparty !== null) {
     return rule.counterparty === subject.counterparty
   }
@@ -167,10 +189,14 @@ export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
   return ` ${normalized} `.includes(` ${rule.pattern} `)
 }
 
+const isSized = (rule: CategoryRule) =>
+  rule.minCents !== null || rule.maxCents !== null
+
 const precedence = (a: CategoryRule, b: CategoryRule) =>
   Number(b.entityId !== null) - Number(a.entityId !== null) ||
   Number(b.counterparty !== null) - Number(a.counterparty !== null) ||
   Number(b.direction !== null) - Number(a.direction !== null) ||
+  Number(isSized(b)) - Number(isSized(a)) ||
   b.priority - a.priority ||
   b.pattern.length - a.pattern.length
 

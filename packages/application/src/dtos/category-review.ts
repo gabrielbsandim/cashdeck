@@ -18,6 +18,8 @@ export const categoryRuleViewSchema = z.object({
   pattern: z.string(),
   counterparty: z.string().nullable(),
   direction: directionSchema.nullable(),
+  minCents: z.int().nullable(),
+  maxCents: z.int().nullable(),
   categoryId: z.string(),
   priority: z.int(),
   createdAt: z.string(),
@@ -29,6 +31,8 @@ export const updateCategoryRuleSchema = z.object({
   pattern: z.string().trim().min(1).max(100).optional(),
   categoryId: z.string().min(1).optional(),
   direction: directionSchema.nullable().optional(),
+  minCents: z.int().positive().nullable().optional(),
+  maxCents: z.int().positive().nullable().optional(),
 })
 
 export const categoryRuleUpdateResultSchema = z.object({

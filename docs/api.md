@@ -556,27 +556,32 @@ by name. A tenant with no categories gets the built-in list on the first call;
 
 ### POST /categories/rules
 
-Body `{ pattern: string, categoryId: string, entity?: "PF" | "PJ" | null }`.
+Body `{ pattern: string, categoryId: string, entity?: "PF" | "PJ" | null,
+direction?: "IN" | "OUT" | null, minCents?: int | null, maxCents?: int | null }`.
 Learns a rule from the merchant words of `pattern` (bank noise dropped, the same
 way `PATCH /transactions/{id}` does) for one entity, or for both when `entity`
 is null or left out, and relabels every matching transaction the user did not
-set, transfers aside. A pattern of only noise is a 422. `data`:
+set, transfers aside. `minCents` and `maxCents` keep the rule to amounts in that
+range, either sign, and a rule with a range wins over the same words without
+one, so one payee can split a shared subscription from a large reimbursement. A
+pattern of only noise, or a minimum above the maximum, is a 422. `data`:
 `{ pattern, categoryId, updated: int }`, 201.
 
 ### GET /categories/rules, PATCH and DELETE /categories/rules/{id}
 
 `CategoryRule`: `{ id, entityKind: "PF" | "PJ" | null, pattern: string,
-counterparty: string | null, direction: "IN" | "OUT" | null, categoryId,
-priority: int, createdAt: timestamp }`. A rule matches the description words in
+counterparty: string | null, direction: "IN" | "OUT" | null,
+minCents: int | null, maxCents: int | null, categoryId, priority: int,
+createdAt: timestamp }`. A rule matches the description words in
 `pattern`, or the payee document in `counterparty` when `pattern` is empty;
 `entityKind` null applies to both entities.
 
 - `GET /categories/rules`: `data` is `[CategoryRule]`, by the words or document
   they match.
 - `PATCH /categories/rules/{id}`: body `{ pattern?: string, categoryId?: string,
-  direction?: "IN" | "OUT" | null }`. New words replace a document. The rule
-  relabels what it now matches, user choices aside. `data`:
-  `{ rule: CategoryRule, updated: int }`.
+  direction?: "IN" | "OUT" | null, minCents?: int | null, maxCents?: int | null }`.
+  New words replace a document. The rule relabels what it now matches, user
+  choices aside. `data`: `{ rule: CategoryRule, updated: int }`.
 - `DELETE /categories/rules/{id}`: `data` is `{ id }`. Labels the rule gave
   stay.
 

@@ -486,6 +486,8 @@ describe('category rules', () => {
         pattern: 'mercado sol',
         counterparty: null,
         direction: null,
+        minCents: null,
+        maxCents: null,
         categoryId: 'groceries',
         priority: 0,
         createdAt: '2026-10-01T00:00:00.000Z',
@@ -518,6 +520,18 @@ describe('category rules', () => {
     expect(kept.rule).toMatchObject({ pattern: 'mercado sol' })
     const doc = await rules.update(TENANT, 'doc', { direction: null })
     expect(doc.rule.direction).toBeNull()
+    const sized = await rules.update(TENANT, 'doc', {
+      minCents: 1_800,
+      maxCents: 1_800,
+    })
+    expect(sized.rule).toMatchObject({ minCents: 1_800, maxCents: 1_800 })
+    const unchanged = await rules.update(TENANT, 'doc', {})
+    expect(unchanged.rule).toMatchObject({ minCents: 1_800, maxCents: 1_800 })
+    const any = await rules.update(TENANT, 'doc', {
+      minCents: null,
+      maxCents: null,
+    })
+    expect(any.rule).toMatchObject({ minCents: null, maxCents: null })
     await expect(
       rules.update(TENANT, 'doc', { categoryId: 'nope' }),
     ).rejects.toBeInstanceOf(NotFoundError)

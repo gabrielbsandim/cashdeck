@@ -137,6 +137,46 @@ describe('category rules', () => {
       'any',
     )
   })
+
+  it('tells a payee apart by the size of the payment', () => {
+    const any = rule({ id: 'any', pattern: 'Ana Lima', categoryId: 'other' })
+    const subscription = rule({
+      id: 'subscription',
+      pattern: 'Ana Lima',
+      minCents: 1_800,
+      maxCents: 1_800,
+      categoryId: 'subs',
+    })
+    const refund = rule({
+      id: 'refund',
+      pattern: 'Ana Lima',
+      minCents: 50_000,
+      categoryId: 'project',
+    })
+    const rules = [any, subscription, refund]
+    const paid = (cents: number) =>
+      findRule(rules, subject('Pix recebido de Ana Lima', null, cents), 'pf')
+        ?.id
+    expect(any).toMatchObject({ minCents: null, maxCents: null })
+    expect(paid(1_800)).toBe('subscription')
+    expect(paid(4_500)).toBe('any')
+    expect(paid(183_189)).toBe('refund')
+    expect(paid(-50_000)).toBe('refund')
+    expect(ruleMatches(subscription, subject('Ana Lima', null, 1_801))).toBe(
+      false,
+    )
+    for (const cents of [0, -100, 10.5]) {
+      expect(() => rule({ id: 'bad', minCents: cents })).toThrow(
+        'A rule amount must be a positive amount.',
+      )
+      expect(() => rule({ id: 'bad', maxCents: cents })).toThrow(
+        'A rule amount must be a positive amount.',
+      )
+    }
+    expect(() => rule({ id: 'bad', minCents: 900, maxCents: 898 })).toThrow(
+      'A rule minimum must not exceed its maximum.',
+    )
+  })
 })
 
 describe('transaction categorization', () => {

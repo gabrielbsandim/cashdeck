@@ -310,6 +310,53 @@ describe('categorization rules', () => {
       create(TENANT, { pattern: 'x', categoryId: 'nope', entity: null }),
     ).rejects.toThrow(NotFoundError)
   })
+
+  it('keeps rules for one payee apart by the amount', async () => {
+    const { deps, id } = await seeded()
+    for (const [txId, cents] of [
+      ['subscription', 1_800],
+      ['pizza', 4_500],
+      ['refund', 183_189],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id: txId,
+          accountId: 'pf-1',
+          description: 'Pix recebido de Ana Lima',
+          amount: Money.of(cents),
+        }),
+      )
+    }
+    const create = makeCreateCategoryRule(deps)
+    const subscription = await create(TENANT, {
+      pattern: 'Ana Lima',
+      categoryId: id('subscriptions'),
+      entity: 'PF',
+      minCents: 1_800,
+      maxCents: 1_800,
+    })
+    expect(subscription).toMatchObject({
+      updated: 1,
+      rule: { direction: null, minCents: 1_800, maxCents: 1_800 },
+    })
+    const refunds = await create(TENANT, {
+      pattern: 'Ana Lima',
+      categoryId: id('investments'),
+      entity: 'PF',
+      direction: 'IN',
+      minCents: 50_000,
+    })
+    expect(refunds).toMatchObject({
+      updated: 1,
+      rule: { direction: 'IN', minCents: 50_000, maxCents: null },
+    })
+    expect(await deps.categories.listRules(TENANT)).toHaveLength(2)
+    const categoryOf = async (txId: string) =>
+      (await deps.transactions.findById(TENANT, txId))?.categoryId
+    expect(await categoryOf('subscription')).toBe(id('subscriptions'))
+    expect(await categoryOf('pizza')).toBeNull()
+    expect(await categoryOf('refund')).toBe(id('investments'))
+  })
 })
 
 describe('automatic categorization', () => {

@@ -3,6 +3,7 @@ import {
   ACCOUNT_ORIGINS,
   ACCOUNT_TYPES,
   CATEGORIZED_BY,
+  RULE_DIRECTIONS,
   TAX_REGIMES,
 } from '@cashdeck/domain'
 import {
@@ -155,6 +156,9 @@ export const createCategoryRuleSchema = z.object({
   pattern: z.string().trim().min(1).max(100),
   categoryId: z.string().min(1),
   entity: entityKindSchema.nullable().default(null),
+  direction: z.enum(RULE_DIRECTIONS).nullable().default(null),
+  minCents: z.int().positive().nullable().default(null),
+  maxCents: z.int().positive().nullable().default(null),
 })
 
 export const categoryRuleResultSchema = z.object({

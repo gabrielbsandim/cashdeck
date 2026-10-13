@@ -11,6 +11,7 @@ import {
   findRule,
   normalizeDescription,
   learnableCounterparty,
+  type RuleDirection,
   ruleMatches,
   type Transaction,
   ValidationError,
@@ -86,7 +87,8 @@ export async function learnRule(
   entityId: string | null,
   pattern: string,
   categoryId: string,
-  learned: Pick<CategoryRule, 'counterparty' | 'direction'> = {
+  learned: Pick<CategoryRule, 'counterparty' | 'direction'> &
+    Partial<Pick<CategoryRule, 'minCents' | 'maxCents'>> = {
     counterparty: null,
     direction: null,
   },
@@ -98,13 +100,17 @@ export async function learnRule(
   if (normalized === '' && document === null) {
     return null
   }
+  const minCents = learned.minCents ?? null
+  const maxCents = learned.maxCents ?? null
   const rules = await deps.categories.listRules(tenantId)
   const existing = rules.find(
     rule =>
       rule.entityId === entityId &&
       rule.pattern === normalized &&
       rule.counterparty === document &&
-      rule.direction === learned.direction,
+      rule.direction === learned.direction &&
+      rule.minCents === minCents &&
+      rule.maxCents === maxCents,
   )
   const rule = createCategoryRule({
     id: existing?.id ?? deps.ids.next(),
@@ -113,6 +119,8 @@ export async function learnRule(
     pattern: normalized,
     counterparty: document,
     direction: learned.direction,
+    minCents,
+    maxCents,
     categoryId,
     priority: existing?.priority ?? 0,
     createdAt: existing?.createdAt ?? deps.clock.now(),
@@ -241,6 +249,9 @@ export type CreateRuleInput = {
   categoryId: string
   // Null makes a rule for both entities.
   entity: EntityKind | null
+  direction?: RuleDirection | null
+  minCents?: number | null
+  maxCents?: number | null
 }
 
 export function makeCreateCategoryRule(
@@ -263,6 +274,12 @@ export function makeCreateCategoryRule(
       entityId,
       input.pattern,
       input.categoryId,
+      {
+        counterparty: null,
+        direction: input.direction ?? null,
+        minCents: input.minCents,
+        maxCents: input.maxCents,
+      },
     )
     if (!rule) {
       throw new ValidationError('A rule needs a merchant or description.')

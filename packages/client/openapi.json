@@ -14054,6 +14054,29 @@
                       "PF",
                       "PJ"
                     ]
+                  },
+                  "direction": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "IN",
+                      "OUT"
+                    ]
+                  },
+                  "minCents": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991
+                  },
+                  "maxCents": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991
                   }
                 },
                 "required": [
@@ -14175,6 +14198,18 @@
                               "OUT"
                             ]
                           },
+                          "minCents": {
+                            "nullable": true,
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "maxCents": {
+                            "nullable": true,
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
                           "categoryId": {
                             "type": "string"
                           },
@@ -14193,6 +14228,8 @@
                           "pattern",
                           "counterparty",
                           "direction",
+                          "minCents",
+                          "maxCents",
                           "categoryId",
                           "priority",
                           "createdAt"
@@ -14276,6 +14313,18 @@
                       "IN",
                       "OUT"
                     ]
+                  },
+                  "minCents": {
+                    "nullable": true,
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991
+                  },
+                  "maxCents": {
+                    "nullable": true,
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991
                   }
                 }
               }
@@ -14322,6 +14371,18 @@
                                 "OUT"
                               ]
                             },
+                            "minCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "maxCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
                             "categoryId": {
                               "type": "string"
                             },
@@ -14340,6 +14401,8 @@
                             "pattern",
                             "counterparty",
                             "direction",
+                            "minCents",
+                            "maxCents",
                             "categoryId",
                             "priority",
                             "createdAt"
@@ -14803,6 +14866,18 @@
                                 "OUT"
                               ]
                             },
+                            "minCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "maxCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
                             "categoryId": {
                               "type": "string"
                             },
@@ -14821,6 +14896,8 @@
                             "pattern",
                             "counterparty",
                             "direction",
+                            "minCents",
+                            "maxCents",
                             "categoryId",
                             "priority",
                             "createdAt"
@@ -14950,6 +15027,18 @@
                                 "OUT"
                               ]
                             },
+                            "minCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "maxCents": {
+                              "nullable": true,
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
                             "categoryId": {
                               "type": "string"
                             },
@@ -14968,6 +15057,8 @@
                             "pattern",
                             "counterparty",
                             "direction",
+                            "minCents",
+                            "maxCents",
                             "categoryId",
                             "priority",
                             "createdAt"

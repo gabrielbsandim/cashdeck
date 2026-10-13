@@ -296,6 +296,8 @@ model CategoryRule {
   pattern      String
   counterparty String?
   direction    String?
+  minCents     Int?     @map("min_cents")
+  maxCents     Int?     @map("max_cents")
   categoryId   String   @map("category_id")
   priority     Int      @default(0)
   createdAt  DateTime @default(now()) @map("created_at")

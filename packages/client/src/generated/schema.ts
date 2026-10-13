@@ -6238,6 +6238,8 @@ export interface operations {
                             counterparty: string | null;
                             /** @enum {string|null} */
                             direction: "IN" | "OUT" | null;
+                            minCents: number | null;
+                            maxCents: number | null;
                             categoryId: string;
                             priority: number;
                             createdAt: string;
@@ -6273,6 +6275,15 @@ export interface operations {
                      * @enum {string|null}
                      */
                     entity?: "PF" | "PJ" | null;
+                    /**
+                     * @default null
+                     * @enum {string|null}
+                     */
+                    direction?: "IN" | "OUT" | null;
+                    /** @default null */
+                    minCents?: number | null;
+                    /** @default null */
+                    maxCents?: number | null;
                 };
             };
         };
@@ -6354,6 +6365,8 @@ export interface operations {
                     categoryId?: string;
                     /** @enum {string|null} */
                     direction?: "IN" | "OUT" | null;
+                    minCents?: number | null;
+                    maxCents?: number | null;
                 };
             };
         };
@@ -6374,6 +6387,8 @@ export interface operations {
                                 counterparty: string | null;
                                 /** @enum {string|null} */
                                 direction: "IN" | "OUT" | null;
+                                minCents: number | null;
+                                maxCents: number | null;
                                 categoryId: string;
                                 priority: number;
                                 createdAt: string;
@@ -6498,6 +6513,8 @@ export interface operations {
                                 counterparty: string | null;
                                 /** @enum {string|null} */
                                 direction: "IN" | "OUT" | null;
+                                minCents: number | null;
+                                maxCents: number | null;
                                 categoryId: string;
                                 priority: number;
                                 createdAt: string;
@@ -6550,6 +6567,8 @@ export interface operations {
                                 counterparty: string | null;
                                 /** @enum {string|null} */
                                 direction: "IN" | "OUT" | null;
+                                minCents: number | null;
+                                maxCents: number | null;
                                 categoryId: string;
                                 priority: number;
                                 createdAt: string;

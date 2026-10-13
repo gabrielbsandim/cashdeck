@@ -36,6 +36,8 @@ export function toCategoryRuleView(
     pattern: rule.pattern,
     counterparty: rule.counterparty,
     direction: rule.direction,
+    minCents: rule.minCents,
+    maxCents: rule.maxCents,
     categoryId: rule.categoryId,
     priority: rule.priority,
     createdAt: rule.createdAt.toISOString(),
@@ -77,6 +79,10 @@ export function makeCategoryRules(deps: CategoryRulesDeps) {
       counterparty: patch.pattern === undefined ? current.counterparty : null,
       direction:
         patch.direction === undefined ? current.direction : patch.direction,
+      minCents:
+        patch.minCents === undefined ? current.minCents : patch.minCents,
+      maxCents:
+        patch.maxCents === undefined ? current.maxCents : patch.maxCents,
       categoryId: patch.categoryId ?? current.categoryId,
     })
     await deps.categories.saveRule(rule)
