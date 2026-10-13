@@ -4254,5 +4254,57 @@
         "type": "String"
       }
     }
+  },
+  "householdTitle": "Família",
+  "householdHint": "Pix entre vocês não é receita nem gasto",
+  "householdIntro": "Pix entre você e estas pessoas conta como movimentar o seu próprio dinheiro: não entra como receita nem como gasto. Só pessoas, pelo CPF.",
+  "householdEmptyTitle": "Ninguém da família ainda",
+  "householdAdd": "Adicionar pessoa",
+  "householdNameLabel": "Nome",
+  "householdCpfLabel": "CPF",
+  "householdSave": "Adicionar",
+  "householdCpfLine": "CPF {cpf}",
+  "@householdCpfLine": {
+    "placeholders": {
+      "cpf": {
+        "type": "String"
+      }
+    }
+  },
+  "householdRemove": "Remover {name}",
+  "@householdRemove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "householdMemberAdded": "Pessoa adicionada à família",
+  "householdMemberRemoved": "{name} saiu da família",
+  "@householdMemberRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "householdNameMissing": "Informe o nome.",
+  "householdNameTooLong": "Use até {max} caracteres.",
+  "@householdNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "householdCpfInvalid": "CPF inválido.",
+  "householdCpfTaken": "Esse CPF já está na família.",
+  "householdFull": "A família tem no máximo {max} pessoas.",
+  "@householdFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   }
 }

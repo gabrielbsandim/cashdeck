@@ -1739,5 +1739,22 @@
   "planCaixinhasHelp": "Savings not tied to a purchase of the plan.",
   "planCaixinhaNew": "New caixinha",
   "planCaixinhaLinked": "Caixinha created and linked to the plan",
-  "planHomeCaixinhas": "{count, plural, =1{1 caixinha with {saved}} other{{count} caixinhas with {saved}}}"
+  "planHomeCaixinhas": "{count, plural, =1{1 caixinha with {saved}} other{{count} caixinhas with {saved}}}",
+  "householdTitle": "Household",
+  "householdHint": "Pix between you is neither income nor spending",
+  "householdIntro": "A Pix between you and these people counts as moving your own money: it is neither income nor spending. People only, by CPF.",
+  "householdEmptyTitle": "No household member yet",
+  "householdAdd": "Add person",
+  "householdNameLabel": "Name",
+  "householdCpfLabel": "CPF",
+  "householdSave": "Add",
+  "householdCpfLine": "CPF {cpf}",
+  "householdRemove": "Remove {name}",
+  "householdMemberAdded": "Person added to the household",
+  "householdMemberRemoved": "{name} removed from the household",
+  "householdNameMissing": "Enter the name.",
+  "householdNameTooLong": "Use at most {max} characters.",
+  "householdCpfInvalid": "Invalid CPF.",
+  "householdCpfTaken": "This CPF is already in the household.",
+  "householdFull": "A household has at most {max} people."
 }

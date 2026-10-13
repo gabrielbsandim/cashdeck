@@ -29,6 +29,7 @@ abstract final class AppRoutes {
   static const recaps = '/recap';
 
   static const entityProfiles = '$settings/profiles';
+  static const household = '$settings/household';
   static const settingsConnections = '$settings/connections';
   static const settingsPayments = '$settings/payments';
   static const settingsCompany = '$settings/company';

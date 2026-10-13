@@ -305,3 +305,12 @@ It never sums positions itself; totals come from the server in BRL.
   email or EVP) and checks a taken key or handle against the list first.
 - 409 (key or handle taken) and 422 (invalid key) show the server message.
 - A handle matches `^[a-z0-9][a-z0-9._]{1,29}$`.
+
+## Household
+
+- `GET /api/v1/household` returns `{ "data": { members: [{ name, taxId }] } }`,
+  `taxId` as CPF digits. `PUT` takes the same body and replaces the whole
+  list, answering with what it stored.
+- At most 10 members, a name of 1 to 80 characters and a valid CPF; a CNPJ or
+  an invalid CPF is a 422 shown as the server's message. The app checks the
+  check digits and a repeated CPF before saving.

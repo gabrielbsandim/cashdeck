@@ -28,6 +28,7 @@ import 'package:cashdeck/features/entities/presentation/entity_profiles_screen.d
 import 'package:cashdeck/features/goals/presentation/goal_routes.dart';
 import 'package:cashdeck/features/home/presentation/balances_screen.dart';
 import 'package:cashdeck/features/home/presentation/home_screen.dart';
+import 'package:cashdeck/features/household/presentation/household_screen.dart';
 import 'package:cashdeck/features/insights/presentation/card_timeline_screen.dart';
 import 'package:cashdeck/features/insights/presentation/cards_screen.dart';
 import 'package:cashdeck/features/insights/presentation/insights_screen.dart';
@@ -192,6 +193,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             AppRoutes.entityProfiles,
             AppRoutes.settings,
             const EntityProfilesScreen(),
+          ),
+          _child(
+            AppRoutes.household,
+            AppRoutes.settings,
+            const HouseholdScreen(),
           ),
           _section(
             AppRoutes.settingsConnections,

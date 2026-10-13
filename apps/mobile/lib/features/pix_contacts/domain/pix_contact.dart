@@ -149,8 +149,7 @@ final _notDigit = RegExp('[^0-9]');
 
 /// Enough of [key] to recognize it in a list without showing all of it.
 String maskPixKey(PixKeyType type, String key) => switch (type) {
-  PixKeyType.cpf when key.length == 11 =>
-    '***.${key.substring(3, 6)}.${key.substring(6, 9)}-**',
+  PixKeyType.cpf => TaxIds.maskCpf(key),
   PixKeyType.cnpj when key.length == 14 =>
     '${key.substring(0, 2)}.${key.substring(2, 5)}.${key.substring(5, 8)}'
         '/${key.substring(8, 12)}-${key.substring(12)}',

@@ -3,6 +3,7 @@ import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/category_review/domain/category_review.dart';
 import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/home/domain/home_repository.dart';
+import 'package:cashdeck/features/household/domain/household.dart';
 import 'package:cashdeck/features/insights/domain/insights_repository.dart';
 import 'package:cashdeck/features/outlook/domain/outlook_repository.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
@@ -30,6 +31,8 @@ final class MockOutlookRepository extends Mock implements OutlookRepository;
 
 final class MockPixContactsRepository extends Mock
     implements PixContactsRepository;
+
+final class MockHouseholdRepository extends Mock implements HouseholdRepository;
 
 final class MockCategoryReviewRepository extends Mock
     implements CategoryReviewRepository;

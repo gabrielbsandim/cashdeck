@@ -45,6 +45,13 @@ abstract final class TaxIds {
     return buffer.toString();
   }
 
+  /// "***.444.777-**": the middle six digits of an eleven digit CPF, enough
+  /// to tell people apart without showing the whole document.
+  static String maskCpf(String digits) {
+    if (digits.length != 11) return digits;
+    return '***.${digits.substring(3, 6)}.${digits.substring(6, 9)}-**';
+  }
+
   static bool isValid(EntityKind kind, String raw) {
     final value = clean(kind, raw);
     return switch (kind) {

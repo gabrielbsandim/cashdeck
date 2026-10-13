@@ -38,6 +38,7 @@ void main() {
   final links = {
     AppRoutes.settings: [
       AppRoutes.entityProfiles,
+      AppRoutes.household,
       AppRoutes.settingsConnections,
       AppRoutes.settingsPayments,
       AppRoutes.settingsCompany,

@@ -42,6 +42,13 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: l10n.settingsProfileHint,
               route: AppRoutes.entityProfiles,
             ),
+          if (!limited)
+            SettingsLink(
+              icon: Symbols.family_restroom_rounded,
+              title: l10n.householdTitle,
+              subtitle: l10n.householdHint,
+              route: AppRoutes.household,
+            ),
           for (final section in SettingsSection.values)
             if (section.openWhileLimited || !limited)
               SettingsLink(

@@ -38,6 +38,11 @@ void main() {
     expect(TaxIds.lengthOf(company), 14);
   });
 
+  test('masks a CPF down to its middle digits', () {
+    expect(TaxIds.maskCpf('11144477735'), '***.444.777-**');
+    expect(TaxIds.maskCpf('1114'), '1114');
+  });
+
   test('a profile copies with new values and compares by value', () {
     const profile = EntityProfile(
       id: 'company',
