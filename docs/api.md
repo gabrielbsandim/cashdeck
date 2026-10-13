@@ -777,6 +777,11 @@ when a bill is captured, so `plan` is never null.
   `NEEDS_CONFIRMATION` one goes back to `OPEN`), the reserve does not fund it,
   the due-soon alert skips it, and the statement match waits up to 15 days
   after the due date for the debit. Returns `BillDetailView`.
+- `PUT /bills/{id}/due-date`: body `{ dueDate: date }`. Corrects a due date
+  read wrong from the e-mail; a capture that finds none in the codes, the
+  charge or the text after "vencimento" falls back to the capture day. Only an
+  `OPEN`, `NEEDS_CONFIRMATION` or `ASSISTED` bill moves; any other answers
+  `422`. Writes a `bill.rescheduled` audit event. Returns `BillView`.
 
 `BillView`:
 

@@ -166,6 +166,29 @@ final class Bill extends Equatable {
     autoDebit: autoDebit,
   );
 
+  /// Nothing is on its way yet, so a date read wrong can still move.
+  bool get canReschedule =>
+      status == BillStatus.pending || status == BillStatus.needsConfirmation;
+
+  Bill rescheduledTo(CalendarDate date) => Bill(
+    id: id,
+    payee: payee,
+    amount: amount,
+    dueDate: date,
+    kind: kind,
+    owner: owner,
+    status: status,
+    source: source,
+    plan: plan,
+    paymentCode: paymentCode,
+    pixCode: pixCode,
+    attempts: attempts,
+    paidAt: paidAt,
+    paidBy: paidBy,
+    confirmationReason: confirmationReason,
+    autoDebit: autoDebit,
+  );
+
   Bill withAutoDebit({required bool enabled}) => Bill(
     id: id,
     payee: payee,

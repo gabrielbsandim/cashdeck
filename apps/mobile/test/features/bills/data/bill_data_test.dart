@@ -2,6 +2,7 @@ import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/bills/data/api_bills_repository.dart';
 import 'package:cashdeck/features/bills/data/bill_dtos.dart';
@@ -342,6 +343,25 @@ void main() {
       expect(billFromJson(billJson()).autoDebit, isFalse);
     });
 
+    test('sends a corrected due date', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {
+          'data': {...billJson(), 'dueDate': '2026-10-15'},
+        }),
+      );
+
+      final bill = (await ApiBillsRepository(dio).reschedule(
+        'bill-1',
+        const CalendarDate(2026, 10, 15),
+      ) as Ok<Bill>).value;
+
+      expect(bill.dueDate, const CalendarDate(2026, 10, 15));
+      final request = adapterOf(dio).requests.single;
+      expect(request.method, 'PUT');
+      expect(request.path, '/api/v1/bills/bill-1/due-date');
+      expect(request.data, {'dueDate': '2026-10-15'});
+    });
+
     test('asks the server to reconcile one bill now', () async {
       final dio = stubDio(
         (_) => StubResponse(200, {'data': billJson(status: 'PAID')}),
@@ -476,6 +496,22 @@ void main() {
       expect(paid.debitsItself, isFalse);
       expect(
         await local.setAutoDebit('missing', enabled: true),
+        const Err<Bill>(NotFoundFailure()),
+      );
+    });
+
+    test('a new due date sticks for the session', () async {
+      final local = FakeBillsRepository(FixedClock(testNow));
+
+      final moved = (await local.reschedule(
+        'bill-gym',
+        testToday.addDays(20),
+      ) as Ok<Bill>).value;
+
+      expect(moved.dueDate, testToday.addDays(20));
+      expect(await local.get('bill-gym'), Ok(moved));
+      expect(
+        await local.reschedule('missing', testToday),
         const Err<Bill>(NotFoundFailure()),
       );
     });

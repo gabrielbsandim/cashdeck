@@ -98,6 +98,12 @@ void main() {
     when(() => repository.markUnpaid('later'))
         .thenAnswer((_) async => Ok(later));
     expect(await MarkBillUnpaid(repository).call('later'), Ok(later));
+    when(() => repository.reschedule('later', testToday))
+        .thenAnswer((_) async => Ok(later));
+    expect(
+      await RescheduleBill(repository).call('later', testToday),
+      Ok(later),
+    );
     when(() => repository.reconcile('later'))
         .thenAnswer((_) async => Ok(later));
     expect(await ReconcileBill(repository).call('later'), Ok(later));

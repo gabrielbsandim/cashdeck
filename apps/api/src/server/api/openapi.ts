@@ -151,6 +151,7 @@ import {
 } from '@cashdeck/application'
 import {
   autoDebitSchema,
+  dueDateSchema,
   markPaidSchema,
   payBillSchema,
 } from '@/server/api/schemas'
@@ -709,6 +710,14 @@ const OPERATIONS: Operation[] = [
     path: '/bills/{id}/mark-unpaid',
     id: 'markBillUnpaid',
     summary: 'Undo a payment marked by hand',
+    response: billViewSchema,
+  },
+  {
+    method: 'put',
+    path: '/bills/{id}/due-date',
+    id: 'setBillDueDate',
+    summary: 'Correct the due date of a bill not yet paid',
+    body: dueDateSchema,
     response: billViewSchema,
   },
   {

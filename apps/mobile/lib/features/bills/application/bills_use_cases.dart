@@ -90,6 +90,15 @@ final class SetAutoDebit {
       _repository.setAutoDebit(id, enabled: enabled);
 }
 
+final class RescheduleBill {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<Result<Bill>> call(String id, CalendarDate dueDate) =>
+      _repository.reschedule(id, dueDate);
+}
+
 /// Checks a waiting payment with its rail now.
 final class ReconcileBill {
   const new(this._repository);

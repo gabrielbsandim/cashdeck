@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:equatable/equatable.dart';
@@ -34,6 +35,9 @@ abstract interface class BillsRepository {
 
   /// Marks the bill as debited by the bank on its own, or undoes it.
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled});
+
+  /// Corrects a due date read wrong from the e-mail.
+  Future<Result<Bill>> reschedule(String id, CalendarDate dueDate);
 
   /// Has the server ask the rail about a waiting payment now, instead of on
   /// its next round; a bill that waits on nothing comes back as it is.

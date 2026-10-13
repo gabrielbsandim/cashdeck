@@ -1,4 +1,4 @@
-import { type LocalDate } from '@/calendar/local-date'
+import { daysBetween, type LocalDate, localDate } from '@/calendar/local-date'
 import { crc16, parseBrCode } from '@/codes/br-code'
 import { decodePaymentCode } from '@/codes/payment-code'
 
@@ -72,4 +72,46 @@ export function findPaymentCodes(text: string, today: LocalDate): FoundCodes {
       .map(run => validBarcode(run, today))
       .find(code => code !== null) ?? null
   return { barcode, pixCode: findBrCodes(text)[0] ?? null }
+}
+
+// "Vencimento: 15/10/2026", "conta com vencimento em 15/10": a date printed
+// right after the word, the year optional.
+const DUE_DATE =
+  /venc[a-z]*\D{0,30}?(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{4}|\d{2}))?/g
+const HALF_YEAR = 183
+
+// Without a year the date is the next one, so a December e-mail can say January.
+function yearOf(raw: string | undefined, date: LocalDate, today: LocalDate) {
+  const year = Number(today.slice(0, 4))
+  if (raw !== undefined) {
+    return raw.length === 2 ? 2000 + Number(raw) : Number(raw)
+  }
+  return daysBetween(date, today) > HALF_YEAR ? year + 1 : year
+}
+
+function dueDateOf(
+  match: RegExpMatchArray,
+  today: LocalDate,
+): LocalDate | null {
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const sameYear = localDate(Number(today.slice(0, 4)), month, day)
+  const year = yearOf(match[3], sameYear, today)
+  const date = localDate(year, month, day)
+  const exact = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  return date === exact ? date : null
+}
+
+export function findDueDate(text: string, today: LocalDate): LocalDate | null {
+  const plain = text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+  for (const match of plain.matchAll(DUE_DATE)) {
+    const date = dueDateOf(match, today)
+    if (date) {
+      return date
+    }
+  }
+  return null
 }

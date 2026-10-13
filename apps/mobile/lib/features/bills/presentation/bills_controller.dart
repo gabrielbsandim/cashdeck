@@ -148,6 +148,12 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
+  Future<AppFailure?> reschedule(CalendarDate dueDate) async {
+    final result = await ref.read(rescheduleBillProvider).call(billId, dueDate);
+    ref.invalidate(billsControllerProvider);
+    return _apply(result);
+  }
+
   /// The server checks the approval with the bank now; the caller reads the
   /// result to say whether it was paid, still waits or moved on.
   Future<Result<Bill>> reconcile() async {

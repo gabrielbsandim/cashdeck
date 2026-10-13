@@ -37,6 +37,10 @@ final setAutoDebitProvider = Provider<SetAutoDebit>(
   (ref) => SetAutoDebit(ref.watch(billsRepositoryProvider)),
 );
 
+final rescheduleBillProvider = Provider<RescheduleBill>(
+  (ref) => RescheduleBill(ref.watch(billsRepositoryProvider)),
+);
+
 final reconcileBillProvider = Provider<ReconcileBill>(
   (ref) => ReconcileBill(ref.watch(billsRepositoryProvider)),
 );

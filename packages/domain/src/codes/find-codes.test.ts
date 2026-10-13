@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { encodeBrCode } from '@/codes/br-code'
 import {
   findBrCodes,
+  findDueDate,
   findPaymentCodes,
   validBarcode,
   validBrCode,
@@ -86,5 +87,29 @@ describe('findPaymentCodes', () => {
       barcode: null,
       pixCode: null,
     })
+  })
+})
+
+describe('findDueDate', () => {
+  it('reads the date printed after the word', () => {
+    expect(
+      findDueDate('A sua conta com vencimento em 15/10/2026.', TODAY),
+    ).toBe('2026-10-15')
+    expect(findDueDate('Data de Vencimento: 05.11.26', TODAY)).toBe(
+      '2026-11-05',
+    )
+    expect(findDueDate('VENCIMENTO 20/10', TODAY)).toBe('2026-10-20')
+  })
+
+  it('takes a date without a year as the next one', () => {
+    expect(findDueDate('Vence em 10/01', '2026-12-20')).toBe('2027-01-10')
+    expect(findDueDate('Vence em 10/09', TODAY)).toBe('2026-09-10')
+  })
+
+  it('skips an impossible date and text without one', () => {
+    expect(
+      findDueDate('Vencimento 31/02/2026, vencimento 28/02/2026', TODAY),
+    ).toBe('2026-02-28')
+    expect(findDueDate('Emitida em 15/10/2026', TODAY)).toBeNull()
   })
 })

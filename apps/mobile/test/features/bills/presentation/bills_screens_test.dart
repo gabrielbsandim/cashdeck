@@ -8,6 +8,7 @@ import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/share/file_sharer.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
@@ -151,6 +152,50 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(l10n.billStatusPaid), findsNothing);
+    });
+
+    testWidgets('moves the due date of an open bill from the menu', (
+      tester,
+    ) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-gym'));
+      expect(find.text(l10n.billDueInDays('17/10', 9)), findsOneWidget);
+
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await settle(tester);
+      await tester.tap(find.byKey(BillDetailScreen.rescheduleKey));
+      await settle(tester);
+      await tester.tap(find.text('20'));
+      final labels = MaterialLocalizations.of(
+        tester.element(find.byType(DatePickerDialog)),
+      );
+      await tester.tap(find.text(labels.okButtonLabel));
+      await settle(tester);
+
+      expect(
+        find.text(l10n.billRescheduledToast('Academia Ritmo')),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.billDueInDays('20/10', 12)), findsOneWidget);
+    });
+
+    testWidgets('closing the date picker keeps the due date', (tester) async {
+      await pumpRoute(tester, AppRoutes.bill('bill-gym'));
+
+      await tester.tap(find.byKey(BillDetailScreen.menuKey));
+      await settle(tester);
+      await tester.tap(find.byKey(BillDetailScreen.rescheduleKey));
+      await settle(tester);
+      final labels = MaterialLocalizations.of(
+        tester.element(find.byType(DatePickerDialog)),
+      );
+      await tester.tap(find.text(labels.cancelButtonLabel));
+      await settle(tester);
+
+      expect(find.text(l10n.billDueInDays('17/10', 9)), findsOneWidget);
+      expect(
+        find.text(l10n.billRescheduledToast('Academia Ritmo')),
+        findsNothing,
+      );
     });
 
     testWidgets('cancelling the mark from the menu changes nothing', (
@@ -945,6 +990,10 @@ final class _Single implements BillsRepository {
   @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
       inner.setAutoDebit(id, enabled: enabled);
+
+  @override
+  Future<Result<Bill>> reschedule(String id, CalendarDate dueDate) =>
+      inner.reschedule(id, dueDate);
 
   @override
   Future<Result<Bill>> reconcile(String id) => inner.reconcile(id);

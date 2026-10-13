@@ -306,6 +306,15 @@
       }
     }
   },
+  "billRescheduleAction": "Alterar vencimento",
+  "billRescheduledToast": "Vencimento de {payee} alterado",
+  "@billRescheduledToast": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
   "billMarkUnpaidAction": "Marcar como não paga",
   "billMarkUnpaidConfirmTitle": "Desfazer o pagamento?",
   "billMarkUnpaidConfirmBody": "{payee} volta para as contas a pagar e o pagamento automático pode pagá-la.",

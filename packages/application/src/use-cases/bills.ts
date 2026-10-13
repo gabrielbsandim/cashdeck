@@ -2,11 +2,13 @@ import {
   type Bill,
   BILL_ACTION_ALERTS,
   type EntityKind,
+  type LocalDate,
   markBillPaid,
   markBillUnpaid,
   type PaymentAttempt,
   type RailId,
   recipientKeys,
+  rescheduleBill,
 } from '@cashdeck/domain'
 import {
   type BillDetailView,
@@ -238,5 +240,38 @@ export function makeMarkBillUnpaid(deps: {
       at: deps.clock.now(),
     })
     return open
+  }
+}
+
+// A due date read wrong from the e-mail moves when the next ladder run works it.
+export function makeRescheduleBill(deps: {
+  bills: BillRepository
+  audit: AuditLog
+  clock: Clock
+  ids: IdGenerator
+}) {
+  return async function reschedule(
+    tenantId: string,
+    billId: string,
+    dueDate: LocalDate,
+  ): Promise<Bill> {
+    const bill = await deps.bills.findById(tenantId, billId)
+    if (!bill) {
+      throw new NotFoundError('Bill')
+    }
+    const moved = rescheduleBill(bill, dueDate)
+    await deps.bills.save(moved)
+    await deps.audit.record({
+      id: deps.ids.next(),
+      tenantId,
+      actor: 'USER',
+      action: 'bill.rescheduled',
+      subjectId: bill.id,
+      rail: null,
+      result: moved.status,
+      details: { from: bill.dueDate, to: dueDate },
+      at: deps.clock.now(),
+    })
+    return moved
   }
 }

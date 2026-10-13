@@ -50,6 +50,7 @@ class BillDetailScreen extends ConsumerWidget {
   static const menuKey = Key('bill-menu');
   static const markPaidKey = Key('bill-menu-mark-paid');
   static const markUnpaidKey = Key('bill-menu-mark-unpaid');
+  static const rescheduleKey = Key('bill-menu-reschedule');
   static const confirmKey = Key('bill-menu-confirm');
   static const cancelKey = Key('bill-menu-cancel');
   static const unverifiedBadgeKey = Key('bill-unverified-sender-badge');
@@ -101,9 +102,10 @@ Future<void> _markPaid(BuildContext context, WidgetRef ref, Bill bill) async {
   );
 }
 
-enum _BillAction { markPaid, markUnpaid }
+enum _BillAction { markPaid, markUnpaid, reschedule }
 
-/// Paid outside the app, or that hand payment undone; both ask first.
+/// Paid outside the app or that hand payment undone, both asked first, or a
+/// due date read wrong.
 class _BillMenu extends ConsumerWidget {
   const new({required this.bill});
 
@@ -114,20 +116,23 @@ class _BillMenu extends ConsumerWidget {
     WidgetRef ref,
     _BillAction action,
   ) async {
+    if (action == _BillAction.reschedule) {
+      await _reschedule(context, ref);
+      return;
+    }
     final l10n = AppLocalizations.of(context);
     final payee = billPayeeOf(l10n, bill);
-    final (title, body, label) = switch (action) {
-      _BillAction.markPaid => (
-        l10n.billMarkPaidConfirmTitle,
-        l10n.billMarkPaidConfirmBody(payee),
-        l10n.billMarkPaidAction,
-      ),
-      _BillAction.markUnpaid => (
-        l10n.billMarkUnpaidConfirmTitle,
-        l10n.billMarkUnpaidConfirmBody(payee),
-        l10n.billMarkUnpaidAction,
-      ),
-    };
+    final (title, body, label) = action == _BillAction.markPaid
+        ? (
+            l10n.billMarkPaidConfirmTitle,
+            l10n.billMarkPaidConfirmBody(payee),
+            l10n.billMarkPaidAction,
+          )
+        : (
+            l10n.billMarkUnpaidConfirmTitle,
+            l10n.billMarkUnpaidConfirmBody(payee),
+            l10n.billMarkUnpaidAction,
+          );
     final confirmed = await showCdBottomSheet<bool>(
       context,
       title: title,
@@ -149,16 +154,44 @@ class _BillMenu extends ConsumerWidget {
     );
   }
 
+  Future<void> _reschedule(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    DateTime local(CalendarDate day) => DateTime(day.year, day.month, day.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: local(bill.dueDate),
+      firstDate: local(bill.dueDate.addDays(-365)),
+      lastDate: local(bill.dueDate.addDays(365)),
+    );
+    if (picked == null || !context.mounted) return;
+    final failure = await ref
+        .read(billDetailControllerProvider(bill.id).notifier)
+        .reschedule(CalendarDate.fromDateTime(picked));
+    if (!context.mounted) return;
+    await showOutcomeToast(
+      context,
+      failure,
+      success: l10n.billRescheduledToast(billPayeeOf(l10n, bill)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    if (!bill.canMarkPaid && !bill.canMarkUnpaid) return const SizedBox();
+    final acts = bill.canMarkPaid || bill.canMarkUnpaid || bill.canReschedule;
+    if (!acts) return const SizedBox();
     return PopupMenuButton<_BillAction>(
       key: BillDetailScreen.menuKey,
       icon: const Icon(Symbols.more_vert_rounded),
       tooltip: l10n.billMenuTooltip,
       onSelected: (action) => _run(context, ref, action),
       itemBuilder: (_) => [
+        if (bill.canReschedule)
+          PopupMenuItem(
+            key: BillDetailScreen.rescheduleKey,
+            value: _BillAction.reschedule,
+            child: Text(l10n.billRescheduleAction),
+          ),
         if (bill.canMarkPaid)
           PopupMenuItem(
             key: BillDetailScreen.markPaidKey,

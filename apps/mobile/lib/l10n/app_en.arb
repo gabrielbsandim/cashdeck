@@ -139,6 +139,15 @@
   "billMarkPaidAction": "Mark as paid",
   "billMarkPaidConfirmTitle": "Already paid this bill?",
   "billMarkPaidConfirmBody": "Mark it if you paid {payee} outside Cashdeck, from another account or the bank app. Automatic payment leaves this bill alone; the next months are paid as usual.",
+  "billRescheduleAction": "Change due date",
+  "billRescheduledToast": "{payee} due date changed",
+  "@billRescheduledToast": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
   "billMarkUnpaidAction": "Mark as unpaid",
   "billMarkUnpaidConfirmTitle": "Undo the payment?",
   "billMarkUnpaidConfirmBody": "{payee} goes back to the bills to pay, and automatic payment may pay it.",

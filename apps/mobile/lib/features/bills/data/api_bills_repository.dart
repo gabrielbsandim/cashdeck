@@ -1,6 +1,7 @@
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/bills/data/bill_dtos.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
@@ -93,6 +94,16 @@ final class ApiBillsRepository implements BillsRepository {
         final response = await _dio.put<Object?>(
           '$path/${Uri.encodeComponent(id)}/auto-debit',
           data: {'enabled': enabled},
+        );
+        return billFromJson(asJsonMap(unwrapData(response.data)));
+      });
+
+  @override
+  Future<Result<Bill>> reschedule(String id, CalendarDate dueDate) =>
+      guardRequest(() async {
+        final response = await _dio.put<Object?>(
+          '$path/${Uri.encodeComponent(id)}/due-date',
+          data: {'dueDate': dueDate.iso},
         );
         return billFromJson(asJsonMap(unwrapData(response.data)));
       });

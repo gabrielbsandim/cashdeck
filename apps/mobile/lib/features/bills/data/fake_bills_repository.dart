@@ -328,6 +328,17 @@ final class FakeBillsRepository implements BillsRepository {
     return found;
   }
 
+  @override
+  Future<Result<Bill>> reschedule(String id, CalendarDate dueDate) async {
+    final found = await get(id);
+    if (found case Ok(:final value)) {
+      final changed = value.rescheduledTo(dueDate);
+      _changed[id] = changed;
+      return Ok(changed);
+    }
+    return found;
+  }
+
   /// No bank answers here, so a waiting bill keeps waiting.
   @override
   Future<Result<Bill>> reconcile(String id) => get(id);

@@ -450,6 +450,30 @@ describe('GmailBillSource', () => {
     expect(llm.calls).toHaveLength(1)
   })
 
+  it('reads the due date a Pix e-mail prints next to the code', async () => {
+    const body = `Sua conta com vencimento em 15/10/2026. Pix: ${STATIC_PIX}`
+    const scripted = new ScriptedTransport()
+      .on('POST', TOKEN, { json: {} })
+      .on('GET', `${API}/messages?`, { json: { messages: [{ id: 'm1' }] } })
+      .on('GET', `${API}/messages/m1?format=full`, {
+        json: {
+          id: 'm1',
+          payload: {
+            mimeType: 'text/plain',
+            headers: [{ name: 'from', value: '<x@y.test>' }],
+            body: { data: b64(body) },
+          },
+        },
+      })
+    const source = new GmailBillSource({
+      credentials: gmailEnv(),
+      transport: scripted.transport,
+    })
+    expect(await source.fetch(TENANT, ENTITY, since)).toEqual([
+      expect.objectContaining({ kind: 'PIX_QR', dueDate: '2026-10-15' }),
+    ])
+  })
+
   it('reads only the body without an extractor and stops at the limit', async () => {
     const scripted = new ScriptedTransport()
       .on('POST', TOKEN, { json: {} })

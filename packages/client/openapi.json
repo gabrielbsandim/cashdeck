@@ -17376,6 +17376,215 @@
         }
       }
     },
+    "/bills/{id}/due-date": {
+      "put": {
+        "operationId": "setBillDueDate",
+        "summary": "Correct the due date of a bill not yet paid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  }
+                },
+                "required": [
+                  "dueDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Correct the due date of a bill not yet paid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "type": "string"
+                        },
+                        "entityKind": {
+                          "type": "string",
+                          "enum": [
+                            "PF",
+                            "PJ"
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "BOLETO",
+                            "PIX_KEY",
+                            "PIX_QR",
+                            "TAX_BARCODE",
+                            "DARF_NO_BARCODE"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "OPEN",
+                            "NEEDS_CONFIRMATION",
+                            "PROCESSING",
+                            "AWAITING_BANK_APPROVAL",
+                            "ASSISTED",
+                            "PAID",
+                            "CANCELLED"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "GMAIL",
+                            "SHARE",
+                            "CAMERA",
+                            "CHAT",
+                            "DDA",
+                            "MANUAL"
+                          ]
+                        },
+                        "payee": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "dueDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "paidAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "paidBy": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "RAIL",
+                            "USER",
+                            "STATEMENT"
+                          ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "entityId",
+                        "entityKind",
+                        "kind",
+                        "status",
+                        "source",
+                        "payee",
+                        "amount",
+                        "dueDate",
+                        "code",
+                        "pixCode",
+                        "createdAt",
+                        "paidAt",
+                        "paidBy",
+                        "autoDebit",
+                        "unverifiedSender"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/bills/{id}/reconcile": {
       "post": {
         "operationId": "reconcileBill",

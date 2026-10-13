@@ -155,6 +155,20 @@ export function markBillUnpaid(bill: Bill): Bill {
   return { ...bill, status: 'OPEN', paidAt: null, paidBy: null }
 }
 
+// Money already on its way keeps the date it was sent for.
+const RESCHEDULABLE: readonly BillStatus[] = [
+  'OPEN',
+  'NEEDS_CONFIRMATION',
+  'ASSISTED',
+]
+
+export function rescheduleBill(bill: Bill, dueDate: LocalDate): Bill {
+  if (!RESCHEDULABLE.includes(bill.status)) {
+    throw new ValidationError(`A ${bill.status} bill keeps its due date.`)
+  }
+  return { ...bill, dueDate }
+}
+
 export function isSettled(bill: Bill): boolean {
   return bill.status === 'PAID' || bill.status === 'CANCELLED'
 }

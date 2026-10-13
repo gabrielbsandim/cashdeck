@@ -3,6 +3,7 @@ import {
   createBill,
   InvalidTransitionError,
   Money,
+  ValidationError,
   recipientKeys,
 } from '@cashdeck/domain'
 import { NotFoundError } from '@/errors/errors'
@@ -16,6 +17,7 @@ import {
   makeListBills,
   makeMarkBillPaid,
   makeMarkBillUnpaid,
+  makeRescheduleBill,
 } from '@/use-cases/bills'
 import { makeRunPaymentLadder } from '@/use-cases/run-payment-ladder'
 
@@ -241,5 +243,28 @@ describe('bill queries and manual payment', () => {
       InvalidTransitionError,
     )
     expect((await deps.bills.findById(TENANT, 'b1'))?.paidBy).toBe('RAIL')
+  })
+
+  it('moves the due date of a bill not yet paid', async () => {
+    const deps = scenario()
+    await deps.bills.save(seed('b1', '2026-10-08'))
+    const reschedule = makeRescheduleBill(deps)
+    const moved = await reschedule(TENANT, 'b1', '2026-10-15')
+    expect(moved.dueDate).toBe('2026-10-15')
+    expect((await deps.bills.findById(TENANT, 'b1'))?.dueDate).toBe(
+      '2026-10-15',
+    )
+    expect(deps.audit.events.at(-1)).toMatchObject({
+      action: 'bill.rescheduled',
+      result: 'OPEN',
+      details: { from: '2026-10-08', to: '2026-10-15' },
+    })
+    await makeMarkBillPaid(deps)(TENANT, 'b1')
+    await expect(reschedule(TENANT, 'b1', '2026-10-20')).rejects.toThrow(
+      ValidationError,
+    )
+    await expect(reschedule(TENANT, 'nope', '2026-10-20')).rejects.toThrow(
+      NotFoundError,
+    )
   })
 })

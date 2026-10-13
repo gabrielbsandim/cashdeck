@@ -59,6 +59,20 @@ void main() {
     },
   );
 
+  test('only a bill nothing is paying yet moves its due date', () {
+    final moved = testBill().rescheduledTo(testToday.addDays(7));
+
+    expect(moved.dueDate, testToday.addDays(7));
+    expect(moved.status, BillStatus.pending);
+    expect(testBill().canReschedule, isTrue);
+    expect(
+      testBill(status: BillStatus.needsConfirmation).canReschedule,
+      isTrue,
+    );
+    expect(testBill(status: BillStatus.scheduled).canReschedule, isFalse);
+    expect(testBill(status: BillStatus.paid).canReschedule, isFalse);
+  });
+
   test('tax guides are taxes', () {
     expect(testBill(kind: BillKind.taxBarcode).isTax, isTrue);
     expect(testBill(kind: BillKind.darfNoBarcode).isTax, isTrue);

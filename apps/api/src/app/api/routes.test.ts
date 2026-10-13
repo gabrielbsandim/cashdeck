@@ -10,6 +10,7 @@ import { POST as payBill } from '@/app/api/v1/bills/[id]/pay/route'
 import { POST as markPaid } from '@/app/api/v1/bills/[id]/mark-paid/route'
 import { POST as markUnpaid } from '@/app/api/v1/bills/[id]/mark-unpaid/route'
 import { PUT as setAutoDebit } from '@/app/api/v1/bills/[id]/auto-debit/route'
+import { PUT as setDueDate } from '@/app/api/v1/bills/[id]/due-date/route'
 import { GET as paymentCron } from '@/app/api/cron/payment-ladder/route'
 
 const BOLETO_LINE = '00190000090280001234256789012178916050000012345'
@@ -134,7 +135,17 @@ describe('api routes', () => {
       paidAt: null,
       paidBy: null,
     })
+    const due = (dueDate: unknown) =>
+      new Request(`http://localhost/api/v1/bills/${id}/due-date`, {
+        method: 'PUT',
+        headers: { ...auth(), 'content-type': 'application/json' },
+        body: JSON.stringify({ dueDate }),
+      })
+    const moved = await json(await setDueDate(due('2026-12-01'), params(id)))
+    expect(moved.body.data).toMatchObject({ id, dueDate: '2026-12-01' })
+    expect((await setDueDate(due('01/12/2026'), params(id))).status).toBe(422)
     await markPaid(post(`/bills/${id}/mark-paid`), params(id))
+    expect((await setDueDate(due('2026-12-02'), params(id))).status).toBe(422)
 
     const flag = (enabled: unknown) =>
       new Request(`http://localhost/api/v1/bills/${id}/auto-debit`, {

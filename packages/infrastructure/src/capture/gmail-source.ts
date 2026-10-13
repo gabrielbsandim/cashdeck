@@ -5,6 +5,7 @@ import {
   type LlmAttachment,
 } from '@cashdeck/application'
 import {
+  findDueDate,
   findPaymentCodes,
   findTaxIds,
   type LocalDate,
@@ -206,6 +207,7 @@ export class GmailBillSource implements BillSource {
     const text = parts.filter(isText).map(decodeBody).join('\n')
     const fromText = toExtracted(findPaymentCodes(text, today), today, {
       payee,
+      dueDate: findDueDate(text, today),
       taxIds: findTaxIds(text),
     })
     const files = found.map(item => item.file)

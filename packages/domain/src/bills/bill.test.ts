@@ -6,11 +6,12 @@ import {
   isSettled,
   markBillPaid,
   markBillUnpaid,
+  rescheduleBill,
   transitionBill,
 } from '@/bills/bill'
 import { decodePaymentCode } from '@/codes/payment-code'
 import { Money } from '@/money/money'
-import { InvalidTransitionError } from '@/shared/domain-error'
+import { InvalidTransitionError, ValidationError } from '@/shared/domain-error'
 
 const PIX =
   '00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***63041D3D'
@@ -139,5 +140,18 @@ describe('bill transitions', () => {
       InvalidTransitionError,
     )
     expect(() => markBillUnpaid(bill)).toThrow(InvalidTransitionError)
+  })
+
+  it('moves the due date only before money leaves', () => {
+    const bill = createBill(input)
+    expect(rescheduleBill(bill, '2026-10-25').dueDate).toBe('2026-10-25')
+    const assisted = transitionBill(bill, 'ASSISTED')
+    expect(rescheduleBill(assisted, '2026-10-25').dueDate).toBe('2026-10-25')
+    expect(() =>
+      rescheduleBill(transitionBill(bill, 'PROCESSING'), '2026-10-25'),
+    ).toThrow(ValidationError)
+    expect(() =>
+      rescheduleBill(markBillPaid(bill, 'USER', new Date()), '2026-10-25'),
+    ).toThrow(ValidationError)
   })
 })
