@@ -137,6 +137,16 @@ export async function insightScope(
   return { entities, accounts }
 }
 
+// A category of the user's under a built-in one counts as its parent, so a
+// project funded beside the investments stays out of the spending.
+function flowKeyOf(
+  categories: ReadonlyMap<string, Category>,
+  id: string | null,
+): string | null {
+  const category = categories.get(id ?? '')
+  return category?.key ?? categories.get(category?.parentId ?? '')?.key ?? null
+}
+
 export async function flowEntries(
   deps: Pick<InsightsDeps, 'transactions' | 'entities'>,
   tenantId: string,
@@ -162,7 +172,7 @@ export async function flowEntries(
     transactions.map(transaction => ({
       transaction,
       accountType: types.get(transaction.accountId) as Account['type'],
-      categoryKey: categories.get(transaction.categoryId ?? '')?.key ?? null,
+      categoryKey: flowKeyOf(categories, transaction.categoryId),
     })),
     {
       ownNames: entities.map(entity => entity.name),

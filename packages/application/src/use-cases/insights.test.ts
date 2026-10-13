@@ -309,4 +309,46 @@ describe('insight helpers', () => {
     expect(await kinds([checking])).toEqual(['INCOME'])
     expect(await kinds([checking, firm])).toEqual(['NEUTRAL'])
   })
+
+  it('counts a category under investments as an investment', async () => {
+    const deps = fullDeps()
+    const invest = {
+      id: 'invest',
+      tenantId: TENANT,
+      key: 'investments',
+      name: 'Investments',
+      icon: null,
+      parentId: null,
+    }
+    const project = { ...invest, id: 'project', key: null, parentId: 'invest' }
+    const loose = { ...project, id: 'loose', parentId: null }
+    for (const [id, categoryId] of [
+      ['ads', 'project'],
+      ['gift', 'loose'],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'checking',
+          amount: Money.of(-5_000),
+          bookedOn: '2026-10-05',
+          description: id,
+          categoryId,
+        }),
+      )
+    }
+    const categories = new Map(
+      [invest, project, loose].map(category => [category.id, category]),
+    )
+    const entries = await flowEntries(
+      deps,
+      TENANT,
+      [account({ id: 'checking', entityId: 'pf' })],
+      categories,
+      { from: '2026-10-01', to: '2026-10-08' },
+    )
+    expect(
+      Object.fromEntries(entries.map(e => [e.transaction.id, e.kind])),
+    ).toEqual({ ads: 'NEUTRAL', gift: 'EXPENSE' })
+  })
 })
