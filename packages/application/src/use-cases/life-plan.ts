@@ -173,8 +173,10 @@ export function makeLifePlan(deps: LifePlanDeps) {
   }
 
   async function belongingsOf(tenantId: string): Promise<Belongings> {
-    const assets = await loadAssets(deps, tenantId)
-    const loans = await loadLoans(deps, tenantId)
+    const [assets, loans] = await Promise.all([
+      loadAssets(deps, tenantId),
+      loadLoans(deps, tenantId),
+    ])
     return {
       assets: new Map(assets.map(asset => [asset.id, asset])),
       loans: new Map(loans.map(loan => [loan.id, loan])),
@@ -183,9 +185,13 @@ export function makeLifePlan(deps: LifePlanDeps) {
 
   // Spending is what the monthly plan leaves once its savings target is set
   // aside; the reserve covers months of it.
-  async function startOf(tenantId: string, chosen: PlanSettings) {
-    const worth = await netWorth(tenantId, { entity: 'PF', months: 1 })
-    const plan = (await safeToSpend(tenantId, 'PF')).plan
+  async function startOf(tenantId: string) {
+    const [chosen, worth, safe] = await Promise.all([
+      settings(tenantId),
+      netWorth(tenantId, { entity: 'PF', months: 1 }),
+      safeToSpend(tenantId, 'PF'),
+    ])
+    const plan = safe.plan
     const budgeted = plan?.savings.cents ?? 0
     const savings = chosen.monthlySavings ?? budgeted
     const start: PlanStart = {
@@ -199,14 +205,15 @@ export function makeLifePlan(deps: LifePlanDeps) {
       keepShare: chosen.keepInvested / 100,
       monthlyYield: (1 + chosen.yearlyYield / 100) ** (1 / 12) - 1,
     }
-    return { start, worth: worth.current }
+    return { chosen, start, worth: worth.current }
   }
 
   async function view(tenantId: string): Promise<PlanView> {
-    const chosen = await settings(tenantId)
-    const { start, worth } = await startOf(tenantId, chosen)
-    const belongings = await belongingsOf(tenantId)
-    const stored = await loadGoals(tenantId)
+    const [{ chosen, start, worth }, belongings, stored] = await Promise.all([
+      startOf(tenantId),
+      belongingsOf(tenantId),
+      loadGoals(tenantId),
+    ])
     const day = today(deps.clock.now())
     const assets = stored.map(goal => liveAsset(goal, belongings))
     const tradeIns = stored.map((goal, index) => {

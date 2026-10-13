@@ -4,6 +4,8 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/layout/cd_card.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
+import 'package:cashdeck/core/widgets/states/cd_shimmer.dart';
+import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
 import 'package:cashdeck/features/plan/presentation/plan_controller.dart';
 import 'package:cashdeck/features/plan/presentation/plan_labels.dart';
@@ -14,11 +16,13 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// The next purchase of the plan and when the milestones come, on Início.
-/// Stays out of the way while loading or when the plan cannot load.
+/// Holds its place while loading, so the cards below do not jump when it
+/// lands, and steps aside when the plan cannot load.
 class HomePlanCard extends ConsumerWidget {
   const new({super.key});
 
   static const cardKey = Key('home-plan');
+  static const loadingKey = Key('home-plan-loading');
 
   static List<String> linesOf(AppLocalizations l10n, LifePlan plan) {
     final purchases = [
@@ -41,13 +45,26 @@ class HomePlanCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
-    final plan = ref.watch(planControllerProvider).value;
+    final state = ref.watch(planControllerProvider);
+    final header = CdSectionHeader(title: l10n.planTitle);
+    final plan = state.value;
+    if (plan == null && state.isLoading) {
+      return Column(
+        key: loadingKey,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          const SizedBox(height: AppSpacing.md),
+          const CdShimmer(child: CdSkeletonCard(height: 88)),
+        ],
+      );
+    }
     if (plan == null) return const SizedBox.shrink();
     final lines = linesOf(l10n, plan);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CdSectionHeader(title: l10n.planTitle),
+        header,
         const SizedBox(height: AppSpacing.md),
         CdCard(
           key: cardKey,

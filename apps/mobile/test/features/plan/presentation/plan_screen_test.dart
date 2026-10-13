@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/money/money.dart';
@@ -263,6 +265,34 @@ void main() {
     );
     await _tap(tester, find.byKey(HomePlanCard.cardKey));
     expect(find.byType(PlanScreen), findsOneWidget);
+  });
+
+  testWidgets('Início holds the plan card in place while it loads', (
+    tester,
+  ) async {
+    // Reduced motion stills the shimmer, so the pending load can settle.
+    final dispatcher = tester.platformDispatcher;
+    dispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(dispatcher.clearAccessibilityFeaturesTestValue);
+    final repository = MockPlanRepository();
+    final pending = Completer<Result<LifePlan>>();
+    when(repository.load).thenAnswer((_) => pending.future);
+    await pumpRoute(
+      tester,
+      AppRoutes.home,
+      overrides: [planRepositoryProvider.overrideWithValue(repository)],
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(HomePlanCard.loadingKey),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byKey(HomePlanCard.cardKey), findsNothing);
+    pending.complete(const Err(ServerFailure()));
+    await settle(tester);
+    expect(find.byKey(HomePlanCard.loadingKey), findsNothing);
   });
 
   testWidgets('the goals screen opens the plan', (tester) async {
