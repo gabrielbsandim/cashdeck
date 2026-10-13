@@ -94,8 +94,12 @@ describe('plan advice', () => {
     })
     const prompt = llm.calls[0]?.messages[0]?.content
     expect(prompt).toContain('Today: 2026-10')
-    expect(prompt).toContain('g3|PURCHASE|Phone|5000|5000|50||2027-03|')
-    expect(prompt).toContain('g2|PURCHASE|Car|40000|40000|0|keeps value|')
+    expect(prompt).toContain(
+      'g3|PURCHASE|Phone|5000|5000|2.5|Million +6|50||2027-03|',
+    )
+    expect(prompt).toContain(
+      'g2|PURCHASE|Car|40000|40000|20.0|Million +19|0|keeps value|',
+    )
     expect(prompt).toContain('Arrange the whole plan.')
     expect(names((await plan.view(TENANT)).goals)).toEqual([
       'Trips',
@@ -156,6 +160,22 @@ describe('plan advice', () => {
 
     const past = await advice.advise(TENANT, { goalId: ids[2] })
     expect(past.goals[0]).toMatchObject({ name: 'Phone', notBefore: null })
+  })
+
+  it('gives no weight when nothing is left to save', async () => {
+    const llm = new FakeLlmProvider().enqueueObject({ summary: '', goals: [] })
+    const { deps, advice } = await seed(llm)
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 100_000, currency: 'BRL' },
+    })
+
+    await advice.advise(TENANT, { goalId: null })
+
+    const prompt = llm.calls[0]?.messages[0]?.content
+    expect(prompt).toContain('g3|PURCHASE|Phone|5000|5000||')
+    expect(prompt).toContain(
+      'g1|YEARLY|Trips|12000|1000||Million +out of reach|',
+    )
   })
 
   it('applies an arrangement', async () => {
