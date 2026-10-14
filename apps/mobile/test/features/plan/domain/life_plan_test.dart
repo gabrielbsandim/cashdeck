@@ -56,6 +56,18 @@ void main() {
         PlanGoalProblem.installments,
       );
     }
+    for (final discount in [-1.0, maxCashDiscount + 1]) {
+      expect(
+        PlanGoalDraft(
+          kind: PlanGoalKind.purchase,
+          name: 'Celular',
+          price: const Money(1),
+          installments: 10,
+          cashDiscount: discount,
+        ).problem,
+        PlanGoalProblem.discount,
+      );
+    }
   });
 
   test('a draft starts from a goal and a milestone shows its progress', () {
@@ -69,7 +81,7 @@ void main() {
     expect(draft.payment, PlanPayment.card);
     expect(draft.installments, 10);
     expect(draft.goalId, 'goal-car');
-    expect(draft.props, hasLength(17));
+    expect(draft.props, hasLength(18));
     expect(draft.linkedTo('goal-new').goalId, 'goal-new');
     expect(
       draft.linkedTo('goal-car'),
@@ -99,7 +111,7 @@ void main() {
       current: Money(100),
     );
     expect(half.progress, 0.5);
-    expect(testPlanGoal.props, hasLength(24));
+    expect(testPlanGoal.props, hasLength(25));
   });
 
   test('settings name their problem and come from the plan', () {
@@ -168,6 +180,15 @@ void main() {
     expect(plan(fromBudget: false).settings.monthlySavings, const Money(100));
     expect(plan(fromBudget: true).props, hasLength(14));
     expect(point.props, hasLength(3));
+    const payment = PlanPaymentAdvice(
+      installments: 10,
+      cash: Money(1_900_000),
+      cardToday: Money(1_901_312),
+      better: PlanPayment.cash,
+      gain: Money(1_312),
+      breakEvenPercent: 4.9,
+    );
+    expect(payment.props, hasLength(6));
     expect(delay.props, ['m', 'Milhão', 2]);
   });
 

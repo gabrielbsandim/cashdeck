@@ -26,6 +26,8 @@ const purchaseSchema = z
     // On the card the cash leaves with the next bills, one per installment.
     payment: z.enum(PLAN_PAYMENTS).default('CASH'),
     installments: z.int().min(1).max(24).default(1),
+    // Percent off the price when paid at once, to weigh against installments.
+    cashDiscount: z.number().min(0).max(50).default(0),
     // The caixinha that saves for it.
     goalId: z.string().min(1).nullable().default(null),
     notBefore: isoMonth.nullable().default(null),
@@ -110,6 +112,7 @@ export const planGoalViewSchema = z.object({
   keepsValue: z.boolean().nullable(),
   payment: z.enum(PLAN_PAYMENTS).nullable(),
   installments: z.int().nullable(),
+  cashDiscount: z.number().nullable(),
   // Null once the caixinha is archived or deleted.
   goalId: z.string().nullable(),
   notBefore: isoMonth.nullable(),
@@ -168,6 +171,17 @@ export const planAdviceGoalSchema = z.object({
   // Where the goal lands once the advice is applied.
   proposedMonth: isoMonth.nullable(),
   proposedStatus: z.enum(PLAN_STATUSES),
+  // Paying at once against the installments, in today's money.
+  payment: z
+    .object({
+      installments: z.int(),
+      cash: moneyViewSchema,
+      cardToday: moneyViewSchema,
+      better: z.enum(PLAN_PAYMENTS),
+      gain: moneyViewSchema,
+      breakEvenPercent: z.number(),
+    })
+    .nullable(),
 })
 
 // The goals come in the order the advice proposes.

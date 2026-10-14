@@ -1,4 +1,5 @@
 import 'package:cashdeck/core/error/failure_message.dart';
+import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
@@ -159,7 +160,7 @@ class _PlanAdviceSheetState extends ConsumerState<PlanAdviceSheet> {
   }
 }
 
-class _AdviceRow extends StatelessWidget {
+class _AdviceRow extends ConsumerWidget {
   const new({
     required this.position,
     required this.goal,
@@ -175,9 +176,10 @@ class _AdviceRow extends StatelessWidget {
       month == null ? planStatusLabel(l10n, status) : planMonth(l10n, month);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final palette = context.palette;
+    final payment = goal.payment;
     final muted = AppTextStyles.bodyMd.copyWith(
       color: palette.onSurfaceVariant,
     );
@@ -231,6 +233,25 @@ class _AdviceRow extends StatelessWidget {
                 if (reason != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(reason, style: muted),
+                ],
+                if (payment != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    planPaymentLine(
+                      l10n,
+                      payment,
+                      hide: ref.watch(hideAmountsProvider),
+                    ),
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: palette.onSurface,
+                    ),
+                  ),
+                  Text(
+                    l10n.planAdviceBreakEven(
+                      planRate(payment.breakEvenPercent),
+                    ),
+                    style: muted,
+                  ),
                 ],
               ],
             ),

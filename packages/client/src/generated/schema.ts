@@ -11835,6 +11835,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -11979,6 +11980,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -12119,6 +12121,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -12202,6 +12205,24 @@ export interface operations {
                                 proposedMonth: string | null;
                                 /** @enum {string} */
                                 proposedStatus: "NOW" | "PLANNED" | "LATE" | "OUT_OF_REACH";
+                                payment: {
+                                    installments: number;
+                                    cash: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    cardToday: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    /** @enum {string} */
+                                    better: "CASH" | "CARD";
+                                    gain: {
+                                        cents: number;
+                                        currency: string;
+                                    };
+                                    breakEvenPercent: number;
+                                } | null;
                             }[];
                         };
                     };
@@ -12317,6 +12338,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -12394,6 +12416,8 @@ export interface operations {
                     payment?: "CASH" | "CARD";
                     /** @default 1 */
                     installments?: number;
+                    /** @default 0 */
+                    cashDiscount?: number;
                     /** @default null */
                     goalId?: string | null;
                     /** @default null */
@@ -12503,6 +12527,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -12582,6 +12607,8 @@ export interface operations {
                     payment?: "CASH" | "CARD";
                     /** @default 1 */
                     installments?: number;
+                    /** @default 0 */
+                    cashDiscount?: number;
                     /** @default null */
                     goalId?: string | null;
                     /** @default null */
@@ -12691,6 +12718,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;
@@ -12827,6 +12855,7 @@ export interface operations {
                                 /** @enum {string|null} */
                                 payment: "CASH" | "CARD" | null;
                                 installments: number | null;
+                                cashDiscount: number | null;
                                 goalId: string | null;
                                 notBefore: string | null;
                                 by: string | null;

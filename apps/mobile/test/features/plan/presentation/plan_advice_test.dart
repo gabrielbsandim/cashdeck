@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/money/money.dart';
+import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/features/plan/data/plan_dtos.dart';
 import 'package:cashdeck/features/plan/domain/life_plan.dart';
@@ -23,7 +25,17 @@ final PlanAdvice _advice = planAdviceFromJson(
   planAdviceJson(
     goalId: 'g1',
     goals: [
-      planAdviceGoalJson(notBefore: '2027-08'),
+      planAdviceGoalJson(
+        notBefore: '2027-08',
+        payment: {
+          'installments': 10,
+          'cash': {'cents': 1_900_000, 'currency': 'BRL'},
+          'cardToday': {'cents': 1_901_312, 'currency': 'BRL'},
+          'better': 'CASH',
+          'gain': {'cents': 1_312, 'currency': 'BRL'},
+          'breakEvenPercent': 4.9,
+        },
+      ),
       planAdviceGoalJson(
         id: 'g2',
         name: 'Milhão',
@@ -78,6 +90,18 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.planNotBefore('Agosto 2027')), findsOneWidget);
+    expect(
+      find.text(
+        l10n.planAdviceCashWins(
+          MoneyFormat.whole(const Money(1_900_000)),
+          MoneyFormat.whole(const Money(1_312)),
+          10,
+          MoneyFormat.whole(const Money(1_901_312)),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.planAdviceBreakEven('4,9')), findsOneWidget);
     expect(find.text('Cabe melhor depois.'), findsOneWidget);
     expect(
       find.text(l10n.planAdviceStays(l10n.planStatusOutOfReach)),

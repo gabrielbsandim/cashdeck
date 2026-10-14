@@ -13,6 +13,7 @@ enum MilestoneMetric { netWorth, invested }
 enum PlanPayment { cash, card }
 
 const maxPlanInstallments = 24;
+const maxCashDiscount = 50.0;
 
 /// How many months a goal pushes a milestone; null when it keeps the
 /// milestone out of reach.
@@ -51,6 +52,7 @@ final class PlanGoal extends Equatable {
     this.keepsValue = false,
     this.payment = PlanPayment.cash,
     this.installments = 1,
+    this.cashDiscount = 0,
     this.goalId,
     this.notBefore,
     this.by,
@@ -81,6 +83,9 @@ final class PlanGoal extends Equatable {
   final bool keepsValue;
   final PlanPayment payment;
   final int installments;
+
+  /// Percent off the price when paid at once.
+  final double cashDiscount;
 
   /// The caixinha saving for it.
   final String? goalId;
@@ -120,6 +125,7 @@ final class PlanGoal extends Equatable {
     keepsValue,
     payment,
     installments,
+    cashDiscount,
     goalId,
     notBefore,
     by,
@@ -296,6 +302,7 @@ final class PlanGoalDraft extends Equatable {
     this.keepsValue = false,
     this.payment = PlanPayment.cash,
     this.installments = 1,
+    this.cashDiscount = 0,
     this.goalId,
     this.notBefore,
     this.by,
@@ -316,6 +323,7 @@ final class PlanGoalDraft extends Equatable {
     keepsValue: goal.keepsValue,
     payment: goal.payment,
     installments: goal.installments,
+    cashDiscount: goal.cashDiscount,
     goalId: goal.goalId,
     notBefore: goal.notBefore,
     by: goal.by,
@@ -337,6 +345,7 @@ final class PlanGoalDraft extends Equatable {
     keepsValue: keepsValue,
     payment: payment,
     installments: installments,
+    cashDiscount: cashDiscount,
     goalId: goalId,
     notBefore: month,
     by: by,
@@ -356,6 +365,7 @@ final class PlanGoalDraft extends Equatable {
   final bool keepsValue;
   final PlanPayment payment;
   final int installments;
+  final double cashDiscount;
   final String? goalId;
   final YearMonth? notBefore;
   final YearMonth? by;
@@ -376,6 +386,7 @@ final class PlanGoalDraft extends Equatable {
     keepsValue: keepsValue,
     payment: payment,
     installments: installments,
+    cashDiscount: cashDiscount,
     goalId: goalId,
     notBefore: notBefore,
     by: by,
@@ -395,6 +406,9 @@ final class PlanGoalDraft extends Equatable {
     if (_amount.cents <= 0) return PlanGoalProblem.amount;
     if (installments < 1 || installments > maxPlanInstallments) {
       return PlanGoalProblem.installments;
+    }
+    if (cashDiscount < 0 || cashDiscount > maxCashDiscount) {
+      return PlanGoalProblem.discount;
     }
     final notBefore = this.notBefore;
     final by = this.by;
@@ -421,6 +435,7 @@ final class PlanGoalDraft extends Equatable {
     keepsValue,
     payment,
     installments,
+    cashDiscount,
     goalId,
     notBefore,
     by,
@@ -430,7 +445,42 @@ final class PlanGoalDraft extends Equatable {
   ];
 }
 
-enum PlanGoalProblem { name, amount, installments, window }
+enum PlanGoalProblem { name, amount, installments, discount, window }
+
+/// Paying a purchase at once against its installments, in today's money.
+final class PlanPaymentAdvice extends Equatable {
+  const new({
+    required this.installments,
+    required this.cash,
+    required this.cardToday,
+    required this.better,
+    required this.gain,
+    required this.breakEvenPercent,
+  });
+
+  final int installments;
+
+  /// Paid at once, after the discount.
+  final Money cash;
+
+  /// The installments, worth less today since the money earns until each bill.
+  final Money cardToday;
+  final PlanPayment better;
+  final Money gain;
+
+  /// The discount from which paying at once wins.
+  final double breakEvenPercent;
+
+  @override
+  List<Object?> get props => [
+    installments,
+    cash,
+    cardToday,
+    better,
+    gain,
+    breakEvenPercent,
+  ];
+}
 
 /// What the model proposes for one goal, and where the goal lands with it.
 final class PlanAdviceGoal extends Equatable {
@@ -444,6 +494,7 @@ final class PlanAdviceGoal extends Equatable {
     this.reason,
     this.month,
     this.proposedMonth,
+    this.payment,
   });
 
   final String id;
@@ -457,6 +508,7 @@ final class PlanAdviceGoal extends Equatable {
   final PlanStatus status;
   final YearMonth? proposedMonth;
   final PlanStatus proposedStatus;
+  final PlanPaymentAdvice? payment;
 
   bool get moves => month != proposedMonth || status != proposedStatus;
 
@@ -471,6 +523,7 @@ final class PlanAdviceGoal extends Equatable {
     status,
     proposedMonth,
     proposedStatus,
+    payment,
   ];
 }
 

@@ -96,6 +96,7 @@ Map<String, Object?> planAdviceGoalJson({
   String? reason = 'Cabe melhor depois.',
   String? month = '2027-05',
   String? proposedMonth = '2027-09',
+  Map<String, Object?>? payment,
 }) => {
   'id': id,
   'kind': kind,
@@ -106,6 +107,7 @@ Map<String, Object?> planAdviceGoalJson({
   'status': month == null ? 'OUT_OF_REACH' : 'PLANNED',
   'proposedMonth': proposedMonth,
   'proposedStatus': proposedMonth == null ? 'OUT_OF_REACH' : 'PLANNED',
+  'payment': payment,
 };
 
 Map<String, Object?> planAdviceJson({

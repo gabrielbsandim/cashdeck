@@ -30866,6 +30866,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -30970,6 +30974,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -31505,6 +31510,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -31609,6 +31618,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -32128,6 +32138,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -32232,6 +32246,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -32455,6 +32470,96 @@
                                   "LATE",
                                   "OUT_OF_REACH"
                                 ]
+                              },
+                              "payment": {
+                                "nullable": true,
+                                "type": "object",
+                                "properties": {
+                                  "installments": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "cash": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cents": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "cents",
+                                      "currency"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "cardToday": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cents": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "cents",
+                                      "currency"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "better": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CASH",
+                                      "CARD"
+                                    ]
+                                  },
+                                  "gain": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cents": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "cents",
+                                      "currency"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "breakEvenPercent": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "installments",
+                                  "cash",
+                                  "cardToday",
+                                  "better",
+                                  "gain",
+                                  "breakEvenPercent"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -32466,7 +32571,8 @@
                               "month",
                               "status",
                               "proposedMonth",
-                              "proposedStatus"
+                              "proposedStatus",
+                              "payment"
                             ],
                             "additionalProperties": false
                           }
@@ -32924,6 +33030,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -33028,6 +33138,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -33233,6 +33344,12 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 24
+                      },
+                      "cashDiscount": {
+                        "default": 0,
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 50
                       },
                       "goalId": {
                         "default": null,
@@ -33708,6 +33825,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -33812,6 +33933,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -34026,6 +34148,12 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 24
+                      },
+                      "cashDiscount": {
+                        "default": 0,
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 50
                       },
                       "goalId": {
                         "default": null,
@@ -34501,6 +34629,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -34605,6 +34737,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",
@@ -35108,6 +35241,10 @@
                                 "minimum": -9007199254740991,
                                 "maximum": 9007199254740991
                               },
+                              "cashDiscount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
                               "goalId": {
                                 "nullable": true,
                                 "type": "string"
@@ -35212,6 +35349,7 @@
                               "keepsValue",
                               "payment",
                               "installments",
+                              "cashDiscount",
                               "goalId",
                               "notBefore",
                               "by",

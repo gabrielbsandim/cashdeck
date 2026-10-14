@@ -69,6 +69,7 @@ PlanGoal planGoalFromJson(JsonMap json) {
         ? PlanPayment.cash
         : lookupValue(planPayments, payment),
     installments: readOptionalInt(json, 'installments') ?? 1,
+    cashDiscount: _optionalNumber(json, 'cashDiscount') ?? 0,
     goalId: readOptionalString(json, 'goalId'),
     notBefore: _optionalMonth(json, 'notBefore'),
     by: _optionalMonth(json, 'by'),
@@ -83,6 +84,22 @@ double _readNumber(JsonMap json, String key) {
   final value = json[key];
   if (value is num) return value.toDouble();
   throw FormatException('Expected a number at "$key"', json);
+}
+
+double? _optionalNumber(JsonMap json, String key) =>
+    json[key] == null ? null : _readNumber(json, key);
+
+PlanPaymentAdvice? _paymentAdvice(JsonMap json) {
+  final payment = readOptionalMap(json, 'payment');
+  if (payment == null) return null;
+  return PlanPaymentAdvice(
+    installments: readInt(payment, 'installments'),
+    cash: readMoney(payment, 'cash'),
+    cardToday: readMoney(payment, 'cardToday'),
+    better: readEnum(payment, 'better', planPayments),
+    gain: readMoney(payment, 'gain'),
+    breakEvenPercent: _readNumber(payment, 'breakEvenPercent'),
+  );
 }
 
 LifePlan lifePlanFromJson(JsonMap json) => LifePlan(
@@ -126,6 +143,7 @@ JsonMap planGoalToJson(PlanGoalDraft draft) {
       'keepsValue': draft.keepsValue,
       'payment': _keyOf(planPayments, draft.payment),
       'installments': draft.installments,
+      'cashDiscount': draft.cashDiscount,
       'goalId': draft.goalId,
       'notBefore': draft.notBefore?.iso,
       'by': draft.by?.iso,
@@ -162,6 +180,7 @@ PlanAdvice planAdviceFromJson(JsonMap json) => PlanAdvice(
         status: readEnum(goal, 'status', planStatuses),
         proposedMonth: _optionalMonth(goal, 'proposedMonth'),
         proposedStatus: readEnum(goal, 'proposedStatus', planStatuses),
+        payment: _paymentAdvice(goal),
       ),
   ],
 );

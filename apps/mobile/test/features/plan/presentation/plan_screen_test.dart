@@ -328,10 +328,15 @@ void main() {
     await _tap(tester, find.byKey(PlanScreen.addKey));
     await _type(tester, PlanGoalEditor.nameKey, 'Celular');
     await _type(tester, PlanGoalEditor.priceKey, '600000');
-    expect(find.byKey(PlanGoalEditor.installmentsKey), findsNothing);
+    expect(find.text(l10n.planInstallmentsOffered), findsOneWidget);
+    expect(find.byKey(PlanGoalEditor.discountKey), findsNothing);
     await _tap(tester, find.text(l10n.planPaymentCard));
     await _tap(tester, find.byKey(PlanGoalEditor.installmentsKey));
     await _tap(tester, find.text(l10n.planInstallmentsOption(12)).last);
+    await _type(tester, PlanGoalEditor.discountKey, '70');
+    await _tap(tester, find.byKey(PlanGoalEditor.saveKey));
+    expect(find.text(l10n.planCashDiscountInvalid), findsOneWidget);
+    await _type(tester, PlanGoalEditor.discountKey, '5,5');
     await _tap(tester, find.byKey(PlanGoalEditor.caixinhaKey));
     await _tap(tester, find.text('Viagem de férias').last);
     await _tap(tester, find.byKey(PlanGoalEditor.saveKey));

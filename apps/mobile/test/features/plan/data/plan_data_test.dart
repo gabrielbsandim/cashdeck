@@ -84,6 +84,7 @@ void main() {
         'keepsValue': true,
         'payment': 'CASH',
         'installments': 1,
+        'cashDiscount': 0,
         'goalId': null,
         'notBefore': '2027-01',
         'by': null,

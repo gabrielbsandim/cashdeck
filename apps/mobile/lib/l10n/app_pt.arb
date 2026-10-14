@@ -4263,6 +4263,52 @@
     }
   },
   "planInstallmentsInvalid": "Escolha de 1 a 24 parcelas.",
+  "planInstallmentsOffered": "Parcelas sem juros oferecidas",
+  "planCashDiscount": "Desconto à vista (%)",
+  "planCashDiscountHelp": "Com as parcelas, a análise da IA compara pagar à vista com parcelar.",
+  "planCashDiscountInvalid": "Use um desconto de 0 a 50%.",
+  "planAdviceCashWins": "À vista por {cash} economiza {gain}: as {count} parcelas valem {card} hoje",
+  "@planAdviceCashWins": {
+    "placeholders": {
+      "cash": {
+        "type": "String"
+      },
+      "gain": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "card": {
+        "type": "String"
+      }
+    }
+  },
+  "planAdviceCardWins": "Parcelar em {count}x economiza {gain}: as parcelas valem {card} hoje contra {cash} à vista",
+  "@planAdviceCardWins": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "gain": {
+        "type": "String"
+      },
+      "card": {
+        "type": "String"
+      },
+      "cash": {
+        "type": "String"
+      }
+    }
+  },
+  "planAdviceBreakEven": "À vista só compensa com desconto acima de {percent}%",
+  "@planAdviceBreakEven": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "planCardLine": "{count, plural, =1{No cartão, sai na fatura seguinte} other{No cartão em {count}x, a partir da fatura seguinte}}",
   "@planCardLine": {
     "placeholders": {

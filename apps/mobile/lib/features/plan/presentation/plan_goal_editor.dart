@@ -63,6 +63,7 @@ class PlanGoalEditor extends ConsumerStatefulWidget {
   static const priceKey = Key('plan-price');
   static const paymentKey = Key('plan-payment');
   static const installmentsKey = Key('plan-installments');
+  static const discountKey = Key('plan-discount');
   static const caixinhaKey = Key('plan-caixinha');
   static const assetKey = Key('plan-asset');
   static const tradeInKey = Key('plan-trade-in');
@@ -88,6 +89,7 @@ class PlanGoalEditor extends ConsumerStatefulWidget {
 
 class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
   final _name = TextEditingController();
+  final _discount = TextEditingController();
   late PlanGoalDraft _draft = const PlanGoalDraft(
     kind: PlanGoalKind.purchase,
     name: '',
@@ -103,12 +105,14 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     if (goal == null) return;
     _draft = PlanGoalDraft.of(goal);
     _name.text = goal.name;
+    if (goal.cashDiscount > 0) _discount.text = planRate(goal.cashDiscount);
     _advanced = _usesAdvanced(_draft);
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _discount.dispose();
     super.dispose();
   }
 
@@ -124,6 +128,7 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     keepsValue: _draft.keepsValue,
     payment: _draft.payment,
     installments: _draft.installments,
+    cashDiscount: _discountValue,
     goalId: _draft.goalId,
     notBefore: _draft.notBefore,
     by: _draft.by,
@@ -131,6 +136,13 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
     metric: _draft.metric,
     target: _draft.target,
   );
+
+  /// Empty means no discount; text that is not a number fails validation.
+  double get _discountValue {
+    final text = _discount.text.trim().replaceAll(',', '.');
+    if (text.isEmpty) return 0;
+    return double.tryParse(text) ?? -1;
+  }
 
   void _edit(PlanGoalDraft Function(PlanGoalDraft draft) change) =>
       setState(() => _draft = change(_current));
@@ -279,21 +291,33 @@ class _PlanGoalEditorState extends ConsumerState<PlanGoalEditor> {
         onChanged: (payment) =>
             _edit((draft) => _with(draft, payment: payment)),
       ),
-      if (_draft.payment == PlanPayment.card) ...[
+      const SizedBox(height: AppSpacing.md),
+      DropdownButtonFormField<int>(
+        key: PlanGoalEditor.installmentsKey,
+        initialValue: _draft.installments,
+        decoration: InputDecoration(
+          labelText: _draft.payment == PlanPayment.card
+              ? l10n.planInstallments
+              : l10n.planInstallmentsOffered,
+        ),
+        items: [
+          for (var count = 1; count <= maxPlanInstallments; count++)
+            DropdownMenuItem(
+              value: count,
+              child: Text(l10n.planInstallmentsOption(count)),
+            ),
+        ],
+        onChanged: (count) =>
+            _edit((draft) => _with(draft, installments: count)),
+      ),
+      if (_draft.installments > 1) ...[
         const SizedBox(height: AppSpacing.md),
-        DropdownButtonFormField<int>(
-          key: PlanGoalEditor.installmentsKey,
-          initialValue: _draft.installments,
-          decoration: InputDecoration(labelText: l10n.planInstallments),
-          items: [
-            for (var count = 1; count <= maxPlanInstallments; count++)
-              DropdownMenuItem(
-                value: count,
-                child: Text(l10n.planInstallmentsOption(count)),
-              ),
-          ],
-          onChanged: (count) =>
-              _edit((draft) => _with(draft, installments: count)),
+        CdTextField(
+          key: PlanGoalEditor.discountKey,
+          controller: _discount,
+          label: l10n.planCashDiscount,
+          helperText: l10n.planCashDiscountHelp,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ],
       ..._caixinhaField(l10n),
@@ -576,6 +600,7 @@ PlanGoalDraft _with(
   keepsValue: keepsValue ?? draft.keepsValue,
   payment: payment ?? draft.payment,
   installments: installments ?? draft.installments,
+  cashDiscount: draft.cashDiscount,
   goalId: goalId == null ? draft.goalId : goalId(),
   notBefore: notBefore == null ? draft.notBefore : notBefore(),
   by: by == null ? draft.by : by(),

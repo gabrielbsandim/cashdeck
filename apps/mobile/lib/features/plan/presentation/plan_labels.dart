@@ -11,6 +11,31 @@ import 'package:material_symbols_icons/symbols.dart';
 String planMonth(AppLocalizations l10n, YearMonth month) =>
     monthTitle(l10n, month);
 
+/// Which way of paying wins, and by how much in today's money.
+String planPaymentLine(
+  AppLocalizations l10n,
+  PlanPaymentAdvice payment, {
+  bool hide = false,
+}) {
+  final cash = MoneyFormat.whole(payment.cash, hide: hide);
+  final card = MoneyFormat.whole(payment.cardToday, hide: hide);
+  final gain = MoneyFormat.whole(payment.gain, hide: hide);
+  return switch (payment.better) {
+    PlanPayment.cash => l10n.planAdviceCashWins(
+      cash,
+      gain,
+      payment.installments,
+      card,
+    ),
+    PlanPayment.card => l10n.planAdviceCardWins(
+      payment.installments,
+      gain,
+      card,
+      cash,
+    ),
+  };
+}
+
 /// When the goal happens, in one line.
 String planWhenLine(AppLocalizations l10n, PlanGoal goal, {bool hide = false}) {
   if (goal.kind == PlanGoalKind.yearly) {
@@ -85,6 +110,7 @@ String planProblemMessage(AppLocalizations l10n, PlanGoalProblem problem) =>
       PlanGoalProblem.name => l10n.planNameMissing,
       PlanGoalProblem.amount => l10n.planAmountMissing,
       PlanGoalProblem.installments => l10n.planInstallmentsInvalid,
+      PlanGoalProblem.discount => l10n.planCashDiscountInvalid,
       PlanGoalProblem.window => l10n.planWindowInvalid,
     };
 

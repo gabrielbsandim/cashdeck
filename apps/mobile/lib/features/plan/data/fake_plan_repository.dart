@@ -54,6 +54,7 @@ final class FakePlanRepository implements PlanRepository {
         price: Money(600_000),
         payment: PlanPayment.card,
         installments: 10,
+        cashDiscount: 5,
         goalId: 'goal-laptop',
       ),
     ),
@@ -90,6 +91,7 @@ final class FakePlanRepository implements PlanRepository {
       keepsValue: draft.keepsValue,
       payment: draft.payment,
       installments: draft.installments,
+      cashDiscount: draft.cashDiscount,
       goalId: draft.goalId,
       notBefore: draft.notBefore,
       by: draft.by,
@@ -220,9 +222,28 @@ final class FakePlanRepository implements PlanRepository {
               status: now[id]!.status,
               proposedMonth: _goal(id, draft, index + 1, asOf).month,
               proposedStatus: PlanStatus.planned,
+              payment: _payment(draft),
             ),
         ],
       ),
+    );
+  }
+
+  /// A rough stand-in: the installments lose 4% of their worth meanwhile.
+  PlanPaymentAdvice? _payment(PlanGoalDraft draft) {
+    if (draft.kind != PlanGoalKind.purchase || draft.installments < 2) {
+      return null;
+    }
+    final price = draft.price.cents;
+    final cash = (price * (100 - draft.cashDiscount) / 100).round();
+    final card = (price * 0.96).round();
+    return PlanPaymentAdvice(
+      installments: draft.installments,
+      cash: Money(cash),
+      cardToday: Money(card),
+      better: cash <= card ? PlanPayment.cash : PlanPayment.card,
+      gain: Money((card - cash).abs()),
+      breakEvenPercent: 4,
     );
   }
 
