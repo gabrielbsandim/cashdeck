@@ -70,7 +70,7 @@ export class GeminiProvider implements LlmProvider {
         'missing_api_key',
       )
     }
-    this.modelId = config.modelId || 'gemini-3.1-flash-lite'
+    this.modelId = config.modelId || 'gemini-3.5-flash-lite'
     this.fetchImpl = config.fetchImpl ?? fetch
   }
 

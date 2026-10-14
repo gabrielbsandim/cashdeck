@@ -41,9 +41,9 @@ describe('GeminiProvider: config', () => {
     expect(() => new GeminiProvider({ apiKey: '' })).toThrow(LlmProviderError)
   })
 
-  it('uses gemini-3.1-flash-lite by default', () => {
+  it('uses gemini-3.5-flash-lite by default', () => {
     const provider = new GeminiProvider({ apiKey: 'k' })
-    expect(provider.modelId).toBe('gemini-3.1-flash-lite')
+    expect(provider.modelId).toBe('gemini-3.5-flash-lite')
   })
 
   it('respects a custom modelId', () => {
