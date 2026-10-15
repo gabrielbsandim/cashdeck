@@ -164,6 +164,20 @@ export class InMemoryPaymentRepository implements PaymentRepository {
       .map(row => row.attempt)
   }
 
+  async findAttemptByExternalId(
+    tenantId: string,
+    rail: RailId,
+    externalId: string,
+  ): Promise<PaymentAttempt | null> {
+    const rows = this.attempts.filter(
+      row =>
+        row.tenantId === tenantId &&
+        row.attempt.rail === rail &&
+        row.attempt.externalId === externalId,
+    )
+    return rows.at(-1)?.attempt ?? null
+  }
+
   async committedCents(
     tenantId: string,
     entityId: string,

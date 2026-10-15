@@ -1,4 +1,4 @@
-import { after } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import {
   type WebhookDelivery,
   type WebhookProvider,
@@ -63,6 +63,29 @@ export function webhookRoute(provider: WebhookProvider) {
       return ok({
         received: receipt.events.length,
         duplicates: receipt.duplicates,
+      })
+    } catch (error) {
+      return handleError(error, scope)
+    }
+  }
+}
+
+// The provider holds the money until this answers, and cancels on any body
+// without a status; errors keep their 4xx or 5xx so it counts a failure.
+export function withdrawalRoute(provider: WebhookProvider) {
+  const scope = `withdrawal:${provider}`
+  return async (request: Request): Promise<Response> => {
+    try {
+      const verdict = await getContainer().validateWithdrawal(
+        resolveTenant(request),
+        await deliveryOf(request, provider),
+      )
+      if (verdict.approved) {
+        return NextResponse.json({ status: 'APPROVED' })
+      }
+      return NextResponse.json({
+        status: 'REFUSED',
+        refuseReason: verdict.reason,
       })
     } catch (error) {
       return handleError(error, scope)

@@ -284,6 +284,18 @@ export class PrismaPaymentRepository implements PaymentRepository {
     return rows.map(attemptFromRow)
   }
 
+  async findAttemptByExternalId(
+    tenantId: string,
+    rail: RailId,
+    externalId: string,
+  ): Promise<PaymentAttempt | null> {
+    const row = await this.db.paymentAttempt.findFirst({
+      where: { tenantId, rail, externalId },
+      orderBy: [{ at: 'desc' }, { stepIndex: 'desc' }],
+    })
+    return row ? attemptFromRow(row) : null
+  }
+
   async claimAttempt(
     tenantId: string,
     attempt: PaymentAttempt,

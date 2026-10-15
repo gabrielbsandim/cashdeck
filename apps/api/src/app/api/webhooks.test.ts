@@ -1,9 +1,10 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { signInTestDevice, STATIC_TOKEN } from '@/app/api/sign-in.test-helpers'
-import { Money } from '@cashdeck/domain'
+import { createBill, Money } from '@cashdeck/domain'
 import { getContainer, resetContainer } from '@/server/container'
 import { POST as asaas } from '@/app/api/webhooks/asaas/route'
+import { POST as withdrawal } from '@/app/api/webhooks/asaas/withdrawal/route'
 import { POST as inter } from '@/app/api/webhooks/inter/route'
 import { POST as pluggy } from '@/app/api/webhooks/pluggy/route'
 import { POST as notaas } from '@/app/api/webhooks/notaas/route'
@@ -108,6 +109,56 @@ describe('webhook routes', () => {
       (await json(await asaas(hook('asaas', body, auth)))).body.data,
     ).toEqual({ received: 0, duplicates: 1 })
     expect((await asaas(hook('asaas', '{', auth))).status).toBe(400)
+  })
+
+  it('approves only a withdrawal the ladder submitted', async () => {
+    const deps = getContainer().deps
+    await deps.bills.save(
+      createBill({
+        id: 'wd-bill',
+        tenantId: 'local',
+        entityId: 'personal',
+        kind: 'PIX_KEY',
+        source: 'MANUAL',
+        payee: 'Supplier',
+        amount: Money.of(100),
+        dueDate: '2026-10-20',
+        code: 'supplier@example.com',
+        createdAt: new Date('2026-10-15T12:00:00Z'),
+      }),
+    )
+    await deps.payments.addAttempt('local', {
+      id: 'wd-att',
+      billId: 'wd-bill',
+      stepIndex: 0,
+      rail: 'ASAAS',
+      mode: 'AUTOMATIC',
+      method: 'PIX',
+      amount: Money.of(100),
+      outcome: 'SUBMITTED',
+      reason: null,
+      externalId: 'transfer:tr-9',
+      idempotencyKey: 'wd-bill:0:PIX',
+      at: new Date('2026-10-15T12:00:00Z'),
+    })
+    const auth = { 'asaas-access-token': 'asaas-token' }
+    const ask = (value: number) =>
+      withdrawal(
+        hook(
+          'asaas/withdrawal',
+          { type: 'TRANSFER', transfer: { id: 'tr-9', value } },
+          auth,
+        ),
+      )
+    expect(await json(await ask(1))).toEqual({
+      status: 200,
+      body: { status: 'APPROVED' },
+    })
+    expect(await json(await ask(2))).toEqual({
+      status: 200,
+      body: { status: 'REFUSED', refuseReason: 'AMOUNT_MISMATCH' },
+    })
+    expect((await withdrawal(hook('asaas/withdrawal', {}))).status).toBe(401)
   })
 
   it('verifies each provider and runs the work', async () => {

@@ -235,7 +235,7 @@ describe('route guards', () => {
         return !source.includes('runCronJob(')
       }
       if (path.startsWith('webhooks/')) {
-        return !source.includes('webhookRoute(')
+        return !/\b(webhookRoute|withdrawalRoute)\(/.test(source)
       }
       const exception = UNGUARDED[path]
       const guard = exception ?? /\broute(<[^>]*>)?\(/

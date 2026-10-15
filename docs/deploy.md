@@ -111,6 +111,12 @@ the crons do the same work on their schedule. For each provider you use:
    - **Asaas** (each account, under Integrations, Webhooks): URL
      `https://<api domain>/api/webhooks/asaas`, authentication token = the
      secret (`ASAAS_WEBHOOK_TOKEN`), events for transfers and bill payments.
+   - **Asaas withdrawal validation** (each account, under Integrations,
+     Security mechanisms): URL
+     `https://<api domain>/api/webhooks/asaas/withdrawal`, the same
+     authentication token, and an email for errors. Leave web interface
+     validation off. Without it every API payment waits for authorization in
+     the Asaas app.
    - **Inter Empresas** (banking webhook API, once per type):
      `https://<api domain>/api/webhooks/inter?token=<INTER_WEBHOOK_TOKEN>`.
    - **Pluggy** (dashboard webhook form, or `POST /webhooks`): URL

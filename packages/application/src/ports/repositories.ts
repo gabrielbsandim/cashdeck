@@ -58,6 +58,12 @@ export interface PaymentRepository {
   // already holds it, so the caller must not call the rail.
   claimAttempt(tenantId: string, attempt: PaymentAttempt): Promise<boolean>
   listAttempts(tenantId: string, billId: string): Promise<PaymentAttempt[]>
+  // The latest attempt the rail answered with this id, or null.
+  findAttemptByExternalId(
+    tenantId: string,
+    rail: RailId,
+    externalId: string,
+  ): Promise<PaymentAttempt | null>
   // Counted as `committedCentsOn` does; without a rail, across every rail.
   committedCents(
     tenantId: string,

@@ -344,6 +344,24 @@ describe('PrismaPaymentRepository', () => {
     expect(await repos.payments.listAttempts(TENANT, 'b1')).toEqual([attempt])
   })
 
+  it('finds the latest attempt a rail answered with an id', async () => {
+    const { db, repos } = mockClient()
+    db.paymentAttempt.findFirst.mockResolvedValueOnce(
+      attemptToRow(TENANT, attempt),
+    )
+    db.paymentAttempt.findFirst.mockResolvedValueOnce(null)
+    expect(
+      await repos.payments.findAttemptByExternalId(TENANT, 'ASAAS', 'tr-1'),
+    ).toEqual(attempt)
+    expect(db.paymentAttempt.findFirst).toHaveBeenCalledWith({
+      where: { tenantId: TENANT, rail: 'ASAAS', externalId: 'tr-1' },
+      orderBy: [{ at: 'desc' }, { stepIndex: 'desc' }],
+    })
+    expect(
+      await repos.payments.findAttemptByExternalId(TENANT, 'ASAAS', 'x'),
+    ).toBeNull()
+  })
+
   it('sums committed cents per entity inside the Sao Paulo day', async () => {
     const { db, repos } = mockClient()
     db.paymentAttempt.findMany.mockResolvedValueOnce([

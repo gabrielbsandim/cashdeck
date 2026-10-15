@@ -158,11 +158,15 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
   https://docs.asaas.com/reference/transfer-to-another-institution-account-or-pix-key,
   https://docs.asaas.com/reference/retrieve-a-single-transfer,
   https://docs.asaas.com/docs/bill.
+- Confirmed live in production with a Pix key transfer: `/v3/finance/balance`
+  as the check, `externalReference` on `/v3/transfers` and its filter on
+  `GET /v3/transfers`, and the statuses `PENDING` (while waiting for
+  authorization) and `DONE` with `endToEndIdentifier`. The transfer fee was 0.
 - **Unconfirmed:** the response fields of `GET /v3/bill/{id}` (`status`,
-  `paymentDate`), the `GET /v3/pix/transactions/{id}` path, and
-  `/v3/finance/balance` as the check. Asaas documents no idempotency header for
-  QR and bill payments, nor `externalReference` on `/pix/qrCodes/pay` and
-  `/bill`, nor the `externalReference` filter on the three list endpoints. If
+  `paymentDate`) and the `GET /v3/pix/transactions/{id}` path. Asaas documents
+  no idempotency header for QR and bill payments, nor `externalReference` on
+  `/pix/qrCodes/pay` and `/bill`, nor the `externalReference` filter on the
+  QR and bill list endpoints. If
   Asaas ignores them, a lost answer is never resolved by the rail: the ladder
   still never resends it (it writes an `IN_FLIGHT` attempt before the call) and
   the bill falls to assisted with `IN_FLIGHT_UNRESOLVED`.
@@ -352,10 +356,43 @@ selects which secret to check against, so it grants nothing by itself.
   `GET /invoices/{id}/status` and stores the PDF and XML once issued. The event
   id is `X-Notaas-Delivery`.
 
+### Asaas withdrawal validation
+
+`POST /api/webhooks/asaas/withdrawal` answers Asaas's withdrawal validation
+mechanism, which holds every API transfer, bill payment and QR code payment
+until the endpoint approves it. It replaces the authorization by SMS or app
+token that an API transfer otherwise waits for. The proof is the same
+`ASAAS_WEBHOOK_TOKEN` in `asaas-access-token`, with `?entity=` as above.
+
+- The body is `{ type, <object> }`: `TRANSFER` with `transfer`, `BILL` with
+  `bill`, `PIX_QR_CODE` with `pixQrCode`. It carries no `externalReference`,
+  so the object `id` is matched to the `ASAAS` attempt stored as
+  `transfer:<id>`, `bill:<id>` or `pix:<id>`.
+- Approved (`{"status":"APPROVED"}`) only when that attempt's latest row is
+  `SUBMITTED`, `value` equals its amount, its bill exists and the entity's kill
+  switch is off. Anything else answers `{"status":"REFUSED","refuseReason":
+  <code>}` with `UNKNOWN_OPERATION`, `NOT_PENDING`, `AMOUNT_MISMATCH` or
+  `KILL_SWITCH`, and Asaas cancels the operation. Other types (refunds,
+  splits, phone recharges) are always refused.
+- Every decision is audited as `payment.withdrawal_check`.
+- A lost answer leaves the attempt `IN_FLIGHT` with no id, so its validation
+  is refused and the operation cancelled; reconciliation then reads it as
+  failed. A wrong refusal costs a payment by hand; a wrong approval could pay
+  twice.
+- Asaas calls about five seconds after the request, and cancels after three
+  failed calls. The ladder writes the attempt with its id as soon as the rail
+  answers, well inside that window.
+- Docs: https://docs.asaas.com/docs/mecanismo-para-validacao-de-saque-via-webhooks.
+
 ### Unconfirmed
 
 - Asaas: that a Pix QR code payment is reported through transfer events, and
   the name of the bill payment object (`bill`).
+- Asaas withdrawal validation: that `pixQrCode.id` is the id
+  `/pix/qrCodes/pay` answered, and that `bill.id` is the id `/bill` answered.
+  One Asaas page says the mechanism is enabled by support and that, once on,
+  transfers must be made only through the API, so a Pix sent by hand from the
+  Asaas app may be held and refused.
 - Inter: the payload fields. Registration was confirmed live:
   `PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
   `boleto-pagamento` answers 204 under the `webhook-banking.write` scope, and

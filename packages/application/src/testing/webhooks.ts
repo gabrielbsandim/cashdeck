@@ -7,6 +7,7 @@ import {
   type WebhookReader,
   type WebhookReceived,
   type WebhookSettlement,
+  type WithdrawalCheck,
 } from '@/ports/webhooks'
 
 export type StoredWebhookEvent = WebhookReceived & {
@@ -87,21 +88,39 @@ export class InMemoryWebhookEventStore implements WebhookEventStore {
 }
 
 // Accepts deliveries whose `x-test-token` header equals the token and returns
-// the events it was given.
+// the events, or the withdrawal check, it was given.
 export class FakeWebhookReader implements WebhookReader {
   constructor(
     readonly provider: WebhookProvider,
     private readonly events: WebhookEvent[] = [],
     private readonly token = 'test-token',
+    private readonly withdrawal: WithdrawalCheck = {
+      rail: 'ASAAS',
+      operation: 'TRANSFER',
+      externalId: null,
+      amountCents: null,
+    },
   ) {}
 
   async read(
     _tenantId: string,
     delivery: WebhookDelivery,
   ): Promise<WebhookEvent[]> {
+    this.authenticate(delivery)
+    return this.events
+  }
+
+  async readWithdrawal(
+    _tenantId: string,
+    delivery: WebhookDelivery,
+  ): Promise<WithdrawalCheck> {
+    this.authenticate(delivery)
+    return this.withdrawal
+  }
+
+  private authenticate(delivery: WebhookDelivery) {
     if (delivery.headers['x-test-token'] !== this.token) {
       throw new UnauthorizedError()
     }
-    return this.events
   }
 }

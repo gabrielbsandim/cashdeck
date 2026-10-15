@@ -4,9 +4,11 @@ import {
   type WebhookEvent,
   type WebhookProvider,
   type WebhookReader,
+  type WithdrawalCheck,
 } from '@cashdeck/application'
 import { type RailId } from '@cashdeck/domain'
 import { type Credentials } from '@/credentials/credential-resolver'
+import { toCents } from '@/http/transport'
 import { verifyNotaasSignature } from '@/invoices/notaas-issuer'
 import {
   bodyId,
@@ -36,19 +38,21 @@ function payment(
 // QR code payment is reported as a transfer.
 const ASAAS_RESOURCES = ['transfer', 'bill', 'pixTransaction'] as const
 
+// Withdrawal validation: the body key of each operation type and the prefix
+// AsaasRail gives the id it stores. Other types are never sent by the rail.
+const ASAAS_WITHDRAWALS = new Map([
+  ['TRANSFER', { key: 'transfer', prefix: 'transfer' }],
+  ['BILL', { key: 'bill', prefix: 'bill' }],
+  ['PIX_QR_CODE', { key: 'pixQrCode', prefix: 'pix' }],
+])
+
 export class AsaasWebhookReader implements WebhookReader {
   readonly provider: WebhookProvider = 'asaas'
 
   constructor(private readonly deps: ReaderDeps) {}
 
   async read(tenantId: string, delivery: WebhookDelivery) {
-    const secret = await webhookSecret(
-      this.deps.credentials,
-      'ASAAS_WEBHOOK_TOKEN',
-      tenantId,
-      delivery,
-    )
-    requireSame(delivery.headers['asaas-access-token'], secret)
+    await this.authenticate(tenantId, delivery)
     const body = parseObject(delivery.rawBody)
     const reference = ASAAS_RESOURCES.map(key =>
       text(field(body[key], 'id')),
@@ -61,6 +65,35 @@ export class AsaasWebhookReader implements WebhookReader {
         reference ?? null,
       ),
     ]
+  }
+
+  async readWithdrawal(
+    tenantId: string,
+    delivery: WebhookDelivery,
+  ): Promise<WithdrawalCheck> {
+    await this.authenticate(tenantId, delivery)
+    const body = parseObject(delivery.rawBody)
+    const operation = text(body.type) ?? 'UNKNOWN'
+    const known = ASAAS_WITHDRAWALS.get(operation)
+    const subject = known ? body[known.key] : undefined
+    const id = text(field(subject, 'id'))
+    const value = field(subject, 'value')
+    return {
+      rail: 'ASAAS',
+      operation,
+      externalId: known && id ? `${known.prefix}:${id}` : null,
+      amountCents: typeof value === 'number' ? toCents(value) : null,
+    }
+  }
+
+  private async authenticate(tenantId: string, delivery: WebhookDelivery) {
+    const secret = await webhookSecret(
+      this.deps.credentials,
+      'ASAAS_WEBHOOK_TOKEN',
+      tenantId,
+      delivery,
+    )
+    requireSame(delivery.headers['asaas-access-token'], secret)
   }
 }
 

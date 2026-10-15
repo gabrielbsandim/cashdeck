@@ -53,6 +53,50 @@ function delivery(
 const refused = (promise: Promise<unknown>) =>
   expect(promise).rejects.toThrow(UnauthorizedError)
 
+describe('Asaas withdrawal validation', () => {
+  const auth = { 'asaas-access-token': 'asaas-token' }
+  const asaas = reader('asaas')
+  const read = (body: unknown, headers = auth) =>
+    asaas.readWithdrawal!(TENANT, delivery('asaas', body, headers))
+
+  it('names each operation in the format AsaasRail stores', async () => {
+    expect(
+      await read({ type: 'TRANSFER', transfer: { id: 'tr-1', value: 1.1 } }),
+    ).toEqual({
+      rail: 'ASAAS',
+      operation: 'TRANSFER',
+      externalId: 'transfer:tr-1',
+      amountCents: 110,
+    })
+    expect(
+      await read({ type: 'BILL', bill: { id: 'b-1', value: 250.35 } }),
+    ).toMatchObject({ externalId: 'bill:b-1', amountCents: 25035 })
+    expect(
+      await read({ type: 'PIX_QR_CODE', pixQrCode: { id: 'q-1', value: 9 } }),
+    ).toMatchObject({ externalId: 'pix:q-1', amountCents: 900 })
+  })
+
+  it('leaves other operations and missing fields unidentified', async () => {
+    expect(
+      await read({ type: 'PIX_REFUND', pixRefund: { id: 'r-1', value: 1 } }),
+    ).toEqual({
+      rail: 'ASAAS',
+      operation: 'PIX_REFUND',
+      externalId: null,
+      amountCents: null,
+    })
+    expect(await read({ type: 'TRANSFER', transfer: {} })).toMatchObject({
+      externalId: null,
+      amountCents: null,
+    })
+    expect(await read([])).toMatchObject({ operation: 'UNKNOWN' })
+  })
+
+  it('refuses a delivery without the token', async () => {
+    await refused(read({ type: 'TRANSFER' }, { 'asaas-access-token': 'x' }))
+  })
+})
+
 describe('Asaas webhooks', () => {
   const auth = { 'asaas-access-token': 'asaas-token' }
 

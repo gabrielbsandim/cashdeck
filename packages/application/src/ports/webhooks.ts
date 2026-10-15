@@ -25,7 +25,33 @@ export interface WebhookReader {
   readonly provider: WebhookProvider
   // Throws UnauthorizedError when the delivery is not from the provider.
   read(tenantId: string, delivery: WebhookDelivery): Promise<WebhookEvent[]>
+  // Only providers that ask before sending each withdrawal implement it.
+  readWithdrawal?(
+    tenantId: string,
+    delivery: WebhookDelivery,
+  ): Promise<WithdrawalCheck>
 }
+
+// An operation the provider holds until we approve it. `externalId` is in the
+// rail's own format, the one its payment attempts store.
+export type WithdrawalCheck = {
+  rail: RailId
+  operation: string
+  externalId: string | null
+  amountCents: number | null
+}
+
+export const WITHDRAWAL_REFUSALS = [
+  'UNKNOWN_OPERATION',
+  'NOT_PENDING',
+  'AMOUNT_MISMATCH',
+  'KILL_SWITCH',
+] as const
+export type WithdrawalRefusal = (typeof WITHDRAWAL_REFUSALS)[number]
+
+export type WithdrawalVerdict =
+  | { approved: true }
+  | { approved: false; reason: WithdrawalRefusal }
 
 // What an event names: the item, payment reference or invoice it is about.
 export type WebhookReceived = {
