@@ -85,6 +85,16 @@ describe('personal summary', () => {
       status: 'UPDATED',
       lastSyncAt: null,
     })
+    await deps.connections.save({
+      id: 'c3',
+      tenantId: TENANT,
+      entityId: 'pf',
+      institutionId: 'asaas',
+      provider: 'asaas',
+      itemId: 'asaas:pf',
+      status: 'UPDATED',
+      lastSyncAt: new Date(NOW.getTime() + 60_000),
+    })
     await deps.transactions.save(
       transaction({
         id: 't1',

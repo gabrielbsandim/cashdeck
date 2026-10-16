@@ -24,6 +24,7 @@ import {
 } from '@/dtos/home'
 import { type Deps } from '@/use-cases/deps'
 import { payrollWindow } from '@/use-cases/payroll'
+import { isRailAccountItem } from '@/use-cases/rail-accounts'
 import { issQuote } from '@/use-cases/revenue'
 import {
   addMonths,
@@ -73,6 +74,8 @@ async function syncOf(
   const connections = await deps.connections.list(tenantId)
   const times = connections
     .filter(connection => connection.entityId === scope.entity.id)
+    // The rail is read live, so its time would hide a stale bank feed.
+    .filter(connection => !isRailAccountItem(connection.itemId))
     .map(connection => connection.lastSyncAt?.getTime() ?? 0)
     .filter(time => time > 0)
   return {

@@ -114,7 +114,33 @@ const RESOURCES_BY_METHOD: Record<PaymentMethod, readonly string[]> = {
   BOLETO: ['bill'],
 }
 
-type Config = { apiKey: string; baseUrl: string }
+export type AsaasConfig = { apiKey: string; baseUrl: string }
+
+export async function asaasConfig(
+  credentials: Credentials,
+  scope: CredentialScope,
+): Promise<AsaasConfig> {
+  const { ASAAS_API_KEY } = await requireCredentials(
+    credentials,
+    PROVIDER,
+    ['ASAAS_API_KEY'],
+    scope,
+  )
+  const environment = await optionalCredential(
+    credentials,
+    'ASAAS_ENVIRONMENT',
+    'production',
+    scope,
+  )
+  const baseUrl =
+    environment === 'sandbox' ? ASAAS_URLS.sandbox : ASAAS_URLS.production
+  return { apiKey: ASAAS_API_KEY, baseUrl }
+}
+
+export const asaasHeaders = (config: AsaasConfig) => ({
+  access_token: config.apiKey,
+  'user-agent': 'cashdeck',
+})
 
 export type AsaasRailDeps = { credentials: Credentials; transport: Transport }
 
@@ -221,7 +247,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
   }
 
   private async payPixCode(
-    config: Config,
+    config: AsaasConfig,
     bill: Bill,
     payload: string,
     idempotencyKey: string,
@@ -264,7 +290,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
   }
 
   private async transfer(
-    config: Config,
+    config: AsaasConfig,
     bill: Bill,
     idempotencyKey: string,
   ): Promise<RailResult> {
@@ -289,7 +315,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
   }
 
   private async payBoleto(
-    config: Config,
+    config: AsaasConfig,
     bill: Bill,
     idempotencyKey: string,
   ): Promise<RailResult> {
@@ -325,35 +351,18 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
     }
   }
 
-  private async config(scope: CredentialScope): Promise<Config> {
-    const { ASAAS_API_KEY } = await requireCredentials(
-      this.deps.credentials,
-      PROVIDER,
-      ['ASAAS_API_KEY'],
-      scope,
-    )
-    const environment = await optionalCredential(
-      this.deps.credentials,
-      'ASAAS_ENVIRONMENT',
-      'production',
-      scope,
-    )
-    const baseUrl =
-      environment === 'sandbox' ? ASAAS_URLS.sandbox : ASAAS_URLS.production
-    return { apiKey: ASAAS_API_KEY, baseUrl }
+  private config(scope: CredentialScope): Promise<AsaasConfig> {
+    return asaasConfig(this.deps.credentials, scope)
   }
 
   // Asaas documents no idempotency header; it is sent anyway so a retry is
   // deduplicated if the API honours it, and the body carries the same key.
   private async call<T>(
-    config: Config,
+    config: AsaasConfig,
     call: Call,
     idempotencyKey?: string,
   ): Promise<Answer<T>> {
-    const headers: Record<string, string> = {
-      access_token: config.apiKey,
-      'user-agent': 'cashdeck',
-    }
+    const headers: Record<string, string> = asaasHeaders(config)
     const keyed = idempotencyKey
       ? { ...headers, 'idempotency-key': idempotencyKey }
       : headers

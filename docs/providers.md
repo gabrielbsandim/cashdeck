@@ -162,6 +162,9 @@ several (`pix:`, `transfer:`, `bill:`, `pagamento:`, `darf:`).
   as the check, `externalReference` on `/v3/transfers` and its filter on
   `GET /v3/transfers`, and the statuses `PENDING` (while waiting for
   authorization) and `DONE` with `endToEndIdentifier`. The transfer fee was 0.
+  A transfer the withdrawal validation refused ends `FAILED` with
+  `failReason` "Autorização externa foi recusada.", read by the rail as
+  failed.
 - **Unconfirmed:** the response fields of `GET /v3/bill/{id}` (`status`,
   `paymentDate`) and the `GET /v3/pix/transactions/{id}` path. Asaas documents
   no idempotency header for QR and bill payments, nor `externalReference` on
@@ -181,6 +184,26 @@ kept for the check before each personal Asaas payment: `ManualTopUpFunder`
 reads the Asaas balance (`AsaasRail.balanceCents`) and, when it falls short,
 fails the round with a reason that asks for a top-up, so the bills fall to
 assisted with `RESERVE_FUNDING_FAILED`. `LOW_BALANCE` warns the day before.
+
+### Asaas account (`AsaasStatementProvider`, PF)
+
+The Asaas account shows up as a connected checking account, read like a bank
+feed. `RailAccountRouter` sends every item id `asaas:<entityId>` to
+`AsaasStatementProvider` and the rest to Pluggy, so the account syncs with the
+Open Finance code: balance, statement, bill settlement and categorization.
+
+- An entity gets the account once its routes go through Asaas and the rail is
+  enabled. Today that is PF only, since PJ pays through Inter and C6. Without
+  Asaas credentials the entity is skipped quietly. The account starts as the
+  reserve unless the entity already has one.
+- `listAccounts`: `GET /finance/balance`, plus `GET /myAccount/accountNumber`
+  for the last four digits; a failure there leaves the suffix empty.
+- `listTransactions`: `GET /financialTransactions` with `startDate`,
+  `finishDate`, `offset` and `limit=100`, paged while `hasMore`. `value` comes
+  signed; ids are prefixed `asaas:`.
+- The `preview-sync` cron syncs it five times a day and opens it on the first
+  run; the daily Open Finance sync reads it again. The home sync time leaves it
+  out, so a stale bank feed still shows.
 
 ### Inter Empresas (`InterEmpresasRail`, PJ)
 
@@ -372,7 +395,7 @@ token that an API transfer otherwise waits for. The proof is the same
   `SUBMITTED`, `value` equals its amount, its bill exists and the entity's kill
   switch is off. Anything else answers `{"status":"REFUSED","refuseReason":
   <code>}` with `UNKNOWN_OPERATION`, `NOT_PENDING`, `AMOUNT_MISMATCH` or
-  `KILL_SWITCH`, and Asaas cancels the operation. Other types (refunds,
+  `KILL_SWITCH`, and Asaas fails the operation. Other types (refunds,
   splits, phone recharges) are always refused.
 - Every decision is audited as `payment.withdrawal_check`.
 - A lost answer leaves the attempt `IN_FLIGHT` with no id, so its validation
@@ -382,6 +405,14 @@ token that an API transfer otherwise waits for. The proof is the same
 - Asaas calls about five seconds after the request, and cancels after three
   failed calls. The ladder writes the attempt with its id as soon as the rail
   answers, well inside that window.
+- Set up from the panel (Integrations, Security mechanisms) with no call to
+  support. With "validate withdrawals made in the interface" off, only API
+  operations are sent here; the Asaas site and app keep the SMS or app token.
+- Confirmed live in production with Pix key transfers: a payment the ladder
+  sent from a chat Pix was approved and settled `DONE` with no authorization
+  in the app, so `transfer.id` is the id `/v3/transfers` answered; a transfer
+  made outside the ladder, with no attempt to match, was refused within
+  seconds.
 - Docs: https://docs.asaas.com/docs/mecanismo-para-validacao-de-saque-via-webhooks.
 
 ### Unconfirmed
@@ -390,9 +421,6 @@ token that an API transfer otherwise waits for. The proof is the same
   the name of the bill payment object (`bill`).
 - Asaas withdrawal validation: that `pixQrCode.id` is the id
   `/pix/qrCodes/pay` answered, and that `bill.id` is the id `/bill` answered.
-  One Asaas page says the mechanism is enabled by support and that, once on,
-  transfers must be made only through the API, so a Pix sent by hand from the
-  Asaas app may be held and refused.
 - Inter: the payload fields. Registration was confirmed live:
   `PUT /banking/v2/webhooks/{tipoWebhook}` for `pix-pagamento` and
   `boleto-pagamento` answers 204 under the `webhook-banking.write` scope, and

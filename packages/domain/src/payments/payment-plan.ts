@@ -254,3 +254,10 @@ export function routePayment(
   }
   return [...steps, assisted]
 }
+
+// Whether any bill of the entity can be paid through the rail.
+export function routesThrough(entityKind: EntityKind, rail: RailId): boolean {
+  return Object.values(DEFAULT_ROUTES[entityKind]).some(routes =>
+    routes.some(route => route.rail === rail),
+  )
+}

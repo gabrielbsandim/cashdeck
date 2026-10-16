@@ -29,6 +29,10 @@ import { NotaasIssuer } from '@/invoices/notaas-issuer'
 import { FipeVehiclePrices } from '@/market/fipe-vehicle-prices'
 import { PublicMarketData } from '@/market/public-market-data'
 import { type DeviceTokens, FcmNotifier } from '@/notify/fcm-notifier'
+import {
+  AsaasStatementProvider,
+  RailAccountRouter,
+} from '@/openfinance/asaas-statement-provider'
 import { PierreProvider } from '@/openfinance/pierre-provider'
 import { OpenFinanceLogins } from '@/openfinance/open-finance-logins'
 import { PluggyProvider } from '@/openfinance/pluggy-provider'
@@ -107,10 +111,13 @@ export function createProviders(input: CreateProvidersInput): Providers {
       rails.map(rail => [rail.id, rail]),
     ),
     reserveFunder: new ManualTopUpFunder({ balance: asaas }),
-    openFinance: new OpenFinanceLogins(
-      PLUGGY_LOGINS.map(
-        login => new PluggyProvider({ credentials, transport, login }),
+    openFinance: new RailAccountRouter(
+      new OpenFinanceLogins(
+        PLUGGY_LOGINS.map(
+          login => new PluggyProvider({ credentials, transport, login }),
+        ),
       ),
+      new AsaasStatementProvider({ credentials, transport }),
     ),
     preview: new PierreProvider({ credentials, transport }),
     marketData: new PublicMarketData({ transport }),

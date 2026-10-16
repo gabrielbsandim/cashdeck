@@ -109,6 +109,7 @@ import {
   makeSetDebitAccount,
   makePersonalSummary,
   makePreviewFeed,
+  makeRailAccounts,
   makePrepareFunding,
   makeProcessWebhookEvents,
   makeRails,
@@ -351,6 +352,10 @@ export function buildContainer(
   const runPaymentLadder = withLadderAlerts(makeRunPaymentLadder(deps), alerts)
   const categorizeTransactions = makeCategorizeTransactions(deps)
   const previewFeed = makePreviewFeed(deps)
+  const openFinance = categorizeAfterSync(
+    makeOpenFinance(deps),
+    categorizeTransactions,
+  )
   return {
     deps,
     env,
@@ -417,10 +422,8 @@ export function buildContainer(
     listInvestments: makeListInvestments(deps),
     investmentPerformance: makeInvestmentPerformance(deps),
     subscriptions: makeSubscriptions(deps),
-    openFinance: categorizeAfterSync(
-      makeOpenFinance(deps),
-      categorizeTransactions,
-    ),
+    openFinance,
+    railAccounts: makeRailAccounts(deps, openFinance.sync),
     previewFeed: {
       // New previews get a category like any synced movement.
       async sync(tenantId: string) {

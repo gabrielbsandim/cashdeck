@@ -13,6 +13,7 @@ import {
   type PaymentAttempt,
   type RailId,
   routePayment,
+  routesThrough,
 } from '@/payments/payment-plan'
 import { type BillKind } from '@/bills/bill'
 import { Money } from '@/money/money'
@@ -171,5 +172,13 @@ describe('routePayment', () => {
       'AUTOMATIC:INTER_EMPRESAS:PIX',
       'ASSISTED:ASSISTED:PIX',
     ])
+  })
+})
+
+describe('routesThrough', () => {
+  it('tells which entities a rail pays for', () => {
+    expect(routesThrough('PF', 'ASAAS')).toBe(true)
+    expect(routesThrough('PJ', 'ASAAS')).toBe(false)
+    expect(routesThrough('PJ', 'INTER_EMPRESAS')).toBe(true)
   })
 })

@@ -743,7 +743,11 @@ describe('crons', () => {
         {} as never,
       )
     expect((await cron(syncCron)).status).toBe(200)
-    expect((await cron(previewCron)).status).toBe(200)
+    const preview = await cron(previewCron)
+    expect(preview.status).toBe(200)
+    expect((await preview.json()).data.railAccounts).toMatchObject({
+      failures: [],
+    })
     expect((await cron(captureCron)).status).toBe(200)
     expect((await cron(reconcileCron)).status).toBe(200)
   })
