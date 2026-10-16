@@ -74,16 +74,20 @@ const NOISE = new Set([
   'pag',
   'transf',
   'transferencia',
+  'transferencias',
   'transfer',
+  'out',
   'key',
   'ted',
   'doc',
   'boleto',
+  'boletos',
   'ltda',
   'eireli',
   'com',
   'www',
   'br',
+  'bra',
 ])
 
 export function normalizeDescription(text: string): string {
@@ -185,8 +189,10 @@ export function ruleMatches(rule: CategoryRule, subject: RuleSubject): boolean {
   if (rule.counterparty !== null) {
     return rule.counterparty === subject.counterparty
   }
+  // Normalized again so a rule stored before a noise word was added matches.
+  const pattern = normalizeDescription(rule.pattern)
   const normalized = normalizeDescription(subject.description)
-  return ` ${normalized} `.includes(` ${rule.pattern} `)
+  return pattern !== '' && ` ${normalized} `.includes(` ${pattern} `)
 }
 
 const isSized = (rule: CategoryRule) =>
@@ -198,7 +204,9 @@ const precedence = (a: CategoryRule, b: CategoryRule) =>
   Number(b.direction !== null) - Number(a.direction !== null) ||
   Number(isSized(b)) - Number(isSized(a)) ||
   b.priority - a.priority ||
-  b.pattern.length - a.pattern.length
+  normalizeDescription(b.pattern).length -
+    normalizeDescription(a.pattern).length ||
+  b.createdAt.getTime() - a.createdAt.getTime()
 
 export function findRule(
   rules: readonly CategoryRule[],

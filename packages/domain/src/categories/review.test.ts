@@ -40,13 +40,31 @@ describe('category review', () => {
       ]),
     ).toBeNull()
     expect(sharedPattern([subject('PIX')])).toBeNull()
+    expect(
+      sharedPattern([
+        subject('Pix recebido de Ana Lima', '11222333000181', 500),
+        subject('PIX RECEBIDO', '11222333000181', 500),
+      ]),
+    ).toEqual({ pattern: '', counterparty: '11222333000181' })
+    expect(
+      sharedPattern([
+        subject('Loja Exemplo', '11222333000181'),
+        subject('Loja Exemplo', '99888777000161'),
+      ]),
+    ).toEqual({ pattern: 'loja exemplo', counterparty: null })
   })
 
-  it('keys a transaction by direction and words, then payee, then itself', () => {
+  it('keys a transaction by direction and payee, then words, then itself', () => {
     expect(reviewKey(subject('COMPRA Padaria Lua 22'))).toBe('OUT:padaria lua')
     expect(reviewKey(subject('Padaria Lua', null, 500))).toBe('IN:padaria lua')
     expect(reviewKey(subject('PIX ENVIADO', '11222333000181'))).toBe(
       'OUT#11222333000181',
+    )
+    expect(reviewKey(subject('Pix enviado Ana Lima', '11222333000181'))).toBe(
+      'OUT#11222333000181',
+    )
+    expect(reviewKey(subject('Mercado Pago Loja', '10.573.521/0001-91'))).toBe(
+      'OUT:mercado pago loja',
     )
     expect(reviewKey(subject('PIX ENVIADO'))).toBe('OUT@tx1')
   })

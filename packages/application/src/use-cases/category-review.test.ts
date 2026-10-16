@@ -189,6 +189,30 @@ describe('category review queue', () => {
     })
   })
 
+  it('trusts a rule over the latest choice for the same payee', async () => {
+    const { deps, review } = await setup()
+    const payee = { description: 'Pix recebido de Ana Lima' }
+    await save(deps, [
+      {
+        id: 'large',
+        ...payee,
+        amount: Money.of(60000),
+        bookedOn: '2026-10-05',
+        ...user('restaurants'),
+      },
+      {
+        id: 'share',
+        ...payee,
+        amount: Money.of(1800),
+        bookedOn: '2026-10-04',
+        categoryId: 'shopping',
+        categorizedBy: 'RULE',
+        categoryConfidence: 1,
+      },
+    ])
+    expect((await review.queue(TENANT)).pending).toBe(0)
+  })
+
   it('answers an empty queue for an entity without accounts', async () => {
     const deps = fullDeps()
     expect(await makeCategoryReview(deps).queue(TENANT, 'PF')).toEqual({

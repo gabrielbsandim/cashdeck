@@ -29,33 +29,30 @@ export function commonWords(descriptions: readonly string[]): string {
   return shared ?? ''
 }
 
-// Words first; a group without shared words still has one rule when every
-// member names the same payee document.
+// The payee document first, since banks describe one payee in many ways;
+// words when the members name no shared document.
 export function sharedPattern(
   subjects: readonly RuleSubject[],
 ): MerchantPattern | null {
-  const pattern = commonWords(subjects.map(subject => subject.description))
-  if (pattern !== '') {
-    return { pattern, counterparty: null }
-  }
   const documents = new Set(
     subjects.map(subject => learnableCounterparty(subject.counterparty)),
   )
   const [document = null] = documents
-  if (documents.size !== 1 || document === null) {
-    return null
+  if (documents.size === 1 && document !== null) {
+    return { pattern: '', counterparty: document }
   }
-  return { pattern: '', counterparty: document }
+  const pattern = commonWords(subjects.map(subject => subject.description))
+  return pattern === '' ? null : { pattern, counterparty: null }
 }
 
 // Transactions a single rule would label together: same direction and same
-// description words, or the same payee when the words say nothing.
+// payee, or the same description words when no payee document is known.
 export function reviewKey(subject: RuleSubject & { id: string }): string {
   const direction = directionOf(subject)
-  const words = normalizeDescription(subject.description)
-  if (words !== '') {
-    return `${direction}:${words}`
-  }
   const document = learnableCounterparty(subject.counterparty)
-  return document ? `${direction}#${document}` : `${direction}@${subject.id}`
+  if (document) {
+    return `${direction}#${document}`
+  }
+  const words = normalizeDescription(subject.description)
+  return words === '' ? `${direction}@${subject.id}` : `${direction}:${words}`
 }

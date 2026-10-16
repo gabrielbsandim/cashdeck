@@ -60,6 +60,11 @@ function reasonOf(
   ) {
     return 'LOW_CONFIDENCE'
   }
+  // A rule carries a choice the user already made, such as one payee split by
+  // amount, so it never disagrees with the group.
+  if (tx.categorizedBy === 'RULE') {
+    return null
+  }
   return reference !== null && tx.categoryId !== reference
     ? 'INCONSISTENT'
     : null

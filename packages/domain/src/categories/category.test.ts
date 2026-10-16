@@ -84,6 +84,30 @@ describe('category rules', () => {
     expect(ruleMatches(market, subject('Supermercado Solar'))).toBe(false)
   })
 
+  it('matches a stored rule by its words once bank noise is dropped', () => {
+    const card = { ...rule({ id: 'r1' }), pattern: 'claudia frazao mogi bra' }
+    expect(ruleMatches(card, subject('CLAUDIA FRAZAO MOGI BR'))).toBe(true)
+    const noise = { ...rule({ id: 'r2' }), pattern: 'transferencias' }
+    expect(ruleMatches(noise, subject('Transferências'))).toBe(false)
+    expect(normalizeDescription('PIX_TRANSFER_OUT Boletos')).toBe('')
+  })
+
+  it('lets the newest of two equal rules win', () => {
+    const older = {
+      ...rule({ id: 'older', categoryId: 'restaurants' }),
+      pattern: 'regiane santos bra',
+      createdAt: new Date('2026-10-01T12:00:00Z'),
+    }
+    const newer = rule({
+      id: 'newer',
+      pattern: 'Regiane Santos',
+      categoryId: 'services',
+    })
+    const card = subject('REGIANE SANTOS MOGI BR')
+    expect(findRule([older, newer], card, 'pf')?.id).toBe('newer')
+    expect(findRule([newer, older], card, 'pf')?.id).toBe('newer')
+  })
+
   it('prefers an entity rule, then priority, then the longer pattern', () => {
     const global = rule({ id: 'global', categoryId: 'shopping' })
     const own = rule({ id: 'own', entityId: 'pf', categoryId: 'groceries' })

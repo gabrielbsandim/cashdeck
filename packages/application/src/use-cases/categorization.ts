@@ -420,7 +420,8 @@ export function makeCategorizeTransactions(deps: CategorizeDeps) {
     return done
   }
 
-  // Rules first, so a learned correction never costs a model call again.
+  // Rules first, so a learned correction never costs a model call again. A
+  // rule learned after the model answered replaces that answer too.
   return async function categorizeTransactions(
     tenantId: string,
   ): Promise<CategorizeSummary> {
@@ -430,18 +431,17 @@ export function makeCategorizeTransactions(deps: CategorizeDeps) {
     const owner = new Map(accounts.map(a => [a.id, a.entityId]))
     const found = await deps.transactions.all(tenantId, {
       accountIds: accounts.map(a => a.id),
-      uncategorized: true,
       from: addDays(today(deps.clock.now()), -LOOKBACK_DAYS),
     })
-    const candidates = found
-      .filter(tx => tx.transferGroupId === null && tx.categorizedBy === null)
+    const open = found.filter(tx => tx.transferGroupId === null)
+    const guessed = open.filter(tx => tx.categorizedBy === 'AI')
+    const candidates = open
+      .filter(tx => tx.categorizedBy === null && tx.categoryId === null)
       .slice(0, MAX_PER_RUN)
-    const pending: Transaction[] = []
-    for (const tx of candidates) {
+    const byRule = async (tx: Transaction): Promise<boolean> => {
       const rule = findRule(rules, tx, owner.get(tx.accountId) as string)
       if (!rule) {
-        pending.push(tx)
-        continue
+        return false
       }
       await deps.transactions.save(
         categorize(tx, {
@@ -450,10 +450,21 @@ export function makeCategorizeTransactions(deps: CategorizeDeps) {
           confidence: 1,
         }),
       )
+      return true
+    }
+    let relabeled = 0
+    for (const tx of guessed) {
+      relabeled += (await byRule(tx)) ? 1 : 0
+    }
+    const pending: Transaction[] = []
+    for (const tx of candidates) {
+      if (!(await byRule(tx))) {
+        pending.push(tx)
+      }
     }
     const byAi = pending.length ? await byModel(pending, categories) : 0
     return {
-      byRule: candidates.length - pending.length,
+      byRule: candidates.length - pending.length + relabeled,
       byAi,
       left: pending.length - byAi,
     }

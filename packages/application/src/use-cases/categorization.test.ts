@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createCategoryRule, Money, ValidationError } from '@cashdeck/domain'
+import {
+  categorize,
+  createCategoryRule,
+  Money,
+  ValidationError,
+} from '@cashdeck/domain'
 import { listTransactionsQuerySchema } from '@/dtos/finance'
 import { NotFoundError } from '@/errors/errors'
 import { LlmProviderError } from '@/ports/llm-provider'
@@ -418,6 +423,43 @@ describe('automatic categorization', () => {
     const prompt = deps.llm.calls[0]?.messages[0]?.content ?? ''
     expect(prompt).toContain('t1|-50.00|Shop 1')
     expect(deps.llm.calls[0]?.responseSchema).toBeDefined()
+  })
+
+  it('lets a rule learned later replace what the model guessed', async () => {
+    const { deps, id } = await seeded()
+    await deps.categories.saveRule(
+      createCategoryRule({
+        id: 'r1',
+        tenantId: TENANT,
+        entityId: null,
+        pattern: 'Claudia Frazao',
+        categoryId: id('services'),
+        createdAt: NOW,
+      }),
+    )
+    for (const [txId, description] of [
+      ['guess', 'CLAUDIA FRAZAO MOGI BR'],
+      ['other', 'Loja Azul'],
+    ] as const) {
+      await deps.transactions.save(
+        categorize(transaction({ id: txId, accountId: 'pf-1', description }), {
+          categoryId: id('shopping'),
+          by: 'AI',
+          confidence: 0.6,
+        }),
+      )
+    }
+    const summary = await makeCategorizeTransactions(deps)(TENANT)
+    expect(summary).toEqual({ byRule: 1, byAi: 0, left: 0 })
+    expect(deps.llm.calls).toEqual([])
+    expect(await deps.transactions.findById(TENANT, 'guess')).toMatchObject({
+      categoryId: id('services'),
+      categorizedBy: 'RULE',
+    })
+    expect(await deps.transactions.findById(TENANT, 'other')).toMatchObject({
+      categoryId: id('shopping'),
+      categorizedBy: 'AI',
+    })
   })
 
   it('shows the model the merchant and bank label, never offering Other', async () => {
