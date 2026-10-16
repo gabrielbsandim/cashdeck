@@ -221,7 +221,9 @@ export class InMemoryTransactionRepository
       .filter(row => matches(row, filter))
       .sort(
         (a, b) =>
-          b.bookedOn.localeCompare(a.bookedOn) || a.id.localeCompare(b.id),
+          b.bookedOn.localeCompare(a.bookedOn) ||
+          (b.bookedAt?.getTime() ?? -1) - (a.bookedAt?.getTime() ?? -1) ||
+          a.id.localeCompare(b.id),
       )
   }
 

@@ -149,24 +149,36 @@ function transactionWhere(tenantId: string, filter: TransactionFilter) {
   }
 }
 
-const NEWEST_FIRST = [{ bookedOn: 'desc' as const }, { id: 'asc' as const }]
+// Statement ids grow with time at banks that send no time, so they break ties.
+const NEWEST_FIRST = [
+  { bookedOn: 'desc' as const },
+  { bookedAt: { sort: 'desc' as const, nulls: 'last' as const } },
+  { externalId: { sort: 'desc' as const, nulls: 'last' as const } },
+  { id: 'asc' as const },
+]
 
 type Details = Pick<
   TransactionRow,
-  'merchant' | 'counterparty' | 'bankCategory' | 'installmentNumber'
+  | 'merchant'
+  | 'counterparty'
+  | 'bankCategory'
+  | 'installmentNumber'
+  | 'bookedAt'
 >
 
 const hasDetails = (row: Details) =>
   row.merchant !== null ||
   row.counterparty !== null ||
   row.bankCategory !== null ||
-  row.installmentNumber !== null
+  row.installmentNumber !== null ||
+  row.bookedAt !== null
 
 const takesDetails = (row: Details, stored: Details) =>
   (row.merchant !== null && stored.merchant === null) ||
   (row.counterparty !== null && stored.counterparty === null) ||
   (row.bankCategory !== null && stored.bankCategory === null) ||
-  (row.installmentNumber !== null && stored.installmentNumber === null)
+  (row.installmentNumber !== null && stored.installmentNumber === null) ||
+  (row.bookedAt !== null && stored.bookedAt === null)
 
 export class PrismaTransactionRepository implements TransactionRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -214,6 +226,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         counterparty: true,
         bankCategory: true,
         installmentNumber: true,
+        bookedAt: true,
       },
     })
     const keyOf = (row: { accountId: string; externalId: string | null }) =>
@@ -259,6 +272,12 @@ export class PrismaTransactionRepository implements TransactionRepository {
           installmentCount: row.installmentCount,
           purchaseOn: row.purchaseOn,
         },
+      })
+    }
+    if (row.bookedAt) {
+      await this.db.transaction.updateMany({
+        where: { ...where, bookedAt: null },
+        data: { bookedAt: row.bookedAt },
       })
     }
   }

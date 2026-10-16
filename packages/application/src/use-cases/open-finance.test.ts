@@ -46,6 +46,7 @@ const provider = () =>
         amountCents: -300,
         currency: 'BRL',
         bookedOn: '2026-10-01',
+        bookedAt: '2026-10-01T21:40:00.000Z',
         description: 'Market',
       },
       {
@@ -141,6 +142,8 @@ describe('open finance', () => {
       settledBills: 1,
       syncedAt: NOW.toISOString(),
     })
+    const [synced] = await deps.transactions.all(TENANT, {})
+    expect(synced?.bookedAt).toEqual(new Date('2026-10-01T21:40:00.000Z'))
     const second = await of.sync(TENANT, connectionId)
     expect(second.transactions).toBe(0)
     expect(await of.syncAll(TENANT)).toEqual({

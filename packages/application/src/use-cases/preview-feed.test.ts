@@ -244,6 +244,7 @@ describe('makePreviewFeed', () => {
       [
         feedTx({
           externalId: 'pierre:1',
+          bookedAt: '2026-10-07T13:05:00.000Z',
           merchant: 'Market',
           counterparty: '11.444.777/0001-61',
           installment: { number: 1, count: 3, purchaseOn: null },
@@ -270,6 +271,7 @@ describe('makePreviewFeed', () => {
     expect(added).toMatchObject({
       accountId: 'a1',
       externalId: 'pierre:1',
+      bookedAt: new Date('2026-10-07T13:05:00.000Z'),
       merchant: 'Market',
       counterparty: '11444777000161',
       installment: { number: 1, count: 3 },

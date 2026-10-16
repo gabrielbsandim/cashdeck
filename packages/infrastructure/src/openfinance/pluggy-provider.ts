@@ -31,6 +31,7 @@ import {
   toCents,
   type Transport,
 } from '@/http/transport'
+import { timeOfDay } from '@/openfinance/time-of-day'
 
 const PROVIDER = 'Pluggy'
 export const PLUGGY_URL = 'https://api.pluggy.ai'
@@ -496,6 +497,7 @@ function toTransaction(
     accountAmountCents:
       converted == null ? null : sign * Math.abs(toCents(converted)),
     bookedOn: tx.date ? toLocalDate(new Date(tx.date)) : '',
+    bookedAt: tx.date ? timeOfDay(tx.date) : null,
     description: tx.description ?? '',
     merchant: merchantOf(tx),
     counterparty: partyOf(tx)?.documentNumber?.value ?? null,

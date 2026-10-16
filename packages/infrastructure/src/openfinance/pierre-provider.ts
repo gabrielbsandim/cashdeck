@@ -20,6 +20,7 @@ import {
   type Transport,
 } from '@/http/transport'
 import { ACCOUNT_TYPES, toInstallment } from '@/openfinance/pluggy-provider'
+import { timeOfDay } from '@/openfinance/time-of-day'
 
 const PROVIDER = 'Pierre'
 export const PIERRE_URL = 'https://www.pierre.finance/tools/api'
@@ -182,6 +183,7 @@ function toTransaction(tx: PierreTransaction): ProviderTransaction[] {
       amountCents: tx.type === 'CREDIT' ? cents : -cents,
       currency: tx.currency_code ?? 'BRL',
       bookedOn: toLocalDate(new Date(tx.date)),
+      bookedAt: timeOfDay(tx.date),
       description: tx.description || 'Transaction',
       merchant: tx.merchant?.name || tx.merchant?.businessName || null,
       counterparty: counterpartyOf(tx),

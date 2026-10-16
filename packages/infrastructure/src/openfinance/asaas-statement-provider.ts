@@ -18,6 +18,7 @@ import {
   toCents,
   type Transport,
 } from '@/http/transport'
+import { seenToday } from '@/openfinance/time-of-day'
 import { type AsaasConfig, asaasConfig, asaasHeaders } from '@/rails/asaas-rail'
 
 const PROVIDER = 'Asaas'
@@ -39,6 +40,7 @@ type AsaasAccountNumber = { account?: string; accountDigit?: string }
 export type AsaasStatementProviderDeps = {
   credentials: Credentials
   transport: Transport
+  now?: () => Date
 }
 
 // The Asaas account read as a bank account: its balance and statement. Each
@@ -105,7 +107,10 @@ export class AsaasStatementProvider implements OpenFinanceProvider {
         break
       }
     }
-    return entries.flatMap(entry => toTransaction(entry, accountExternalId))
+    const now = this.deps.now?.() ?? new Date()
+    return entries.flatMap(entry =>
+      toTransaction(entry, accountExternalId, now),
+    )
   }
 
   async listBills() {
@@ -156,6 +161,7 @@ function suffixOf(number: AsaasAccountNumber | null): string | null {
 function toTransaction(
   entry: AsaasEntry,
   accountExternalId: string,
+  now: Date,
 ): ProviderTransaction[] {
   if (typeof entry.value !== 'number' || !entry.date) {
     return []
@@ -167,6 +173,7 @@ function toTransaction(
       amountCents: toCents(entry.value),
       currency: 'BRL',
       bookedOn: entry.date,
+      bookedAt: seenToday(entry.date, now),
       description: entry.description?.trim() || 'Asaas',
     },
   ]

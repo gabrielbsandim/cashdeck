@@ -18,6 +18,9 @@ const ITEM = 'asaas:pf'
 const link = { provider: 'asaas', itemId: ITEM }
 const range = { from: '2026-10-01', to: '2026-10-15' }
 
+// 20:30 in Brazil on the 15th, so only that day's entries take the time.
+const SEEN = new Date('2026-10-15T23:30:00.000Z')
+
 function provider(
   scripted: ScriptedTransport,
   env: Record<string, string> = { ASAAS_API_KEY: 'key-test' },
@@ -25,6 +28,7 @@ function provider(
   return new AsaasStatementProvider({
     credentials: credentials(env),
     transport: scripted.transport,
+    now: () => SEEN,
   })
 }
 
@@ -118,6 +122,7 @@ describe('AsaasStatementProvider', () => {
         amountCents: 198_000,
         currency: 'BRL',
         bookedOn: '2026-10-15',
+        bookedAt: SEEN.toISOString(),
         description: 'Cobrança recebida',
       },
       {
@@ -126,6 +131,7 @@ describe('AsaasStatementProvider', () => {
         amountCents: -200,
         currency: 'BRL',
         bookedOn: '2026-10-15',
+        bookedAt: SEEN.toISOString(),
         description: 'Asaas',
       },
       {
@@ -134,6 +140,7 @@ describe('AsaasStatementProvider', () => {
         amountCents: -100,
         currency: 'BRL',
         bookedOn: '2026-10-14',
+        bookedAt: null,
         description: 'Asaas',
       },
     ])

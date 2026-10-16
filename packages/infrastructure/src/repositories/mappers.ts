@@ -68,6 +68,7 @@ export type TransactionRow = {
   amountCents: bigint
   currency: string
   bookedOn: Date
+  bookedAt: Date | null
   description: string
   categoryId: string | null
   transferGroupId: string | null
@@ -248,6 +249,7 @@ export function transactionFromRow(row: TransactionRow): Transaction {
     accountId: row.accountId,
     amount: Money.of(Number(row.amountCents), row.currency),
     bookedOn: fromDbDate(row.bookedOn),
+    bookedAt: row.bookedAt,
     description: row.description,
     categoryId: row.categoryId,
     transferGroupId: row.transferGroupId,
@@ -273,6 +275,7 @@ export function transactionToRow(transaction: Transaction): TransactionRow {
     amountCents: BigInt(transaction.amount.cents),
     currency: transaction.amount.currency,
     bookedOn: toDbDate(transaction.bookedOn),
+    bookedAt: transaction.bookedAt,
     description: transaction.description,
     categoryId: transaction.categoryId,
     transferGroupId: transaction.transferGroupId,

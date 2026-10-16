@@ -44,6 +44,8 @@ export type ProviderTransaction = {
   // Signed, in the account currency, for a purchase made in another one.
   accountAmountCents?: number | null
   bookedOn: string
+  // ISO instant, only when the bank sends the time of day.
+  bookedAt?: string | null
   description: string
   merchant?: string | null
   // CPF or CNPJ of the payee of a debit or the payer of a credit.

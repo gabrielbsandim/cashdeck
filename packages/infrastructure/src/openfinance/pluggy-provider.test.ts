@@ -176,7 +176,7 @@ describe('PluggyProvider', () => {
               id: 't3',
               amount: 1000,
               type: 'CREDIT',
-              date: '2026-10-05T03:00:00.000Z',
+              date: '2026-10-05T14:30:00.000Z',
               paymentData: {
                 payer: {
                   name: ' Fulano de Tal ',
@@ -242,6 +242,7 @@ describe('PluggyProvider', () => {
         currency: 'BRL',
         accountAmountCents: null,
         bookedOn: '2026-10-02',
+        bookedAt: null,
         description: 'Mercado',
         merchant: 'Mercado Exemplo',
         counterparty: '11.222.333/0001-81',
@@ -256,6 +257,7 @@ describe('PluggyProvider', () => {
         currency: 'USD',
         accountAmountCents: -6120,
         bookedOn: '',
+        bookedAt: null,
         description: '',
         merchant: 'Exemplo LTDA',
         counterparty: null,
@@ -267,6 +269,7 @@ describe('PluggyProvider', () => {
         externalId: 't3',
         amountCents: 100000,
         bookedOn: '2026-10-05',
+        bookedAt: '2026-10-05T14:30:00.000Z',
         merchant: 'Fulano de Tal',
         counterparty: '529.982.247-25',
         installment: null,

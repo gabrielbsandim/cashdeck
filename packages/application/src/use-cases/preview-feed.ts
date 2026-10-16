@@ -78,6 +78,7 @@ export function confirmPreview(
   return {
     ...confirmed,
     id: preview.id,
+    bookedAt: confirmed.bookedAt ?? preview.bookedAt,
     categoryId: preview.categoryId,
     categorizedBy: preview.categorizedBy,
     categoryConfidence: preview.categoryConfidence,
@@ -168,6 +169,7 @@ export function makePreviewFeed(deps: PreviewDeps) {
       accountId: account.id,
       amount: Money.of(tx.amountCents, tx.currency),
       bookedOn: tx.bookedOn,
+      bookedAt: tx.bookedAt ? new Date(tx.bookedAt) : null,
       description: tx.description,
       externalId: tx.externalId,
       merchant: tx.merchant ?? null,

@@ -134,6 +134,7 @@ export function makeCardNotifications(deps: NotificationDeps) {
           accountId: account.id,
           amount: Money.of(item.kind === 'REFUND' ? cents : -cents),
           bookedOn,
+          bookedAt: new Date(notification.postedAt),
           description:
             merchant || sanitize(notification.title) || notification.app,
           externalId: `${NOTIFICATION_ID_PREFIX}${notification.id}`,

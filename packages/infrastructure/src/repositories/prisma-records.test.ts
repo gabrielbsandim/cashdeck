@@ -252,6 +252,7 @@ describe('transactions', () => {
       counterparty: '11222333000181',
       bankCategory: 'Shopping',
       installment: { number: 2, count: 3, purchaseOn: '2026-08-01' },
+      bookedAt: new Date('2026-10-08T21:40:00.000Z'),
     })
     const bare = createTransaction({ ...transaction, externalId: null })
     const filled = createTransaction({ ...detailed, externalId: 'e2' })
@@ -265,6 +266,7 @@ describe('transactions', () => {
         counterparty: null,
         bankCategory: null,
         installmentNumber: null,
+        bookedAt: null,
       },
       {
         accountId: 'a1',
@@ -273,6 +275,7 @@ describe('transactions', () => {
         counterparty: '11222333000181',
         bankCategory: 'Shopping',
         installmentNumber: 2,
+        bookedAt: new Date('2026-10-08T21:40:00.000Z'),
       },
     ])
     expect(
@@ -329,6 +332,15 @@ describe('transactions', () => {
           installmentCount: 3,
           purchaseOn: new Date('2026-08-01T00:00:00.000Z'),
         },
+      },
+      {
+        where: {
+          tenantId: TENANT,
+          accountId: 'a1',
+          externalId: 'e1',
+          bookedAt: null,
+        },
+        data: { bookedAt: new Date('2026-10-08T21:40:00.000Z') },
       },
     ])
     db.transaction.findFirst.mockResolvedValueOnce(transactionToRow(detailed))

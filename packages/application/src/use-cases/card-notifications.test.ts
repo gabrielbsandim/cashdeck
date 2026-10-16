@@ -100,8 +100,8 @@ describe('card notifications', () => {
         tx.installment?.count ?? null,
       ]),
     ).toEqual([
-      ['notification:second-01', -10000, '2026-10-10', 'Compra aprovada', 3],
       ['notification:third-001', 1000, '2026-10-10', 'Card App', null],
+      ['notification:second-01', -10000, '2026-10-10', 'Compra aprovada', 3],
       ['notification:first-001', -4250, '2026-10-09', 'Bakery', null],
     ])
     expect(stored.at(-1)?.merchant).toBe('Bakery')

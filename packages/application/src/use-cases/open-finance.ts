@@ -260,6 +260,7 @@ export function makeOpenFinance(deps: OpenFinanceDeps) {
       accountId: account.id,
       amount: amountOf(account, tx),
       bookedOn: tx.bookedOn,
+      bookedAt: tx.bookedAt ? new Date(tx.bookedAt) : null,
       description: tx.description,
       externalId: tx.externalId,
       merchant: tx.merchant ?? null,

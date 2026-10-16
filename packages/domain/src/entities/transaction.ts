@@ -22,6 +22,9 @@ export type Transaction = {
   readonly accountId: string
   readonly amount: Money
   readonly bookedOn: string
+  // When in the day it happened, from the bank or from the first sync that
+  // saw it that same day; null orders it after the timed ones of its day.
+  readonly bookedAt: Date | null
   readonly description: string
   readonly categoryId: string | null
   readonly transferGroupId: string | null
@@ -43,6 +46,7 @@ export type Transaction = {
 
 export type CreateTransactionInput = Omit<
   Transaction,
+  | 'bookedAt'
   | 'categoryId'
   | 'transferGroupId'
   | 'externalId'
@@ -56,6 +60,7 @@ export type CreateTransactionInput = Omit<
   | 'installment'
   | 'provisional'
 > & {
+  bookedAt?: Date | null
   categoryId?: string | null
   transferGroupId?: string | null
   externalId?: string | null
@@ -115,6 +120,7 @@ export function createTransaction(input: CreateTransactionInput): Transaction {
   return {
     ...input,
     description: guard.notEmpty(input.description, 'Description'),
+    bookedAt: input.bookedAt ?? null,
     categoryId: input.categoryId ?? null,
     transferGroupId: input.transferGroupId ?? null,
     externalId: input.externalId ?? null,
