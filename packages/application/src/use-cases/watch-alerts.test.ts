@@ -131,6 +131,29 @@ describe('watch alerts', () => {
     expect(await run(TENANT)).toEqual(NONE)
   })
 
+  it('judges a payee paid before against itself, not its category', async () => {
+    const deps = await setup()
+    const accountant = { counterparty: '11144477735', categoryId: 'services' }
+    await spend(deps, [
+      ['a1', '2026-04-10', 25000, 'pix key transfer', accountant],
+      ['a2', '2026-05-11', 25000, 'pix key transfer', accountant],
+      ['a3', '2026-09-16', 25000, 'pix key transfer', accountant],
+      ['a4', '2026-10-07', 25000, 'Transferências', accountant],
+      ['power1', '2026-05-18', 28000, 'CONTA DE LUZ - EDP 1 - DOCTO: 11'],
+      ['power2', '2026-10-07', 34900, 'CONTA DE LUZ - EDP 1 - DOCTO: 42'],
+      ...[1, 2, 3, 4, 5].map(
+        (n): [string, string, number, string, Record<string, unknown>] => [
+          `cut${n}`,
+          `2026-09-1${n}`,
+          4000,
+          `Barbearia ${n}`,
+          { categoryId: 'services' },
+        ],
+      ),
+    ])
+    expect(await makeWatchAlerts(deps)(TENANT)).toEqual(NONE)
+  })
+
   it('warns about a pricier or doubled subscription still running', async () => {
     const deps = await setup()
     const monthly = (name: string, cents: number[], days: string[]) =>

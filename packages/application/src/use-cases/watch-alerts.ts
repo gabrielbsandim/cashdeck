@@ -7,6 +7,7 @@ import {
   detectRecurring,
   groupByRecurrence,
   isUnusual,
+  learnableCounterparty,
   type LocalDate,
   Money,
   recurrenceKey,
@@ -52,6 +53,7 @@ const USUAL_DAYS = 90
 // A purchase synced late still gets its alert; older ones are history.
 const RECENT_DAYS = 3
 const CATEGORY_HISTORY = 5
+const PAYEE_HISTORY = 1
 const CARD_HISTORY = 6
 const CARD_RECENT_DAYS = 10
 const SUBSCRIPTION_RECENT_DAYS = 7
@@ -63,29 +65,45 @@ const brl = (cents: number) => formatMoney(Money.of(Math.round(cents)))
 
 type Expense = { transaction: Transaction; entityId: string; cents: number }
 
-function usualFor(expense: Expense, history: readonly Expense[]) {
+// A payee paid before by document or by words is judged against itself alone;
+// a category mixes the accountant with the coffee shop.
+function samePayee(a: Transaction, b: Transaction): boolean {
+  const document = learnableCounterparty(a.counterparty)
+  if (document !== null && document === learnableCounterparty(b.counterparty)) {
+    return true
+  }
+  const key = recurrenceKey(a)
+  return key !== '' && recurrenceKey(b) === key
+}
+
+function usualFor(
+  expense: Expense,
+  history: readonly Expense[],
+  since: LocalDate,
+) {
   const others = history.filter(
     item =>
       item.transaction.id !== expense.transaction.id &&
       item.entityId === expense.entityId &&
       item.transaction.bookedOn <= expense.transaction.bookedOn,
   )
-  const key = recurrenceKey(expense.transaction)
-  const merchant = usualAmount(
+  const payee = usualAmount(
     others
-      .filter(item => key !== '' && recurrenceKey(item.transaction) === key)
+      .filter(item => samePayee(expense.transaction, item.transaction))
       .map(item => item.cents),
-    UNUSUAL_PURCHASE,
+    { ...UNUSUAL_PURCHASE, minHistory: PAYEE_HISTORY },
   )
-  if (merchant !== null) {
-    return { usual: merchant, scope: 'MERCHANT' }
+  if (payee !== null) {
+    return { usual: payee, scope: 'MERCHANT' }
   }
   const categoryId = expense.transaction.categoryId
   const category = usualAmount(
     others
       .filter(
         item =>
-          categoryId !== null && item.transaction.categoryId === categoryId,
+          categoryId !== null &&
+          item.transaction.categoryId === categoryId &&
+          item.transaction.bookedOn >= since,
       )
       .map(item => item.cents),
     { ...UNUSUAL_PURCHASE, minHistory: CATEGORY_HISTORY },
@@ -225,14 +243,13 @@ export function makeWatchAlerts(deps: WatchAlertDeps) {
     day: LocalDate,
   ): AlertInput[] {
     const since = addDays(day, -USUAL_DAYS)
-    const history = expenses.filter(item => item.transaction.bookedOn >= since)
-    const recent = history.filter(
+    const recent = expenses.filter(
       item =>
         item.transaction.bookedOn >= addDays(day, -RECENT_DAYS) &&
         item.transaction.installment === null,
     )
     return recent.flatMap(expense => {
-      const { usual, scope } = usualFor(expense, history)
+      const { usual, scope } = usualFor(expense, expenses, since)
       if (
         usual === null ||
         !isUnusual(expense.cents, usual, UNUSUAL_PURCHASE)
