@@ -19,12 +19,15 @@ final class CardNotificationsView extends Equatable {
   final CardNotificationStatus status;
   final List<TransactionAccount> cards;
 
-  bool get canEnable => allows(status.packages, status.accountId);
+  bool get canEnable => allows(status.routes);
 
-  bool allows(Set<String> packages, String? accountId) =>
+  bool allows(Map<String, String> routes) =>
       status.access &&
-      packages.isNotEmpty &&
-      cards.any((card) => card.id == accountId);
+      routes.isNotEmpty &&
+      routes.values.every((id) => cards.any((card) => card.id == id));
+
+  TransactionAccount? cardOf(String package) =>
+      cards.where((card) => card.id == status.routes[package]).firstOrNull;
 
   CardNotificationsView withStatus(CardNotificationStatus status) =>
       CardNotificationsView(supported: supported, status: status, cards: cards);
@@ -65,34 +68,29 @@ class CardNotificationsController extends AsyncNotifier<CardNotificationsView> {
   }
 
   Future<AppFailure?> setEnabled({required bool enabled}) =>
-      _save((status) => (enabled, status.packages, status.accountId));
+      _save((status) => (enabled, status.routes));
 
-  Future<AppFailure?> selectCard(String accountId) =>
-      _save((status) => (status.enabled, status.packages, accountId));
-
-  Future<AppFailure?> toggleApp(String package, {required bool watched}) =>
-      _save(
-        (status) => (
-          status.enabled,
-          watched
-              ? {...status.packages, package}
-              : ({...status.packages}..remove(package)),
-          status.accountId,
-        ),
-      );
+  /// Sends [package]'s charges to [accountId], or stops watching it on null.
+  Future<AppFailure?> routeApp(String package, String? accountId) => _save(
+    (status) => (
+      status.enabled,
+      accountId == null
+          ? ({...status.routes}..remove(package))
+          : {...status.routes, package: accountId},
+    ),
+  );
 
   Future<AppFailure?> _save(
-    (bool, Set<String>, String?) Function(CardNotificationStatus) change,
+    (bool, Map<String, String>) Function(CardNotificationStatus) change,
   ) async {
     final current = state.value;
     if (current == null) return null;
-    final (enabled, packages, accountId) = change(current.status);
+    final (enabled, routes) = change(current.status);
     final result = await ref
         .read(saveCardNotificationsProvider)
         .call(
-          enabled: enabled && current.allows(packages, accountId),
-          packages: packages,
-          accountId: accountId,
+          enabled: enabled && current.allows(routes),
+          routes: routes,
           session: ref.read(serverSessionProvider),
         );
     switch (result) {

@@ -8,11 +8,12 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_inline_banner.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
-import 'package:cashdeck/core/widgets/inputs/cd_checkbox_row.dart';
 import 'package:cashdeck/core/widgets/layout/cd_list_row.dart';
+import 'package:cashdeck/core/widgets/layout/cd_options_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/card_notifications/domain/card_notifications.dart';
 import 'package:cashdeck/features/card_notifications/presentation/card_notifications_controller.dart';
 import 'package:cashdeck/features/transactions/presentation/transaction_labels.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -20,13 +21,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Picks the card and the apps whose notifications become previews. Coming
+/// Routes each app's notifications to the card they become previews on. Coming
 /// back from the system settings reloads, since that is where access changes.
 class CardNotificationsScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
   static const switchKey = Key('card-notifications-switch');
   static const accessKey = Key('card-notifications-access');
+  static const offKey = Key('card-notifications-off');
 
   static Key cardKey(String id) => Key('card-notifications-card-$id');
 
@@ -60,6 +62,39 @@ class _CardNotificationsScreenState
     if (failure == null || !mounted) return;
     final l10n = AppLocalizations.of(context);
     await showCdToast(context, message: failure.userMessage(l10n));
+  }
+
+  Future<void> _route(
+    AppLocalizations l10n,
+    CardNotificationsView view,
+    NotifyingApp app,
+  ) async {
+    final current = view.status.routes[app.package];
+    final picked = await showOptionsSheet<String?>(
+      context,
+      title: l10n.cardNotificationsPickCard(app.label),
+      options: [
+        PickerOption(
+          value: null,
+          label: l10n.cardNotificationsAppOff,
+          key: CardNotificationsScreen.offKey,
+          icon: Symbols.notifications_off_rounded,
+          selected: current == null,
+        ),
+        for (final card in view.cards)
+          PickerOption(
+            value: card.id,
+            label: accountName(card),
+            subtitle: card.institution,
+            key: CardNotificationsScreen.cardKey(card.id),
+            icon: Symbols.credit_card_rounded,
+            selected: card.id == current,
+          ),
+      ],
+    );
+    if (picked == null || picked.$1 == current) return;
+    final controller = ref.read(cardNotificationsControllerProvider.notifier);
+    await _report(controller.routeApp(app.package, picked.$1));
   }
 
   @override
@@ -136,28 +171,24 @@ class _CardNotificationsScreenState
                   unawaited(_report(controller.openAccessSettings())),
             ),
           ),
-        section(l10n.cardNotificationsCardSection),
-        if (view.cards.isEmpty) note(l10n.cardNotificationsNoCards),
-        for (final card in view.cards)
-          CdCheckboxRow(
-            key: CardNotificationsScreen.cardKey(card.id),
-            title: accountName(card),
-            subtitle: Text(card.institution, style: hint),
-            value: card.id == status.accountId,
-            onChanged: (_) =>
-                unawaited(_report(controller.selectCard(card.id))),
-          ),
         section(l10n.cardNotificationsAppsSection),
+        if (view.cards.isEmpty) note(l10n.cardNotificationsNoCards),
         if (status.apps.isEmpty) note(l10n.cardNotificationsNoApps),
         for (final app in status.apps)
-          CdCheckboxRow(
+          CdListRow(
             key: CardNotificationsScreen.appKey(app.package),
             title: app.label,
-            subtitle: Text(app.package, style: hint),
-            value: status.packages.contains(app.package),
-            onChanged: (watched) => unawaited(
-              _report(controller.toggleApp(app.package, watched: watched)),
-            ),
+            subtitle: switch (view.cardOf(app.package)) {
+              final card? => l10n.cardNotificationsAppCard(accountName(card)),
+              null => app.package,
+            },
+            icon: view.cardOf(app.package) == null
+                ? Symbols.notifications_rounded
+                : Symbols.credit_card_rounded,
+            chevron: true,
+            onTap: view.cards.isEmpty
+                ? null
+                : () => unawaited(_route(l10n, view, app)),
           ),
         const SizedBox(height: AppSpacing.lg),
         CdListRow(

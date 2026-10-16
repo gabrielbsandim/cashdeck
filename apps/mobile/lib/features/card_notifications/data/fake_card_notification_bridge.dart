@@ -13,14 +13,15 @@ final class FakeCardNotificationBridge implements CardNotificationBridge {
     NotifyingApp(package: 'com.example.chat', label: 'Chat'),
   ];
 
+  CardNotificationConfig get config => _config;
+
   @override
   bool get supported => true;
 
   CardNotificationStatus get _status => CardNotificationStatus(
     access: access,
     enabled: _config.enabled,
-    packages: _config.packages,
-    accountId: _config.accountId,
+    routes: _config.routes,
     pending: 0,
     apps: apps,
   );

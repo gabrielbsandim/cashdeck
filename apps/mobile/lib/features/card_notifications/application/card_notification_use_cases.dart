@@ -23,7 +23,8 @@ final class ListNotificationCards {
   }
 }
 
-/// Forwarding only runs with a card and a session to send with.
+/// Forwarding only runs with an app routed to a card and a session to send
+/// with.
 final class SaveCardNotifications {
   const new(this._bridge);
 
@@ -31,20 +32,41 @@ final class SaveCardNotifications {
 
   Future<Result<CardNotificationStatus>> call({
     required bool enabled,
-    required Set<String> packages,
-    required String? accountId,
+    required Map<String, String> routes,
     required ServerCredentials? session,
   }) {
-    final ready = enabled && accountId != null && session != null;
+    final ready = enabled && routes.isNotEmpty && session != null;
     return _bridge.configure(
       CardNotificationConfig(
         enabled: ready,
-        packages: packages,
-        accountId: accountId,
+        routes: routes,
         baseUrl: ready ? session.baseUrl : null,
         token: ready ? session.token : null,
       ),
     );
+  }
+}
+
+/// Hands each new session to forwarding the user left on, since the phone
+/// keeps the token it was given and the server refuses it once replaced.
+final class ResumeCardNotifications {
+  const new(this._bridge);
+
+  final CardNotificationBridge _bridge;
+
+  Future<void> call(ServerCredentials session) async {
+    if (!_bridge.supported) return;
+    final status = await _bridge.status();
+    if (status case Ok(:final value) when value.enabled) {
+      await _bridge.configure(
+        CardNotificationConfig(
+          enabled: true,
+          routes: value.routes,
+          baseUrl: session.baseUrl,
+          token: session.token,
+        ),
+      );
+    }
   }
 }
 

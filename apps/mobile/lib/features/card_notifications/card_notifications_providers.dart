@@ -28,3 +28,7 @@ final saveCardNotificationsProvider = Provider<SaveCardNotifications>(
 final stopCardNotificationsProvider = Provider<StopCardNotifications>(
   (ref) => StopCardNotifications(ref.watch(cardNotificationBridgeProvider)),
 );
+
+final resumeCardNotificationsProvider = Provider<ResumeCardNotifications>(
+  (ref) => ResumeCardNotifications(ref.watch(cardNotificationBridgeProvider)),
+);

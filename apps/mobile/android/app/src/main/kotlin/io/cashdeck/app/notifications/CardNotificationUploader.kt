@@ -21,17 +21,15 @@ class CardNotificationUploader(context: Context, params: WorkerParameters) :
     Worker(context, params) {
     override fun doWork(): Result {
         val store = CardNotificationStore(applicationContext)
-        val accountId = store.accountId
         val baseUrl = store.baseUrl
         val token = store.token
-        if (!store.enabled || accountId == null || baseUrl == null || token == null) {
+        if (!store.enabled || baseUrl == null || token == null) {
             return Result.success()
         }
         while (true) {
             val queue = store.queue()
             if (queue.length() == 0) return Result.success()
-            val batch = JSONArray()
-            for (index in 0 until minOf(queue.length(), BATCH)) batch.put(queue.get(index))
+            val (accountId, batch) = nextBatch(queue)
             val status = try {
                 post(baseUrl, token, JSONObject().put("accountId", accountId).put("notifications", batch))
             } catch (_: IOException) {
@@ -47,6 +45,19 @@ class CardNotificationUploader(context: Context, params: WorkerParameters) :
                 else -> store.drop(ids(batch))
             }
         }
+    }
+
+    // The server takes one card per request, so a batch holds the first item's card only.
+    private fun nextBatch(queue: JSONArray): Pair<String, JSONArray> {
+        val accountId = queue.getJSONObject(0).optString(CardNotificationStore.ACCOUNT_FIELD)
+        val batch = JSONArray()
+        for (index in 0 until queue.length()) {
+            val item = queue.getJSONObject(index)
+            if (item.optString(CardNotificationStore.ACCOUNT_FIELD) != accountId) continue
+            if (batch.length() == BATCH) break
+            batch.put(item)
+        }
+        return accountId to batch
     }
 
     private fun ids(batch: JSONArray): Set<String> =

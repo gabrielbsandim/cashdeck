@@ -51,15 +51,13 @@ void main() {
       expect(CardNotificationStatus.unsupported.props, [
         false,
         false,
-        <String>{},
-        null,
+        <String, String>{},
         0,
         <NotifyingApp>[],
       ]);
       expect(CardNotificationConfig.off.props, [
         false,
-        <String>{},
-        null,
+        <String, String>{},
         null,
         null,
       ]);
@@ -83,39 +81,65 @@ void main() {
       );
     });
 
-    test('forwards only with a card and a session', () async {
+    test('forwards only with an app routed and a session', () async {
       final bridge = FakeCardNotificationBridge(access: true);
       final save = SaveCardNotifications(bridge);
       final on = await save(
         enabled: true,
-        packages: {'com.example.cardapp'},
-        accountId: 'card',
+        routes: {'com.example.cardapp': 'card', 'com.example.chat': 'other'},
         session: session,
       );
       expect((on as Ok<CardNotificationStatus>).value.enabled, isTrue);
+      final unrouted = await save(enabled: true, routes: {}, session: session);
+      expect((unrouted as Ok<CardNotificationStatus>).value.enabled, isFalse);
       final signedOut = await save(
         enabled: true,
-        packages: {'com.example.cardapp'},
-        accountId: 'card',
+        routes: {'com.example.cardapp': 'card'},
         session: null,
       );
       expect((signedOut as Ok<CardNotificationStatus>).value.enabled, isFalse);
 
       await save(
         enabled: true,
-        packages: {'com.example.cardapp'},
-        accountId: 'card',
+        routes: {'com.example.cardapp': 'card'},
         session: session,
       );
       await StopCardNotifications(bridge).call();
       final stopped = await bridge.status() as Ok<CardNotificationStatus>;
       expect(stopped.value.enabled, isFalse);
-      expect(stopped.value.packages, isEmpty);
+      expect(stopped.value.routes, isEmpty);
+    });
+
+    test('a new session reaches forwarding the user left on', () async {
+      final bridge = FakeCardNotificationBridge(access: true);
+      await ResumeCardNotifications(bridge).call(session);
+      expect(bridge.config, CardNotificationConfig.off);
+
+      await SaveCardNotifications(bridge).call(
+        enabled: true,
+        routes: {'com.example.cardapp': 'card'},
+        session: session,
+      );
+      const fresh = ServerCredentials(
+        baseUrl: 'https://cashdeck.example.com',
+        token: 'fresh',
+      );
+      await ResumeCardNotifications(bridge).call(fresh);
+      expect(
+        bridge.config,
+        const CardNotificationConfig(
+          enabled: true,
+          routes: {'com.example.cardapp': 'card'},
+          baseUrl: 'https://cashdeck.example.com',
+          token: 'fresh',
+        ),
+      );
     });
 
     test('stopping skips a phone without the listener', () async {
       const bridge = PlatformCardNotificationBridge(supported: false);
       await const StopCardNotifications(bridge).call();
+      await const ResumeCardNotifications(bridge).call(session);
       expect(
         await bridge.status(),
         const Ok(CardNotificationStatus.unsupported),
@@ -150,8 +174,7 @@ void main() {
         (call) => {
           'access': true,
           'enabled': call.method == 'configure',
-          'packages': ['com.example.cardapp'],
-          'accountId': 'card',
+          'routes': {'com.example.cardapp': 'card', 'com.example.bad': 7},
           'pending': 2,
           'apps': [
             {'package': 'com.example.zeta', 'label': 'zeta'},
@@ -163,12 +186,12 @@ void main() {
       const bridge = PlatformCardNotificationBridge(channel: channel);
       final status = await bridge.status() as Ok<CardNotificationStatus>;
       expect(status.value.pending, 2);
+      expect(status.value.routes, {'com.example.cardapp': 'card'});
       expect(status.value.apps.map((app) => app.label), ['Card App', 'zeta']);
       final configured = await bridge.configure(
         const CardNotificationConfig(
           enabled: true,
-          packages: {'com.example.cardapp'},
-          accountId: 'card',
+          routes: {'com.example.cardapp': 'card'},
           baseUrl: 'https://cashdeck.example.com',
           token: 'token',
         ),
@@ -176,8 +199,7 @@ void main() {
       expect((configured as Ok<CardNotificationStatus>).value.enabled, isTrue);
       expect(calls.last.arguments, {
         'enabled': true,
-        'packages': ['com.example.cardapp'],
-        'accountId': 'card',
+        'routes': {'com.example.cardapp': 'card'},
         'baseUrl': 'https://cashdeck.example.com',
         'token': 'token',
       });

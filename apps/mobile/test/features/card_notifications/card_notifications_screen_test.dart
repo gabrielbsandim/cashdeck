@@ -29,13 +29,29 @@ const card = TransactionAccount(
   type: AccountType.creditCard,
 );
 
+const other = TransactionAccount(
+  id: 'other',
+  name: 'Another card',
+  owner: EntityKind.personal,
+  institution: 'Card Bank',
+  type: AccountType.creditCard,
+);
+
+const failingStatus = CardNotificationStatus(
+  access: false,
+  enabled: false,
+  routes: {},
+  pending: 0,
+  apps: [NotifyingApp(package: 'com.example.cardapp', label: 'Card App')],
+);
+
 final class FailingBridge implements CardNotificationBridge {
   @override
   bool get supported => true;
 
   @override
   Future<Result<CardNotificationStatus>> status() async =>
-      const Ok(CardNotificationStatus.unsupported);
+      const Ok(failingStatus);
 
   @override
   Future<Result<void>> openAccessSettings() async =>
@@ -49,7 +65,7 @@ final class FailingBridge implements CardNotificationBridge {
 
 List<Override> overrides(
   CardNotificationBridge bridge, {
-  Result<List<TransactionAccount>> accounts = const Ok([card]),
+  Result<List<TransactionAccount>> accounts = const Ok([card, other]),
 }) {
   final repository = MockTransactionsRepository();
   when(repository.accounts).thenAnswer((_) async => accounts);
@@ -60,7 +76,7 @@ List<Override> overrides(
 }
 
 void main() {
-  testWidgets('grants access, picks a card and an app, then forwards', (
+  testWidgets('grants access, links each app to a card, then forwards', (
     tester,
   ) async {
     final bridge = FakeCardNotificationBridge();
@@ -85,23 +101,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(l10n.cardNotificationsAccessGranted), findsOneWidget);
 
-    await tester.tap(find.byKey(CardNotificationsScreen.cardKey('card')));
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(CardNotificationsScreen.appKey('com.example.cardapp')),
+    Future<void> route(String package, Key option) async {
+      await tester.tap(find.byKey(CardNotificationsScreen.appKey(package)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(option));
+      await tester.pumpAndSettle();
+    }
+
+    Future<Map<String, String>> routes() async =>
+        (await bridge.status() as Ok<CardNotificationStatus>).value.routes;
+
+    await route('com.example.cardapp', CardNotificationsScreen.cardKey('card'));
+    await route('com.example.chat', CardNotificationsScreen.cardKey('other'));
+    expect(find.text(l10n.cardNotificationsAppCard('Card')), findsOneWidget);
+    expect(
+      find.text(l10n.cardNotificationsAppCard('Another card')),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(CardNotificationsScreen.switchKey));
     await tester.pumpAndSettle();
     final status = await bridge.status() as Ok<CardNotificationStatus>;
     expect(status.value.enabled, isTrue);
-    expect(status.value.accountId, 'card');
-    expect(status.value.packages, {'com.example.cardapp'});
+    expect(status.value.routes, {
+      'com.example.cardapp': 'card',
+      'com.example.chat': 'other',
+    });
 
+    await route('com.example.cardapp', CardNotificationsScreen.cardKey('card'));
     await tester.tap(
       find.byKey(CardNotificationsScreen.appKey('com.example.cardapp')),
     );
     await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(await routes(), hasLength(2));
+
+    await route('com.example.chat', CardNotificationsScreen.offKey);
+    expect(await routes(), {'com.example.cardapp': 'card'});
+    await route('com.example.cardapp', CardNotificationsScreen.offKey);
     final unwatched = await bridge.status() as Ok<CardNotificationStatus>;
     expect(unwatched.value.enabled, isFalse);
     expect(find.text(l10n.cardNotificationsSwitchHint), findsOneWidget);
@@ -133,6 +170,10 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(CardNotificationsScreen.appKey('com.example.cardapp')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(CardNotificationsScreen.cardKey('card')));
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(
@@ -140,7 +181,7 @@ void main() {
     );
     expect(
       container.read(cardNotificationsControllerProvider).value?.status,
-      CardNotificationStatus.unsupported,
+      failingStatus,
     );
     await tester.pump(const Duration(seconds: 5));
   });
@@ -194,8 +235,7 @@ final class _PendingBridge implements CardNotificationBridge {
     CardNotificationStatus(
       access: true,
       enabled: false,
-      packages: {},
-      accountId: null,
+      routes: {},
       pending: 3,
       apps: [],
     ),

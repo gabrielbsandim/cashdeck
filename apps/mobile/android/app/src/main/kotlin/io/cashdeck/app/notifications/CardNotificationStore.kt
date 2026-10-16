@@ -10,32 +10,42 @@ class CardNotificationStore(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
-    val enabled: Boolean get() = prefs.getBoolean(KEY_ENABLED, false)
-    val packages: Set<String> get() = prefs.getStringSet(KEY_PACKAGES, emptySet()) ?: emptySet()
-    val accountId: String? get() = prefs.getString(KEY_ACCOUNT, null)
+    /** The user's choice, which outlives a refused token. */
+    val chosen: Boolean get() = prefs.getBoolean(KEY_ENABLED, false) && routes.isNotEmpty()
+
+    val enabled: Boolean get() = chosen && baseUrl != null && token != null
     val baseUrl: String? get() = prefs.getString(KEY_URL, null)
     val token: String? get() = prefs.getString(KEY_TOKEN, null)
 
+    /** The card each watched app's charges land on, by package. */
+    val routes: Map<String, String>
+        get() {
+            val json = JSONObject(prefs.getString(KEY_ROUTES, "{}") ?: "{}")
+            return json.keys().asSequence().associateWith { json.getString(it) }
+        }
+
+    init {
+        adoptSingleCard()
+    }
+
     fun configure(
         enabled: Boolean,
-        packages: Set<String>,
-        accountId: String?,
+        routes: Map<String, String>,
         baseUrl: String?,
         token: String?,
     ) {
         prefs.edit()
-            .putBoolean(KEY_ENABLED, enabled && accountId != null && token != null)
-            .putStringSet(KEY_PACKAGES, packages)
-            .putString(KEY_ACCOUNT, accountId)
+            .putBoolean(KEY_ENABLED, enabled && routes.isNotEmpty())
+            .putString(KEY_ROUTES, JSONObject(routes).toString())
             .putString(KEY_URL, baseUrl)
             .putString(KEY_TOKEN, if (enabled) token else null)
             .apply()
         if (!enabled) clearQueue()
     }
 
-    // A revoked token stops forwarding until the app signs in again.
+    // A refused token pauses forwarding; the next session the app hands over resumes it.
     fun forgetToken() {
-        prefs.edit().putBoolean(KEY_ENABLED, false).remove(KEY_TOKEN).apply()
+        prefs.edit().remove(KEY_TOKEN).apply()
     }
 
     fun seenApps(): Map<String, String> {
@@ -79,6 +89,23 @@ class CardNotificationStore(context: Context) {
     @Synchronized
     fun queue(): JSONArray = JSONArray(prefs.getString(KEY_QUEUE, "[]") ?: "[]")
 
+    // Before routes one card took every watched app, and queued items named no card.
+    @Synchronized
+    private fun adoptSingleCard() {
+        val account = prefs.getString(KEY_ACCOUNT, null) ?: return
+        val packages = prefs.getStringSet(KEY_PACKAGES, emptySet()).orEmpty()
+        val queue = queue()
+        for (index in 0 until queue.length()) {
+            queue.getJSONObject(index).put(ACCOUNT_FIELD, account)
+        }
+        prefs.edit()
+            .putString(KEY_ROUTES, JSONObject(packages.associateWith { account }).toString())
+            .putString(KEY_QUEUE, queue.toString())
+            .remove(KEY_PACKAGES)
+            .remove(KEY_ACCOUNT)
+            .apply()
+    }
+
     @Synchronized
     fun drop(ids: Set<String>) {
         val queue = queue()
@@ -97,6 +124,8 @@ class CardNotificationStore(context: Context) {
     companion object {
         private const val NAME = "card_notifications"
         private const val KEY_ENABLED = "enabled"
+        const val ACCOUNT_FIELD = "accountId"
+        private const val KEY_ROUTES = "routes"
         private const val KEY_PACKAGES = "packages"
         private const val KEY_ACCOUNT = "account_id"
         private const val KEY_URL = "base_url"

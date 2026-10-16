@@ -8,8 +8,11 @@ CardNotificationStatus cardNotificationStatusFromMap(
 ) => CardNotificationStatus(
   access: map['access'] == true,
   enabled: map['enabled'] == true,
-  packages: {...(map['packages'] as List<Object?>? ?? []).whereType<String>()},
-  accountId: map['accountId'] as String?,
+  routes: {
+    for (final MapEntry(:key, :value)
+        in (map['routes'] as Map<Object?, Object?>? ?? {}).entries)
+      if (key is String && value is String) key: value,
+  },
   pending: map['pending'] as int? ?? 0,
   apps: [
     for (final app
@@ -56,8 +59,7 @@ final class PlatformCardNotificationBridge implements CardNotificationBridge {
   ) => _read(
     () => _channel.invokeMethod<Object?>('configure', {
       'enabled': config.enabled,
-      'packages': config.packages.toList(),
-      'accountId': config.accountId,
+      'routes': config.routes,
       'baseUrl': config.baseUrl,
       'token': config.token,
     }),

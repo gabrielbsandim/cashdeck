@@ -2868,18 +2868,34 @@
   "cardNotificationsMenu": "Compras pelas notificações",
   "moreCardNotificationsHint": "Lança na hora o que o app do cartão avisa",
   "cardNotificationsTitle": "Compras pelas notificações",
-  "cardNotificationsIntro": "Para um cartão sem Open Finance: cada compra que o app do cartão notifica neste celular entra como prévia na conta escolhida, até a fatura confirmar.",
+  "cardNotificationsIntro": "Para cartões sem Open Finance: cada compra que o app de um cartão notifica neste celular entra como prévia no cartão ligado a esse app, até a fatura confirmar.",
   "cardNotificationsUnsupported": "Disponível só no Android.",
   "cardNotificationsAccessTitle": "Acesso às notificações",
   "cardNotificationsAccessMissing": "O Android ainda não deixou o Cashdeck ler notificações.",
   "cardNotificationsAccessAction": "Permitir",
   "cardNotificationsAccessGranted": "Permitido",
-  "cardNotificationsCardSection": "Cartão",
   "cardNotificationsNoCards": "Nenhum cartão. Crie uma conta manual do tipo cartão de crédito.",
-  "cardNotificationsAppsSection": "Apps",
+  "cardNotificationsAppsSection": "Apps e cartões",
   "cardNotificationsNoApps": "Os apps aparecem aqui depois de notificarem algo neste celular.",
+  "cardNotificationsAppCard": "Lança no {card}",
+  "@cardNotificationsAppCard": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      }
+    }
+  },
+  "cardNotificationsPickCard": "Compras do {app} vão para",
+  "@cardNotificationsPickCard": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "cardNotificationsAppOff": "Não lançar",
   "cardNotificationsSwitch": "Lançar as compras notificadas",
-  "cardNotificationsSwitchHint": "Precisa do acesso, de um cartão e de pelo menos um app",
+  "cardNotificationsSwitchHint": "Precisa do acesso e de pelo menos um app ligado a um cartão",
   "cardNotificationsPending": "{count, plural, =1{1 notificação aguardando internet} other{{count} notificações aguardando internet}}",
   "@cardNotificationsPending": {
     "placeholders": {

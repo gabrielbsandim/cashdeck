@@ -1,7 +1,11 @@
 package io.cashdeck.app.notifications
 
 import android.app.Notification
+import android.content.ComponentName
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import org.json.JSONObject
@@ -22,8 +26,10 @@ class CardNotificationListener : NotificationListenerService() {
         readActive()
     }
 
+    // Battery savers unbind the listener, and nothing binds it back on its own.
     override fun onListenerDisconnected() {
         connected = null
+        rebind(applicationContext)
     }
 
     private fun readActive() {
@@ -38,7 +44,8 @@ class CardNotificationListener : NotificationListenerService() {
         if (sbn.isOngoing) return
         val store = CardNotificationStore(applicationContext)
         store.rememberApp(sbn.packageName, labelOf(sbn.packageName))
-        if (!store.enabled || sbn.packageName !in store.packages) return
+        if (!store.enabled) return
+        val accountId = store.routes[sbn.packageName] ?: return
         val extras = notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = (
@@ -54,7 +61,8 @@ class CardNotificationListener : NotificationListenerService() {
                 .put("app", labelOf(sbn.packageName))
                 .put("title", title.take(MAX_TITLE))
                 .put("text", text.take(MAX_TEXT))
-                .put("postedAt", isoInstant(sbn.postTime)),
+                .put("postedAt", isoInstant(sbn.postTime))
+                .put(CardNotificationStore.ACCOUNT_FIELD, accountId),
         )
         CardNotificationUploader.schedule(applicationContext)
     }
@@ -72,6 +80,26 @@ class CardNotificationListener : NotificationListenerService() {
 
         fun readActiveNotifications() {
             connected?.readActive()
+        }
+
+        fun hasAccess(context: Context): Boolean {
+            val granted = Settings.Secure.getString(
+                context.contentResolver,
+                "enabled_notification_listeners",
+            ).orEmpty()
+            val self = ComponentName(context, CardNotificationListener::class.java)
+            return granted.split(':').any { ComponentName.unflattenFromString(it) == self }
+        }
+
+        // An app update can leave access granted while the listener stays unbound.
+        fun ensureBound(context: Context) {
+            if (connected != null || !hasAccess(context)) return
+            rebind(context)
+        }
+
+        private fun rebind(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+            requestRebind(ComponentName(context, CardNotificationListener::class.java))
         }
 
         private const val ID_LENGTH = 40

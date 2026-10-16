@@ -17,8 +17,7 @@ final class CardNotificationStatus extends Equatable {
   const new({
     required this.access,
     required this.enabled,
-    required this.packages,
-    required this.accountId,
+    required this.routes,
     required this.pending,
     required this.apps,
   });
@@ -26,8 +25,7 @@ final class CardNotificationStatus extends Equatable {
   static const unsupported = CardNotificationStatus(
     access: false,
     enabled: false,
-    packages: {},
-    accountId: null,
+    routes: {},
     pending: 0,
     apps: [],
   );
@@ -35,48 +33,36 @@ final class CardNotificationStatus extends Equatable {
   /// Whether the user let Cashdeck read notifications in system settings.
   final bool access;
   final bool enabled;
-  final Set<String> packages;
-  final String? accountId;
+
+  /// The card each watched app's charges land on, by package.
+  final Map<String, String> routes;
 
   /// Notifications waiting for the network.
   final int pending;
   final List<NotifyingApp> apps;
 
   @override
-  List<Object?> get props => [
-    access,
-    enabled,
-    packages,
-    accountId,
-    pending,
-    apps,
-  ];
+  List<Object?> get props => [access, enabled, routes, pending, apps];
 }
 
 /// What forwarding sends and where; the server and token are the session's.
 final class CardNotificationConfig extends Equatable {
   const new({
     required this.enabled,
-    required this.packages,
-    required this.accountId,
+    required this.routes,
     this.baseUrl,
     this.token,
   });
 
-  static const off = CardNotificationConfig(
-    enabled: false,
-    packages: {},
-    accountId: null,
-  );
+  static const off = CardNotificationConfig(enabled: false, routes: {});
 
   final bool enabled;
-  final Set<String> packages;
-  final String? accountId;
+  final Map<String, String> routes;
   final String? baseUrl;
   final String? token;
 
   @override
-  List<Object?> get props => [enabled, packages, accountId, baseUrl, token];
+  List<Object?> get props => [enabled, routes, baseUrl, token];
 }
 
 /// The phone side that reads other apps' notifications, Android only.

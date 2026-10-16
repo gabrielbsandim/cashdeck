@@ -8,6 +8,7 @@ import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/core/theme/app_theme.dart';
 import 'package:cashdeck/core/widgets/layout/cd_bottom_inset.dart';
 import 'package:cashdeck/features/alerts/presentation/push_listener.dart';
+import 'package:cashdeck/features/card_notifications/presentation/resume_card_notifications.dart';
 import 'package:cashdeck/features/home_widget/presentation/home_widget_sync.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,7 @@ class _CashdeckAppState extends ConsumerState<CashdeckApp> {
     safeMode.check().ignore();
     clearHomeWidgetOnSignOut(ref);
     enableHomeWidgetRefresh(ref);
+    resumeCardNotificationsOnSignIn(ref);
     _shared = ref.read(shareIntakeProvider).received().listen(_open);
   }
 
