@@ -222,10 +222,10 @@ describe('pix in the chat', () => {
     const turn = await chat.sendMessage(
       TENANT,
       thread.id,
-      message('Manda 50,50 pro @ana e pro @ze'),
+      message('Manda 50,50 pro @ana.souza e pro @ze'),
     )
     expect(deps.llm.calls[0]?.messages.at(-1)?.content).toContain(
-      `[mentioned contact @ana id=${ana.id} name="Ana Souza"]\n[@ze is not a saved contact]`,
+      `[mentioned contact @ana.souza id=${ana.id} name="Ana Souza"]\n[@ze is not a saved contact]`,
     )
     const action = turn.messages[1]?.actions[0]
     expect(action).toMatchObject({
@@ -237,7 +237,7 @@ describe('pix in the chat', () => {
         amount: { cents: 5050, currency: 'BRL' },
         pixKey: 'ana@example.com',
         pixKeyType: 'EMAIL',
-        contactHandle: 'ana',
+        contactHandle: 'ana.souza',
         newContact: false,
       },
     })
@@ -287,7 +287,7 @@ describe('pix in the chat', () => {
       {
         id: expect.any(String),
         name: 'Joana Lima',
-        handle: '@joana',
+        handle: '@joana.lima',
         keyType: 'EMAIL',
         key: '******.com',
         timesPaid: 0,
@@ -301,7 +301,7 @@ describe('pix in the chat', () => {
         payee: 'João Alves',
         pixKey: '+5511987654321',
         pixKeyType: 'PHONE',
-        contactHandle: 'joao',
+        contactHandle: 'joao.alves',
         newContact: true,
       },
     })
@@ -313,7 +313,7 @@ describe('pix in the chat', () => {
     const saved = await contacts.list(TENANT, '@joao')
     expect(saved[0]).toMatchObject({
       id: confirmed.result?.contactId,
-      handle: 'joao',
+      handle: 'joao.alves',
       timesPaid: 1,
     })
   })

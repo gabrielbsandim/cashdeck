@@ -472,7 +472,7 @@ describe('pix contacts', () => {
     })
     expect(created.status).toBe(201)
     expect(created.body.data).toMatchObject({
-      handle: 'ana',
+      handle: 'ana.souza',
       pixKeyType: 'EMAIL',
       timesPaid: 0,
     })

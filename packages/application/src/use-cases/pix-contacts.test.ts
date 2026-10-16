@@ -11,7 +11,7 @@ function setup() {
 }
 
 describe('pix contacts', () => {
-  it('saves a contact with a handle from its first name', async () => {
+  it('saves a contact with a handle from its first and last names', async () => {
     const { contacts } = setup()
     const created = await contacts.create(TENANT, {
       name: ' João  Silva ',
@@ -20,7 +20,7 @@ describe('pix contacts', () => {
     expect(created).toEqual({
       id: created.id,
       name: 'João Silva',
-      handle: 'joao',
+      handle: 'joao.silva',
       pixKey: '52998224725',
       pixKeyType: 'CPF',
       timesPaid: 0,
@@ -67,8 +67,8 @@ describe('pix contacts', () => {
       pixKey: '+55 11 98765-4321',
     })
     expect((await contacts.list(TENANT)).map(c => c.handle)).toEqual([
-      'ana',
-      'bia',
+      'ana.souza',
+      'bia.lima',
     ])
     expect((await contacts.list(TENANT, 'lima')).map(c => c.id)).toEqual([
       bia.id,
@@ -99,7 +99,7 @@ describe('pix contacts', () => {
       contacts.update(TENANT, ana.id, { pixKeyType: 'CNPJ' }),
     ).rejects.toThrow(ValidationError)
     await expect(
-      contacts.update(TENANT, ana.id, { handle: 'bia' }),
+      contacts.update(TENANT, ana.id, { handle: 'bia.lima' }),
     ).rejects.toThrow(ConflictError)
     await expect(contacts.update(TENANT, 'missing', {})).rejects.toThrow(
       NotFoundError,

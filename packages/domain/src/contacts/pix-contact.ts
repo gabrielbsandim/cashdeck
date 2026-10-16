@@ -107,7 +107,8 @@ export function suggestHandle(
   const words = searchText(name).split(' ').map(slug).filter(Boolean)
   const first = (words[0] ?? 'contato').slice(0, 24).padEnd(2, '0')
   const last = words.length > 1 ? words.at(-1) : undefined
-  const candidates = [first, ...(last ? [`${first}.${last}`.slice(0, 30)] : [])]
+  // A first name alone collides as soon as a second person shares it.
+  const candidates = [...(last ? [`${first}.${last}`.slice(0, 30)] : []), first]
   const free = candidates.find(candidate => !taken.has(candidate))
   if (free) {
     return free

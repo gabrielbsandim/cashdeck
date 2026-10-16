@@ -66,8 +66,8 @@ describe('handles', () => {
   })
 
   it('suggests the first name, then the full name, then a number', () => {
-    expect(suggestHandle('João da Silva', new Set())).toBe('joao')
-    expect(suggestHandle('João da Silva', new Set(['joao']))).toBe('joao.silva')
+    expect(suggestHandle('João da Silva', new Set())).toBe('joao.silva')
+    expect(suggestHandle('João da Silva', new Set(['joao.silva']))).toBe('joao')
     expect(
       suggestHandle('João da Silva', new Set(['joao', 'joao.silva', 'joao2'])),
     ).toBe('joao3')
