@@ -130,16 +130,24 @@ export const debitAccountInputSchema = z.object({
   accountId: z.string().min(1).nullable(),
 })
 
+// One payment the Asaas balance makes soon; a PIX line is the loose Pix of a
+// typical month, set aside on the day its 30 days start.
+export const fundingLineViewSchema = z.object({
+  name: z.string(),
+  amount: moneyViewSchema,
+  on: isoDate,
+  kind: z.enum(['BILL', 'EXPECTED', 'FIXED', 'PIX']),
+})
+
+export type FundingLineView = z.infer<typeof fundingLineViewSchema>
+
 export const fundingPlanSchema = z.object({
   balance: moneyViewSchema.nullable(),
-  monthlyAverage: moneyViewSchema,
-  months: z.array(z.object({ month: z.string(), total: moneyViewSchema })),
-  upcoming: moneyViewSchema,
-  // Bills that repeat but have not arrived, plus the fixed payments.
-  expected: moneyViewSchema,
-  pixReserve: moneyViewSchema,
-  items: z.array(fundingItemViewSchema),
+  // What the next 30 days take, which is also the monthly transfer to set up.
+  needed: moneyViewSchema,
   topUp: moneyViewSchema,
+  lines: z.array(fundingLineViewSchema),
+  items: z.array(fundingItemViewSchema),
   // The account the bank debits by itself, once one is picked.
   debit: z
     .object({

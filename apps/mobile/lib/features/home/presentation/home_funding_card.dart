@@ -19,8 +19,8 @@ final FutureProvider<FundingPlan> fundingPlanProvider =
       retry: noRetry,
     );
 
-/// How much the bills paid from Asaas take a month, to size a recurring
-/// transfer, and what to send now for the next 30 days. Hidden without bills.
+/// What the Asaas balance pays in the next 30 days, line by line, and what to
+/// send now so it can. Hidden when nothing is coming.
 class HomeFundingCard extends ConsumerWidget {
   const new({super.key});
 
@@ -64,36 +64,30 @@ class _Plan extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CdAmount(
-          plan.monthlyAverage,
-          size: CdAmountSize.lg,
-          textAlign: TextAlign.start,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(l10n.fundingAverage(plan.months), style: muted),
-        const SizedBox(height: AppSpacing.sm),
-        CdPrivateText(
-          (hide) => l10n.fundingUpcoming(
-            MoneyFormat.format(plan.upcoming, hide: hide),
-            MoneyFormat.format(plan.expected, hide: hide),
-            MoneyFormat.format(plan.pixReserve, hide: hide),
-          ),
-          style: muted,
-        ),
-        if (plan.balance case final balance?) ...[
-          const SizedBox(height: AppSpacing.xs),
-          CdPrivateText(
-            (hide) =>
-                l10n.fundingBalance(MoneyFormat.format(balance, hide: hide)),
-            style: muted,
-          ),
-        ],
-        const SizedBox(height: AppSpacing.xs),
         _Verdict(
           text: (hide) => short
               ? l10n.fundingTopUp(MoneyFormat.format(plan.topUp, hide: hide))
               : l10n.fundingCovered,
           short: short,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        CdPrivateText((hide) {
+          final needed = MoneyFormat.format(plan.needed, hide: hide);
+          return switch (plan.balance) {
+            null => l10n.fundingNeedsUnknown(needed),
+            final balance => l10n.fundingNeeds(
+              needed,
+              MoneyFormat.format(balance, hide: hide),
+            ),
+          };
+        }, style: muted),
+        const SizedBox(height: AppSpacing.sm),
+        for (final line in plan.lines) _Line(line: line),
+        const SizedBox(height: AppSpacing.sm),
+        CdPrivateText(
+          (hide) =>
+              l10n.fundingMonthly(MoneyFormat.format(plan.needed, hide: hide)),
+          style: muted,
         ),
         if (plan.debit case final debit?) ...[
           const SizedBox(height: AppSpacing.md),
@@ -117,6 +111,44 @@ class _Plan extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  const new({required this.line});
+
+  final FundingLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    const style = AppTextStyles.bodyMd;
+    final name = switch (line.kind) {
+      FundingLineKind.pix => l10n.fundingLinePix,
+      FundingLineKind.expected => l10n.fundingLineExpected(line.name),
+      FundingLineKind.bill || FundingLineKind.fixed => line.name,
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 48,
+            child: Text(
+              line.on.dayMonth,
+              style: style.copyWith(color: context.palette.onSurfaceVariant),
+            ),
+          ),
+          Expanded(
+            child: Text(name, style: style, overflow: TextOverflow.ellipsis),
+          ),
+          CdPrivateText(
+            (hide) => MoneyFormat.format(line.amount, hide: hide),
+            style: style,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
 import 'package:cashdeck/core/preferences/display_preferences.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/home/application/home_use_cases.dart';
 import 'package:cashdeck/features/home/domain/home_summary.dart';
 import 'package:cashdeck/features/home/home_providers.dart';
@@ -22,12 +23,16 @@ const double _height = 4200;
 
 const _covered = FundingPlan(
   balance: null,
-  monthlyAverage: Money(120_000),
-  months: 1,
-  upcoming: Money(30_000),
-  expected: Money(5_000),
-  pixReserve: Money(2_000),
+  needed: Money(30_000),
   topUp: Money(0),
+  lines: [
+    FundingLine(
+      name: 'Escola',
+      amount: Money(30_000),
+      on: CalendarDate(2026, 10, 20),
+      kind: FundingLineKind.bill,
+    ),
+  ],
   debit: FundingDebit(
     name: 'Banco Azul',
     balance: Money(90_000),
@@ -61,36 +66,40 @@ Future<MockHomeRepository> _pump(
 }
 
 void main() {
-  testWidgets('shows the monthly average and what to send now', (tester) async {
+  testWidgets('lists the next 30 days and what to send now', (tester) async {
     await pumpRoute(tester, AppRoutes.home, screenHeight: _height);
 
     expect(find.byKey(HomeFundingCard.cardKey), findsOneWidget);
     expect(
-      _inCard(find.text(MoneyFormat.format(const Money(218_500)))),
+      _inCard(
+        find.text(l10n.fundingTopUp(MoneyFormat.format(const Money(139_300)))),
+      ),
       findsOneWidget,
     );
-    expect(_inCard(find.text(l10n.fundingAverage(3))), findsOneWidget);
     expect(
       _inCard(
         find.text(
-          l10n.fundingUpcoming(
-            MoneyFormat.format(const Money(96_300)),
-            MoneyFormat.format(const Money(55_000)),
-            MoneyFormat.format(const Money(30_000)),
+          l10n.fundingNeeds(
+            MoneyFormat.format(const Money(181_300)),
+            MoneyFormat.format(const Money(42_000)),
           ),
         ),
       ),
       findsOneWidget,
     );
+    expect(_inCard(find.text(l10n.fundingLinePix)), findsOneWidget);
+    expect(_inCard(find.text('Internet Rede')), findsOneWidget);
+    expect(_inCard(find.text('Condominio')), findsOneWidget);
     expect(
-      _inCard(
-        find.text(l10n.fundingBalance(MoneyFormat.format(const Money(42_000)))),
-      ),
+      _inCard(find.text(l10n.fundingLineExpected('Plano de Saude'))),
       findsOneWidget,
     );
+    expect(_inCard(find.text('02/11')), findsOneWidget);
     expect(
       _inCard(
-        find.text(l10n.fundingTopUp(MoneyFormat.format(const Money(139_300)))),
+        find.text(
+          l10n.fundingMonthly(MoneyFormat.format(const Money(181_300))),
+        ),
       ),
       findsOneWidget,
     );
@@ -133,19 +142,17 @@ void main() {
     when(repository.funding).thenAnswer((_) async => const Ok(_covered));
     await tester.tap(find.byKey(HomeFundingCard.retryKey));
     await settle(tester);
-    expect(_inCard(find.text(l10n.fundingAverage(1))), findsOneWidget);
     expect(
       _inCard(
         find.text(
-          l10n.fundingUpcoming(
+          l10n.fundingNeedsUnknown(
             MoneyFormat.format(const Money(30_000), hide: true),
-            MoneyFormat.format(const Money(5_000), hide: true),
-            MoneyFormat.format(const Money(2_000), hide: true),
           ),
         ),
       ),
       findsOneWidget,
     );
+    expect(_inCard(find.text('Escola')), findsOneWidget);
     expect(_inCard(find.text(l10n.fundingCovered)), findsOneWidget);
     expect(
       _inCard(find.text(l10n.fundingDebitCovered('Banco Azul'))),
@@ -153,18 +160,15 @@ void main() {
     );
   });
 
-  testWidgets('hides without bills', (tester) async {
+  testWidgets('hides when nothing is coming', (tester) async {
     await _pump(
       tester,
       () async => const Ok(
         FundingPlan(
           balance: Money(0),
-          monthlyAverage: Money(0),
-          months: 1,
-          upcoming: Money(0),
-          expected: Money(0),
-          pixReserve: Money(0),
+          needed: Money(0),
           topUp: Money(0),
+          lines: [],
         ),
       ),
     );

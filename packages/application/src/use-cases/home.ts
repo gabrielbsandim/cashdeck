@@ -23,6 +23,7 @@ import {
   type PersonalSummary,
 } from '@/dtos/home'
 import { type Deps } from '@/use-cases/deps'
+import { commitmentsAhead } from '@/use-cases/funding-plan'
 import { payrollWindow } from '@/use-cases/payroll'
 import { isRailAccountItem } from '@/use-cases/rail-accounts'
 import { issQuote } from '@/use-cases/revenue'
@@ -144,6 +145,7 @@ export function makePersonalSummary(
     | 'payments'
     | 'budgets'
     | 'clock'
+    | 'documents'
   >,
 ) {
   return async function personalSummary(
@@ -189,7 +191,10 @@ export function makePersonalSummary(
       sync,
       reserve:
         reserveAccount &&
-        (await reserveOf(deps, tenantId, reserveAccount, month, bills)),
+        (await reserveOf(deps, tenantId, reserveAccount, month, {
+          entity: scope.entity,
+          day,
+        })),
       forecast: {
         from: day,
         balances: forecast.map(money),
@@ -211,29 +216,37 @@ export function makePersonalSummary(
 }
 
 async function reserveOf(
-  deps: Pick<Deps, 'institutions' | 'transactions'>,
+  deps: Pick<
+    Deps,
+    'institutions' | 'transactions' | 'bills' | 'documents' | 'accounts'
+  >,
   tenantId: string,
   account: Account,
   month: string,
-  bills: Array<{ day: number; amount: Money }>,
+  { entity, day }: { entity: FinancialEntity; day: LocalDate },
 ) {
-  const [institution, credits] = await Promise.all([
+  const [institution, credits, ahead] = await Promise.all([
     deps.institutions.findById(tenantId, account.institutionId),
     deps.transactions.all(tenantId, {
       accountIds: [account.id],
       from: firstDay(month),
     }),
+    commitmentsAhead(deps, tenantId, entity, day, COVER_CAP_DAYS),
   ])
   const yields = credits
     .filter(tx => tx.amount.isPositive() && tx.transferGroupId === null)
     .map(tx => tx.amount)
+  const due = ahead.map(item => ({
+    day: daysBetween(day, item.on),
+    amount: Money.of(item.amount.cents),
+  }))
   return {
     accountId: account.id,
     institution: institution?.name ?? '',
     product: account.name,
     balance: money(account.balance),
     monthYield: money(sum(yields)),
-    coverDays: coverDays(account.balance, bills, COVER_CAP_DAYS),
+    coverDays: coverDays(account.balance, due, COVER_CAP_DAYS),
     cdiPercent: account.cdiPercent,
   }
 }

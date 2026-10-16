@@ -2793,32 +2793,38 @@
   "payrollAnnexFromPayroll": "Folha",
   "payrollAnnexSaved": "Anexo atualizado",
   "fundingTitle": "Abastecer o Asaas",
-  "fundingAverage": "{months, plural, =1{Média por mês das contas pagas por lá, com 1 mês de histórico} other{Média por mês das contas pagas por lá, em {months} meses}}",
-  "@fundingAverage": {
+  "fundingNeeds": "Os próximos 30 dias pedem {needed} · Saldo: {balance}",
+  "@fundingNeeds": {
     "placeholders": {
-      "months": {
-        "type": "int"
-      }
-    }
-  },
-  "fundingUpcoming": "Próximos 30 dias: {upcoming} em boletos, {expected} previstos e {pix} de Pix avulso",
-  "@fundingUpcoming": {
-    "placeholders": {
-      "upcoming": {
+      "needed": {
         "type": "String"
       },
-      "expected": {
-        "type": "String"
-      },
-      "pix": {
-        "type": "String"
-      }
-    }
-  },
-  "fundingBalance": "Saldo no Asaas: {balance}",
-  "@fundingBalance": {
-    "placeholders": {
       "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingNeedsUnknown": "Os próximos 30 dias pedem {needed}",
+  "@fundingNeedsUnknown": {
+    "placeholders": {
+      "needed": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingMonthly": "Uma transferência mensal de {needed} mantém o saldo em dia",
+  "@fundingMonthly": {
+    "placeholders": {
+      "needed": {
+        "type": "String"
+      }
+    }
+  },
+  "fundingLinePix": "Pix avulso (média do mês)",
+  "fundingLineExpected": "{name} (previsto)",
+  "@fundingLineExpected": {
+    "placeholders": {
+      "name": {
         "type": "String"
       }
     }

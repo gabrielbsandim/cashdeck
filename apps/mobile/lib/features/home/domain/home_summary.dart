@@ -331,55 +331,53 @@ final class ConsolidatedSummary extends HomeSummary {
   ];
 }
 
-/// What the Asaas balance pays a month for the person, and what it lacks for
-/// the next 30 days of bills, expected bills, fixed payments and loose Pix.
+/// What the Asaas balance pays for the person in the next 30 days, and what
+/// to send so it can.
 final class FundingPlan extends Equatable {
   const new({
     required this.balance,
-    required this.monthlyAverage,
-    required this.months,
-    required this.upcoming,
-    required this.expected,
-    required this.pixReserve,
+    required this.needed,
     required this.topUp,
+    required this.lines,
     this.debit,
   });
 
   /// Null when the balance could not be read.
   final Money? balance;
-  final Money monthlyAverage;
 
-  /// How many months the average spans.
-  final int months;
-  final Money upcoming;
-
-  /// Bills that repeat but have not arrived, plus the fixed payments.
-  final Money expected;
-
-  /// What a typical month sends in small Pix to people.
-  final Money pixReserve;
+  /// What the next 30 days take, which is also the monthly transfer to set up.
+  final Money needed;
   final Money topUp;
+  final List<FundingLine> lines;
 
   /// The account the bank debits by itself, once one is picked.
   final FundingDebit? debit;
 
-  bool get isEmpty =>
-      monthlyAverage.cents == 0 &&
-      upcoming.cents == 0 &&
-      expected.cents == 0 &&
-      pixReserve.cents == 0;
+  bool get isEmpty => lines.isEmpty;
 
   @override
-  List<Object?> get props => [
-    balance,
-    monthlyAverage,
-    months,
-    upcoming,
-    expected,
-    pixReserve,
-    topUp,
-    debit,
-  ];
+  List<Object?> get props => [balance, needed, topUp, lines, debit];
+}
+
+enum FundingLineKind { bill, expected, fixed, pix }
+
+/// One payment the Asaas balance makes soon. A [FundingLineKind.pix] line is
+/// the loose Pix of a typical month and has no name.
+final class FundingLine extends Equatable {
+  const new({
+    required this.name,
+    required this.amount,
+    required this.on,
+    required this.kind,
+  });
+
+  final String name;
+  final Money amount;
+  final CalendarDate on;
+  final FundingLineKind kind;
+
+  @override
+  List<Object?> get props => [name, amount, on, kind];
 }
 
 /// What the account on automatic debit needs for its next monthly debits.

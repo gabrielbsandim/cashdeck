@@ -13,6 +13,13 @@ const Map<String, InternalTransferKind> _transferKinds = {
   'PRO_LABORE': InternalTransferKind.proLabore,
 };
 
+const Map<String, FundingLineKind> _fundingLineKinds = {
+  'BILL': FundingLineKind.bill,
+  'EXPECTED': FundingLineKind.expected,
+  'FIXED': FundingLineKind.fixed,
+  'PIX': FundingLineKind.pix,
+};
+
 SyncInfo syncFromJson(JsonMap json) => SyncInfo(
   accountCount: readInt(json, 'accountCount'),
   syncedAt: readOptionalDateTime(json, 'syncedAt'),
@@ -129,12 +136,17 @@ FundingPlan fundingFromJson(JsonMap json) {
   final debit = readOptionalMap(json, 'debit');
   return FundingPlan(
     balance: balance == null ? null : moneyFromJson(balance),
-    monthlyAverage: readMoney(json, 'monthlyAverage'),
-    months: readMapList(json, 'months').length,
-    upcoming: readMoney(json, 'upcoming'),
-    expected: readMoney(json, 'expected'),
-    pixReserve: readMoney(json, 'pixReserve'),
+    needed: readMoney(json, 'needed'),
     topUp: readMoney(json, 'topUp'),
+    lines: [
+      for (final line in readMapList(json, 'lines'))
+        FundingLine(
+          name: readString(line, 'name'),
+          amount: readMoney(line, 'amount'),
+          on: readDate(line, 'on'),
+          kind: readEnum(line, 'kind', _fundingLineKinds),
+        ),
+    ],
     debit: debit == null
         ? null
         : FundingDebit(

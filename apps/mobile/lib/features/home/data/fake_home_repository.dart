@@ -136,12 +136,34 @@ final class FakeHomeRepository implements HomeRepository {
     return const Ok(
       FundingPlan(
         balance: Money(42_000),
-        monthlyAverage: Money(218_500),
-        months: 3,
-        upcoming: Money(96_300),
-        expected: Money(55_000),
-        pixReserve: Money(30_000),
+        needed: Money(181_300),
         topUp: Money(139_300),
+        lines: [
+          FundingLine(
+            name: '',
+            amount: Money(30_000),
+            on: CalendarDate(2026, 10, 8),
+            kind: FundingLineKind.pix,
+          ),
+          FundingLine(
+            name: 'Internet Rede',
+            amount: Money(9_990),
+            on: CalendarDate(2026, 10, 12),
+            kind: FundingLineKind.bill,
+          ),
+          FundingLine(
+            name: 'Condominio',
+            amount: Money(55_000),
+            on: CalendarDate(2026, 10, 15),
+            kind: FundingLineKind.fixed,
+          ),
+          FundingLine(
+            name: 'Plano de Saude',
+            amount: Money(86_310),
+            on: CalendarDate(2026, 11, 2),
+            kind: FundingLineKind.expected,
+          ),
+        ],
         debit: FundingDebit(
           name: 'Banco Azul',
           balance: Money(150_000),

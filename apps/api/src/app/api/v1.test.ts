@@ -229,7 +229,7 @@ describe('money views', () => {
     expect((await call(h(homePersonal), 'GET')).status).toBe(200)
     const funding = await call(h(fundingPlan), 'GET')
     expect(funding.status).toBe(200)
-    expect(funding.body.data).toHaveProperty('monthlyAverage')
+    expect(funding.body.data).toHaveProperty('needed')
     const item = await call(h(addFundingItem), 'POST', {
       body: { name: 'Condominio', amountCents: 55_000, dayOfMonth: 10 },
     })

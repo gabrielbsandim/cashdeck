@@ -11,6 +11,7 @@ import {
   type LocalDate,
   Money,
   recipientKeys,
+  shiftMonth,
   summarizeCharges,
   toCounterparty,
   type Transaction,
@@ -21,11 +22,12 @@ import {
   type FundingDebitView,
   type FundingItemInput,
   type FundingItemView,
+  type FundingLineView,
   type FundingPlan,
 } from '@/dtos/home'
 import { NotFoundError } from '@/errors/errors'
-import { loadAutoDebit } from '@/use-cases/auto-debit'
-import { dueAfter } from '@/use-cases/card-cycle'
+import { type AutoDebitCheck, loadAutoDebit } from '@/use-cases/auto-debit'
+import { dueAfter, sameDayIn } from '@/use-cases/card-cycle'
 import { type Deps } from '@/use-cases/deps'
 import {
   addMonths,
@@ -69,9 +71,37 @@ function median(values: readonly number[]): number {
   )
 }
 
-// Once a monthly payee's bill is paid, the next one is a month away and
-// arrives only days before it is due, so the last one stands in for it.
-function expectedBills(bills: readonly Bill[], day: LocalDate): Money[] {
+// Each payee bills again on the same day of the month after its latest bill,
+// so the months ahead are known before their bills arrive.
+function monthlyDates(
+  latest: LocalDate,
+  day: LocalDate,
+  end: LocalDate,
+): LocalDate[] {
+  const dates: LocalDate[] = []
+  const dayOfMonth = latest.slice(8)
+  for (
+    let month = shiftMonth(monthOf(latest), 1);
+    sameDayIn(month, dayOfMonth) <= end;
+    month = shiftMonth(month, 1)
+  ) {
+    dates.push(sameDayIn(month, dayOfMonth))
+  }
+  return dates.filter(on => on >= day)
+}
+
+const line = (
+  name: string,
+  amount: Money,
+  on: LocalDate,
+  kind: FundingLineView['kind'],
+): FundingLineView => ({ name, amount: money(amount), on, kind })
+
+function billLines(
+  bills: readonly Bill[],
+  day: LocalDate,
+  end: LocalDate,
+): FundingLineView[] {
   const byPayee = new Map<string, Bill[]>()
   for (const bill of bills) {
     byPayee.set(keyOf(bill), [...(byPayee.get(keyOf(bill)) ?? []), bill])
@@ -80,9 +110,71 @@ function expectedBills(bills: readonly Bill[], day: LocalDate): Money[] {
     const latest = [...own].sort((a, b) =>
       b.dueDate.localeCompare(a.dueDate),
     )[0] as Bill
+    const name = latest.payee ?? latest.kind
+    const arrived = own
+      .filter(
+        bill =>
+          FUNDED.includes(bill.status) &&
+          bill.dueDate >= day &&
+          bill.dueDate <= end,
+      )
+      .map(bill => line(name, bill.amount, bill.dueDate, 'BILL'))
     const current = latest.dueDate >= addDays(day, -STALE_DAYS)
-    return current && !FUNDED.includes(latest.status) ? [latest.amount] : []
+    const coming = current
+      ? monthlyDates(latest.dueDate, day, end).map(on =>
+          line(name, latest.amount, on, 'EXPECTED'),
+        )
+      : []
+    return [...arrived, ...coming]
   })
+}
+
+function itemLines(
+  items: readonly FundingItemView[],
+  day: LocalDate,
+  end: LocalDate,
+): FundingLineView[] {
+  const before = `${shiftMonth(monthOf(day), -1)}-`
+  return items.flatMap(item =>
+    monthlyDates(
+      `${before}${String(item.dayOfMonth).padStart(2, '0')}`,
+      day,
+      end,
+    ).map(on => line(item.name, Money.of(item.amount.cents), on, 'FIXED')),
+  )
+}
+
+// Loose Pix have no date, so each 30 days sets a month's worth aside upfront.
+function pixLines(reserve: Money, day: LocalDate, days: number) {
+  if (!reserve.isPositive()) {
+    return []
+  }
+  const starts = Array.from(
+    { length: Math.ceil(days / UPCOMING_DAYS) },
+    (_, index) => addDays(day, index * UPCOMING_DAYS),
+  )
+  return starts.map(on => line('', reserve, on, 'PIX'))
+}
+
+type Commitments = {
+  isAutoDebit: AutoDebitCheck
+  bills: Bill[]
+  items: FundingItemView[]
+  pixReserve: Money
+}
+
+function linesAhead(
+  commitments: Commitments,
+  day: LocalDate,
+  days: number,
+): FundingLineView[] {
+  const end = addDays(day, days)
+  const bills = commitments.bills.filter(bill => !commitments.isAutoDebit(bill))
+  return [
+    ...billLines(bills, day, end),
+    ...itemLines(commitments.items, day, end),
+    ...pixLines(commitments.pixReserve, day, days),
+  ].sort((a, b) => a.on.localeCompare(b.on))
 }
 
 // What the bank debits by itself every month: the mortgage, power and TV
@@ -252,8 +344,46 @@ async function listItems(
   return [...items].sort((a, b) => a.dayOfMonth - b.dayOfMonth)
 }
 
-// What the Asaas balance pays a month, and what to send so it covers the next
-// 30 days of bills, expected bills, fixed payments and loose Pix.
+type CommitmentDeps = Pick<
+  Deps,
+  'bills' | 'documents' | 'accounts' | 'transactions'
+>
+
+async function loadCommitments(
+  deps: CommitmentDeps,
+  tenantId: string,
+  entity: FinancialEntity,
+  day: LocalDate,
+): Promise<Commitments> {
+  const [isAutoDebit, stored, items, pixReserve] = await Promise.all([
+    loadAutoDebit(deps, tenantId),
+    allPages(request =>
+      deps.bills.list(tenantId, { entityId: entity.id }, request),
+    ),
+    listItems(deps, tenantId),
+    loosePixReserve(deps, tenantId, entity, day),
+  ])
+  const bills = stored.filter(bill => bill.status !== 'CANCELLED')
+  return { isAutoDebit, bills, items, pixReserve }
+}
+
+// What the reserve pays over the next days, dated, so the home can tell how
+// long its balance lasts with the same numbers the funding plan uses.
+export async function commitmentsAhead(
+  deps: CommitmentDeps,
+  tenantId: string,
+  entity: FinancialEntity,
+  day: LocalDate,
+  days: number,
+): Promise<FundingLineView[]> {
+  return linesAhead(
+    await loadCommitments(deps, tenantId, entity, day),
+    day,
+    days,
+  )
+}
+
+// What the Asaas balance pays in the next 30 days and what to send so it can.
 export function makeFundingPlan(
   deps: Pick<
     Deps,
@@ -277,69 +407,27 @@ export function makeFundingPlan(
   return async function fundingPlan(tenantId: string): Promise<FundingPlan> {
     const entity = await requireEntity(deps.entities, tenantId, 'PF')
     const day = today(deps.clock.now())
-    const [isAutoDebit, stored, items, pixReserve, balance, history] =
-      await Promise.all([
-        loadAutoDebit(deps, tenantId),
-        allPages(request =>
-          deps.bills.list(tenantId, { entityId: entity.id }, request),
-        ),
-        listItems(deps, tenantId),
-        loosePixReserve(deps, tenantId, entity, day),
-        balanceOf(tenantId, entity.id),
-        debitHistory(deps, tenantId, day),
-      ])
-    const known = stored.filter(bill => bill.status !== 'CANCELLED')
-    const bills = known.filter(bill => !isAutoDebit(bill))
-    const current = monthOf(day)
-    const first = bills
-      .map(bill => monthOf(bill.dueDate))
-      .reduce(
-        (earliest, month) => (month < earliest ? month : earliest),
-        current,
-      )
-    const floor = addMonths(current, 1 - HISTORY_MONTHS)
-    const start = first > floor ? first : floor
-    const months: FundingPlan['months'] = []
-    for (let month = start; month <= current; month = addMonths(month, 1)) {
-      const own = bills.filter(bill => monthOf(bill.dueDate) === month)
-      months.push({ month, total: money(sum(own.map(bill => bill.amount))) })
-    }
-    const total = months.reduce((cents, month) => cents + month.total.cents, 0)
-    const end = addDays(day, UPCOMING_DAYS)
-    const upcoming = sum(
-      bills
-        .filter(
-          bill =>
-            FUNDED.includes(bill.status) &&
-            bill.dueDate >= day &&
-            bill.dueDate <= end,
-        )
-        .map(bill => bill.amount),
-    )
-    // Every day of the month falls within the next 30 days.
-    const expected = sum([
-      ...expectedBills(bills, day),
-      ...items.map(item => Money.of(item.amount.cents)),
+    const [commitments, balance, history] = await Promise.all([
+      loadCommitments(deps, tenantId, entity, day),
+      balanceOf(tenantId, entity.id),
+      debitHistory(deps, tenantId, day),
     ])
-    const shortfall = upcoming
-      .add(expected)
-      .add(pixReserve)
-      .subtract(balance ?? Money.zero())
+    const lines = linesAhead(commitments, day, UPCOMING_DAYS)
+    const needed = sum(lines.map(item => Money.of(item.amount.cents)))
+    const shortfall = needed.subtract(balance ?? Money.zero())
+    const end = addDays(day, UPCOMING_DAYS)
     return {
       balance: balance && money(balance),
-      monthlyAverage: money(Money.of(Math.round(total / months.length))),
-      months,
-      upcoming: money(upcoming),
-      expected: money(expected),
-      pixReserve: money(pixReserve),
-      items,
+      needed: money(needed),
       topUp: money(shortfall.isPositive() ? shortfall : Money.zero()),
+      lines,
+      items: commitments.items,
       debit: debitPlan(
         history,
         day,
-        known.filter(
+        commitments.bills.filter(
           bill =>
-            isAutoDebit(bill) &&
+            commitments.isAutoDebit(bill) &&
             FUNDED.includes(bill.status) &&
             bill.dueDate >= addDays(day, -ARRIVED_DAYS) &&
             bill.dueDate <= end,

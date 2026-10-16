@@ -2830,29 +2830,24 @@ export interface operations {
                                 cents: number;
                                 currency: string;
                             } | null;
-                            monthlyAverage: {
+                            needed: {
                                 cents: number;
                                 currency: string;
                             };
-                            months: {
-                                month: string;
-                                total: {
+                            topUp: {
+                                cents: number;
+                                currency: string;
+                            };
+                            lines: {
+                                name: string;
+                                amount: {
                                     cents: number;
                                     currency: string;
                                 };
+                                on: string;
+                                /** @enum {string} */
+                                kind: "BILL" | "EXPECTED" | "FIXED" | "PIX";
                             }[];
-                            upcoming: {
-                                cents: number;
-                                currency: string;
-                            };
-                            expected: {
-                                cents: number;
-                                currency: string;
-                            };
-                            pixReserve: {
-                                cents: number;
-                                currency: string;
-                            };
                             items: {
                                 id: string;
                                 name: string;
@@ -2862,10 +2857,6 @@ export interface operations {
                                 };
                                 dayOfMonth: number;
                             }[];
-                            topUp: {
-                                cents: number;
-                                currency: string;
-                            };
                             debit: {
                                 accountId: string;
                                 name: string;

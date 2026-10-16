@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type FinancialEntity,
   type LocalDate,
   Money,
   type Transaction,
@@ -17,6 +18,7 @@ import { TENANT } from '@/testing/scenario.test-helpers'
 import { makeSetAutoDebit } from '@/use-cases/auto-debit'
 import { makeGetBill } from '@/use-cases/bills'
 import {
+  commitmentsAhead,
   FUNDING_SETTINGS_COLLECTION,
   makeFundingItems,
   makeFundingPlan,
@@ -26,7 +28,7 @@ import {
 const cents = (value: number) => ({ cents: value, currency: 'BRL' })
 
 describe('funding plan', () => {
-  it('averages the personal bills by month and sizes the top-up', async () => {
+  it('lists what the next 30 days take and sizes the top-up', async () => {
     const deps = { ...fullDeps(), funder: new FakeReserveFunder(10_000) }
     const bills = [
       bill({ id: 'august', dueDate: '2026-08-10', amount: Money.of(30_000) }),
@@ -55,22 +57,34 @@ describe('funding plan', () => {
 
     expect(await makeFundingPlan(deps)(TENANT)).toEqual({
       balance: cents(10_000),
-      monthlyAverage: cents(21_667),
-      months: [
-        { month: '2026-08', total: cents(30_000) },
-        { month: '2026-09', total: cents(0) },
-        { month: '2026-10', total: cents(35_000) },
-      ],
-      upcoming: cents(20_000),
-      expected: cents(20_000),
-      pixReserve: cents(0),
-      items: [],
+      needed: cents(40_000),
       topUp: cents(30_000),
+      lines: [
+        {
+          name: 'Supplier',
+          amount: cents(15_000),
+          on: '2026-10-15',
+          kind: 'BILL',
+        },
+        {
+          name: 'Supplier',
+          amount: cents(5_000),
+          on: '2026-11-02',
+          kind: 'BILL',
+        },
+        {
+          name: 'Supplier',
+          amount: cents(20_000),
+          on: '2026-11-05',
+          kind: 'EXPECTED',
+        },
+      ],
+      items: [],
       debit: null,
     })
   })
 
-  it('keeps six months and no top-up when the balance covers', async () => {
+  it('needs no top-up when the balance covers', async () => {
     const deps = { ...fullDeps(), funder: new FakeReserveFunder(50_000) }
     await deps.bills.save(
       bill({ id: 'old', dueDate: '2025-12-10', amount: Money.of(60_000) }),
@@ -79,17 +93,10 @@ describe('funding plan', () => {
       bill({ id: 'soon', dueDate: '2026-10-15', amount: Money.of(6_000) }),
     )
 
-    const plan = await makeFundingPlan(deps)(TENANT)
-    expect(plan.months.map(month => month.month)).toEqual([
-      '2026-05',
-      '2026-06',
-      '2026-07',
-      '2026-08',
-      '2026-09',
-      '2026-10',
-    ])
-    expect(plan.monthlyAverage).toEqual(cents(1_000))
-    expect(plan.topUp).toEqual(cents(0))
+    expect(await makeFundingPlan(deps)(TENANT)).toMatchObject({
+      needed: cents(6_000),
+      topUp: cents(0),
+    })
   })
 
   it('shows no balance when Asaas cannot be read', async () => {
@@ -103,10 +110,44 @@ describe('funding plan', () => {
 
     expect(await makeFundingPlan(deps)(TENANT)).toMatchObject({
       balance: null,
-      monthlyAverage: cents(6_000),
-      upcoming: cents(6_000),
+      needed: cents(6_000),
       topUp: cents(6_000),
     })
+  })
+
+  it('repeats the monthly payments over a longer window', async () => {
+    const deps = fullDeps()
+    await deps.bills.save(
+      bill({
+        id: 'power',
+        payee: 'Volt',
+        dueDate: '2026-09-30',
+        status: 'PAID',
+        amount: Money.of(30_000),
+      }),
+    )
+    await makeFundingItems(deps).add(TENANT, {
+      name: 'Rent',
+      amountCents: 100_000,
+      dayOfMonth: 31,
+    })
+    const entity = await deps.entities.findByKind(TENANT, 'PF')
+
+    const lines = await commitmentsAhead(
+      deps,
+      TENANT,
+      entity as FinancialEntity,
+      '2026-10-08',
+      90,
+    )
+    expect(lines.map(item => [item.on, item.kind, item.amount.cents])).toEqual([
+      ['2026-10-30', 'EXPECTED', 30_000],
+      ['2026-10-31', 'FIXED', 100_000],
+      ['2026-11-30', 'EXPECTED', 30_000],
+      ['2026-11-30', 'FIXED', 100_000],
+      ['2026-12-30', 'EXPECTED', 30_000],
+      ['2026-12-31', 'FIXED', 100_000],
+    ])
   })
 
   it('adds the bills still to come, the fixed payments and loose Pix', async () => {
@@ -198,9 +239,28 @@ describe('funding plan', () => {
     })
 
     expect(await makeFundingPlan(deps)(TENANT)).toMatchObject({
-      upcoming: cents(9_999),
-      expected: cents(96_250),
-      pixReserve: cents(2_250),
+      needed: cents(108_499),
+      lines: [
+        { name: '', amount: cents(2_250), on: '2026-10-08', kind: 'PIX' },
+        {
+          name: 'Internet',
+          amount: cents(9_999),
+          on: '2026-10-09',
+          kind: 'BILL',
+        },
+        {
+          name: 'Condominio',
+          amount: cents(55_000),
+          on: '2026-10-10',
+          kind: 'FIXED',
+        },
+        {
+          name: 'Plano Saude',
+          amount: cents(41_250),
+          on: '2026-11-06',
+          kind: 'EXPECTED',
+        },
+      ],
       items: [
         {
           id: condo.id,

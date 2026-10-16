@@ -312,15 +312,16 @@ void main() {
         },
         'GET /api/v1/home/personal/funding': {
           'balance': null,
-          'monthlyAverage': _money(300),
-          'months': [
-            {'month': '2026-09', 'total': _money(200)},
-            {'month': '2026-10', 'total': _money(400)},
-          ],
-          'upcoming': _money(150),
-          'expected': _money(60),
-          'pixReserve': _money(40),
+          'needed': _money(250),
           'topUp': _money(250),
+          'lines': [
+            {
+              'name': 'Internet',
+              'amount': _money(250),
+              'on': '2026-10-20',
+              'kind': 'EXPECTED',
+            },
+          ],
           'debit': {
             'accountId': 'a1',
             'name': 'Banco Azul',
@@ -355,12 +356,16 @@ void main() {
         _ok(await repository.funding()),
         const FundingPlan(
           balance: null,
-          monthlyAverage: Money(300),
-          months: 2,
-          upcoming: Money(150),
-          expected: Money(60),
-          pixReserve: Money(40),
+          needed: Money(250),
           topUp: Money(250),
+          lines: [
+            FundingLine(
+              name: 'Internet',
+              amount: Money(250),
+              on: CalendarDate(2026, 10, 20),
+              kind: FundingLineKind.expected,
+            ),
+          ],
           debit: FundingDebit(
             name: 'Banco Azul',
             balance: Money(500),
