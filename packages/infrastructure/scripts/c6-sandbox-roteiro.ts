@@ -126,8 +126,12 @@ class Roteiro {
   }
 }
 
+// The sandbox takes well over ten seconds to decode a group, and answers 422
+// until it is done.
+const DECODE_ATTEMPTS = 18
+
 async function groupItems(roteiro: Roteiro, groupId: string): Promise<Item[]> {
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for (let attempt = 1; attempt <= DECODE_ATTEMPTS; attempt += 1) {
     const listed = await roteiro.run(
       'AP_03',
       'Obter todos os itens de um grupo de pagamentos',
@@ -135,11 +139,11 @@ async function groupItems(roteiro: Roteiro, groupId: string): Promise<Item[]> {
       { method: 'GET', url: `${PAYMENTS}/${groupId}/items` },
     )
     const items = (listed.body as { items?: Item[] } | null)?.items ?? []
-    if (items.length > 0 || attempt === 5) {
+    if (items.length > 0 || attempt === DECODE_ATTEMPTS) {
       return items
     }
     roteiro.outcomes.pop()
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 5000))
   }
   return []
 }
@@ -161,7 +165,11 @@ async function paymentGroup(
     }
     return
   }
-  const ids = (await groupItems(roteiro, groupId)).map(item => item.id ?? '')
+  // Removing the undecodable items first leaves a payable one for AP_06.
+  const payable = (item: Item) => Number(item.status === 'READ_DATA')
+  const ids = (await groupItems(roteiro, groupId))
+    .sort((a, b) => payable(a) - payable(b))
+    .map(item => item.id ?? '')
   const [first = 'missing', second = 'missing', third = 'missing'] = ids
 
   await roteiro.run(
