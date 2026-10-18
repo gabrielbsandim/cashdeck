@@ -92,7 +92,8 @@ The inbox rebuilds each alert text from its type and `data` in the app
 language, keeping the server text when a field is missing.
 Signing out first calls `DELETE /api/v1/devices/{token}` (percent-encoded),
 while the credentials still authenticate it; a failed call never blocks it.
-Tapping an alert or a push opens what it is about: `UNUSUAL_PURCHASE` its
+Tapping an alert or a push opens what it is about: `UNUSUAL_PURCHASE` and
+`CARD_CHARGE_CAPTURED` their
 `transactionId`, `SUBSCRIPTION_CHANGED` the subscription `key`,
 `CARD_BILL_ABOVE_AVERAGE` the card `accountId`, `BANK_SYNC_STALE` the
 connections and `INVOICE_NOT_ISSUED` the company settings, `MONTHLY_RECAP` the recap of its

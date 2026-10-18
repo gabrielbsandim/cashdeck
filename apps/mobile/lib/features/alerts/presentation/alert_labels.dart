@@ -30,6 +30,7 @@ String alertKindLabel(AppLocalizations l10n, AlertKind kind) => switch (kind) {
   AlertKind.budgetNearLimit => l10n.alertKindBudgetNearLimit,
   AlertKind.budgetLimitReached => l10n.alertKindBudgetLimitReached,
   AlertKind.monthlyRecap => l10n.alertKindMonthlyRecap,
+  AlertKind.cardChargeCaptured => l10n.alertKindCardChargeCaptured,
   AlertKind.other => l10n.alertKindOther,
 };
 
@@ -55,6 +56,7 @@ IconData alertKindIcon(AlertKind kind) => switch (kind) {
   AlertKind.budgetNearLimit => Symbols.donut_small_rounded,
   AlertKind.budgetLimitReached => Symbols.donut_large_rounded,
   AlertKind.monthlyRecap => Symbols.auto_stories_rounded,
+  AlertKind.cardChargeCaptured => Symbols.contactless_rounded,
   AlertKind.other => Symbols.notifications_rounded,
 };
 
@@ -201,7 +203,36 @@ final Map<AlertKind, _Builder> _builders = {
         : l10n.alertTextRecapTitle(_month(l10n, d)),
     body: l10n.alertTextRecapBody(d['income'], d['expenses']),
   ),
+  AlertKind.cardChargeCaptured: _cardChargeCaptured,
 };
+
+AlertText _cardChargeCaptured(AppLocalizations l10n, _AlertData d) {
+  final title = d.fields['kind'] == 'REFUND'
+      ? l10n.alertTextChargeRefundTitle
+      : l10n.alertTextChargePurchaseTitle;
+  final installments = d.fields['installments'];
+  if (installments == null) {
+    return (
+      title: title,
+      body: l10n.alertTextChargeBody(
+        d['card'],
+        d['merchant'],
+        d['amount'],
+        d['day'],
+      ),
+    );
+  }
+  return (
+    title: title,
+    body: l10n.alertTextChargeInstallmentBody(
+      d['card'],
+      d['merchant'],
+      d['amount'],
+      d['day'],
+      installments,
+    ),
+  );
+}
 
 /// A run that threw names its error; one that finished with items left
 /// behind counts them.

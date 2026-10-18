@@ -10566,7 +10566,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP" | "CARD_CHARGE_CAPTURED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -10647,7 +10647,7 @@ export interface operations {
                         data: {
                             id: string;
                             /** @enum {string} */
-                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
+                            type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP" | "CARD_CHARGE_CAPTURED";
                             entityId: string | null;
                             billId: string | null;
                             invoiceId: string | null;
@@ -10725,7 +10725,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP" | "CARD_CHARGE_CAPTURED";
                                 muted: boolean;
                             }[];
                         };
@@ -10770,7 +10770,7 @@ export interface operations {
                         data: {
                             types: {
                                 /** @enum {string} */
-                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP";
+                                type: "BILL_CAPTURED" | "BILL_NEEDS_AMOUNT" | "BILL_DUE_SOON" | "PAYMENT_NEEDS_CONFIRMATION" | "PAYMENT_PAID" | "PAYMENT_MOVED_DOWN" | "PAYMENT_ASSISTED" | "APPROVAL_PENDING" | "LOW_BALANCE" | "INVOICE_ISSUED" | "INVOICE_FAILED" | "CARD_BILL_CLOSED" | "JOB_FAILED" | "UNUSUAL_PURCHASE" | "SUBSCRIPTION_CHANGED" | "CARD_BILL_ABOVE_AVERAGE" | "BANK_SYNC_STALE" | "INVOICE_NOT_ISSUED" | "BUDGET_NEAR_LIMIT" | "BUDGET_LIMIT_REACHED" | "MONTHLY_RECAP" | "CARD_CHARGE_CAPTURED";
                                 muted: boolean;
                             }[];
                         };

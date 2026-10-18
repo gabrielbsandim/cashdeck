@@ -116,6 +116,10 @@ void main() {
       AppRoutes.transaction('tx 1'),
     );
     expect(
+      alertDestination(AlertKind.cardChargeCaptured, {'transactionId': 'tx 2'}),
+      AppRoutes.transaction('tx 2'),
+    );
+    expect(
       alertDestination(AlertKind.subscriptionChanged, {'key': 'streaming'}),
       AppRoutes.subscription('streaming'),
     );

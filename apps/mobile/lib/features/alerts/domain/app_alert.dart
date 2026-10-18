@@ -25,6 +25,7 @@ enum AlertKind {
   budgetNearLimit('BUDGET_NEAR_LIMIT'),
   budgetLimitReached('BUDGET_LIMIT_REACHED'),
   monthlyRecap('MONTHLY_RECAP'),
+  cardChargeCaptured('CARD_CHARGE_CAPTURED'),
   other('OTHER');
 
   new(this.wire);

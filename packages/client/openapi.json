@@ -26987,7 +26987,8 @@
                               "INVOICE_NOT_ISSUED",
                               "BUDGET_NEAR_LIMIT",
                               "BUDGET_LIMIT_REACHED",
-                              "MONTHLY_RECAP"
+                              "MONTHLY_RECAP",
+                              "CARD_CHARGE_CAPTURED"
                             ]
                           },
                           "entityId": {
@@ -27198,7 +27199,8 @@
                             "INVOICE_NOT_ISSUED",
                             "BUDGET_NEAR_LIMIT",
                             "BUDGET_LIMIT_REACHED",
-                            "MONTHLY_RECAP"
+                            "MONTHLY_RECAP",
+                            "CARD_CHARGE_CAPTURED"
                           ]
                         },
                         "entityId": {
@@ -27396,7 +27398,8 @@
                                   "INVOICE_NOT_ISSUED",
                                   "BUDGET_NEAR_LIMIT",
                                   "BUDGET_LIMIT_REACHED",
-                                  "MONTHLY_RECAP"
+                                  "MONTHLY_RECAP",
+                                  "CARD_CHARGE_CAPTURED"
                                 ]
                               },
                               "muted": {
@@ -27518,7 +27521,8 @@
                                   "INVOICE_NOT_ISSUED",
                                   "BUDGET_NEAR_LIMIT",
                                   "BUDGET_LIMIT_REACHED",
-                                  "MONTHLY_RECAP"
+                                  "MONTHLY_RECAP",
+                                  "CARD_CHARGE_CAPTURED"
                                 ]
                               },
                               "muted": {

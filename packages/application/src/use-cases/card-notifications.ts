@@ -3,6 +3,7 @@ import {
   createTransaction,
   Money,
   toLocalDate,
+  type Transaction,
   ValidationError,
 } from '@cashdeck/domain'
 import {
@@ -11,12 +12,20 @@ import {
   notificationReadingSchema,
 } from '@/dtos/card-notifications'
 import { type LlmToolParameter } from '@/ports/llm-provider'
+import { cardChargeCapturedAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { required } from '@/use-cases/shared'
 
 // Notifications come from another app's own wording, so they are kept apart
 // from any provider's ids.
 export const NOTIFICATION_ID_PREFIX = 'notification:'
+
+// Two phones on the same card notify one charge seconds apart, so another
+// phone's preview of the same amount this close is that charge again.
+const OTHER_PHONE_WINDOW_MS = 10 * 60 * 1000
+
+// Older previews carry no time, and NaN keeps them out of every comparison.
+const postedAt = (tx: Transaction) => tx.bookedAt?.getTime() ?? Number.NaN
 
 type Notification = CaptureNotificationsInput['notifications'][number]
 
@@ -56,10 +65,13 @@ const SYSTEM = [
 
 const sanitize = (value: string) => value.replace(/\s+/g, ' ').trim()
 
-type NotificationDeps = Pick<Deps, 'accounts' | 'transactions' | 'llm' | 'ids'>
+type NotificationDeps = Pick<
+  Deps,
+  'accounts' | 'transactions' | 'llm' | 'ids' | 'alerts'
+>
 
 export function makeCardNotifications(deps: NotificationDeps) {
-  async function unseen(
+  async function storedAround(
     tenantId: string,
     accountId: string,
     notifications: readonly Notification[],
@@ -67,14 +79,27 @@ export function makeCardNotifications(deps: NotificationDeps) {
     const earliest = notifications
       .map(item => toLocalDate(new Date(item.postedAt)))
       .sort()[0] as string
-    const stored = await deps.transactions.all(tenantId, {
+    return deps.transactions.all(tenantId, {
       accountIds: [accountId],
       from: addDays(earliest, -1),
     })
-    const known = new Set(stored.map(tx => tx.externalId))
-    return notifications.filter(
-      item => !known.has(`${NOTIFICATION_ID_PREFIX}${item.id}`),
+  }
+
+  function notifiedByOtherPhone(
+    stored: readonly Transaction[],
+    source: string,
+  ) {
+    const others = stored.filter(
+      tx =>
+        tx.externalId?.startsWith(NOTIFICATION_ID_PREFIX) &&
+        !tx.externalId.startsWith(source),
     )
+    return (charge: Transaction) =>
+      others.some(
+        tx =>
+          tx.amount.cents === charge.amount.cents &&
+          Math.abs(postedAt(tx) - postedAt(charge)) <= OTHER_PHONE_WINDOW_MS,
+      )
   }
 
   async function read(notifications: readonly Notification[]) {
@@ -103,6 +128,7 @@ export function makeCardNotifications(deps: NotificationDeps) {
   return async function capture(
     tenantId: string,
     input: CaptureNotificationsInput,
+    deviceId: string,
   ): Promise<CapturedNotificationsView> {
     const account = required(
       await deps.accounts.findById(tenantId, input.accountId),
@@ -111,10 +137,15 @@ export function makeCardNotifications(deps: NotificationDeps) {
     if (account.type !== 'CREDIT_CARD') {
       throw new ValidationError('Notifications go to a credit card account.')
     }
-    const fresh = await unseen(tenantId, account.id, input.notifications)
+    const source = `${NOTIFICATION_ID_PREFIX}${deviceId.slice(0, 8)}:`
+    const stored = await storedAround(tenantId, account.id, input.notifications)
+    const known = new Set(stored.map(tx => tx.externalId))
+    const fresh = input.notifications.filter(
+      item => !known.has(`${source}${item.id}`),
+    )
     const items = fresh.length > 0 ? await read(fresh) : []
     const answered = new Set<Notification>()
-    const charges = items.flatMap(item => {
+    const candidates = items.flatMap(item => {
       const notification = fresh[Number(item.ref.slice(1)) - 1]
       // A charge in installments lands on the card one installment at a time.
       const cents = Math.round((item.amount * 100) / item.installments)
@@ -137,7 +168,7 @@ export function makeCardNotifications(deps: NotificationDeps) {
           bookedAt: new Date(notification.postedAt),
           description:
             merchant || sanitize(notification.title) || notification.app,
-          externalId: `${NOTIFICATION_ID_PREFIX}${notification.id}`,
+          externalId: `${source}${notification.id}`,
           merchant: merchant || null,
           installment:
             item.installments > 1
@@ -147,9 +178,16 @@ export function makeCardNotifications(deps: NotificationDeps) {
         }),
       ]
     })
-    return {
-      received: input.notifications.length,
-      added: await deps.transactions.saveNew(charges),
+    // Read again: the other phone's request may have saved while the model read.
+    const repeated = notifiedByOtherPhone(
+      await storedAround(tenantId, account.id, input.notifications),
+      source,
+    )
+    const charges = candidates.filter(charge => !repeated(charge))
+    const added = await deps.transactions.saveNew(charges)
+    for (const charge of charges) {
+      await deps.alerts.emit(cardChargeCapturedAlert(tenantId, account, charge))
     }
+    return { received: input.notifications.length, added }
   }
 }

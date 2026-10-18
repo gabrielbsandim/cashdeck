@@ -5,6 +5,7 @@ import {
   type Money,
   type RailId,
   toLocalDate,
+  type Transaction,
 } from '@cashdeck/domain'
 import {
   type AlertEmitter,
@@ -16,6 +17,12 @@ import { type Clock } from '@/ports/system'
 
 type AlertData = Record<string, string>
 type AlertText = { title: string; body: string }
+
+const installmentPt = (d: AlertData) =>
+  d.installments ? `, parcela 1 de ${d.installments}` : ''
+
+const installmentEn = (d: AlertData) =>
+  d.installments ? `, installment 1 of ${d.installments}` : ''
 
 export const RAIL_NAMES: Record<RailId, string> = {
   MERCADO_PAGO_PAYOUTS: 'Mercado Pago',
@@ -170,6 +177,13 @@ export const ALERT_TEXTS: Record<AlertType, (d: AlertData) => AlertText> = {
         : `Retrospectiva de ${monthName(`${d.month}`, 'pt')}`,
     body: `Entraram ${d.income} e saíram ${d.expenses}. Toque para ver como foi o mês.`,
   }),
+  CARD_CHARGE_CAPTURED: d => ({
+    title:
+      d.kind === 'REFUND'
+        ? 'Estorno no cartão registrado'
+        : 'Compra no cartão registrada',
+    body: `${d.card}: ${d.merchant} · ${d.amount} em ${d.day}${installmentPt(d)}.`,
+  }),
 }
 
 export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
@@ -273,6 +287,11 @@ export const ALERT_TEXTS_EN: Record<AlertType, (d: AlertData) => AlertText> = {
         ? `Your company's ${monthName(`${d.month}`, 'en')} recap`
         : `Your ${monthName(`${d.month}`, 'en')} recap`,
     body: `${d.income} came in and ${d.expenses} went out. Tap to see how the month went.`,
+  }),
+  CARD_CHARGE_CAPTURED: d => ({
+    title:
+      d.kind === 'REFUND' ? 'Card refund recorded' : 'Card purchase recorded',
+    body: `${d.card}: ${d.merchant} · ${d.amount} on ${d.day}${installmentEn(d)}.`,
   }),
 }
 
@@ -424,6 +443,31 @@ export function cardClosedAlert(
       dueDate: formatDay(statement.due),
     },
     dedupeKey: `CARD_BILL_CLOSED:${statement.entityId}:${statement.issuer}:${statement.card}:${statement.closing}`,
+  }
+}
+
+// Keyed by the phone's notification, so a resent one never repeats the push.
+export function cardChargeCapturedAlert(
+  tenantId: string,
+  card: { name: string; entityId: string },
+  charge: Transaction,
+): AlertInput {
+  const count = charge.installment?.count
+  const refund = !charge.amount.isNegative()
+  return {
+    tenantId,
+    type: 'CARD_CHARGE_CAPTURED',
+    entityId: card.entityId,
+    data: {
+      transactionId: charge.id,
+      card: card.name,
+      kind: refund ? 'REFUND' : 'PURCHASE',
+      merchant: charge.description,
+      amount: formatMoney(refund ? charge.amount : charge.amount.negate()),
+      day: formatDay(charge.bookedOn),
+      ...(count ? { installments: String(count) } : {}),
+    },
+    dedupeKey: `CARD_CHARGE_CAPTURED:${charge.externalId}`,
   }
 }
 

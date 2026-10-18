@@ -1202,7 +1202,11 @@ The Android app forwards the notifications of the apps the user picked.
   ones not stored yet; an approved charge becomes a provisional debit dated
   the day it was posted, a refund a provisional credit, anything else is
   ignored. A charge in N installments stores its first installment. The
-  external id is `notification:<id>`, so a resend adds nothing. `data`:
+  external id is `notification:<session>:<id>`, the first 8 characters of the
+  sending device session, so a resend adds nothing. Phones that share a card
+  notify each charge once each: a charge of the same amount another session
+  stored within 10 minutes of it is that charge, and is dropped. Each charge
+  stored raises a `CARD_CHARGE_CAPTURED` alert. `data`:
   `{ received: int, added: int }`.
 
 ## Accountant export
@@ -1291,6 +1295,7 @@ and `invoiceId` when set, so a tap opens the screen the alert is about.
 | `LOW_BALANCE` | daily cron: the reserve does not cover tomorrow's automatic payments |
 | `INVOICE_ISSUED`, `INVOICE_FAILED` | the issuer answers `ISSUED` or `REJECTED`, on issue, polling or webhook |
 | `CARD_BILL_CLOSED` | a card statement is read |
+| `CARD_CHARGE_CAPTURED` | a forwarded card notification became a provisional charge (see [Card notifications](#card-notifications)); `transactionId`, `card`, `kind` (`PURCHASE` or `REFUND`), `merchant`, `amount`, `day`, `installments` when paid in installments. Once per notification |
 | `UNUSUAL_PURCHASE` | daily cron: an expense of the last 3 days (not an installment or a preview) of at least R$ 200 is over 3 times the median of that merchant in the last 90 days (3 or more past charges), or of its category (5 or more); `transactionId`, `merchant`, `amount`, `usual`, `times`, `scope` (`MERCHANT` or `CATEGORY`), `day`. Once per transaction |
 | `SUBSCRIPTION_CHANGED` | daily cron: a confirmed or detected subscription (not dismissed) charged in the last 7 days costs over 5% more than the charge before (`change: PRICE_UP`, `previous`, `percent`), or was charged twice in the same month (`change: DUPLICATE`, `count`, `month`); `key`, `name`, `amount`, `transactionId`. Once per charge |
 | `CARD_BILL_ABOVE_AVERAGE` | daily cron: a card bill closed in the last 10 days is over 30% and R$ 100 above the average of the up to 6 bills before it (3 or more); `accountId`, `card`, `amount`, `average`, `percent`, `dueDate`. Once per bill |

@@ -6,6 +6,7 @@ typedef _Route = String Function(String id);
 /// The data key naming the record an alert is about, and its screen.
 const Map<AlertKind, (String, _Route)> _records = {
   AlertKind.unusualPurchase: ('transactionId', AppRoutes.transaction),
+  AlertKind.cardChargeCaptured: ('transactionId', AppRoutes.transaction),
   AlertKind.subscriptionChanged: ('key', AppRoutes.subscription),
   AlertKind.cardBillAboveAverage: ('accountId', AppRoutes.cardBills),
 };

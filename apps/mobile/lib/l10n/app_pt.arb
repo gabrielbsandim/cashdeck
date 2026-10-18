@@ -3530,6 +3530,46 @@
   "recapStoryAi": "Escrito pela IA a partir dos seus números.",
   "recapStoryTemplate": "Resumo automático dos seus números.",
   "recapHint": "Toque à direita para seguir, à esquerda para voltar, segure para pausar, deslize para baixo para fechar.",
+  "alertKindCardChargeCaptured": "Compra no cartão registrada",
+  "alertTextChargePurchaseTitle": "Compra no cartão registrada",
+  "alertTextChargeRefundTitle": "Estorno no cartão registrado",
+  "alertTextChargeBody": "{card}: {merchant} · {amount} em {day}.",
+  "@alertTextChargeBody": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "merchant": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTextChargeInstallmentBody": "{card}: {merchant} · {amount} em {day}, parcela 1 de {installments}.",
+  "@alertTextChargeInstallmentBody": {
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "merchant": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "installments": {
+        "type": "String"
+      }
+    }
+  },
   "alertKindMonthlyRecap": "Retrospectiva do mês",
   "alertTextRecapTitle": "Retrospectiva de {month}",
   "@alertTextRecapTitle": {

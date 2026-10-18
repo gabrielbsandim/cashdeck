@@ -8,9 +8,13 @@ export const dynamic = 'force-dynamic'
 // The phone gives up after 30 seconds, so the category is set after the answer.
 export const POST = route(
   'card-notifications:capture',
-  async ({ request, tenantId, container }) => {
+  async ({ request, tenantId, sessionId, container }) => {
     const input = captureNotificationsSchema.parse(await readJson(request))
-    const captured = await container.captureNotifications(tenantId, input)
+    const captured = await container.captureNotifications(
+      tenantId,
+      input,
+      sessionId,
+    )
     if (captured.added > 0) {
       await defer(
         () => container.categorizeTransactions(tenantId),

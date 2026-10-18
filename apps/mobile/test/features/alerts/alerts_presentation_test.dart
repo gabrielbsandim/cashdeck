@@ -215,6 +215,20 @@ void main() {
           body: r'Pet: R$ 120,00 of R$ 100,00 this month.',
         ),
       ),
+      AlertKind.cardChargeCaptured: (
+        {
+          'card': 'Card',
+          'kind': 'PURCHASE',
+          'merchant': 'Bakery',
+          'amount': r'R$ 30,00',
+          'day': '10/10',
+          'installments': '3',
+        },
+        (
+          title: 'Card purchase recorded',
+          body: r'Card: Bakery · R$ 30,00 on 10/10, installment 1 of 3.',
+        ),
+      ),
     };
     for (final MapEntry(key: kind, value: (data, text)) in cases.entries) {
       expect(textOf(kind, data), text, reason: kind.name);
@@ -254,6 +268,19 @@ void main() {
     expect(
       textOf(AlertKind.invoiceIssued, {'client': 'Client', 'amount': '1'}).body,
       startsWith('Invoice to'),
+    );
+    expect(
+      textOf(AlertKind.cardChargeCaptured, {
+        'card': 'Card',
+        'kind': 'REFUND',
+        'merchant': 'Bakery',
+        'amount': r'R$ 30,00',
+        'day': '10/10',
+      }),
+      (
+        title: 'Card refund recorded',
+        body: r'Card: Bakery · R$ 30,00 on 10/10.',
+      ),
     );
     const stored = (title: 'Servidor', body: 'Texto do servidor');
     expect(textOf(AlertKind.billDueSoon, const {}), stored);
