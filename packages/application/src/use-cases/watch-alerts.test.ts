@@ -154,6 +154,25 @@ describe('watch alerts', () => {
     expect(await makeWatchAlerts(deps)(TENANT)).toEqual(NONE)
   })
 
+  it('keeps quiet on a category amount already seen in the window', async () => {
+    const deps = await setup()
+    const taxes = { categoryId: 'taxes' }
+    await spend(deps, [
+      ['tax1', '2026-09-15', 201253, 'br_utility', taxes],
+      ...[1, 2, 3, 4, 5].map(
+        (n): [string, string, number, string, Record<string, unknown>] => [
+          `fee${n}`,
+          `2026-09-2${n}`,
+          300,
+          `IOF ${n}`,
+          taxes,
+        ],
+      ),
+      ['tax2', '2026-10-07', 123574, 'Boletos', taxes],
+    ])
+    expect(await makeWatchAlerts(deps)(TENANT)).toEqual(NONE)
+  })
+
   it('warns about a pricier or doubled subscription still running', async () => {
     const deps = await setup()
     const monthly = (name: string, cents: number[], days: string[]) =>

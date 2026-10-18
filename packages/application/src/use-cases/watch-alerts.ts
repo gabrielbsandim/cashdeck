@@ -97,17 +97,23 @@ function usualFor(
     return { usual: payee, scope: 'MERCHANT' }
   }
   const categoryId = expense.transaction.categoryId
-  const category = usualAmount(
-    others
-      .filter(
-        item =>
-          categoryId !== null &&
-          item.transaction.categoryId === categoryId &&
-          item.transaction.bookedOn >= since,
-      )
-      .map(item => item.cents),
-    { ...UNUSUAL_PURCHASE, minHistory: CATEGORY_HISTORY },
-  )
+  const peers = others
+    .filter(
+      item =>
+        categoryId !== null &&
+        item.transaction.categoryId === categoryId &&
+        item.transaction.bookedOn >= since,
+    )
+    .map(item => item.cents)
+  // A category can mix cent fees with big monthly bills, so an amount it has
+  // already seen is not news however far it sits from the median.
+  if (peers.some(cents => cents >= expense.cents)) {
+    return { usual: null, scope: 'CATEGORY' }
+  }
+  const category = usualAmount(peers, {
+    ...UNUSUAL_PURCHASE,
+    minHistory: CATEGORY_HISTORY,
+  })
   return { usual: category, scope: 'CATEGORY' }
 }
 
