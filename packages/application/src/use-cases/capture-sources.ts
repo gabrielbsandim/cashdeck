@@ -6,6 +6,7 @@ import { amountRequiredAlert, emitAlert } from '@/use-cases/alert-events'
 import { type Deps } from '@/use-cases/deps'
 import { keepBillLines } from '@/use-cases/bill-lines'
 import { makeCaptureBill } from '@/use-cases/capture-bill'
+import { makeSettleFromStatement } from '@/use-cases/settle-from-statement'
 import { credentialName, putCredential } from '@/use-cases/credentials'
 import { required, requireEntity, requireEntityById } from '@/use-cases/shared'
 
@@ -59,11 +60,15 @@ type CaptureDeps = Pick<
   | 'rails'
   | 'clock'
   | 'ids'
+  | 'alertStore'
+  | 'accounts'
+  | 'transactions'
 > &
   Partial<Pick<Deps, 'alerts'>>
 
 export function makeCaptureSources(deps: CaptureDeps) {
   const capture = makeCaptureBill(deps)
+  const settle = makeSettleFromStatement(deps)
 
   async function sources(tenantId: string): Promise<CaptureSourcesView> {
     const entities = await deps.entities.list(tenantId)
@@ -167,9 +172,16 @@ export function makeCaptureSources(deps: CaptureDeps) {
       taxId: entity.taxId.value,
     })
     let created = 0
+    const payers = new Set<string>()
     for (const found of fetched) {
       const payer = await payerOf(tenantId, entity, found)
+      payers.add(payer)
       created += (await captureOne(tenantId, payer, sourceName, found)) ? 1 : 0
+    }
+    // A bill read after it was paid would wait for the next bank sync to
+    // leave the overdue list; the statement settles it right away.
+    for (const payer of payers) {
+      await settle(tenantId, payer)
     }
     return { fetched: fetched.length, created }
   }
