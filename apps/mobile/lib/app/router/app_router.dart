@@ -125,6 +125,13 @@ String? gateRedirect(
   return limited && closedWhileLimited(path) ? AppRoutes.home : null;
 }
 
+/// The screen an app link opens: the mailbox OAuth callback comes back as
+/// cashdeck://capture, whose path alone matches no route.
+String? deepLinkTarget(Uri uri) =>
+    uri.scheme == 'cashdeck' && uri.host == 'capture'
+    ? AppRoutes.captureSources
+    : null;
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final gateChanged = ValueNotifier<int>(0);
   ref
@@ -135,12 +142,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: AppRoutes.home,
     refreshListenable: gateChanged,
-    redirect: (_, state) => gateRedirect(
-      state.uri.path,
-      signedIn: ref.read(serverSessionProvider) != null,
-      locked: ref.read(appLockProvider),
-      limited: ref.read(safeModeLimitedProvider),
-    ),
+    redirect: (_, state) {
+      final target = deepLinkTarget(state.uri);
+      return gateRedirect(
+            target ?? state.uri.path,
+            signedIn: ref.read(serverSessionProvider) != null,
+            locked: ref.read(appLockProvider),
+            limited: ref.read(safeModeLimitedProvider),
+          ) ??
+          target;
+    },
     routes: [
       _page(AppRoutes.signIn, const ServerSignInScreen()),
       _page(AppRoutes.unlock, const UnlockScreen()),

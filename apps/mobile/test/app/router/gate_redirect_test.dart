@@ -44,4 +44,17 @@ void main() {
     }
     expect(gateRedirect(AppRoutes.chat, signedIn: true, locked: false), isNull);
   });
+
+  test('opens capture sources from the mailbox OAuth return link', () {
+    expect(
+      deepLinkTarget(Uri.parse('cashdeck://capture/?connected=1')),
+      AppRoutes.captureSources,
+    );
+    expect(
+      deepLinkTarget(Uri.parse('cashdeck://capture?error=INVALID_STATE')),
+      AppRoutes.captureSources,
+    );
+    expect(deepLinkTarget(Uri.parse('cashdeck://widget/refresh')), isNull);
+    expect(deepLinkTarget(Uri.parse('/home')), isNull);
+  });
 }
