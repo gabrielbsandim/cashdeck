@@ -172,7 +172,7 @@ export function makeCaptureSources(deps: CaptureDeps) {
       taxId: entity.taxId.value,
     })
     let created = 0
-    const payers = new Set<string>()
+    const payers = new Set<string>([entityId])
     for (const found of fetched) {
       const payer = await payerOf(tenantId, entity, found)
       payers.add(payer)

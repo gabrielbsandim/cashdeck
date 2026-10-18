@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { type BillSource, type CapturedBill } from '@/ports/providers'
 import { Money } from '@cashdeck/domain'
-import { account, fullDeps, transaction } from '@/testing/deps.test-helpers'
+import {
+  account,
+  bill,
+  fullDeps,
+  transaction,
+} from '@/testing/deps.test-helpers'
 import { InMemoryEntityRepository } from '@/testing/repositories'
 import {
   BOLETO_LINE,
@@ -115,8 +120,30 @@ describe('capture sources', () => {
     const capture = makeCaptureSources(deps)
     const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
     await capture.readMailbox(TENANT, mailbox.id)
-    const [bill] = (await deps.bills.list(TENANT, {}, { limit: 10 })).items
-    expect(bill).toMatchObject({ status: 'PAID', paidBy: 'STATEMENT' })
+    const [read] = (await deps.bills.list(TENANT, {}, { limit: 10 })).items
+    expect(read).toMatchObject({ status: 'PAID', paidBy: 'STATEMENT' })
+  })
+
+  it('settles bills read before, on a read that finds no new mail', async () => {
+    const deps = fullDeps({ billSources: [source('GMAIL', [])] })
+    await deps.accounts.save(account({ id: 'checking', entityId: 'pf' }))
+    await deps.bills.save(
+      bill({ id: 'late', amount: Money.of(61_140), dueDate: '2026-10-08' }),
+    )
+    await deps.transactions.save(
+      transaction({
+        id: 'paid',
+        accountId: 'checking',
+        amount: Money.of(-61_140),
+        bookedOn: '2026-10-06',
+      }),
+    )
+    const capture = makeCaptureSources(deps)
+    const mailbox = await capture.completeMailbox(TENANT, 'PF', 'good-code')
+    await capture.readMailbox(TENANT, mailbox.id)
+    expect(await deps.bills.findById(TENANT, 'late')).toMatchObject({
+      status: 'PAID',
+    })
   })
 
   it('files a company guide from the personal mailbox under the company', async () => {
