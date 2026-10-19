@@ -19,9 +19,9 @@
     "@cashdeck/i18n": "workspace:*",
     "@cashdeck/infrastructure": "workspace:*",
     "@sentry/nextjs": "10.69.0",
-    "next": "16.2.12",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "next": "16.4.2",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "zod": "4.3.6"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
     "@types/react-dom": "19.2.0",
     "@vitest/coverage-v8": "4.1.7",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.4.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.1.7"
