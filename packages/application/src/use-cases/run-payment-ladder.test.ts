@@ -45,6 +45,9 @@ function bill(overrides: Partial<Bill> = {}): Bill {
   }
 }
 
+// The next business day after NOW, the last due date a run pays.
+const PAYMENT_DAY = '2026-10-09'
+
 const personalBill = (overrides: Partial<Bill> = {}) =>
   bill({ entityId: 'pf', ...overrides })
 
@@ -428,7 +431,9 @@ describe('runPaymentLadder', () => {
   it('asks for confirmation for a new payee, then remembers it', async () => {
     const inter = new FakePaymentRail('INTER_EMPRESAS')
     const { deps, run } = await setup([inter])
-    await deps.bills.save(bill({ id: 'b2', payee: 'New supplier' }))
+    await deps.bills.save(
+      bill({ id: 'b2', payee: 'New supplier', dueDate: PAYMENT_DAY }),
+    )
     const pending = await run(TENANT, 'b2')
     expect(pending.bill.status).toBe('NEEDS_CONFIRMATION')
     expect(deps.audit.events.at(-1)).toMatchObject({
@@ -474,7 +479,12 @@ describe('runPaymentLadder', () => {
     const inter = new FakePaymentRail('INTER_EMPRESAS')
     const { deps, run } = await setup([inter])
     await deps.bills.save(
-      bill({ id: 'b2', source: 'GMAIL', unverifiedSender: true }),
+      bill({
+        id: 'b2',
+        source: 'GMAIL',
+        unverifiedSender: true,
+        dueDate: PAYMENT_DAY,
+      }),
     )
     const pending = await run(TENANT, 'b2')
     expect(pending.bill.status).toBe('NEEDS_CONFIRMATION')
@@ -555,6 +565,46 @@ describe('runPaymentLadder', () => {
     await paid({ id: 'near', amount: Money.of(12500) }, 10)
     await deps.bills.save(bill({ id: 'b3' }))
     expect((await run(TENANT, 'b3')).bill.status).toBe('PAID')
+  })
+
+  it('keeps a confirmation given before the payment day and pays on it', async () => {
+    const inter = new FakePaymentRail('INTER_EMPRESAS')
+    const { deps, run } = await setup([inter], { confirmAboveCents: 10_000 })
+    await deps.bills.save(bill({ id: 'b2', payee: 'New supplier' }))
+    expect((await run(TENANT, 'b2')).bill.status).toBe('NEEDS_CONFIRMATION')
+
+    const approved = await run(TENANT, 'b2', { confirmed: true })
+    expect(approved.bill.status).toBe('OPEN')
+    expect(approved.attempts).toEqual([])
+    expect(inter.requests).toEqual([])
+    expect(
+      await deps.payees.isKnown(TENANT, 'pj', 'boleto:001:NEW SUPPLIER'),
+    ).toBe(true)
+    expect(deps.audit.events.at(-1)).toMatchObject({
+      action: 'payment.approved',
+      rail: 'INTER_EMPRESAS',
+      result: 'OPEN',
+      details: { dueDate: '2026-10-20' },
+    })
+
+    expect((await run(TENANT, 'b2')).bill.status).toBe('PAID')
+  })
+
+  it('asks again when the amount changes after an early confirmation', async () => {
+    const { deps, run } = await setup([new FakePaymentRail('INTER_EMPRESAS')], {
+      confirmAboveCents: 10_000,
+    })
+    await run(TENANT, 'b1')
+    await run(TENANT, 'b1', { confirmed: true })
+    await deps.bills.save(bill({ amount: Money.of(20000) }))
+    expect((await run(TENANT, 'b1')).bill.status).toBe('NEEDS_CONFIRMATION')
+  })
+
+  it('pays an open bill confirmed early, as a pay now', async () => {
+    const { deps, run } = await setup([new FakePaymentRail('INTER_EMPRESAS')])
+    await deps.bills.save(bill({ id: 'b2', payee: 'New supplier' }))
+    const paid = await run(TENANT, 'b2', { confirmed: true })
+    expect(paid.bill.status).toBe('PAID')
   })
 
   it('asks for confirmation above the amount threshold', async () => {

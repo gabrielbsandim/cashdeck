@@ -1,6 +1,8 @@
 import {
+  addBusinessDays,
   type Bill,
   deviatesFromHistory,
+  type LocalDate,
   type PaymentAttempt,
   type RailId,
   recipientKeys,
@@ -9,6 +11,7 @@ import { type ConfirmationReason } from '@/dtos/bill'
 import { ProviderNotConfiguredError } from '@/errors/errors'
 import { type RailResult } from '@/ports/payment-rail'
 import { type RailStatusReader } from '@/ports/rail-status'
+import { type DocumentStore } from '@/ports/records'
 import {
   type BillRepository,
   type IdempotencyStore,
@@ -28,7 +31,21 @@ export function failureReason(error: unknown): string {
   return 'UNKNOWN_ERROR'
 }
 
-export type ConfirmationDeps = { payees: PayeeDirectory; bills: BillRepository }
+// Bills are worked one business day early so a late submission still settles
+// in time.
+export function paymentHorizon(today: LocalDate): LocalDate {
+  return addBusinessDays(today, 1)
+}
+
+export const APPROVALS_COLLECTION = 'payment-approvals'
+
+export type PaymentApproval = { amountCents: number }
+
+export type ConfirmationDeps = {
+  payees: PayeeDirectory
+  bills: BillRepository
+  documents: DocumentStore
+}
 
 export function makeConfirmationCheck(deps: ConfirmationDeps) {
   async function paidHistory(
@@ -52,6 +69,14 @@ export function makeConfirmationCheck(deps: ConfirmationDeps) {
     bill: Bill,
     settings: PaymentSettings,
   ): Promise<ConfirmationReason[]> {
+    const approval = await deps.documents.get<PaymentApproval>(
+      tenantId,
+      APPROVALS_COLLECTION,
+      bill.id,
+    )
+    if (approval?.amountCents === bill.amount.cents) {
+      return []
+    }
     const keys = recipientKeys(bill)
     const known = await Promise.all(
       keys.map(key => deps.payees.isKnown(tenantId, bill.entityId, key)),

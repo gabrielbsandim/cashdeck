@@ -6,7 +6,10 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 export function GET(request: Request) {
-  return runCronJob(request, 'alerts', () =>
-    getContainer().runDailyAlerts(readEnv().CASHDECK_TENANT_ID),
-  )
+  return runCronJob(request, 'alerts', async () => {
+    const container = getContainer()
+    const tenantId = readEnv().CASHDECK_TENANT_ID
+    const confirmations = await container.requestConfirmations(tenantId)
+    return { ...(await container.runDailyAlerts(tenantId)), ...confirmations }
+  })
 }

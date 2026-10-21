@@ -150,7 +150,9 @@ gives the monthly average those bills take, to size a recurring transfer.
   payment, configurable per entity. The last two bound automatic steps only.
 - The first payment to a new payee always requires an in-app confirmation. The
   payee is the real recipient: the Pix key of the BR Code (the merchant for a
-  dynamic code), the bank and payee of a boleto.
+  dynamic code), the bank and payee of a boleto. The daily alerts ask for it
+  up to 3 days before the due date, with a push; a confirmation given before
+  the payment day is kept and the ladder pays on schedule.
 - An amount above a threshold, or differing by more than a set percentage (30%
   by default) from the median of the last paid bills to the same recipient,
   requires confirmation.

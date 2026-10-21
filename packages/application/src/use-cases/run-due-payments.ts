@@ -1,11 +1,7 @@
-import {
-  addBusinessDays,
-  type Bill,
-  type BillStatus,
-  toLocalDate,
-} from '@cashdeck/domain'
+import { type Bill, type BillStatus, toLocalDate } from '@cashdeck/domain'
 import { type BillRepository } from '@/ports/repositories'
 import { type Clock } from '@/ports/system'
+import { paymentHorizon } from '@/use-cases/payment-guards'
 import { type FundingSummary } from '@/use-cases/reserve-funding'
 import { type LadderRun } from '@/use-cases/run-payment-ladder'
 
@@ -27,14 +23,13 @@ export type DuePaymentsSummary = {
 
 const PAGE_SIZE = 100
 
-// Bills are worked one business day early so a late submission still settles
-// in time. They are collected first because running the ladder changes status,
-// and the reserve is funded for all of them before the first one is paid.
+// Bills are collected first because running the ladder changes status, and
+// the reserve is funded for all of them before the first one is paid.
 export function makeRunDuePayments(deps: RunDuePaymentsDeps) {
   return async function runDuePayments(
     tenantId: string,
   ): Promise<DuePaymentsSummary> {
-    const horizon = addBusinessDays(toLocalDate(deps.clock.now()), 1)
+    const horizon = paymentHorizon(toLocalDate(deps.clock.now()))
     const due: Bill[] = []
     let cursor: string | null = null
     do {

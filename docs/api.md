@@ -798,7 +798,10 @@ when a bill is captured, so `plan` is never null.
   merchant name and city; the bank and payee of a boleto; both for a
   bolepix), when it is above `confirmAboveCents`, or when it strays from the
   paid history by more than `maxDeviationPercent`; `confirmed: true` pays it
-  and remembers every recipient. The audit log records the call as actor
+  and remembers every recipient. A bill confirmed before its payment day (due
+  after the next business day) is not paid: the confirmation is kept for that
+  amount, the bill goes back to `OPEN` and the ladder pays it on schedule
+  without asking again. The audit log records the call as actor
   `USER` with the API token's hash prefix and the `x-request-id` (or
   `x-vercel-id`) header.
 - `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
@@ -1417,7 +1420,7 @@ or that answers a non-empty `failures` list, raises a `JOB_FAILED` alert.
 | `/api/cron/preview-sync` | every 3 hours, 11:00 to 23:00 | reads the preview feed into `provisional` movements, then asks it to collect again for the next run; answers `{ accounts, previews }` |
 | `/api/cron/capture` | daily 09:30 | reads mailboxes and DDA |
 | `/api/cron/payment-ladder` | weekdays 11:00 | checks that the Asaas balance covers the personal bills it is about to pay (no provider tops it up, so a shortfall sends them to assisted), then runs the ladder for bills due; answers `{ checked, byStatus, funding: { rounds, fundedCents } }` |
-| `/api/cron/alerts` | daily 12:00 | bills due tomorrow and a short reserve; returns `{ dueSoon, lowBalance }` |
+| `/api/cron/alerts` | daily 12:00 | asks for confirmation on open bills due within 3 days that need one, then bills due tomorrow and a short reserve; returns `{ requested, dueSoon, lowBalance }` |
 | `/api/cron/reconcile-payments` | weekdays 21:00 | asks each rail for the status of submitted Pix and boleto attempts and of in-flight calls; marks the bill `PAID`, or records the failure and moves it to the assisted step; moves unapproved batches past the cutoff to assisted; answers `{ checked, paid, failed, expired, failures }` |
 | `/api/cron/monthly-recap` | day 1, 15:30 | after the sync, sends the `MONTHLY_RECAP` push of the month that closed for the personal entity and for the company, each when it moved money; answers `{ month, sent, entities }` with the entities pushed |
 | `/api/cron/invoices` | weekdays 12:00 | drafts the recurring invoices that are due, then refreshes every `PROCESSING` invoice from the issuer |

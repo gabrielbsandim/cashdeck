@@ -47,9 +47,12 @@ import {
   makeBuildPaymentPlan,
 } from '@/use-cases/build-payment-plan'
 import {
+  APPROVALS_COLLECTION,
   failureReason,
   makeConfirmationCheck,
   makeResolveInFlight,
+  type PaymentApproval,
+  paymentHorizon,
 } from '@/use-cases/payment-guards'
 import {
   type FundingSummary,
@@ -397,6 +400,37 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     return { bill: pending, plan, attempts: [], instructions: null }
   }
 
+  // Confirmed before its payment day: the approval is kept and the bill waits
+  // for the run that pays it on time, which then asks nothing.
+  async function approve(run: Run, plan: PaymentPlan): Promise<LadderRun> {
+    const { tenantId, bill } = run
+    for (const key of recipientKeys(bill)) {
+      await deps.payees.remember(tenantId, bill.entityId, key)
+    }
+    await deps.documents.put<PaymentApproval>(
+      tenantId,
+      APPROVALS_COLLECTION,
+      bill.id,
+      { amountCents: bill.amount.cents },
+    )
+    const open = transitionBill(bill, 'OPEN')
+    await deps.bills.save(open)
+    await deps.audit.record(
+      event(run, {
+        action: 'payment.approved',
+        rail: currentStep(plan).rail,
+        result: 'OPEN',
+        details: { recipients: recipientKeys(bill), dueDate: bill.dueDate },
+      }),
+    )
+    return { bill: open, plan, attempts: [], instructions: null }
+  }
+
+  const approvesAhead = (run: Run) =>
+    run.confirmed &&
+    run.bill.status === 'NEEDS_CONFIRMATION' &&
+    run.bill.dueDate > paymentHorizon(run.today)
+
   return async function runPaymentLadder(
     tenantId: string,
     billId: string,
@@ -434,6 +468,9 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
       return leaveToBank(run, plan)
     }
     const current = settings.killSwitch ? jumpToAssisted(plan) : plan
+    if (approvesAhead(run)) {
+      return approve(run, current)
+    }
     const reasons =
       run.confirmed || isAtAssistedStep(current)
         ? []
