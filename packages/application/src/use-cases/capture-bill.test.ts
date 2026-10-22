@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { crc16, encodeBrCode, Money, transitionBill } from '@cashdeck/domain'
+import { encodeBrCode, Money, transitionBill } from '@cashdeck/domain'
 import { captureBillSchema } from '@/dtos/bill'
 import { AmountRequiredError, NotFoundError } from '@/errors/errors'
 import { type PixCharge } from '@/ports/providers'
@@ -8,6 +8,7 @@ import { makeCaptureBill } from '@/use-cases/capture-bill'
 import {
   BOLETO_BARCODE,
   BOLETO_LINE,
+  dynamicPix,
   NOW,
   PIX_NO_AMOUNT,
   scenario,
@@ -29,13 +30,6 @@ const PIX_OF_BOLETO = encodeBrCode({
   amount: Money.of(12345),
 })
 const LOCATION = 'pix.example.com/qr/v2/cobv/abc123'
-
-function dynamicPix(location: string, city = 'SAO PAULO'): string {
-  const account = `0014br.gov.bcb.pix25${String(location.length).padStart(2, '0')}${location}`
-  const tail = `5802BR5918Fornecedor Exemplo60${String(city.length).padStart(2, '0')}${city}62070503***6304`
-  const body = `000201010212${`26${account.length}${account}`}520400005303986${tail}`
-  return body + crc16(body)
-}
 
 const charge = (overrides: Partial<PixCharge> = {}): PixCharge => ({
   amount: Money.of(12345),

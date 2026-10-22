@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Money } from '@cashdeck/domain'
+import { encodeBrCode, Money } from '@cashdeck/domain'
 import { type ChatAction, type ChatScope } from '@/ports/chat'
 import {
   account,
@@ -7,7 +7,13 @@ import {
   fullDeps,
   transaction,
 } from '@/testing/deps.test-helpers'
-import { NOW, TENANT } from '@/testing/scenario.test-helpers'
+import { FakePixLocationResolver } from '@/testing/providers'
+import {
+  dynamicPix,
+  NOW,
+  PIX_NO_AMOUNT,
+  TENANT,
+} from '@/testing/scenario.test-helpers'
 import { ensureCategories } from '@/use-cases/categorization'
 import { makeChatTools, type Proposal } from '@/use-cases/chat/tools'
 
@@ -389,5 +395,71 @@ describe('chat side-effect tools', () => {
     await expect(
       personal.run('draft_invoice', { transactionId: 'income' }),
     ).rejects.toThrow('Transaction was not found.')
+  })
+
+  it('proposes paying a pasted Pix code with the amount the capture will pay', async () => {
+    const { deps, proposals, run } = await toolsFor('PF')
+    const location = 'pix.example.com/qr/v2/cobv/chat1'
+    const broken = 'pix.example.com/qr/v2/cobv/broken'
+    deps.pixLocations = new FakePixLocationResolver({
+      [location]: {
+        amount: Money.of(12345),
+        dueDate: '2026-10-25',
+        key: null,
+        payee: 'Fornecedor Exemplo Ltda',
+        txid: 'chat1',
+      },
+      [broken]: new Error('down'),
+    })
+    const fixed = encodeBrCode({
+      key: 'store@example.com',
+      merchantName: 'Loja Exemplo',
+      merchantCity: 'SAO PAULO',
+      amount: Money.of(2977),
+    })
+    expect(
+      await run('pay_pix_code', { code: ` ${fixed} `, amount: 1 }),
+    ).toMatchObject({ status: 'PENDING_CONFIRMATION', actionId: 'act-1' })
+    await run('pay_pix_code', { code: PIX_NO_AMOUNT, amount: 50 })
+    await run('pay_pix_code', { code: dynamicPix(location) })
+    await expect(
+      run('pay_pix_code', { code: fixed.slice(0, -1) }),
+    ).rejects.toThrow('not a valid Pix copy and paste code')
+    await expect(run('pay_pix_code', { code: PIX_NO_AMOUNT })).rejects.toThrow(
+      'This code has no amount',
+    )
+    await expect(
+      run('pay_pix_code', { code: dynamicPix(broken) }),
+    ).rejects.toThrow('This code has no amount')
+    expect(proposals).toEqual([
+      {
+        tool: 'PAY_BILL',
+        entity: 'PF',
+        needsEntity: false,
+        target: { pixCode: fixed, amountCents: '2977' },
+        details: {
+          payee: 'Loja Exemplo',
+          amount: { cents: 2977, currency: 'BRL' },
+          dueDate: NOW.toISOString().slice(0, 10),
+        },
+      },
+      expect.objectContaining({
+        target: { pixCode: PIX_NO_AMOUNT, amountCents: '5000' },
+      }),
+      expect.objectContaining({
+        target: { pixCode: dynamicPix(location), amountCents: '12345' },
+        details: {
+          payee: 'Fornecedor Exemplo Ltda',
+          amount: { cents: 12345, currency: 'BRL' },
+          dueDate: '2026-10-25',
+        },
+      }),
+    ])
+    const consolidated = await toolsFor('ALL')
+    await consolidated.run('pay_pix_code', { code: fixed })
+    expect(consolidated.proposals[0]).toMatchObject({
+      entity: null,
+      needsEntity: true,
+    })
   })
 })

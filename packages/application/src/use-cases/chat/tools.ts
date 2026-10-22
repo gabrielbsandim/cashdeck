@@ -2,11 +2,13 @@ import {
   type Account,
   addDays,
   BILL_STATUSES,
+  type BrCode,
   type Category,
   type EntityKind,
   isSettled,
   Money,
   normalizeDescription,
+  parseBrCode,
   PIX_KEY_TYPES,
   rankContacts,
   type Transaction,
@@ -20,6 +22,7 @@ import {
   type ChatScope,
 } from '@/ports/chat'
 import { type LlmToolParameter } from '@/ports/llm-provider'
+import { type PixCharge } from '@/ports/providers'
 import { allPages, required, today } from '@/use-cases/shared'
 import { type AgentTool } from '@/use-cases/chat/agent'
 import { sanitize } from '@/use-cases/chat/hardening'
@@ -53,6 +56,7 @@ type ToolDeps = Pick<
   | 'clock'
   | 'ids'
   | 'pixContacts'
+  | 'pixLocations'
 >
 
 const DEFAULT_DAYS = 30
@@ -92,6 +96,34 @@ type Lookup = {
 
 // The model needs the id to pay, not the whole key.
 const maskKey = (key: string) => `******${key.slice(-4)}`
+
+const reais = (amount: number | undefined) =>
+  amount === undefined ? null : Money.of(Math.round(amount * 100))
+
+function readPixCode(raw: string): BrCode {
+  try {
+    return parseBrCode(raw)
+  } catch {
+    throw new ValidationError(
+      'This is not a valid Pix copy and paste code. Ask the user to paste it again.',
+    )
+  }
+}
+
+// The amount the capture will pay: the code's own, then the dynamic charge's,
+// and only then the one the user typed.
+export async function readPixPayment<T extends Money | null>(
+  deps: Pick<Deps, 'pixLocations'>,
+  raw: string,
+  typed: T,
+): Promise<{ code: BrCode; charge: PixCharge | null; amount: Money | T }> {
+  const code = readPixCode(raw)
+  const charge =
+    code.url === null
+      ? null
+      : await deps.pixLocations.resolve(code.url).catch(() => null)
+  return { code, charge, amount: code.amount ?? charge?.amount ?? typed }
+}
 
 export function makeChatTools(deps: ToolDeps) {
   const contacts = makePixContacts(deps)
@@ -538,6 +570,55 @@ export function makeChatTools(deps: ToolDeps) {
     }
   }
 
+  const pixCodeArgs = z.object({
+    code: z.string().trim().min(1).max(512),
+    amount: z.number().positive().max(1_000_000).optional(),
+  })
+
+  function payPixCode(ctx: ToolContext): AgentTool {
+    return {
+      name: 'pay_pix_code',
+      description:
+        'Propose paying a Pix copy and paste code (BR Code, starts with 000201) now. The user must confirm in the app.',
+      parameters: object(
+        {
+          code: text('The whole code, exactly as the user sent it'),
+          amount: {
+            type: 'number',
+            description: 'Amount in reais, only when the code has none',
+          },
+        },
+        ['code'],
+      ),
+      async run(raw) {
+        const args = pixCodeArgs.parse(raw)
+        const { code, charge, amount } = await readPixPayment(
+          deps,
+          args.code,
+          reais(args.amount),
+        )
+        if (!amount) {
+          throw new ValidationError(
+            'This code has no amount. Ask the user how much to pay.',
+          )
+        }
+        const entity = scopeKind(ctx.scope)
+        const action = await ctx.propose({
+          tool: 'PAY_BILL',
+          entity,
+          needsEntity: entity === null,
+          target: { pixCode: code.payload, amountCents: String(amount.cents) },
+          details: {
+            payee: sanitize(charge?.payee ?? code.merchantName, 120),
+            amount: amount.toJSON(),
+            dueDate: charge?.dueDate ?? today(deps.clock.now()),
+          },
+        })
+        return pendingReply(action)
+      },
+    }
+  }
+
   const ruleArgs = z.object({
     pattern: z.string().trim().min(1).max(100),
     category: z.string().trim().min(1),
@@ -735,6 +816,7 @@ export function makeChatTools(deps: ToolDeps) {
       explainCharge(ctx),
       createBillFromAttachment(ctx),
       payBill(ctx),
+      payPixCode(ctx),
       createCategoryRule(ctx),
       draftInvoice(ctx),
       findPixContacts(ctx),

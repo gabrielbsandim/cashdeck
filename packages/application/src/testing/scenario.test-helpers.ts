@@ -1,5 +1,6 @@
 import {
   type Bill,
+  crc16,
   createFinancialEntity,
   type RailId,
   recipientKeys,
@@ -32,6 +33,14 @@ export const BOLETO_BARCODE = '00199160500000123450000002800012345678901217'
 export const TAX_BARCODE = '85600000001500003282026102000000000000123000'
 export const PIX_NO_AMOUNT =
   '00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***63041D3D'
+
+// A dynamic BR Code: the amount lives behind the location, not in the code.
+export function dynamicPix(location: string, city = 'SAO PAULO'): string {
+  const account = `0014br.gov.bcb.pix25${String(location.length).padStart(2, '0')}${location}`
+  const tail = `5802BR5918Fornecedor Exemplo60${String(city.length).padStart(2, '0')}${city}62070503***6304`
+  const body = `000201010212${`26${account.length}${account}`}520400005303986${tail}`
+  return body + crc16(body)
+}
 
 export const personal = createFinancialEntity({
   id: 'pf',

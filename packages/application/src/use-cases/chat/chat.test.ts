@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Money, ValidationError } from '@cashdeck/domain'
+import { encodeBrCode, Money, ValidationError } from '@cashdeck/domain'
 import { sendMessageSchema } from '@/dtos/chat'
 import {
   ConflictError,
@@ -15,8 +15,13 @@ import {
   fullDeps,
   transaction,
 } from '@/testing/deps.test-helpers'
-import { FakePaymentRail } from '@/testing/providers'
-import { BOLETO_LINE, NOW, TENANT } from '@/testing/scenario.test-helpers'
+import { FakePaymentRail, FakePixLocationResolver } from '@/testing/providers'
+import {
+  BOLETO_LINE,
+  dynamicPix,
+  NOW,
+  TENANT,
+} from '@/testing/scenario.test-helpers'
 import { ensureCategories } from '@/use-cases/categorization'
 import { DEFAULT_CHAT_CONFIG, makeChat } from '@/use-cases/chat/chat'
 import { ISSUER_COLLECTION } from '@/use-cases/invoices'
@@ -268,6 +273,78 @@ describe('pending actions', () => {
     expect(deps.llm.calls.at(-1)?.messages[1]?.content).toContain(
       `[proposed PAY_BILL ${action?.id}: CONFIRMED]`,
     )
+  })
+
+  it('turns a pasted Pix code into a bill and pays it once confirmed', async () => {
+    const { deps, chat } = await setup()
+    const code = encodeBrCode({
+      key: 'store@example.com',
+      merchantName: 'Loja Exemplo',
+      merchantCity: 'SAO PAULO',
+      amount: Money.of(2977),
+    })
+    const thread = await chat.createThread(TENANT, { scope: 'ALL' })
+    deps.llm
+      .enqueue(use('pay_pix_code', { code }))
+      .enqueue(say('Confirme no card.'))
+    const turn = await chat.sendMessage(
+      TENANT,
+      thread.id,
+      message(`Paga esse Pix ${code}`),
+    )
+    const [action] = turn.messages[1]?.actions ?? []
+    expect(action).toMatchObject({
+      tool: 'PAY_BILL',
+      status: 'PENDING',
+      needsEntity: true,
+      details: { payee: 'Loja Exemplo', amount: { cents: 2977 } },
+    })
+    expect(await deps.bills.findByPixCode(TENANT, 'pf', code)).toBeNull()
+    const confirmed = await chat.confirmAction(TENANT, action?.id as string, {
+      entity: 'PF',
+    })
+    expect(confirmed.status).toBe('CONFIRMED')
+    const paid = await deps.bills.findById(
+      TENANT,
+      confirmed.result?.billId as string,
+    )
+    expect(paid).toMatchObject({
+      entityId: 'pf',
+      kind: 'PIX_QR',
+      source: 'CHAT',
+      pixCode: code,
+      amount: Money.of(2977),
+    })
+    expect(paid?.status).not.toBe('OPEN')
+  })
+
+  it('refuses a Pix code whose charge changed before the confirmation', async () => {
+    const { deps, chat } = await setup()
+    const location = 'pix.example.com/qr/v2/cobv/chat2'
+    const charge = {
+      amount: Money.of(12345),
+      dueDate: '2026-10-25',
+      key: null,
+      payee: 'Fornecedor Exemplo Ltda',
+      txid: 'chat2',
+    }
+    const charges = { [location]: charge }
+    deps.pixLocations = new FakePixLocationResolver(charges)
+    const thread = await chat.createThread(TENANT, { scope: 'PF' })
+    deps.llm
+      .enqueue(use('pay_pix_code', { code: dynamicPix(location) }))
+      .enqueue(say('Confirme no card.'))
+    const turn = await chat.sendMessage(TENANT, thread.id, message('Paga'))
+    const [action] = turn.messages[1]?.actions ?? []
+    charges[location] = { ...charge, amount: Money.of(20000) }
+    const failed = await chat.confirmAction(TENANT, action?.id as string, {})
+    expect(failed).toMatchObject({
+      status: 'FAILED',
+      error: 'The amount of this Pix code changed. Ask for it again.',
+    })
+    expect(
+      await deps.bills.findByPixCode(TENANT, 'pf', dynamicPix(location)),
+    ).toBeNull()
   })
 
   it('creates a bill from an attachment once an entity is chosen', async () => {
