@@ -41,6 +41,7 @@ import {
   categoryIndex,
   type FlowEntry,
   flowEntries,
+  flowKeyOf,
   insightScope,
 } from '@/use-cases/insights'
 import { loadLoans, type StoredLoan } from '@/use-cases/loans'
@@ -130,6 +131,7 @@ type Plan = {
   sources: number
   savings: Money
   savingsSet: boolean
+  invested: Money
   entries: readonly FlowEntry[]
   cards: ReadonlySet<string>
 }
@@ -600,6 +602,16 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       sources: stored.incomeSources.length,
       savings: target ? Money.of(target.cents) : typical.saved,
       savingsSet: target !== null,
+      invested: Money.of(
+        -entries
+          .filter(
+            entry =>
+              monthOf(entry.transaction.bookedOn) === month &&
+              flowKeyOf(categories, entry.transaction.categoryId) ===
+                'investments',
+          )
+          .reduce((total, entry) => total + entry.transaction.amount.cents, 0),
+      ),
       entries,
       cards,
     }
@@ -676,6 +688,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       today: base.day,
       income,
       savings: plan.savings,
+      invested: plan.invested,
       spentOnCards: spentOn(true),
       spentFromAccounts: spentOn(false),
       spentToday: Money.of(

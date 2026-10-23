@@ -102,6 +102,25 @@ describe('monthlyAllowance', () => {
     expect(overspent).toMatchObject({ daily: { cents: 0 } })
   })
 
+  it('saves what the month already put away once it passes the target', () => {
+    const input = {
+      today: '2026-10-22',
+      income: Money.of(1_000_000),
+      savings: Money.of(300_000),
+      spentOnCards: Money.zero(),
+      spentFromAccounts: Money.zero(),
+      obligations: [],
+    }
+    const below = monthlyAllowance({ ...input, invested: Money.of(100_000) })
+    const past = monthlyAllowance({ ...input, invested: Money.of(400_000) })
+    expect(below.total.cents).toBe(700_000)
+    expect(past.total.cents).toBe(600_000)
+    expect(past.lines[1]).toMatchObject({
+      kind: 'SAVINGS',
+      amount: { cents: -400_000 },
+    })
+  })
+
   it('says how far the month is overspent', () => {
     const allowance = monthlyAllowance({
       today: '2026-10-31',

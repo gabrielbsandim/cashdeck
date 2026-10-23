@@ -144,7 +144,7 @@ export async function insightScope(
 
 // A category of the user's under a built-in one counts as its parent, so a
 // project funded beside the investments stays out of the spending.
-function flowKeyOf(
+export function flowKeyOf(
   categories: ReadonlyMap<string, Category>,
   id: string | null,
 ): string | null {

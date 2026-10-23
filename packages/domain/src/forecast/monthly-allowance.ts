@@ -32,6 +32,8 @@ export type MonthlyAllowanceInput = {
   readonly today: LocalDate
   readonly income: Money
   readonly savings: Money
+  // Put away this month so far, net of what came back.
+  readonly invested?: Money
   // Spent since the month began, by purchase date, card bills left out.
   readonly spentOnCards: Money
   readonly spentFromAccounts: Money
@@ -71,6 +73,12 @@ export function typicalMonth(
   }
 }
 
+// Money put away past the target came out of what was free to spend.
+function savedOf(input: MonthlyAllowanceInput) {
+  const invested = input.invested ?? Money.zero()
+  return invested.compare(input.savings) > 0 ? invested : input.savings
+}
+
 const planLine = (
   kind: SafeToSpendLine['kind'],
   amount: Money,
@@ -86,7 +94,7 @@ export function monthlyAllowance(
   const due = input.obligations.filter(obligation => obligation.on <= until)
   const lines = [
     planLine('INCOME', input.income),
-    planLine('SAVINGS', input.savings.negate()),
+    planLine('SAVINGS', savedOf(input).negate()),
     planLine('SPENT_CARD', input.spentOnCards.negate()),
     planLine('SPENT_ACCOUNT', input.spentFromAccounts.negate()),
     ...obligationLines(due),

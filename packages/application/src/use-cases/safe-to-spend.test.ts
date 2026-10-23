@@ -416,6 +416,43 @@ describe('safe to spend', () => {
     })
   })
 
+  it('saves what the month invested once it passes the target', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    await deps.categories.save({
+      id: 'inv',
+      tenantId: TENANT,
+      key: 'investments',
+      name: 'Investments',
+      icon: null,
+      parentId: null,
+    })
+    for (const [id, bookedOn, cents] of [
+      ['cdb', '2026-10-05', -400000],
+      ['redeemed', '2026-10-06', 50000],
+      ['last-month', '2026-09-20', -90000],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'chk',
+          bookedOn,
+          amount: Money.of(cents),
+          description: 'Aplicacao',
+          categoryId: 'inv',
+        }),
+      )
+    }
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(view).toMatchObject({
+      plan: { savings: { cents: 300000 } },
+      total: { cents: 275165 },
+    })
+    expect(rows(view)[1]).toEqual(['SAVINGS', '', -350000, null])
+  })
+
   it('saves what a typical month leaves and warns when checking falls short', async () => {
     const deps = await seed()
     const setPlan = makeSetSpendingPlan(deps)
