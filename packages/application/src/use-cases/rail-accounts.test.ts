@@ -92,6 +92,9 @@ describe('rail accounts', () => {
       account?.institutionId as string,
     )
     expect(institution?.name).toBe('Asaas')
+    expect(institution?.imageUrl).toBe(
+      'https://www.asaas.com/staticboto/apple-touch-icon.png',
+    )
     expect(await deps.transactions.all(TENANT, {})).toHaveLength(1)
   })
 

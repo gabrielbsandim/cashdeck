@@ -15,6 +15,9 @@ import { type Deps } from '@/use-cases/deps'
 export const RAIL_ACCOUNT_PROVIDER = 'asaas'
 const RAIL: RailId = 'ASAAS'
 const INSTITUTION = 'Asaas'
+// No Open Finance connector lists Asaas, so its brand is pinned here.
+const LOGO = 'https://www.asaas.com/staticboto/apple-touch-icon.png'
+const COLOR = '0030FF'
 
 export const railAccountItemId = (entityId: string) =>
   `${RAIL_ACCOUNT_PROVIDER}:${entityId}`
@@ -52,6 +55,8 @@ export function makeRailAccounts(
       tenantId,
       name: INSTITUTION,
       manual: false,
+      imageUrl: LOGO,
+      primaryColor: COLOR,
     })
     const connection: Connection = {
       id: deps.ids.next(),
