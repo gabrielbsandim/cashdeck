@@ -381,6 +381,41 @@ describe('safe to spend', () => {
     })
   })
 
+  it('leaves a bill or a subscription paid today out of what today spent', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    await deps.bills.save(
+      bill({
+        id: 'b1',
+        payee: 'Power Co',
+        dueDate: '2026-10-12',
+        status: 'PAID',
+        paidAt: new Date('2026-10-08T15:00:00Z'),
+      }),
+    )
+    for (const [id, cents, description] of [
+      ['power', -12345, 'Pagamento Power Co'],
+      ['stream', -5590, 'Streaming Plus'],
+      ['lunch', -10000, 'Padaria Exemplo'],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'chk',
+          bookedOn: '2026-10-08',
+          amount: Money.of(cents),
+          description,
+        }),
+      )
+    }
+    expect(await makeSafeToSpend(deps)(TENANT)).toMatchObject({
+      total: { cents: 315165 },
+      daily: { cents: 3548 },
+    })
+  })
+
   it('saves what a typical month leaves and warns when checking falls short', async () => {
     const deps = await seed()
     const setPlan = makeSetSpendingPlan(deps)
@@ -594,6 +629,41 @@ describe('safe to spend', () => {
       cashShortBy: { cents: 4000 },
     })
     expect(view.lines.map(line => line.kind)).toEqual(['BILL'])
+  })
+
+  it('takes what cash spent today off today, bills paid today aside', async () => {
+    const deps = fullDeps()
+    await deps.accounts.save(
+      account({ id: 'chk', entityId: 'pf', balance: Money.of(238000) }),
+    )
+    await deps.bills.save(
+      bill({
+        id: 'b1',
+        amount: Money.of(5000),
+        status: 'PAID',
+        paidAt: new Date('2026-10-08T15:00:00Z'),
+      }),
+    )
+    for (const [id, cents] of [
+      ['boleto', -5000],
+      ['lunch', -2000],
+      ['refund', 700],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'chk',
+          bookedOn: '2026-10-08',
+          amount: Money.of(cents),
+        }),
+      )
+    }
+    expect(await makeSafeToSpend(deps)(TENANT)).toMatchObject({
+      basis: 'CASH',
+      days: 24,
+      total: { cents: 238000 },
+      daily: { cents: 8000 },
+    })
   })
 
   it('runs the company on cash until its next income and keeps its budgets', async () => {

@@ -78,6 +78,8 @@ export type SafeToSpendInput = {
   readonly income: ExpectedIncome | null
   readonly obligations: readonly Obligation[]
   readonly budgets?: readonly BudgetLeft[]
+  // What left the cash today on anything not owed.
+  readonly spentToday?: Money
 }
 
 export type SafeToSpend = {
@@ -282,6 +284,15 @@ export const shortfallOf = (total: Money) =>
 export const dailyOf = (total: Money, days: number) =>
   Money.of(total.isPositive() ? Math.floor(total.cents / days) : 0)
 
+// Today's share is set as the day began, so each purchase today takes its
+// whole amount off what is left for today instead of a fraction of it.
+export function leftToday(total: Money, days: number, spentToday: Money) {
+  const share = dailyOf(total.add(spentToday), days)
+  return share.compare(spentToday) > 0
+    ? share.subtract(spentToday)
+    : Money.zero()
+}
+
 // Checking balance minus what is owed until the next income and what the
 // month's budgets still allow; the reserve covers the obligations paid from it.
 export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
@@ -295,7 +306,7 @@ export function safeToSpend(input: SafeToSpendInput): SafeToSpend {
   const total = input.cash.add(sum(lines.map(line => line.amount)))
   return {
     total,
-    daily: dailyOf(total, days),
+    daily: leftToday(total, days, input.spentToday ?? Money.zero()),
     days,
     until,
     income: input.income,

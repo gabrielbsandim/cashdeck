@@ -2,8 +2,8 @@ import { daysBetween, type LocalDate } from '@/calendar/local-date'
 import {
   type BudgetLeft,
   budgetLines,
-  dailyOf,
   lastDayOfMonth,
+  leftToday,
   type Obligation,
   obligationLines,
   reserveLines,
@@ -75,15 +75,6 @@ const planLine = (
   kind: SafeToSpendLine['kind'],
   amount: Money,
 ): SafeToSpendLine => ({ kind, label: '', amount, on: null })
-
-// Today's share is set as the day began, so each purchase today takes its
-// whole amount off what is left for today instead of a fraction of it.
-function leftToday(total: Money, days: number, spentToday: Money) {
-  const share = dailyOf(total.add(spentToday), days)
-  return share.compare(spentToday) > 0
-    ? share.subtract(spentToday)
-    : Money.zero()
-}
 
 // The typical income less the savings target, what the month already spent
 // and what it still owes; spread over the days left in the month.

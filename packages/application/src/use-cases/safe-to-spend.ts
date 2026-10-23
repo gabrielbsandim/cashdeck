@@ -112,6 +112,7 @@ type Base = Omit<Context, 'until'> & {
   reserve: Money
   isAutoDebit: (bill: Bill) => boolean
   items: readonly FundingItemView[]
+  paidToday: readonly Bill[]
 }
 
 type Owner = Pick<Base, 'tenantId' | 'kind' | 'entity' | 'day'>
@@ -457,6 +458,9 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       open: bills.filter(
         bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
       ),
+      paidToday: bills.filter(
+        bill => isSettled(bill) && bill.paidAt && today(bill.paidAt) === day,
+      ),
       checking: sum(spending.map(account => account.balance)),
       reserve: sum(
         cash
@@ -501,11 +505,24 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     }
   }
 
+  // A bill or a recurring charge paid today was owed this morning already.
+  async function dueSettlement(base: Base) {
+    const keys = new Set(
+      (await deps.recurrences.list(base.tenantId))
+        .filter(recurrence => recurrence.entityId === base.entity.id)
+        .map(recurrence => recurrence.key),
+    )
+    return (tx: Transaction) =>
+      keys.has(recurrenceKey(tx)) ||
+      base.paidToday.some(bill => bill.amount.cents === -tx.amount.cents)
+  }
+
   // Until the next income: for a company, or a person without a closed month.
   async function cashView(base: Base): Promise<SafeToSpendView> {
-    const [income, budgets] = await Promise.all([
+    const [income, budgets, settlesDue] = await Promise.all([
       incomeOf(base.tenantId, base.entity, base.recent, base.day),
       budgetsLeft(base.tenantId, base.kind, base.day),
+      dueSettlement(base),
     ])
     const { until } = spendingWindow(base.day, income)
     const result = safeToSpend({
@@ -518,6 +535,16 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         since: '',
       }),
       budgets,
+      spentToday: sum(
+        base.recent
+          .filter(
+            tx =>
+              tx.bookedOn === base.day &&
+              tx.amount.isNegative() &&
+              !settlesDue(tx),
+          )
+          .map(tx => tx.amount),
+      ).negate(),
     })
     return {
       ...baseView(base),
@@ -615,17 +642,19 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     // Any recurring debit still running is owed, a dismissed subscription too.
     const running = { include: () => true, since: addMonths(month, -1) }
     const until = addDays(base.day, CASH_ALERT_DAYS)
-    const [cardBill, recurrent, budgets, upcoming] = await Promise.all([
-      cardBillTotals(base),
-      recurringObligations(base.tenantId, context, {
-        charges: plan.entries
-          .filter(entry => entry.kind === 'EXPENSE')
-          .map(entry => entry.transaction),
-        ...running,
-      }),
-      budgetsLeft(base.tenantId, base.kind, base.day),
-      cashObligations(base, until, running),
-    ])
+    const [cardBill, recurrent, budgets, upcoming, settlesDue] =
+      await Promise.all([
+        cardBillTotals(base),
+        recurringObligations(base.tenantId, context, {
+          charges: plan.entries
+            .filter(entry => entry.kind === 'EXPENSE')
+            .map(entry => entry.transaction),
+          ...running,
+        }),
+        budgetsLeft(base.tenantId, base.kind, base.day),
+        cashObligations(base, until, running),
+        dueSettlement(base),
+      ])
     const spent = plan.entries.filter(
       entry =>
         entry.kind === 'EXPENSE' &&
@@ -651,7 +680,11 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       spentFromAccounts: spentOn(false),
       spentToday: Money.of(
         spent
-          .filter(entry => entry.transaction.bookedOn === base.day)
+          .filter(
+            entry =>
+              entry.transaction.bookedOn === base.day &&
+              !settlesDue(entry.transaction),
+          )
           .reduce((total, entry) => total + entry.cents, 0),
       ),
       obligations: [

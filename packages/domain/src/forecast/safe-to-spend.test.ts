@@ -178,6 +178,21 @@ describe('safeToSpend', () => {
     expect(result.lines.map(line => line.kind)).toEqual(['BILL'])
   })
 
+  it('takes what cash spent today whole off what is left for today', () => {
+    const leftAfter = (cash: number, spent: number) =>
+      safeToSpend({
+        today: '2026-10-08',
+        cash: Money.of(cash),
+        reserve: Money.zero(),
+        income: null,
+        obligations: [],
+        spentToday: Money.of(spent),
+      }).daily.cents
+    expect(leftAfter(240000, 0)).toBe(10000)
+    expect(leftAfter(238000, 2000)).toBe(8000)
+    expect(leftAfter(230000, 10000)).toBe(0)
+  })
+
   it('says how short the money falls, with nothing to spend', () => {
     const result = safeToSpend({
       today: '2026-10-08',
