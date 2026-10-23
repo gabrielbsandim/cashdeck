@@ -566,12 +566,32 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
     }
   }
 
+  // Money moved into an investment account was put away before any product
+  // shows it; what the account then buys inside it moves nothing.
+  async function movedToInvestments(
+    owner: Owner,
+    accounts: readonly Account[],
+    categories: Awaited<ReturnType<typeof categoryIndex>>,
+  ) {
+    const moved = await deps.transactions.all(owner.tenantId, {
+      accountIds: accounts
+        .filter(account => account.type === 'INVESTMENT')
+        .map(account => account.id),
+      from: firstDay(monthOf(owner.day)),
+      to: owner.day,
+    })
+    return moved
+      .filter(tx => flowKeyOf(categories, tx.categoryId) === 'transfers')
+      .reduce((total, tx) => total + tx.amount.cents, 0)
+  }
+
   async function planOf(owner: Owner): Promise<Plan | null> {
     const month = monthOf(owner.day)
-    const [scope, categories, stored] = await Promise.all([
+    const [scope, categories, stored, holdings] = await Promise.all([
       insightScope(deps, owner.tenantId, owner.kind),
       categoryIndex(deps, owner.tenantId),
       loadSpendingPlan(deps, owner.tenantId, owner.entity.id),
+      deps.accounts.listByEntity(owner.tenantId, owner.entity.id),
     ])
     const entries = await flowEntries(
       deps,
@@ -603,14 +623,18 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       savings: target ? Money.of(target.cents) : typical.saved,
       savingsSet: target !== null,
       invested: Money.of(
-        -entries
-          .filter(
-            entry =>
-              monthOf(entry.transaction.bookedOn) === month &&
-              flowKeyOf(categories, entry.transaction.categoryId) ===
-                'investments',
-          )
-          .reduce((total, entry) => total + entry.transaction.amount.cents, 0),
+        (await movedToInvestments(owner, holdings, categories)) -
+          entries
+            .filter(
+              entry =>
+                monthOf(entry.transaction.bookedOn) === month &&
+                flowKeyOf(categories, entry.transaction.categoryId) ===
+                  'investments',
+            )
+            .reduce(
+              (total, entry) => total + entry.transaction.amount.cents,
+              0,
+            ),
       ),
       entries,
       cards,

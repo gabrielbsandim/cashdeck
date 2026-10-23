@@ -453,6 +453,49 @@ describe('safe to spend', () => {
     expect(rows(view)[1]).toEqual(['SAVINGS', '', -350000, null])
   })
 
+  it('counts what moved into an investment account as invested', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    for (const [id, key] of [
+      ['inv', 'investments'],
+      ['moves', 'transfers'],
+    ] as const) {
+      await deps.categories.save({
+        id,
+        tenantId: TENANT,
+        key,
+        name: key,
+        icon: null,
+        parentId: null,
+      })
+    }
+    await deps.accounts.save(
+      account({ id: 'broker', entityId: 'pf', type: 'INVESTMENT' }),
+    )
+    for (const [id, bookedOn, cents, categoryId] of [
+      ['in', '2026-10-05', 400000, 'moves'],
+      ['back', '2026-10-06', -50000, 'moves'],
+      ['bought', '2026-10-07', -400000, 'inv'],
+      ['last-month', '2026-09-20', 90000, 'moves'],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId: 'broker',
+          bookedOn,
+          amount: Money.of(cents),
+          description: 'Corretora',
+          categoryId,
+        }),
+      )
+    }
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(view).toMatchObject({ total: { cents: 275165 } })
+    expect(rows(view)[1]).toEqual(['SAVINGS', '', -350000, null])
+  })
+
   it('saves what a typical month leaves and warns when checking falls short', async () => {
     const deps = await seed()
     const setPlan = makeSetSpendingPlan(deps)
