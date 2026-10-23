@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import io.cashdeck.app.widget.WidgetRefreshWorker
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
@@ -42,7 +43,12 @@ class CardNotificationUploader(context: Context, params: WorkerParameters) :
                 }
                 status >= HttpURLConnection.HTTP_INTERNAL_ERROR || status == TOO_MANY -> return Result.retry()
                 // A 2xx is stored, any other 4xx can never be: either way it leaves the queue.
-                else -> store.drop(ids(batch))
+                else -> {
+                    store.drop(ids(batch))
+                    if (status < HttpURLConnection.HTTP_MULT_CHOICE) {
+                        WidgetRefreshWorker.refreshNow(applicationContext)
+                    }
+                }
             }
         }
     }
