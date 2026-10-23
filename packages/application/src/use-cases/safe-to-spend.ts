@@ -649,6 +649,11 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       savings: plan.savings,
       spentOnCards: spentOn(true),
       spentFromAccounts: spentOn(false),
+      spentToday: Money.of(
+        spent
+          .filter(entry => entry.transaction.bookedOn === base.day)
+          .reduce((total, entry) => total + entry.cents, 0),
+      ),
       obligations: [
         ...billObligations(
           base.open.filter(bill => !cardBill.boleto(bill)),

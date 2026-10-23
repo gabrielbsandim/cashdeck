@@ -35,6 +35,8 @@ export type MonthlyAllowanceInput = {
   // Spent since the month began, by purchase date, card bills left out.
   readonly spentOnCards: Money
   readonly spentFromAccounts: Money
+  // The part of that spending booked today.
+  readonly spentToday?: Money
   // Still to be paid this month; one overdue and unpaid counts as well.
   readonly obligations: readonly Obligation[]
   readonly budgets?: readonly BudgetLeft[]
@@ -74,6 +76,15 @@ const planLine = (
   amount: Money,
 ): SafeToSpendLine => ({ kind, label: '', amount, on: null })
 
+// Today's share is set as the day began, so each purchase today takes its
+// whole amount off what is left for today instead of a fraction of it.
+function leftToday(total: Money, days: number, spentToday: Money) {
+  const share = dailyOf(total.add(spentToday), days)
+  return share.compare(spentToday) > 0
+    ? share.subtract(spentToday)
+    : Money.zero()
+}
+
 // The typical income less the savings target, what the month already spent
 // and what it still owes; spread over the days left in the month.
 export function monthlyAllowance(
@@ -93,7 +104,7 @@ export function monthlyAllowance(
   const total = sum(lines.map(line => line.amount))
   return {
     total,
-    daily: dailyOf(total, days),
+    daily: leftToday(total, days, input.spentToday ?? Money.zero()),
     days,
     until,
     shortBy: shortfallOf(total),

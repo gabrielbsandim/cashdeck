@@ -360,6 +360,27 @@ describe('safe to spend', () => {
     ])
   })
 
+  it('takes a purchase captured today whole off what is left for today', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    await deps.transactions.save(
+      transaction({
+        id: 'lunch',
+        accountId: 'card',
+        bookedOn: '2026-10-08',
+        amount: Money.of(-10000),
+        description: 'Padaria Exemplo',
+        provisional: true,
+      }),
+    )
+    expect(await makeSafeToSpend(deps)(TENANT)).toMatchObject({
+      total: { cents: 315165 },
+      daily: { cents: 3548 },
+    })
+  })
+
   it('saves what a typical month leaves and warns when checking falls short', async () => {
     const deps = await seed()
     const setPlan = makeSetSpendingPlan(deps)

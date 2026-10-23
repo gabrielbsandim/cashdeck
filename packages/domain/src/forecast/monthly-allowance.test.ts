@@ -72,6 +72,36 @@ describe('monthlyAllowance', () => {
     ])
   })
 
+  it('takes a purchase made today whole off what is left for today', () => {
+    const input = {
+      today: '2026-10-22',
+      income: Money.of(1_000_000),
+      savings: Money.zero(),
+      spentFromAccounts: Money.zero(),
+      obligations: [],
+    }
+    const morning = monthlyAllowance({
+      ...input,
+      spentOnCards: Money.of(100_000),
+    })
+    const evening = monthlyAllowance({
+      ...input,
+      spentOnCards: Money.of(109_016),
+      spentToday: Money.of(9_016),
+    })
+    const overspent = monthlyAllowance({
+      ...input,
+      spentOnCards: Money.of(200_000),
+      spentToday: Money.of(109_016),
+    })
+    expect(morning).toMatchObject({ days: 10, daily: { cents: 90_000 } })
+    expect(evening).toMatchObject({
+      total: { cents: 890_984 },
+      daily: { cents: 80_984 },
+    })
+    expect(overspent).toMatchObject({ daily: { cents: 0 } })
+  })
+
   it('says how far the month is overspent', () => {
     const allowance = monthlyAllowance({
       today: '2026-10-31',
