@@ -28,8 +28,22 @@ export interface MailboxAuthorizer {
 
 export type PdfRow = readonly [label: string, value: string]
 
+export type PdfSection = {
+  readonly heading: string
+  readonly rows: readonly PdfRow[]
+}
+
+// A one-page receipt: the amount up top, then labelled sections.
+export type PdfDocument = {
+  readonly title: string
+  readonly amount: string
+  readonly caption: string
+  readonly sections: readonly PdfSection[]
+  readonly footer: string
+}
+
 export interface PdfWriter {
-  render(title: string, rows: readonly PdfRow[]): Uint8Array
+  render(document: PdfDocument): Uint8Array
 }
 
 // Passwords to try on a protected PDF, such as prefixes of the owner's tax id.

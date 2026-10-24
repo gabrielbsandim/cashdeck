@@ -4,7 +4,7 @@ import { ValidationError } from '@cashdeck/domain'
 import { type HttpRequest, type HttpResponse } from '@/http/transport'
 import { X509CertificateInspector } from '@/services/certificate-inspector'
 import { GoogleMailboxAuthorizer } from '@/services/google-mailbox-authorizer'
-import { SimplePdfWriter } from '@/services/pdf-writer'
+import { SimplePdfWriter, wrap } from '@/services/pdf-writer'
 import { crc32, StoredZipWriter } from '@/services/zip-writer'
 
 // A throwaway self-signed certificate for the subject "cashdeck-test".
@@ -181,18 +181,42 @@ describe('GoogleMailboxAuthorizer', () => {
 
 describe('SimplePdfWriter', () => {
   it('writes a one page PDF with a valid cross reference table', () => {
-    const bytes = new SimplePdfWriter().render('Payment receipt', [
-      ['Payee', 'Água (Serviços) \\ Ltda'],
-      ['Note', 'Emoji 🙂'],
-    ])
+    const bytes = new SimplePdfWriter().render({
+      title: 'Payment receipt',
+      amount: 'R$ 170,00',
+      caption: 'Paid on 23/10/2026, 8:06\u202fPM',
+      sections: [
+        {
+          heading: 'To',
+          rows: [
+            ['Payee', 'Água (Serviços) \\ Ltda'],
+            ['Note', 'Emoji 🙂'],
+            ['Code', '8'.repeat(70)],
+          ],
+        },
+      ],
+      footer: 'Generated',
+    })
     const text = Buffer.from(bytes).toString('latin1')
     expect(text.startsWith('%PDF-1.4')).toBe(true)
-    expect(text).toContain('(Payee: Água \\(Serviços\\) \\\\ Ltda)')
-    expect(text).toContain('(Note: Emoji ?)')
+    expect(text).toContain('(Água \\(Serviços\\) \\\\ Ltda)')
+    expect(text).toContain('(Emoji ?)')
+    expect(text).toContain('(Paid on 23/10/2026, 8:06 PM)')
+    expect(text).toContain('/BaseFont /Helvetica-Bold')
+    expect(text).toContain(`(${'8'.repeat(55)})`)
     const xref = Number(text.match(/startxref\n(\d+)/)?.[1])
     expect(text.slice(xref, xref + 4)).toBe('xref')
     const fourth = text.split('\n').filter(line => / 00000 n $/.test(line))[3]
     const offset = Number(fourth?.slice(0, 10))
     expect(text.slice(offset, offset + 7)).toBe('4 0 obj')
+  })
+
+  it('wraps a value at spaces and inside a word too long for a line', () => {
+    expect(wrap('Pix enviado para Fulano', 11)).toEqual([
+      'Pix enviado',
+      'para Fulano',
+    ])
+    expect(wrap('ABCDEFGHIJ KL', 4)).toEqual(['ABCD', 'EFGH', 'IJ', 'KL'])
+    expect(wrap('')).toEqual([])
   })
 })

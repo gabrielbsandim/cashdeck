@@ -9,7 +9,7 @@ import {
   type DocumentFile,
   type DocumentTextReader,
   type MailboxAuthorizer,
-  type PdfRow,
+  type PdfDocument,
   type PdfWriter,
 } from '@/ports/services'
 
@@ -61,9 +61,20 @@ export class FakeMailboxAuthorizer implements MailboxAuthorizer {
 }
 
 export class FakePdfWriter implements PdfWriter {
-  render(title: string, rows: readonly PdfRow[]): Uint8Array {
-    const lines = rows.map(([label, value]) => `${label}: ${value}`)
-    return new TextEncoder().encode([title, ...lines].join('\n'))
+  render(document: PdfDocument): Uint8Array {
+    const lines = document.sections.flatMap(section => [
+      section.heading,
+      ...section.rows.map(([label, value]) => `${label}: ${value}`),
+    ])
+    return new TextEncoder().encode(
+      [
+        document.title,
+        document.amount,
+        document.caption,
+        ...lines,
+        document.footer,
+      ].join('\n'),
+    )
   }
 }
 
