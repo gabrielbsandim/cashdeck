@@ -114,6 +114,7 @@ type Base = Omit<Context, 'until'> & {
   isAutoDebit: (bill: Bill) => boolean
   items: readonly FundingItemView[]
   paidToday: readonly Bill[]
+  paidByRail: readonly { bill: Bill; on: LocalDate }[]
 }
 
 type Owner = Pick<Base, 'tenantId' | 'kind' | 'entity' | 'day'>
@@ -461,7 +462,16 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         bill => !isSettled(bill) && bill.dueDate >= addDays(day, -OVERDUE_DAYS),
       ),
       paidToday: bills.filter(
-        bill => isSettled(bill) && bill.paidAt && today(bill.paidAt) === day,
+        bill =>
+          isSettled(bill) &&
+          bill.paidAt &&
+          today(bill.paidAt) === day &&
+          today(bill.createdAt) < day,
+      ),
+      paidByRail: bills.flatMap(bill =>
+        bill.paidBy === 'RAIL' && bill.paidAt
+          ? [{ bill, on: today(bill.paidAt) }]
+          : [],
       ),
       checking: sum(spending.map(account => account.balance)),
       reserve: sum(
@@ -697,6 +707,19 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
         monthOf(entry.transaction.bookedOn) === month &&
         !cardBill.payment(entry.transaction),
     )
+    // What the app paid shows in the statement only once the bank syncs it.
+    const unsynced = base.paidByRail.filter(
+      ({ bill, on }) =>
+        monthOf(on) === month &&
+        !cardBill.boleto(bill) &&
+        !plan.entries.some(
+          entry =>
+            entry.transaction.amount.cents === -bill.amount.cents &&
+            entry.transaction.bookedOn >= on,
+        ),
+    )
+    const paidOf = (paid: typeof unsynced) =>
+      Money.of(paid.reduce((total, { bill }) => total + bill.amount.cents, 0))
     const spentOn = (onCard: boolean) =>
       Money.of(
         spent
@@ -714,7 +737,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       savings: plan.savings,
       invested: plan.invested,
       spentOnCards: spentOn(true),
-      spentFromAccounts: spentOn(false),
+      spentFromAccounts: spentOn(false).add(paidOf(unsynced)),
       spentToday: Money.of(
         spent
           .filter(
@@ -723,6 +746,13 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
               !settlesDue(entry.transaction),
           )
           .reduce((total, entry) => total + entry.cents, 0),
+      ).add(
+        paidOf(
+          unsynced.filter(
+            ({ bill, on }) =>
+              on === base.day && today(bill.createdAt) === base.day,
+          ),
+        ),
       ),
       obligations: [
         ...billObligations(

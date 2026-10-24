@@ -393,6 +393,7 @@ describe('safe to spend', () => {
         dueDate: '2026-10-12',
         status: 'PAID',
         paidAt: new Date('2026-10-08T15:00:00Z'),
+        createdAt: new Date('2026-10-01T12:00:00Z'),
       }),
     )
     for (const [id, cents, description] of [
@@ -414,6 +415,52 @@ describe('safe to spend', () => {
       total: { cents: 315165 },
       daily: { cents: 3548 },
     })
+  })
+
+  it('spends what the app paid before the bank statement shows it', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    const paid = (id: string, cents: number, at: string, createdAt: string) =>
+      deps.bills.save(
+        bill({
+          id,
+          kind: 'PIX_KEY',
+          source: 'CHAT',
+          amount: Money.of(cents),
+          dueDate: '2026-10-08',
+          status: 'PAID',
+          paidBy: 'RAIL',
+          paidAt: new Date(at),
+          createdAt: new Date(createdAt),
+        }),
+      )
+    await paid('pix', 10000, '2026-10-08T15:00:00Z', '2026-10-08T14:00:00Z')
+    await paid('older', 2000, '2026-10-08T15:00:00Z', '2026-10-01T12:00:00Z')
+    await paid(
+      'last-month',
+      9000,
+      '2026-09-20T15:00:00Z',
+      '2026-09-20T14:00:00Z',
+    )
+    const before = await makeSafeToSpend(deps)(TENANT)
+    await deps.transactions.save(
+      transaction({
+        id: 'pix-debit',
+        accountId: 'chk',
+        bookedOn: '2026-10-08',
+        amount: Money.of(-10000),
+        description: 'Pix enviado',
+      }),
+    )
+    const after = await makeSafeToSpend(deps)(TENANT)
+    for (const view of [before, after]) {
+      expect(view).toMatchObject({
+        total: { cents: 313165 },
+        daily: { cents: 3465 },
+      })
+    }
   })
 
   it('saves what the month invested once it passes the target', async () => {
@@ -722,6 +769,7 @@ describe('safe to spend', () => {
         amount: Money.of(5000),
         status: 'PAID',
         paidAt: new Date('2026-10-08T15:00:00Z'),
+        createdAt: new Date('2026-10-01T12:00:00Z'),
       }),
     )
     for (const [id, cents] of [
