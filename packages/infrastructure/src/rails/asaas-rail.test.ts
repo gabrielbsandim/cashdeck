@@ -233,7 +233,7 @@ describe('AsaasRail', () => {
           id: 'p1',
           status: 'DONE',
           endToEndIdentifier: 'E1',
-          effectiveDate: '2026-10-08',
+          effectiveDate: '2026-10-08 20:06:57',
         },
       })
       .on('GET', `${API}/transfers/t1`, {
@@ -241,6 +241,13 @@ describe('AsaasRail', () => {
       })
       .on('GET', `${API}/bill/b1`, {
         json: { id: 'b1', status: 'PAID', paymentDate: '2026-10-08' },
+      })
+      .on('GET', `${API}/bill/b4`, {
+        json: {
+          id: 'b4',
+          status: 'PAID',
+          paymentDate: '2026-10-08T23:06:57Z',
+        },
       })
       .on('GET', `${API}/bill/b2`, {
         json: { id: 'b2', status: 'BANK_PROCESSING' },
@@ -252,7 +259,7 @@ describe('AsaasRail', () => {
       externalId: 'pix:p1',
       reason: null,
       endToEndId: 'E1',
-      settledAt: '2026-10-08',
+      settledAt: '2026-10-08T20:06:57-03:00',
     })
     expect(await asaas.status('transfer:t1', scope)).toMatchObject({
       outcome: 'FAILED',
@@ -260,7 +267,10 @@ describe('AsaasRail', () => {
       settledAt: null,
     })
     expect(await asaas.status('bill:b1', scope)).toMatchObject({
-      settledAt: '2026-10-08',
+      settledAt: '2026-10-08T00:00:00-03:00',
+    })
+    expect(await asaas.status('bill:b4', scope)).toMatchObject({
+      settledAt: '2026-10-08T23:06:57Z',
     })
     expect((await asaas.status('bill:b2', scope)).outcome).toBe('SUBMITTED')
     expect((await asaas.status('bill:b3', scope)).outcome).toBe('FAILED')
@@ -323,7 +333,7 @@ describe('AsaasRail', () => {
       externalId: 'transfer:tr-9',
       reason: null,
       endToEndId: null,
-      settledAt: '2026-10-08',
+      settledAt: '2026-10-08T00:00:00-03:00',
     })
     expect(
       await asaas.findByReference(

@@ -400,7 +400,17 @@ const STATUS_TABLES: Record<string, Record<string, RailResult['outcome']>> = {
 }
 
 function settledAt(op: AsaasOperation): string | null {
-  return op.effectiveDate ?? op.paymentDate ?? null
+  const settled = op.effectiveDate ?? op.paymentDate
+  return settled ? brasiliaInstant(settled) : null
+}
+
+// Asaas writes Brasília wall-clock time with no offset, and Brazil keeps -03:00.
+function brasiliaInstant(text: string): string {
+  if (text.includes('T')) {
+    return text
+  }
+  const [day, time = '00:00:00'] = text.split(' ')
+  return `${day}T${time}-03:00`
 }
 
 function errorDescription(text: string): string {
