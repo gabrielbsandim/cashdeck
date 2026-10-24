@@ -16,6 +16,7 @@ import 'package:cashdeck/features/chat/domain/chat.dart';
 import 'package:cashdeck/features/chat/presentation/chat_controller.dart';
 import 'package:cashdeck/features/chat/presentation/chat_labels.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/home/presentation/home_screen.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/pix_contact_labels.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_controller.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
@@ -81,6 +82,10 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
     if (!mounted) return;
     if (failure == null && widget.action.tool == ChatTool.sendPix) {
       ref.invalidate(pixContactsControllerProvider);
+    }
+    // Início stays mounted, so reloading it also redraws the home widget.
+    if (failure == null && widget.action.tool.movesMoney) {
+      HomeScreen.refreshed.forEach(ref.invalidate);
     }
     await showOutcomeToast(context, failure, success: l10n.chatActionDone);
   }
