@@ -10,6 +10,7 @@ import {
 import {
   type Bill,
   type BillKind,
+  decodePaymentCode,
   type EntityKind,
   type PaymentMethod,
 } from '@cashdeck/domain'
@@ -52,6 +53,18 @@ import {
 } from '@/rails/rail-support'
 
 const PROVIDER = 'Asaas'
+
+// Asaas reads only the digitable line, so a scanned 44 digit barcode, as on
+// utility bills, is rewritten; a code that does not decode goes as is.
+export function identificationFieldOf(bill: Bill): string {
+  const code = bill.code ?? ''
+  try {
+    const decoded = decodePaymentCode(code, bill.dueDate)
+    return 'digitableLine' in decoded ? decoded.digitableLine : code
+  } catch {
+    return code
+  }
+}
 
 export const ASAAS_URLS = {
   production: 'https://api.asaas.com/v3',
@@ -325,7 +338,7 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
         method: 'POST',
         url: `${config.baseUrl}/bill`,
         json: {
-          identificationField: bill.code,
+          identificationField: identificationFieldOf(bill),
           description: paymentDescription(bill),
           externalReference: idempotencyKey,
         },

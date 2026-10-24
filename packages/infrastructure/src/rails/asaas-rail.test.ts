@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { Money } from '@cashdeck/domain'
-import { AsaasRail, ASAAS_URLS } from '@/rails/asaas-rail'
 import {
+  AsaasRail,
+  ASAAS_URLS,
+  identificationFieldOf,
+} from '@/rails/asaas-rail'
+import {
+  bill,
   credentials,
   DYNAMIC_PIX,
   ENTITY,
@@ -177,6 +182,23 @@ describe('AsaasRail', () => {
     expect(scripted.last('POST', `${sandbox}/bill`).headers).toMatchObject({
       'idempotency-key': 'bill-1:0',
     })
+  })
+
+  it('turns a utility barcode into the digitable line Asaas reads', async () => {
+    const scripted = new ScriptedTransport().on('POST', `${API}/bill`, {
+      json: { id: 'b-3', status: 'PENDING' },
+    })
+    await rail(scripted).pay(
+      payment({ code: '82660000001234500001234567890123456789012345' }),
+    )
+    expect(scripted.body('POST', `${API}/bill`)).toMatchObject({
+      identificationField: '826600000010234500001230456789012345567890123456',
+    })
+  })
+
+  it('sends a code it cannot decode as is', () => {
+    expect(identificationFieldOf(bill({ code: '123' }))).toBe('123')
+    expect(identificationFieldOf(bill({ code: null }))).toBe('')
   })
 
   it('pays the barcode of a bolepix when the step method is BOLETO', async () => {
