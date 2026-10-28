@@ -543,6 +543,51 @@ describe('safe to spend', () => {
     expect(rows(view)[1]).toEqual(['SAVINGS', '', -350000, null])
   })
 
+  it('does not count again what the broker cash account buys', async () => {
+    const deps = await seed()
+    await makeSetSpendingPlan(deps)(TENANT, {
+      savings: { cents: 300000, currency: 'BRL' },
+    })
+    for (const [id, key] of [
+      ['inv', 'investments'],
+      ['moves', 'transfers'],
+    ] as const) {
+      await deps.categories.save({
+        id,
+        tenantId: TENANT,
+        key,
+        name: key,
+        icon: null,
+        parentId: null,
+      })
+    }
+    for (const [id, type] of [
+      ['broker', 'INVESTMENT'],
+      ['broker-cash', 'CHECKING'],
+    ] as const) {
+      await deps.accounts.save(
+        account({ id, entityId: 'pf', type, institutionId: 'broker-inst' }),
+      )
+    }
+    for (const [id, accountId, cents, categoryId] of [
+      ['in', 'broker', 400000, 'moves'],
+      ['stocks', 'broker-cash', -350000, 'inv'],
+    ] as const) {
+      await deps.transactions.save(
+        transaction({
+          id,
+          accountId,
+          bookedOn: '2026-10-07',
+          amount: Money.of(cents),
+          description: 'Corretora',
+          categoryId,
+        }),
+      )
+    }
+    const view = await makeSafeToSpend(deps)(TENANT)
+    expect(rows(view)[1]).toEqual(['SAVINGS', '', -400000, null])
+  })
+
   it('saves what a typical month leaves and warns when checking falls short', async () => {
     const deps = await seed()
     const setPlan = makeSetSpendingPlan(deps)

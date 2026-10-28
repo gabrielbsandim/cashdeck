@@ -146,6 +146,21 @@ const lineView = (line: SafeToSpendLine) => ({
 
 const isCard = (account: Account) => account.type === 'CREDIT_CARD'
 
+// A broker's cash account buys with money already counted as it moved into
+// the broker's investment account.
+function brokerAccountIds(accounts: readonly Account[]) {
+  const brokers = new Set(
+    accounts
+      .filter(account => account.type === 'INVESTMENT')
+      .map(account => account.institutionId),
+  )
+  return new Set(
+    accounts
+      .filter(account => brokers.has(account.institutionId))
+      .map(account => account.id),
+  )
+}
+
 const centsOf = (entries: readonly FlowEntry[]) =>
   entries.reduce((total, entry) => total + entry.cents, 0)
 
@@ -622,6 +637,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
       return null
     }
     const target = stored.savings
+    const inBroker = brokerAccountIds(holdings)
     const incomes = entries.filter(isIncome)
     const incomeMonth = incomeMonthOf(incomes, month)
     return {
@@ -638,6 +654,7 @@ export function makeSafeToSpend(deps: SafeToSpendDeps) {
             .filter(
               entry =>
                 monthOf(entry.transaction.bookedOn) === month &&
+                !inBroker.has(entry.transaction.accountId) &&
                 flowKeyOf(categories, entry.transaction.categoryId) ===
                   'investments',
             )
