@@ -37,6 +37,7 @@ import { makeCreateCategoryRule } from '@/use-cases/categorization'
 import { runAgentTurn } from '@/use-cases/chat/agent'
 import { redFlags, sanitize, wrapUserContent } from '@/use-cases/chat/hardening'
 import {
+  EMPTY_RESULT,
   makeChatTools,
   type Proposal,
   readPixPayment,
@@ -105,6 +106,7 @@ function systemPrompt(
     'Tools that change data (bills, payments, Pix, rules, invoices) only create a proposal the user confirms in the app. Never say an action was done before it is confirmed.',
     'To pay a Pix copy and paste code (it starts with 000201): call pay_pix_code with the whole code exactly as the user sent it. Never take the Pix key out of the code or use send_pix for it.',
     'To pay a boleto, utility bill or tax guide: call pay_barcode with the barcode or digitable line the user typed, or pay_bill_from_attachment when it came as a file and the user wants it paid now. create_bill_from_attachment only saves the bill for its due date.',
+    'To show a receipt (comprovante) of a payment or Pix: call list_bills with status PAID, pick the one the user means by payee, amount or date, then call show_receipt with its id.',
     'To send a Pix: a [mentioned contact] line already names the saved contact; otherwise call find_pix_contacts with the name. One clear match: call send_pix with its contactId. Several: ask which one. None: ask for the Pix key and the full name (the key type is detected, never ask for it), then call send_pix with them; the contact is saved when the user confirms. Ask for the amount when it is missing, and never invent a Pix key.',
   ]
   if (flags.length > 0) {
@@ -161,14 +163,6 @@ const EMPTY_DETAILS = {
   contactHandle: null,
   newContact: null,
   recipient: null,
-}
-
-const EMPTY_RESULT: ChatActionResult = {
-  billId: null,
-  invoiceId: null,
-  ruleId: null,
-  updated: null,
-  contactId: null,
 }
 
 function recipientOf(target: Record<string, string>): PixRecipient {
@@ -785,6 +779,8 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
       }
       case 'SEND_PIX':
         return sendPix(tenantId, action, entity, actor)
+      case 'SHOW_RECEIPT':
+        return { ...EMPTY_RESULT, billId: action.target.billId as string }
     }
   }
 

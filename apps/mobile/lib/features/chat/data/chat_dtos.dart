@@ -29,6 +29,7 @@ const Map<String, ChatTool> _tools = {
   'CREATE_CATEGORY_RULE': ChatTool.createCategoryRule,
   'DRAFT_INVOICE': ChatTool.draftInvoice,
   'SEND_PIX': ChatTool.sendPix,
+  'SHOW_RECEIPT': ChatTool.showReceipt,
 };
 
 const Map<String, ChatActionStatus> _statuses = {

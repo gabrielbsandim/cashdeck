@@ -2979,6 +2979,7 @@
   "safeZoneReleaseReason": "Liberar o Cashdeck fora da zona segura",
   "errorSafeMode": "Bloqueado fora da zona segura.",
   "chatToolSendPix": "Enviar Pix",
+  "chatToolShowReceipt": "Comprovante",
   "chatDetailPixKey": "Chave Pix",
   "chatDetailContact": "Contato",
   "chatRecipientVerified": "Recebedor confirmado",

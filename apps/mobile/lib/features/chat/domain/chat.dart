@@ -18,14 +18,16 @@ enum ChatTool {
   payBill,
   createCategoryRule,
   draftInvoice,
-  sendPix;
+  sendPix,
+  showReceipt;
 
   /// Confirming these sends money out, so the device check comes first.
   bool get movesMoney => switch (this) {
     ChatTool.payBill || ChatTool.sendPix => true,
     ChatTool.createBillFromAttachment ||
     ChatTool.createCategoryRule ||
-    ChatTool.draftInvoice => false,
+    ChatTool.draftInvoice ||
+    ChatTool.showReceipt => false,
   };
 }
 

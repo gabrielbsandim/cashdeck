@@ -447,6 +447,35 @@ describe('pending actions', () => {
     })
   })
 
+  it('shows a receipt card that needs no confirmation', async () => {
+    const { deps, chat } = await setup()
+    await deps.bills.save(
+      bill({ id: 'b-rent', entityId: 'pf', status: 'PAID', payee: 'Rent' }),
+    )
+    const thread = await chat.createThread(TENANT, { scope: 'PF' })
+    deps.llm
+      .enqueue(use('show_receipt', { billId: 'b-rent' }))
+      .enqueue(say('Aqui está.'))
+    const turn = await chat.sendMessage(
+      TENANT,
+      thread.id,
+      message('Comprovante do aluguel'),
+    )
+    const [action] = turn.messages[1]?.actions ?? []
+    expect(action).toMatchObject({
+      tool: 'SHOW_RECEIPT',
+      status: 'CONFIRMED',
+      result: { billId: 'b-rent' },
+      details: { payee: 'Rent' },
+    })
+    const again = await chat.confirmAction(TENANT, action?.id as string, {})
+    expect(again.status).toBe('CONFIRMED')
+    const stored = await deps.chat.findAction(TENANT, action?.id as string)
+    await deps.chat.saveAction({ ...stored!, status: 'PENDING', result: null })
+    const reopened = await chat.confirmAction(TENANT, action?.id as string, {})
+    expect(reopened.result?.billId).toBe('b-rent')
+  })
+
   it('records a failure, cancels and expires actions', async () => {
     const { deps, chat } = await setup()
     await deps.transactions.save(

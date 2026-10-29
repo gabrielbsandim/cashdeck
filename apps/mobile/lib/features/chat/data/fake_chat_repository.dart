@@ -170,12 +170,27 @@ final class FakeChatRepository implements ChatRepository {
   }
 
   ChatMessage _reply(ChatThread thread, ChatMessage user, DateTime now) {
+    final asksForReceipt = RegExp(
+      'comprovante|receipt',
+      caseSensitive: false,
+    ).hasMatch(user.text);
     final asksForPix = RegExp('pix', caseSensitive: false).hasMatch(user.text);
     final asksToPay = RegExp(
       'pag|pay',
       caseSensitive: false,
     ).hasMatch(user.text);
     final action = switch ((user.attachments.firstOrNull, asksToPay)) {
+      _ when asksForReceipt => _action(
+        thread,
+        ChatTool.showReceipt,
+        const ChatActionDetails(
+          payee: 'Condomínio Jardim',
+          amount: Money(78_000),
+        ),
+        now,
+        status: ChatActionStatus.confirmed,
+        result: const ChatActionResult(billId: 'bill-condo'),
+      ),
       _ when asksForPix => _action(
         thread,
         ChatTool.sendPix,
@@ -210,6 +225,7 @@ final class FakeChatRepository implements ChatRepository {
         ChatTool.payBill =>
           'A conta de energia vence em 4 dias. Confirme para pagar agora.',
         ChatTool.sendPix => 'Preparei o Pix. Confira e confirme.',
+        ChatTool.showReceipt => 'Aqui está o comprovante.',
         _ =>
           r'Neste mês entraram R$ 6.500,00 e saíram R$ 4.120,00. As maiores '
               'categorias foram moradia, mercado e transporte.',
@@ -265,8 +281,10 @@ final class FakeChatRepository implements ChatRepository {
     ChatThread thread,
     ChatTool tool,
     ChatActionDetails details,
-    DateTime now,
-  ) {
+    DateTime now, {
+    ChatActionStatus status = ChatActionStatus.pending,
+    ChatActionResult? result,
+  }) {
     final entity = switch (thread.scope) {
       EntityScope.personal => EntityKind.personal,
       EntityScope.company => EntityKind.company,
@@ -276,10 +294,11 @@ final class FakeChatRepository implements ChatRepository {
       id: _next('action'),
       threadId: thread.id,
       tool: tool,
-      status: ChatActionStatus.pending,
+      status: status,
       entity: entity,
       needsEntity: entity == null,
       details: details,
+      result: result,
       createdAt: now,
     );
     _actions[action.id] = action;

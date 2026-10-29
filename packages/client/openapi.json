@@ -28495,7 +28495,8 @@
                                     "PAY_BILL",
                                     "CREATE_CATEGORY_RULE",
                                     "DRAFT_INVOICE",
-                                    "SEND_PIX"
+                                    "SEND_PIX",
+                                    "SHOW_RECEIPT"
                                   ]
                                 },
                                 "status": {
@@ -28904,7 +28905,8 @@
                                         "PAY_BILL",
                                         "CREATE_CATEGORY_RULE",
                                         "DRAFT_INVOICE",
-                                        "SEND_PIX"
+                                        "SEND_PIX",
+                                        "SHOW_RECEIPT"
                                       ]
                                     },
                                     "status": {
@@ -29291,7 +29293,8 @@
                                         "PAY_BILL",
                                         "CREATE_CATEGORY_RULE",
                                         "DRAFT_INVOICE",
-                                        "SEND_PIX"
+                                        "SEND_PIX",
+                                        "SHOW_RECEIPT"
                                       ]
                                     },
                                     "status": {
@@ -29608,7 +29611,8 @@
                             "PAY_BILL",
                             "CREATE_CATEGORY_RULE",
                             "DRAFT_INVOICE",
-                            "SEND_PIX"
+                            "SEND_PIX",
+                            "SHOW_RECEIPT"
                           ]
                         },
                         "status": {
@@ -29882,7 +29886,8 @@
                             "PAY_BILL",
                             "CREATE_CATEGORY_RULE",
                             "DRAFT_INVOICE",
-                            "SEND_PIX"
+                            "SEND_PIX",
+                            "SHOW_RECEIPT"
                           ]
                         },
                         "status": {

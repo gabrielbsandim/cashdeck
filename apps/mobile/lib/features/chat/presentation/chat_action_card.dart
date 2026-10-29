@@ -1,3 +1,4 @@
+import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/security/biometric_authenticator.dart';
 import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
@@ -23,6 +24,7 @@ import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_control
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// What the assistant proposes to do. Nothing runs until the user confirms
@@ -43,6 +45,8 @@ class ChatActionCard extends ConsumerStatefulWidget {
       Key('chat-action-entity-${kind.name}');
 
   static const newContactKey = Key('chat-action-new-contact');
+
+  static Key receiptKey(String id) => Key('chat-action-receipt-$id');
 
   static const verifiedRecipientKey = Key('chat-action-recipient-verified');
 
@@ -110,6 +114,7 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
     final error = action.error;
     final needsChoice = action.isPending && action.needsEntity;
     final ready = !needsChoice || _entity != null;
+    final receipt = _receiptBill(action);
     return CdCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -126,7 +131,8 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
                   ),
                 ),
               ),
-              CdStatusBadge(tone: tone, label: status),
+              if (action.tool != ChatTool.showReceipt)
+                CdStatusBadge(tone: tone, label: status),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -150,6 +156,17 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
               error,
               style: AppTextStyles.bodyMd.copyWith(color: context.money.failed),
             ),
+          if (receipt != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            CdButton.tonal(
+              key: ChatActionCard.receiptKey(action.id),
+              expand: true,
+              icon: Symbols.receipt_long_rounded,
+              label: l10n.billReceiptView,
+              onPressed: () =>
+                  context.push(AppRoutes.billReceipt(receipt)).ignore(),
+            ),
+          ],
           if (needsChoice) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -197,6 +214,13 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
         ],
       ),
     );
+  }
+
+  /// A payment the user confirmed here is where they look for its proof.
+  String? _receiptBill(ChatAction action) {
+    final pays = action.tool.movesMoney || action.tool == ChatTool.showReceipt;
+    if (!pays || action.status != ChatActionStatus.confirmed) return null;
+    return action.result?.billId;
   }
 
   List<Widget> _rows(AppLocalizations l10n, ChatActionDetails details) {

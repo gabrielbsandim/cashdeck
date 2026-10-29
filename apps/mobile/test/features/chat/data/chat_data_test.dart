@@ -117,6 +117,7 @@ void main() {
         'CREATE_CATEGORY_RULE',
         'DRAFT_INVOICE',
         'SEND_PIX',
+        'SHOW_RECEIPT',
       ]) {
         expect(
           () => actionFromJson({..._action(), 'tool': tool}),

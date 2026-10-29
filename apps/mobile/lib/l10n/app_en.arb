@@ -1242,6 +1242,7 @@
   "safeZoneReleaseReason": "Release Cashdeck outside the safe zone",
   "errorSafeMode": "Blocked outside the safe zone.",
   "chatToolSendPix": "Send Pix",
+  "chatToolShowReceipt": "Receipt",
   "chatDetailPixKey": "Pix key",
   "chatDetailContact": "Contact",
   "chatRecipientVerified": "Recipient confirmed",

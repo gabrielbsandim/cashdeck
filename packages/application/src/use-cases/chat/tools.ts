@@ -23,6 +23,7 @@ import { NotFoundError } from '@/errors/errors'
 import {
   type ChatAction,
   type ChatActionDetails,
+  type ChatActionResult,
   type ChatRecipient,
   type ChatScope,
 } from '@/ports/chat'
@@ -44,7 +45,18 @@ import { isoDate } from '@/dtos/common'
 export type Proposal = Pick<
   ChatAction,
   'tool' | 'entity' | 'needsEntity' | 'target'
-> & { details: Partial<ChatActionDetails> }
+> &
+  Partial<Pick<ChatAction, 'status' | 'result' | 'resolvedAt'>> & {
+    details: Partial<ChatActionDetails>
+  }
+
+export const EMPTY_RESULT: ChatActionResult = {
+  billId: null,
+  invoiceId: null,
+  ruleId: null,
+  updated: null,
+  contactId: null,
+}
 
 // Everything here comes from the server: the thread decides the scope, so a
 // tool argument can narrow a query but never widen it.
@@ -660,6 +672,54 @@ export function makeChatTools(deps: ToolDeps) {
     }
   }
 
+  // Nothing to confirm: the card is born done and only links to the receipt.
+  function showReceipt(ctx: ToolContext): AgentTool {
+    return {
+      name: 'show_receipt',
+      description:
+        'Show the receipt of a paid bill or Pix as a card the user can open and share in the app.',
+      parameters: object(
+        { billId: text('Id of a PAID bill from list_bills') },
+        ['billId'],
+      ),
+      async run(raw) {
+        const args = payArgs.parse(raw)
+        const allowed = await allowedEntities(ctx)
+        const bill = required(
+          await deps.bills.findById(ctx.tenantId, args.billId),
+          'Bill',
+        )
+        const entity = allowed.get(bill.entityId)
+        if (!entity) {
+          throw new NotFoundError('Bill')
+        }
+        if (bill.status !== 'PAID') {
+          throw new ValidationError(
+            'This bill is not paid, so it has no receipt.',
+          )
+        }
+        await ctx.propose({
+          tool: 'SHOW_RECEIPT',
+          entity,
+          needsEntity: false,
+          status: 'CONFIRMED',
+          result: { ...EMPTY_RESULT, billId: bill.id },
+          resolvedAt: deps.clock.now(),
+          target: { billId: bill.id },
+          details: {
+            payee: bill.payee && sanitize(bill.payee, 120),
+            amount: bill.amount.toJSON(),
+          },
+        })
+        return {
+          status: 'SHOWN',
+          instruction:
+            'The receipt card is in the app. Tell the user they can open or share it there.',
+        }
+      },
+    }
+  }
+
   const pixCodeArgs = z.object({
     code: z.string().trim().min(1).max(512),
     amount: z.number().positive().max(1_000_000).optional(),
@@ -1041,6 +1101,7 @@ export function makeChatTools(deps: ToolDeps) {
       explainCharge(ctx),
       createBillFromAttachment(ctx),
       payBill(ctx),
+      showReceipt(ctx),
       payPixCode(ctx),
       payBarcode(ctx),
       payBillFromAttachment(ctx),

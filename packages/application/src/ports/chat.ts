@@ -60,6 +60,7 @@ export const CHAT_ACTION_TOOLS = [
   'CREATE_CATEGORY_RULE',
   'DRAFT_INVOICE',
   'SEND_PIX',
+  'SHOW_RECEIPT',
 ] as const
 export type ChatActionTool = (typeof CHAT_ACTION_TOOLS)[number]
 

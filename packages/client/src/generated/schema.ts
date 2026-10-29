@@ -11164,7 +11164,7 @@ export interface operations {
                                 id: string;
                                 threadId: string;
                                 /** @enum {string} */
-                                tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                                tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX" | "SHOW_RECEIPT";
                                 /** @enum {string} */
                                 status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                                 /** @enum {string|null} */
@@ -11271,7 +11271,7 @@ export interface operations {
                                     id: string;
                                     threadId: string;
                                     /** @enum {string} */
-                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX" | "SHOW_RECEIPT";
                                     /** @enum {string} */
                                     status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                                     /** @enum {string|null} */
@@ -11371,7 +11371,7 @@ export interface operations {
                                     id: string;
                                     threadId: string;
                                     /** @enum {string} */
-                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                                    tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX" | "SHOW_RECEIPT";
                                     /** @enum {string} */
                                     status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                                     /** @enum {string|null} */
@@ -11456,7 +11456,7 @@ export interface operations {
                             id: string;
                             threadId: string;
                             /** @enum {string} */
-                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX" | "SHOW_RECEIPT";
                             /** @enum {string} */
                             status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                             /** @enum {string|null} */
@@ -11531,7 +11531,7 @@ export interface operations {
                             id: string;
                             threadId: string;
                             /** @enum {string} */
-                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX";
+                            tool: "CREATE_BILL_FROM_ATTACHMENT" | "PAY_BILL" | "CREATE_CATEGORY_RULE" | "DRAFT_INVOICE" | "SEND_PIX" | "SHOW_RECEIPT";
                             /** @enum {string} */
                             status: "PENDING" | "CONFIRMED" | "CANCELLED" | "FAILED" | "EXPIRED";
                             /** @enum {string|null} */

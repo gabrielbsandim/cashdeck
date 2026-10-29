@@ -412,6 +412,42 @@ describe('chat side-effect tools', () => {
     ).rejects.toThrow('Transaction was not found.')
   })
 
+  it('shows the receipt of a paid bill as a card that is already done', async () => {
+    const { deps, proposals, run } = await toolsFor('PF')
+    await deps.bills.save(
+      bill({ id: 'b-rent', entityId: 'pf', status: 'PAID', payee: 'Rent' }),
+    )
+    expect(await run('show_receipt', { billId: 'b-rent' })).toEqual({
+      status: 'SHOWN',
+      instruction:
+        'The receipt card is in the app. Tell the user they can open or share it there.',
+    })
+    await run('show_receipt', { billId: 'b-paid' })
+    await expect(run('show_receipt', { billId: 'b-pf' })).rejects.toThrow(
+      'not paid',
+    )
+    await expect(run('show_receipt', { billId: 'b-pj' })).rejects.toThrow(
+      'Bill was not found.',
+    )
+    expect(proposals[0]).toEqual({
+      tool: 'SHOW_RECEIPT',
+      entity: 'PF',
+      needsEntity: false,
+      status: 'CONFIRMED',
+      result: {
+        billId: 'b-rent',
+        invoiceId: null,
+        ruleId: null,
+        updated: null,
+        contactId: null,
+      },
+      resolvedAt: deps.clock.now(),
+      target: { billId: 'b-rent' },
+      details: { payee: 'Rent', amount: { cents: 12345, currency: 'BRL' } },
+    })
+    expect(proposals[1]?.details.payee).toBeNull()
+  })
+
   it('proposes paying a pasted Pix code with the amount the capture will pay', async () => {
     const { deps, proposals, run } = await toolsFor('PF')
     const location = 'pix.example.com/qr/v2/cobv/chat1'

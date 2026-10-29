@@ -14,6 +14,7 @@ import 'package:cashdeck/features/chat/presentation/chat_screen.dart';
 import 'package:cashdeck/features/chat/presentation/conversation_screen.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/presentation/entity_switcher.dart';
+import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -204,6 +205,26 @@ void main() {
 
     expect(find.text(l10n.chatActionConfirmed), findsOneWidget);
     expect(find.byKey(ChatActionCard.newContactKey), findsNothing);
+  });
+
+  testWidgets('a receipt opens from the chat, asked for or after paying', (
+    tester,
+  ) async {
+    await pumpRoute(tester, AppRoutes.chatNew);
+
+    await _send(tester, 'Paga a conta de energia');
+    expect(_keyStarting('chat-action-receipt-'), findsNothing);
+    await tester.tap(_keyStarting('chat-action-confirm-'));
+    await settle(tester);
+    expect(_keyStarting('chat-action-receipt-'), findsOneWidget);
+    await waitForToast(tester);
+
+    await _send(tester, 'Me manda o comprovante do condomínio');
+    expect(find.text(l10n.chatToolShowReceipt), findsOneWidget);
+    expect(find.text(l10n.chatActionConfirmed), findsOneWidget);
+    await tester.tap(_keyStarting('chat-action-receipt-').last);
+    await settle(tester);
+    expect(find.byType(ReceiptViewerScreen), findsOneWidget);
   });
 
   testWidgets('a message can be copied, edited or answered again', (

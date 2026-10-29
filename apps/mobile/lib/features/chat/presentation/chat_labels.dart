@@ -10,6 +10,7 @@ String chatToolTitle(AppLocalizations l10n, ChatTool tool) => switch (tool) {
   ChatTool.createCategoryRule => l10n.chatToolCreateRule,
   ChatTool.draftInvoice => l10n.chatToolDraftInvoice,
   ChatTool.sendPix => l10n.chatToolSendPix,
+  ChatTool.showReceipt => l10n.chatToolShowReceipt,
 };
 
 IconData chatToolIcon(ChatTool tool) => switch (tool) {
@@ -18,6 +19,7 @@ IconData chatToolIcon(ChatTool tool) => switch (tool) {
   ChatTool.createCategoryRule => Symbols.rule_rounded,
   ChatTool.draftInvoice => Symbols.request_quote_rounded,
   ChatTool.sendPix => Symbols.send_money_rounded,
+  ChatTool.showReceipt => Symbols.receipt_long_rounded,
 };
 
 (String, MoneyTone) chatActionStatusOf(
