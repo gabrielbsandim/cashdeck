@@ -1,4 +1,6 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/entities/domain/tax_id.dart';
 import 'package:equatable/equatable.dart';
 
@@ -196,6 +198,58 @@ final class PixContactDraft extends Equatable {
   List<Object?> get props => [name, handle, keyKind, pixKey];
 }
 
+/// Who a Pix goes to: a saved contact, or a new name and key that becomes one
+/// once the Pix is sent.
+final class PixPayee extends Equatable {
+  const new contact(String this.contactId) : draft = null;
+
+  const new newKey(PixContactDraft this.draft) : contactId = null;
+
+  final String? contactId;
+  final PixContactDraft? draft;
+
+  @override
+  List<Object?> get props => [contactId, draft];
+}
+
+/// The holder the central bank directory names for the key, or the name the
+/// user gave when the lookup failed.
+final class PixRecipientCheck extends Equatable {
+  const new({
+    required this.name,
+    required this.verified,
+    this.taxId,
+    this.bank,
+  });
+
+  final String name;
+  final String? taxId;
+  final String? bank;
+  final bool verified;
+
+  @override
+  List<Object?> get props => [name, taxId, bank, verified];
+}
+
+final class PixPreview extends Equatable {
+  const new({
+    required this.name,
+    required this.pixKey,
+    required this.pixKeyType,
+    required this.isNew,
+    required this.recipient,
+  });
+
+  final String name;
+  final String pixKey;
+  final PixKeyType pixKeyType;
+  final bool isNew;
+  final PixRecipientCheck recipient;
+
+  @override
+  List<Object?> get props => [name, pixKey, pixKeyType, isNew, recipient];
+}
+
 abstract interface class PixContactsRepository {
   /// Most recently paid first, then by name.
   Future<Result<List<PixContact>>> list({String? search});
@@ -205,4 +259,9 @@ abstract interface class PixContactsRepository {
   Future<Result<PixContact>> update(String id, PixContactDraft draft);
 
   Future<Result<void>> delete(String id);
+
+  Future<Result<PixPreview>> preview(PixPayee payee, EntityKind entity);
+
+  /// Sends now; resolves with the bill the Pix became, which holds its receipt.
+  Future<Result<String>> send(PixPayee payee, EntityKind entity, Money amount);
 }

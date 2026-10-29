@@ -1,6 +1,8 @@
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/network/guard_request.dart';
 import 'package:cashdeck/core/network/json_reader.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/pix_contacts/data/pix_contact_dtos.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:dio/dio.dart';
@@ -11,6 +13,7 @@ final class ApiPixContactsRepository implements PixContactsRepository {
   final Dio _dio;
 
   static const path = '/api/v1/pix-contacts';
+  static const transfersPath = '/api/v1/pix-transfers';
 
   String _contact(String id) => '$path/${Uri.encodeComponent(id)}';
 
@@ -49,4 +52,27 @@ final class ApiPixContactsRepository implements PixContactsRepository {
   @override
   Future<Result<void>> delete(String id) =>
       guardRequest(() => _dio.delete<Object?>(_contact(id)));
+
+  @override
+  Future<Result<PixPreview>> preview(PixPayee payee, EntityKind entity) =>
+      guardRequest(() async {
+        final response = await _dio.post<Object?>(
+          '$transfersPath/preview',
+          data: pixPayeeToJson(payee, entity),
+        );
+        return pixPreviewFromJson(asJsonMap(unwrapData(response.data)));
+      });
+
+  @override
+  Future<Result<String>> send(
+    PixPayee payee,
+    EntityKind entity,
+    Money amount,
+  ) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      transfersPath,
+      data: pixTransferToJson(payee, entity, amount),
+    );
+    return readString(asJsonMap(unwrapData(response.data)), 'id');
+  });
 }

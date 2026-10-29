@@ -24,3 +24,11 @@ final savePixContactProvider = Provider<SavePixContact>(
 final deletePixContactProvider = Provider<DeletePixContact>(
   (ref) => DeletePixContact(ref.watch(pixContactsRepositoryProvider)),
 );
+
+final previewPixTransferProvider = Provider<PreviewPixTransfer>(
+  (ref) => PreviewPixTransfer(ref.watch(pixContactsRepositoryProvider)),
+);
+
+final sendPixTransferProvider = Provider<SendPixTransfer>(
+  (ref) => SendPixTransfer(ref.watch(pixContactsRepositoryProvider)),
+);

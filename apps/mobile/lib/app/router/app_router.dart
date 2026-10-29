@@ -43,6 +43,7 @@ import 'package:cashdeck/features/open_finance/presentation/connect_by_item_id_s
 import 'package:cashdeck/features/outlook/presentation/net_worth_screen.dart';
 import 'package:cashdeck/features/payroll/presentation/payroll_input_screen.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/pix_contacts_screen.dart';
+import 'package:cashdeck/features/pix_contacts/presentation/send_pix_screen.dart';
 import 'package:cashdeck/features/plan/presentation/plan_routes.dart';
 import 'package:cashdeck/features/rails/domain/payment_rail.dart';
 import 'package:cashdeck/features/rails/presentation/payment_rails_screen.dart';
@@ -102,7 +103,8 @@ bool closedWhileLimited(String path) {
       path.startsWith('${AppRoutes.settings}/') ||
       path.endsWith('/receipt') ||
       path == AppRoutes.sharedFile ||
-      path == AppRoutes.pasteCode;
+      path == AppRoutes.pasteCode ||
+      path == AppRoutes.sendPix;
 }
 
 /// Where [path] must go instead: sign-in without a session, the lock screen
@@ -171,6 +173,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             state.extra is LocalFile ? null : AppRoutes.home,
         builder: (_, state) =>
             SharedFileScreen(file: state.extra! as LocalFile),
+      ),
+      GoRoute(
+        path: AppRoutes.sendPix,
+        builder: (_, _) => const SendPixScreen(),
       ),
       GoRoute(
         path: AppRoutes.pasteCode,

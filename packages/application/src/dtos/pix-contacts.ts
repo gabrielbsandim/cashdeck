@@ -1,5 +1,6 @@
 import { PIX_KEY_TYPES, type PixContact } from '@cashdeck/domain'
 import { z } from 'zod'
+import { entityKindSchema } from '@/dtos/common'
 
 export const pixKeyTypeSchema = z.enum(PIX_KEY_TYPES)
 
@@ -43,3 +44,53 @@ export const toPixContactView = (contact: PixContact): PixContactView => ({
   lastPaidAt: contact.lastPaidAt?.toISOString() ?? null,
   createdAt: contact.createdAt.toISOString(),
 })
+
+const recipientFields = {
+  contactId: z.string().min(1).optional(),
+  name: createPixContactSchema.shape.name.optional(),
+  pixKey: createPixContactSchema.shape.pixKey.optional(),
+  pixKeyType: pixKeyTypeSchema.optional(),
+  entity: entityKindSchema,
+}
+
+const namesSomeone = (input: {
+  contactId?: string
+  name?: string
+  pixKey?: string
+}) => Boolean(input.contactId ?? (input.name && input.pixKey))
+
+const SOMEONE = { message: 'Choose a contact, or give a name and a Pix key.' }
+
+export const previewPixSchema = z
+  .object(recipientFields)
+  .refine(namesSomeone, SOMEONE)
+
+export type PreviewPixInput = z.infer<typeof previewPixSchema>
+
+export const sendPixSchema = z
+  .object({
+    ...recipientFields,
+    amountCents: z.int().positive().max(100_000_000),
+  })
+  .refine(namesSomeone, SOMEONE)
+
+export type SendPixInput = z.infer<typeof sendPixSchema>
+
+export const pixPreviewViewSchema = z.object({
+  contact: z.object({
+    id: z.string().nullable(),
+    name: z.string(),
+    handle: z.string(),
+    pixKey: z.string(),
+    pixKeyType: pixKeyTypeSchema,
+    isNew: z.boolean(),
+  }),
+  recipient: z.object({
+    name: z.string(),
+    taxId: z.string().nullable(),
+    bank: z.string().nullable(),
+    verified: z.boolean(),
+  }),
+})
+
+export type PixPreviewView = z.infer<typeof pixPreviewViewSchema>

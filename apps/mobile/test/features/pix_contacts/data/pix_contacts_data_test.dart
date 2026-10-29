@@ -1,8 +1,10 @@
 import 'package:cashdeck/core/config/app_config.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/pix_contacts/data/api_pix_contacts_repository.dart';
 import 'package:cashdeck/features/pix_contacts/data/fake_pix_contacts_repository.dart';
 import 'package:cashdeck/features/pix_contacts/data/pix_contact_dtos.dart';
@@ -90,6 +92,27 @@ void main() {
         'DELETE /api/v1/pix-contacts/contact-1' => const StubResponse(200, {
           'data': {'id': 'contact-1'},
         }),
+        'POST /api/v1/pix-transfers/preview' => const StubResponse(200, {
+          'data': {
+            'contact': {
+              'id': null,
+              'name': 'Ana Exemplo',
+              'handle': 'ana',
+              'pixKey': 'ana@exemplo.com',
+              'pixKeyType': 'EMAIL',
+              'isNew': true,
+            },
+            'recipient': {
+              'name': 'Ana Exemplo',
+              'taxId': '***.456.789-**',
+              'bank': null,
+              'verified': true,
+            },
+          },
+        }),
+        'POST /api/v1/pix-transfers' => const StubResponse(201, {
+          'data': {'id': 'bill-9'},
+        }),
         _ => const StubResponse(404),
       };
     });
@@ -101,9 +124,37 @@ void main() {
     expect(await repository.delete('contact-1'), isA<Ok<void>>());
     expect(await repository.delete('none'), isA<Err<void>>());
 
+    final preview = _ok(
+      await repository.preview(
+        const PixPayee.newKey(_draft),
+        EntityKind.company,
+      ),
+    );
+    expect(preview.recipient.verified, isTrue);
+    expect(preview.pixKeyType, PixKeyType.email);
+    expect(
+      await repository.send(
+        const PixPayee.contact('contact-1'),
+        EntityKind.personal,
+        const Money(2050),
+      ),
+      const Ok('bill-9'),
+    );
+
     final requests = adapterOf(dio).requests;
     expect(requests[0].queryParameters, {'search': 'mar'});
     expect((requests[1].data as Map)['pixKeyType'], 'EMAIL');
+    expect(requests[5].data, {
+      'name': 'Ana Exemplo',
+      'pixKey': 'ana@exemplo.com',
+      'pixKeyType': 'EMAIL',
+      'entity': 'PJ',
+    });
+    expect(requests[6].data, {
+      'contactId': 'contact-1',
+      'entity': 'PF',
+      'amountCents': 2050,
+    });
   });
 
   group('fake', () {
@@ -177,6 +228,65 @@ void main() {
       );
       expect(await fake.delete(created.id), const Ok<void>(null));
       expect(await fake.delete(created.id), const Err<void>(NotFoundFailure()));
+    });
+
+    test('previews and sends a Pix, saving a new key as a contact', () async {
+      final fake = repository();
+
+      final known = _ok(
+        await fake.preview(
+          const PixPayee.contact('contact-1'),
+          EntityKind.personal,
+        ),
+      );
+      final fresh = _ok(
+        await fake.preview(const PixPayee.newKey(_draft), EntityKind.personal),
+      );
+      expect(known.recipient.verified, isTrue);
+      expect(known.isNew, isFalse);
+      expect(fresh.recipient.verified, isFalse);
+      expect(fresh.name, 'Ana Exemplo');
+      expect(
+        await fake.preview(const PixPayee.contact('none'), EntityKind.personal),
+        const Err<PixPreview>(NotFoundFailure()),
+      );
+      const bad = PixContactDraft(
+        name: 'X',
+        handle: '',
+        keyKind: PixKeyKind.email,
+        pixKey: 'x',
+      );
+      expect(
+        await fake.preview(const PixPayee.newKey(bad), EntityKind.personal),
+        const Err<PixPreview>(ValidationFailure('Chave Pix inválida.')),
+      );
+
+      const money = Money(100);
+      expect(
+        await fake.send(
+          const PixPayee.newKey(_draft),
+          EntityKind.personal,
+          money,
+        ),
+        const Ok('bill-condo'),
+      );
+      expect(_ok(await fake.list(search: 'ana')).single.handle, 'ana.exemplo');
+      expect(
+        await fake.send(
+          const PixPayee.newKey(_draft),
+          EntityKind.personal,
+          money,
+        ),
+        const Err<String>(ValidationFailure('Essa chave já é de um contato.')),
+      );
+      expect(
+        await fake.send(
+          const PixPayee.contact('contact-1'),
+          EntityKind.personal,
+          money,
+        ),
+        const Ok('bill-condo'),
+      );
     });
   });
 

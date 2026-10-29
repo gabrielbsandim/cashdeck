@@ -312,7 +312,9 @@ void main() {
     clipboard(tester, null);
     final app = await pumpRoute(tester, AppRoutes.bills);
 
-    await tester.tap(find.byKey(BillsScreen.pasteKey));
+    await tester.tap(find.byKey(BillsScreen.payKey));
+    await settle(tester);
+    await tester.tap(find.byKey(BillsScreen.payOptionKey(AppRoutes.pasteCode)));
     await settle(tester);
     expect(app.location, AppRoutes.pasteCode);
 

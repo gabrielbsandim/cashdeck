@@ -6,6 +6,9 @@ import {
   sessionViewSchema,
   pixContactQuerySchema,
   pixContactViewSchema,
+  pixPreviewViewSchema,
+  previewPixSchema,
+  sendPixSchema,
   regenerateSchema,
   updatePixContactSchema,
   accountViewSchema,
@@ -1378,6 +1381,25 @@ const OPERATIONS: Operation[] = [
     id: 'removePixContact',
     summary: 'Forget a Pix contact',
     response: idSchema,
+  },
+  {
+    method: 'post',
+    path: '/pix-transfers/preview',
+    id: 'previewPixTransfer',
+    summary: 'Who a contact or Pix key pays, as the central bank names them',
+    body: previewPixSchema,
+    response: pixPreviewViewSchema,
+  },
+  {
+    method: 'post',
+    path: '/pix-transfers',
+    id: 'sendPixTransfer',
+    summary: 'Send a Pix now to a contact or a new key, saving it as a contact',
+    body: sendPixSchema,
+    status: '201',
+    response: billDetailViewSchema.extend({
+      instructions: assistedInstructionsSchema.nullable(),
+    }),
   },
 ]
 

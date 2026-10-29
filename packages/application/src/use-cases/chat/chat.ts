@@ -1,9 +1,7 @@
 import {
-  createBill,
   type EntityKind,
   mentionedHandles,
   Money,
-  type PixKeyType,
   ValidationError,
 } from '@cashdeck/domain'
 import { type z } from 'zod'
@@ -16,6 +14,7 @@ import {
   type SendMessageInput,
   type ThreadView,
 } from '@/dtos/chat'
+import { sendPixSchema } from '@/dtos/pix-contacts'
 import {
   ConflictError,
   NotFoundError,
@@ -45,12 +44,13 @@ import {
 import { type Deps } from '@/use-cases/deps'
 import { makeInvoiceReceipt } from '@/use-cases/invoices'
 import { withLadderAlerts } from '@/use-cases/ladder-alerts'
-import { makePixContacts, type PixRecipient } from '@/use-cases/pix-contacts'
+import { makePixTransfers } from '@/use-cases/pix-transfers'
 import { makeRunPaymentLadder } from '@/use-cases/run-payment-ladder'
 import {
   allPages,
   decodeUpload,
   required,
+  requireEntity,
   toBase64,
   today,
 } from '@/use-cases/shared'
@@ -165,17 +165,6 @@ const EMPTY_DETAILS = {
   recipient: null,
 }
 
-function recipientOf(target: Record<string, string>): PixRecipient {
-  if (target.contactId) {
-    return { contactId: target.contactId }
-  }
-  return {
-    name: target.name as string,
-    pixKey: target.pixKey as string,
-    pixKeyType: target.pixKeyType as PixKeyType | undefined,
-  }
-}
-
 export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
   const toolsFor = makeChatTools(deps)
   const captureBill = makeCaptureBill(deps)
@@ -183,7 +172,7 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
   const runLadder = withLadderAlerts(makeRunPaymentLadder(deps), deps.alerts)
   const createRule = makeCreateCategoryRule(deps)
   const invoiceReceipt = makeInvoiceReceipt(deps)
-  const contacts = makePixContacts(deps)
+  const transfers = makePixTransfers(deps)
 
   async function views(
     tenantId: string,
@@ -656,12 +645,7 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
   }
 
   async function ownerOf(tenantId: string, entity: EntityKind | null) {
-    const kind = required(entity, 'Entity')
-    return required(
-      (await deps.entities.list(tenantId)).find(row => row.kind === kind) ??
-        null,
-      'Entity',
-    )
+    return requireEntity(deps.entities, tenantId, required(entity, 'Entity'))
   }
 
   // A pasted code only becomes a bill once confirmed, and a Pix code alone only
@@ -706,25 +690,19 @@ export function makeChat(deps: Deps, config: ChatConfig = DEFAULT_CHAT_CONFIG) {
     entity: EntityKind | null,
     actor: Actor,
   ): Promise<ChatActionResult> {
-    const { target } = action
-    const owner = await ownerOf(tenantId, entity)
-    const contact = await contacts.recordPaid(tenantId, recipientOf(target))
-    const now = deps.clock.now()
-    const bill = createBill({
-      id: deps.ids.next(),
-      tenantId,
-      entityId: owner.id,
-      kind: 'PIX_KEY',
-      source: 'CHAT',
-      payee: contact.name,
-      amount: Money.of(Number(target.amountCents)),
-      dueDate: today(now),
-      code: contact.pixKey,
-      createdAt: now,
+    const { amountCents, ...recipient } = action.target
+    const input = sendPixSchema.parse({
+      ...recipient,
+      amountCents: Number(amountCents),
+      entity,
     })
-    await deps.bills.save(bill)
-    const run = await runLadder(tenantId, bill.id, { confirmed: true, actor })
-    return { ...EMPTY_RESULT, billId: run.bill.id, contactId: contact.id }
+    const { run, contactId } = await transfers.send(
+      tenantId,
+      input,
+      actor,
+      'CHAT',
+    )
+    return { ...EMPTY_RESULT, billId: run.bill.id, contactId }
   }
 
   async function execute(

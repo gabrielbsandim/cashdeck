@@ -33,6 +33,22 @@ export type PixRecipient =
 
 export type ResolvedRecipient = { contact: PixContact; isNew: boolean }
 
+export function recipientFrom(fields: {
+  contactId?: string
+  name?: string
+  pixKey?: string
+  pixKeyType?: PixKeyType
+}): PixRecipient {
+  if (fields.contactId) {
+    return { contactId: fields.contactId }
+  }
+  return {
+    name: fields.name as string,
+    pixKey: fields.pixKey as string,
+    pixKeyType: fields.pixKeyType,
+  }
+}
+
 function assertFree(all: readonly PixContact[], contact: PixContact) {
   const others = all.filter(other => other.id !== contact.id)
   const sameHandle = others.find(other => other.handle === contact.handle)

@@ -2987,6 +2987,26 @@
   "chatDetailHolder": "Titular",
   "chatDetailTaxId": "CPF/CNPJ",
   "chatDetailBank": "Banco",
+  "billsPayButton": "Pagar",
+  "billsPayPix": "Pix para contato ou chave",
+  "billsPayPixHint": "Confira quem recebe antes de enviar",
+  "billsPayPasteHint": "Boleto, conta ou Pix copia e cola",
+  "billsPayScanHint": "QR Pix ou código de barras pela câmera",
+  "sendPixTo": "Para quem",
+  "sendPixNewKey": "Nova chave Pix",
+  "sendPixFrom": "Pagar com",
+  "sendPixReview": "Revisar",
+  "sendPixReviewTitle": "Pix para {name}",
+  "@sendPixReviewTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendPixChooseSomeone": "Escolha um contato ou digite o nome e a chave.",
+  "sendPixAmountMissing": "Informe o valor.",
+  "sendPixDone": "Pix enviado.",
   "chatNewContactNote": "Novo contato: será salvo como @{handle}",
   "@chatNewContactNote": {
     "placeholders": {

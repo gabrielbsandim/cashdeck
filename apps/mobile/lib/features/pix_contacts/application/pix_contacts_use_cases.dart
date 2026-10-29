@@ -1,5 +1,7 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 
 final class ListPixContacts {
@@ -32,4 +34,27 @@ final class DeletePixContact {
   final PixContactsRepository _repository;
 
   Future<Result<void>> call(String id) => _repository.delete(id);
+}
+
+final class PreviewPixTransfer {
+  const new(this._repository);
+
+  final PixContactsRepository _repository;
+
+  Future<Result<PixPreview>> call(PixPayee payee, EntityKind entity) =>
+      _repository.preview(payee, entity);
+}
+
+/// Resolves with the bill the Pix became. A zero amount never leaves the app.
+final class SendPixTransfer {
+  const new(this._repository);
+
+  final PixContactsRepository _repository;
+
+  Future<Result<String>> call(PixPayee payee, EntityKind entity, Money amount) {
+    if (amount.cents <= 0) {
+      return Future.value(const Err(UnexpectedFailure()));
+    }
+    return _repository.send(payee, entity, amount);
+  }
 }

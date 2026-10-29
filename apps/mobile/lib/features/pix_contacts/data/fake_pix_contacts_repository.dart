@@ -1,6 +1,8 @@
 import 'package:cashdeck/core/error/app_failure.dart';
+import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 
 /// Fictional contacts in memory, with the server's uniqueness rules.
@@ -110,5 +112,67 @@ final class FakePixContactsRepository implements PixContactsRepository {
     final removed = _contacts.remove(id);
     if (removed == null) return const Err(NotFoundFailure());
     return const Ok(null);
+  }
+
+  /// Saved contacts come back verified; a new key as if the lookup failed.
+  @override
+  Future<Result<PixPreview>> preview(PixPayee payee, EntityKind entity) async {
+    await Future<void>.delayed(latency);
+    final draft = payee.draft;
+    if (draft != null) {
+      final key = draft.normalizedKey;
+      if (key == null) {
+        return const Err(ValidationFailure('Chave Pix inválida.'));
+      }
+      final name = draft.name.trim();
+      return Ok(
+        PixPreview(
+          name: name,
+          pixKey: key.$1,
+          pixKeyType: key.$2,
+          isNew: true,
+          recipient: PixRecipientCheck(name: name, verified: false),
+        ),
+      );
+    }
+    final contact = _contacts[payee.contactId];
+    if (contact == null) return const Err(NotFoundFailure());
+    return Ok(
+      PixPreview(
+        name: contact.name,
+        pixKey: contact.pixKey,
+        pixKeyType: contact.pixKeyType,
+        isNew: false,
+        recipient: PixRecipientCheck(
+          name: contact.name,
+          taxId: '***.456.789-**',
+          bank: 'Banco Exemplo',
+          verified: true,
+        ),
+      ),
+    );
+  }
+
+  /// Every Pix lands on the paid one the fake bills already hold.
+  @override
+  Future<Result<String>> send(
+    PixPayee payee,
+    EntityKind entity,
+    Money amount,
+  ) async {
+    final draft = payee.draft;
+    if (draft != null) {
+      final saved = await _save(
+        PixContactDraft(
+          name: draft.name,
+          handle: handleFromName(draft.name),
+          keyKind: draft.keyKind,
+          pixKey: draft.pixKey,
+        ),
+        null,
+      );
+      if (saved case Err(:final failure)) return Err(failure);
+    }
+    return const Ok('bill-condo');
   }
 }

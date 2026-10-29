@@ -14,6 +14,7 @@ import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
 import 'package:cashdeck/core/widgets/insights/cd_calendar_month.dart';
 import 'package:cashdeck/core/widgets/insights/cd_insight_card.dart';
 import 'package:cashdeck/core/widgets/insights/cd_segment_bar.dart';
+import 'package:cashdeck/core/widgets/layout/cd_options_sheet.dart';
 import 'package:cashdeck/core/widgets/layout/cd_section_header.dart';
 import 'package:cashdeck/core/widgets/money/cd_bill_card.dart';
 import 'package:cashdeck/core/widgets/states/cd_empty_state.dart';
@@ -37,8 +38,52 @@ class BillsScreen extends ConsumerWidget {
   const new({super.key});
 
   static Key tileKey(String billId) => Key('bill-$billId');
-  static const pasteKey = Key('bills-paste');
+  static const payKey = Key('bills-pay');
+
+  static Key payOptionKey(String route) => Key('bills-pay-$route');
   static const loadMoreKey = Key('bills-load-more');
+
+  /// Every way to pay from here; each opens the flow it already had.
+  Future<void> _pay(BuildContext context, AppLocalizations l10n) async {
+    PickerOption<String> option(
+      String route,
+      IconData icon,
+      String label,
+      String subtitle,
+    ) => PickerOption(
+      value: route,
+      label: label,
+      subtitle: subtitle,
+      icon: icon,
+      key: payOptionKey(route),
+    );
+    final chosen = await showOptionsSheet<String>(
+      context,
+      title: l10n.billsPayButton,
+      options: [
+        option(
+          AppRoutes.sendPix,
+          Symbols.send_money_rounded,
+          l10n.billsPayPix,
+          l10n.billsPayPixHint,
+        ),
+        option(
+          AppRoutes.pasteCode,
+          Symbols.content_paste_rounded,
+          l10n.pasteCodeButton,
+          l10n.billsPayPasteHint,
+        ),
+        option(
+          AppRoutes.scanBill,
+          Symbols.qr_code_scanner_rounded,
+          l10n.scanTitle,
+          l10n.billsPayScanHint,
+        ),
+      ],
+    );
+    if (chosen == null || !context.mounted) return;
+    context.push(chosen.$1).ignore();
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,10 +93,10 @@ class BillsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: const TabAppBar(),
       floatingActionButton: FloatingActionButton.extended(
-        key: BillsScreen.pasteKey,
-        icon: const Icon(Symbols.content_paste_rounded),
-        label: Text(l10n.pasteCodeButton),
-        onPressed: () => context.push(AppRoutes.pasteCode).ignore(),
+        key: BillsScreen.payKey,
+        icon: const Icon(Symbols.payments_rounded),
+        label: Text(l10n.billsPayButton),
+        onPressed: () => _pay(context, l10n),
       ),
       body: Column(
         children: [

@@ -24,22 +24,18 @@ import {
   type ChatAction,
   type ChatActionDetails,
   type ChatActionResult,
-  type ChatRecipient,
   type ChatScope,
 } from '@/ports/chat'
 import { type LlmToolParameter } from '@/ports/llm-provider'
-import {
-  type PixCharge,
-  type RecipientDirectoryScope,
-  type VerifiedPayee,
-} from '@/ports/providers'
+import { type PixCharge, type RecipientDirectoryScope } from '@/ports/providers'
 import { allPages, required, toBase64, today } from '@/use-cases/shared'
 import { type AgentTool } from '@/use-cases/chat/agent'
 import { sanitize } from '@/use-cases/chat/hardening'
 import { makeReadBillFile } from '@/use-cases/capture-file'
 import { ensureCategories } from '@/use-cases/categorization'
 import { type Deps } from '@/use-cases/deps'
-import { makePixContacts, type PixRecipient } from '@/use-cases/pix-contacts'
+import { makePixContacts, recipientFrom } from '@/use-cases/pix-contacts'
+import { checkedRecipient } from '@/use-cases/pix-transfers'
 import { isoDate } from '@/dtos/common'
 
 export type Proposal = Pick<
@@ -197,22 +193,6 @@ export async function readPixPayment<T extends Money | null>(
 
 // A directory outage must not block the proposal; the card then says the
 // payee could not be verified.
-async function checkedRecipient(
-  lookup: () => Promise<VerifiedPayee | null>,
-  fallback: string,
-): Promise<ChatRecipient> {
-  const payee = await lookup().catch(() => null)
-  if (!payee) {
-    return { name: fallback, taxId: null, bank: null, verified: false }
-  }
-  return {
-    name: sanitize(payee.name, 120),
-    taxId: payee.taxId && sanitize(payee.taxId, 20),
-    bank: payee.bank && sanitize(payee.bank, 120),
-    verified: true,
-  }
-}
-
 export function makeChatTools(deps: ToolDeps) {
   const contacts = makePixContacts(deps)
   const readBillFile = makeReadBillFile(deps)
@@ -1015,17 +995,6 @@ export function makeChatTools(deps: ToolDeps) {
         'Give the contactId of a saved contact, or the name and the Pix key of a new one.',
     })
 
-  function recipientOf(args: z.infer<typeof sendPixArgs>): PixRecipient {
-    if (args.contactId) {
-      return { contactId: args.contactId }
-    }
-    return {
-      name: args.name as string,
-      pixKey: args.pixKey as string,
-      pixKeyType: args.pixKeyType,
-    }
-  }
-
   function sendPix(ctx: ToolContext): AgentTool {
     return {
       name: 'send_pix',
@@ -1049,7 +1018,7 @@ export function makeChatTools(deps: ToolDeps) {
         const args = sendPixArgs.parse(raw)
         const { contact, isNew } = await contacts.resolve(
           ctx.tenantId,
-          recipientOf(args),
+          recipientFrom(args),
         )
         const amount = Money.of(Math.round(args.amount * 100))
         const entity = scopeKind(ctx.scope)

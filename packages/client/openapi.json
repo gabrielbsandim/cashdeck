@@ -30598,6 +30598,616 @@
         }
       }
     },
+    "/pix-transfers/preview": {
+      "post": {
+        "operationId": "previewPixTransfer",
+        "summary": "Who a contact or Pix key pays, as the central bank names them",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contactId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "pixKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "pixKeyType": {
+                    "type": "string",
+                    "enum": [
+                      "CPF",
+                      "CNPJ",
+                      "EMAIL",
+                      "PHONE",
+                      "EVP"
+                    ]
+                  },
+                  "entity": {
+                    "type": "string",
+                    "enum": [
+                      "PF",
+                      "PJ"
+                    ]
+                  }
+                },
+                "required": [
+                  "entity"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Who a contact or Pix key pays, as the central bank names them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "contact": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "handle": {
+                              "type": "string"
+                            },
+                            "pixKey": {
+                              "type": "string"
+                            },
+                            "pixKeyType": {
+                              "type": "string",
+                              "enum": [
+                                "CPF",
+                                "CNPJ",
+                                "EMAIL",
+                                "PHONE",
+                                "EVP"
+                              ]
+                            },
+                            "isNew": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "handle",
+                            "pixKey",
+                            "pixKeyType",
+                            "isNew"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "recipient": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "taxId": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "bank": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "verified": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "taxId",
+                            "bank",
+                            "verified"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "contact",
+                        "recipient"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/pix-transfers": {
+      "post": {
+        "operationId": "sendPixTransfer",
+        "summary": "Send a Pix now to a contact or a new key, saving it as a contact",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contactId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "pixKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "pixKeyType": {
+                    "type": "string",
+                    "enum": [
+                      "CPF",
+                      "CNPJ",
+                      "EMAIL",
+                      "PHONE",
+                      "EVP"
+                    ]
+                  },
+                  "entity": {
+                    "type": "string",
+                    "enum": [
+                      "PF",
+                      "PJ"
+                    ]
+                  },
+                  "amountCents": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "maximum": 100000000
+                  }
+                },
+                "required": [
+                  "entity",
+                  "amountCents"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Send a Pix now to a contact or a new key, saving it as a contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "type": "string"
+                        },
+                        "entityKind": {
+                          "type": "string",
+                          "enum": [
+                            "PF",
+                            "PJ"
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "BOLETO",
+                            "PIX_KEY",
+                            "PIX_QR",
+                            "TAX_BARCODE",
+                            "DARF_NO_BARCODE"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "OPEN",
+                            "NEEDS_CONFIRMATION",
+                            "PROCESSING",
+                            "AWAITING_BANK_APPROVAL",
+                            "ASSISTED",
+                            "PAID",
+                            "CANCELLED"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "GMAIL",
+                            "SHARE",
+                            "CAMERA",
+                            "CHAT",
+                            "DDA",
+                            "MANUAL"
+                          ]
+                        },
+                        "payee": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "cents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "currency": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            }
+                          },
+                          "required": [
+                            "cents",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "dueDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pixCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "paidAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "paidBy": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "RAIL",
+                            "USER",
+                            "STATEMENT"
+                          ]
+                        },
+                        "autoDebit": {
+                          "type": "boolean"
+                        },
+                        "unverifiedSender": {
+                          "type": "boolean"
+                        },
+                        "confirmationReason": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "UNVERIFIED_SENDER",
+                            "NEW_PAYEE",
+                            "ABOVE_THRESHOLD",
+                            "AMOUNT_DEVIATION",
+                            "CAP_EXCEEDED"
+                          ]
+                        },
+                        "plan": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "steps": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AUTOMATIC",
+                                      "BANK_APPROVAL",
+                                      "ASSISTED"
+                                    ]
+                                  },
+                                  "rail": {
+                                    "type": "string",
+                                    "enum": [
+                                      "MERCADO_PAGO_PAYOUTS",
+                                      "ASAAS",
+                                      "INTER_EMPRESAS",
+                                      "C6_EMPRESAS",
+                                      "ASSISTED"
+                                    ]
+                                  },
+                                  "method": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PIX",
+                                      "BOLETO"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mode",
+                                  "rail",
+                                  "method"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "currentStep": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "steps",
+                            "currentStep"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "attempts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "stepIndex": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "rail": {
+                                "type": "string",
+                                "enum": [
+                                  "MERCADO_PAGO_PAYOUTS",
+                                  "ASAAS",
+                                  "INTER_EMPRESAS",
+                                  "C6_EMPRESAS",
+                                  "ASSISTED"
+                                ]
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "AUTOMATIC",
+                                  "BANK_APPROVAL",
+                                  "ASSISTED"
+                                ]
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": [
+                                  "PIX",
+                                  "BOLETO"
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "cents": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                  }
+                                },
+                                "required": [
+                                  "cents",
+                                  "currency"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "outcome": {
+                                "type": "string",
+                                "enum": [
+                                  "PAID",
+                                  "SUBMITTED",
+                                  "PENDING_APPROVAL",
+                                  "ASSISTED",
+                                  "FAILED",
+                                  "IN_FLIGHT"
+                                ]
+                              },
+                              "reason": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "externalId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "appLink": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "stepIndex",
+                              "rail",
+                              "mode",
+                              "method",
+                              "amount",
+                              "outcome",
+                              "reason",
+                              "externalId",
+                              "appLink",
+                              "at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "instructions": {
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string"
+                            },
+                            "copyCode": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pixCode": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "amountCents": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "dueDate": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "copyCode",
+                            "pixCode",
+                            "amountCents",
+                            "dueDate"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "entityId",
+                        "entityKind",
+                        "kind",
+                        "status",
+                        "source",
+                        "payee",
+                        "amount",
+                        "dueDate",
+                        "code",
+                        "pixCode",
+                        "createdAt",
+                        "paidAt",
+                        "paidBy",
+                        "autoDebit",
+                        "unverifiedSender",
+                        "confirmationReason",
+                        "plan",
+                        "attempts",
+                        "instructions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/plan": {
       "get": {
         "operationId": "getLifePlan",
