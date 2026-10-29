@@ -2981,6 +2981,11 @@
   "chatToolSendPix": "Enviar Pix",
   "chatDetailPixKey": "Chave Pix",
   "chatDetailContact": "Contato",
+  "chatRecipientVerified": "Titular confirmado no Pix",
+  "chatRecipientUnverified": "Não foi possível confirmar o titular no Pix. Confira o recebedor antes de pagar.",
+  "chatDetailHolder": "Titular",
+  "chatDetailTaxId": "CPF/CNPJ",
+  "chatDetailBank": "Banco",
   "chatNewContactNote": "Novo contato: será salvo como @{handle}",
   "@chatNewContactNote": {
     "placeholders": {

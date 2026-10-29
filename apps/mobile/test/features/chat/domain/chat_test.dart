@@ -78,7 +78,11 @@ void main() {
   test('value classes compare by value', () {
     expect(testThread().props, hasLength(5));
     expect(testAction().props, hasLength(10));
-    expect(testAction().details.props, hasLength(11));
+    expect(testAction().details.props, hasLength(12));
+    expect(
+      const ChatRecipient(name: 'Ana Exemplo', verified: true).props,
+      hasLength(4),
+    );
     expect(const ChatActionResult(billId: 'b', updated: 2).props, hasLength(5));
   });
 

@@ -336,6 +336,7 @@ export function buildContainer(
       providers.billSources.map(billSource => [billSource.source, billSource]),
     ),
     pixLocations: providers.pixLocations,
+    pixDirectory: providers.pixDirectory,
     documentText: providers.documentText,
     webhooks: new Map<WebhookProvider, WebhookReader>(
       providers.webhooks.map(reader => [reader.provider, reader]),

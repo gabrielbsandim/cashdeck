@@ -300,6 +300,80 @@ describe('AsaasRail', () => {
     await expect(asaas.status('card:1', scope)).rejects.toThrow('does not know')
   })
 
+  it('names the owner of a pix key from the directory', async () => {
+    const scripted = new ScriptedTransport().on(
+      'GET',
+      `${API}/pix/addressKeys/external`,
+      {
+        json: {
+          ispbName: 'Instituicao Exemplo',
+          financialInstitution: { bank: { name: 'Banco Exemplo' } },
+          owner: { name: 'Ana Exemplo', cpfCnpj: '529.982.247-25' },
+        },
+      },
+      { json: { ispbName: 'Instituicao Exemplo', owner: { name: 'Bia' } } },
+      {
+        status: 404,
+        json: { errors: [{ description: 'Chave não encontrada' }] },
+      },
+    )
+    const asaas = rail(scripted)
+    const key = { type: 'PHONE', value: '+5511987654321' } as const
+    expect(await asaas.ownerOfKey(key, scope)).toEqual({
+      name: 'Ana Exemplo',
+      taxId: '***.982.247-**',
+      bank: 'Banco Exemplo',
+    })
+    expect(scripted.last('GET', `${API}/pix/addressKeys/external`).url).toBe(
+      `${API}/pix/addressKeys/external?type=PHONE&key=%2B5511987654321`,
+    )
+    expect(await asaas.ownerOfKey(key, scope)).toEqual({
+      name: 'Bia',
+      taxId: null,
+      bank: 'Instituicao Exemplo',
+    })
+    expect(await asaas.ownerOfKey(key, scope)).toBeNull()
+  })
+
+  it('names the receiver of a pix code before paying it', async () => {
+    const scripted = new ScriptedTransport().on(
+      'POST',
+      `${API}/pix/qrCodes/decode`,
+      {
+        json: {
+          receiver: {
+            name: 'Loja Exemplo Ltda',
+            cpfCnpj: '11.222.333/0001-81',
+            ispbName: 'Banco Exemplo',
+          },
+        },
+      },
+      {
+        json: { receiver: { tradingName: 'Loja', cpfCnpj: '***.456.789-**' } },
+      },
+      { json: { receiver: { name: null } } },
+      { json: {} },
+      { status: 400, json: { errors: [{ description: 'QR inválido' }] } },
+    )
+    const asaas = rail(scripted)
+    expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toEqual({
+      name: 'Loja Exemplo Ltda',
+      taxId: '11.222.333/0001-81',
+      bank: 'Banco Exemplo',
+    })
+    expect(scripted.body('POST', `${API}/pix/qrCodes/decode`)).toEqual({
+      payload: STATIC_PIX,
+    })
+    expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toEqual({
+      name: 'Loja',
+      taxId: '***.456.789-**',
+      bank: null,
+    })
+    expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toBeNull()
+    expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toBeNull()
+    expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toBeNull()
+  })
+
   it('checks the account balance', async () => {
     const ok = new ScriptedTransport().on('GET', `${API}/finance/balance`, {
       json: { balance: 1 },

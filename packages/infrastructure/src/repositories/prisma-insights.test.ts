@@ -149,6 +149,7 @@ const action: ChatAction = {
     pixKeyType: null,
     contactHandle: null,
     newContact: null,
+    recipient: null,
   },
   result: null,
   error: null,

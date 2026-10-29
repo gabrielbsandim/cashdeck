@@ -28589,6 +28589,33 @@
                                     "newContact": {
                                       "nullable": true,
                                       "type": "boolean"
+                                    },
+                                    "recipient": {
+                                      "nullable": true,
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "taxId": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "bank": {
+                                          "nullable": true,
+                                          "type": "string"
+                                        },
+                                        "verified": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "taxId",
+                                        "bank",
+                                        "verified"
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   },
                                   "required": [
@@ -28602,7 +28629,8 @@
                                     "pixKey",
                                     "pixKeyType",
                                     "contactHandle",
-                                    "newContact"
+                                    "newContact",
+                                    "recipient"
                                   ],
                                   "additionalProperties": false
                                 },
@@ -28970,6 +28998,33 @@
                                         "newContact": {
                                           "nullable": true,
                                           "type": "boolean"
+                                        },
+                                        "recipient": {
+                                          "nullable": true,
+                                          "type": "object",
+                                          "properties": {
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "taxId": {
+                                              "nullable": true,
+                                              "type": "string"
+                                            },
+                                            "bank": {
+                                              "nullable": true,
+                                              "type": "string"
+                                            },
+                                            "verified": {
+                                              "type": "boolean"
+                                            }
+                                          },
+                                          "required": [
+                                            "name",
+                                            "taxId",
+                                            "bank",
+                                            "verified"
+                                          ],
+                                          "additionalProperties": false
                                         }
                                       },
                                       "required": [
@@ -28983,7 +29038,8 @@
                                         "pixKey",
                                         "pixKeyType",
                                         "contactHandle",
-                                        "newContact"
+                                        "newContact",
+                                        "recipient"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -29329,6 +29385,33 @@
                                         "newContact": {
                                           "nullable": true,
                                           "type": "boolean"
+                                        },
+                                        "recipient": {
+                                          "nullable": true,
+                                          "type": "object",
+                                          "properties": {
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "taxId": {
+                                              "nullable": true,
+                                              "type": "string"
+                                            },
+                                            "bank": {
+                                              "nullable": true,
+                                              "type": "string"
+                                            },
+                                            "verified": {
+                                              "type": "boolean"
+                                            }
+                                          },
+                                          "required": [
+                                            "name",
+                                            "taxId",
+                                            "bank",
+                                            "verified"
+                                          ],
+                                          "additionalProperties": false
                                         }
                                       },
                                       "required": [
@@ -29342,7 +29425,8 @@
                                         "pixKey",
                                         "pixKeyType",
                                         "contactHandle",
-                                        "newContact"
+                                        "newContact",
+                                        "recipient"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -29618,6 +29702,33 @@
                             "newContact": {
                               "nullable": true,
                               "type": "boolean"
+                            },
+                            "recipient": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "taxId": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "bank": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "verified": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "taxId",
+                                "bank",
+                                "verified"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -29631,7 +29742,8 @@
                             "pixKey",
                             "pixKeyType",
                             "contactHandle",
-                            "newContact"
+                            "newContact",
+                            "recipient"
                           ],
                           "additionalProperties": false
                         },
@@ -29864,6 +29976,33 @@
                             "newContact": {
                               "nullable": true,
                               "type": "boolean"
+                            },
+                            "recipient": {
+                              "nullable": true,
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "taxId": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "bank": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "verified": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "taxId",
+                                "bank",
+                                "verified"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -29877,7 +30016,8 @@
                             "pixKey",
                             "pixKeyType",
                             "contactHandle",
-                            "newContact"
+                            "newContact",
+                            "recipient"
                           ],
                           "additionalProperties": false
                         },

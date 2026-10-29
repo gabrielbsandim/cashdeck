@@ -7,7 +7,7 @@ import {
   fullDeps,
   transaction,
 } from '@/testing/deps.test-helpers'
-import { FakePixLocationResolver } from '@/testing/providers'
+import { FakePixDirectory, FakePixLocationResolver } from '@/testing/providers'
 import {
   dynamicPix,
   NOW,
@@ -417,6 +417,15 @@ describe('chat side-effect tools', () => {
       merchantCity: 'SAO PAULO',
       amount: Money.of(2977),
     })
+    const directory = new FakePixDirectory({
+      [fixed]: {
+        name: 'Loja Exemplo Comercio Ltda',
+        taxId: '11.222.333/0001-81',
+        bank: 'Banco Exemplo',
+      },
+      [dynamicPix(location)]: new Error('down'),
+    })
+    deps.pixDirectory = directory
     expect(
       await run('pay_pix_code', { code: ` ${fixed} `, amount: 1 }),
     ).toMatchObject({ status: 'PENDING_CONFIRMATION', actionId: 'act-1' })
@@ -441,6 +450,12 @@ describe('chat side-effect tools', () => {
           payee: 'Loja Exemplo',
           amount: { cents: 2977, currency: 'BRL' },
           dueDate: NOW.toISOString().slice(0, 10),
+          recipient: {
+            name: 'Loja Exemplo Comercio Ltda',
+            taxId: '11.222.333/0001-81',
+            bank: 'Banco Exemplo',
+            verified: true,
+          },
         },
       },
       expect.objectContaining({
@@ -452,11 +467,23 @@ describe('chat side-effect tools', () => {
           payee: 'Fornecedor Exemplo Ltda',
           amount: { cents: 12345, currency: 'BRL' },
           dueDate: '2026-10-25',
+          recipient: {
+            name: 'Fornecedor Exemplo Ltda',
+            taxId: null,
+            bank: null,
+            verified: false,
+          },
         },
       }),
     ])
+    expect(directory.lookups[0]).toEqual({
+      query: fixed,
+      scope: { tenantId: TENANT, entityId: 'pf' },
+    })
     const consolidated = await toolsFor('ALL')
+    consolidated.deps.pixDirectory = directory
     await consolidated.run('pay_pix_code', { code: fixed })
+    expect(directory.lookups.at(-1)?.scope).toEqual({ tenantId: TENANT })
     expect(consolidated.proposals[0]).toMatchObject({
       entity: null,
       needsEntity: true,

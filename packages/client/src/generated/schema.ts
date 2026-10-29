@@ -11186,6 +11186,12 @@ export interface operations {
                                     pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
                                     contactHandle: string | null;
                                     newContact: boolean | null;
+                                    recipient: {
+                                        name: string;
+                                        taxId: string | null;
+                                        bank: string | null;
+                                        verified: boolean;
+                                    } | null;
                                 };
                                 result: {
                                     billId: string | null;
@@ -11287,6 +11293,12 @@ export interface operations {
                                         pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
                                         contactHandle: string | null;
                                         newContact: boolean | null;
+                                        recipient: {
+                                            name: string;
+                                            taxId: string | null;
+                                            bank: string | null;
+                                            verified: boolean;
+                                        } | null;
                                     };
                                     result: {
                                         billId: string | null;
@@ -11381,6 +11393,12 @@ export interface operations {
                                         pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
                                         contactHandle: string | null;
                                         newContact: boolean | null;
+                                        recipient: {
+                                            name: string;
+                                            taxId: string | null;
+                                            bank: string | null;
+                                            verified: boolean;
+                                        } | null;
                                     };
                                     result: {
                                         billId: string | null;
@@ -11460,6 +11478,12 @@ export interface operations {
                                 pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
                                 contactHandle: string | null;
                                 newContact: boolean | null;
+                                recipient: {
+                                    name: string;
+                                    taxId: string | null;
+                                    bank: string | null;
+                                    verified: boolean;
+                                } | null;
                             };
                             result: {
                                 billId: string | null;
@@ -11529,6 +11553,12 @@ export interface operations {
                                 pixKeyType: "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP" | null;
                                 contactHandle: string | null;
                                 newContact: boolean | null;
+                                recipient: {
+                                    name: string;
+                                    taxId: string | null;
+                                    bank: string | null;
+                                    verified: boolean;
+                                } | null;
                             };
                             result: {
                                 billId: string | null;

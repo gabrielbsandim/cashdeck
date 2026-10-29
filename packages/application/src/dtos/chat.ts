@@ -94,6 +94,14 @@ export const chatActionViewSchema = z.object({
     pixKeyType: z.enum(PIX_KEY_TYPES).nullable(),
     contactHandle: z.string().nullable(),
     newContact: z.boolean().nullable(),
+    recipient: z
+      .object({
+        name: z.string(),
+        taxId: z.string().nullable(),
+        bank: z.string().nullable(),
+        verified: z.boolean(),
+      })
+      .nullable(),
   }),
   result: z
     .object({

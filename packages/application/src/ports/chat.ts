@@ -73,6 +73,15 @@ export const CHAT_ACTION_STATUSES = [
 export type ChatActionStatus = (typeof CHAT_ACTION_STATUSES)[number]
 
 // What the confirmation card shows; every field is optional per tool.
+// Who a Pix pays: verified when the central bank directory named the owner,
+// otherwise the name the user or the code gave.
+export type ChatRecipient = {
+  name: string
+  taxId: string | null
+  bank: string | null
+  verified: boolean
+}
+
 export type ChatActionDetails = {
   payee: string | null
   amount: { cents: number; currency: string } | null
@@ -85,6 +94,7 @@ export type ChatActionDetails = {
   pixKeyType: PixKeyType | null
   contactHandle: string | null
   newContact: boolean | null
+  recipient: ChatRecipient | null
 }
 
 export type ChatActionResult = {

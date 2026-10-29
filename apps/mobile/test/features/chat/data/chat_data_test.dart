@@ -148,6 +148,12 @@ void main() {
         'pixKeyType': 'EMAIL',
         'contactHandle': 'ana.exemplo',
         'newContact': true,
+        'recipient': {
+          'name': 'Ana Exemplo Lima',
+          'taxId': '***.456.789-**',
+          'bank': 'Banco Exemplo',
+          'verified': true,
+        },
       };
       final pix = actionFromJson({
         ..._action(result: {'contactId': 'contact-9'}),
@@ -164,10 +170,20 @@ void main() {
       expect(pix.details.pixKeyType, PixKeyType.email);
       expect(pix.details.contactHandle, 'ana.exemplo');
       expect(pix.details.newContact, isTrue);
+      expect(
+        pix.details.recipient,
+        const ChatRecipient(
+          name: 'Ana Exemplo Lima',
+          taxId: '***.456.789-**',
+          bank: 'Banco Exemplo',
+          verified: true,
+        ),
+      );
       expect(pix.result?.contactId, 'contact-9');
       expect(odd.details.pixKeyType, isNull);
       expect(odd.details.newContact, isNull);
       expect(actionFromJson(_action()).details.pixKey, isNull);
+      expect(actionFromJson(_action()).details.recipient, isNull);
     });
 
     test('scopes and drafts travel as the server reads them', () {

@@ -69,6 +69,25 @@ final class ChatAttachment extends Equatable {
   List<Object?> get props => [id, fileName, mimeType, size];
 }
 
+/// Who a Pix pays. [verified] when the central bank directory named the
+/// account holder; otherwise the name typed or printed on the code.
+final class ChatRecipient extends Equatable {
+  const new({
+    required this.name,
+    required this.verified,
+    this.taxId,
+    this.bank,
+  });
+
+  final String name;
+  final String? taxId;
+  final String? bank;
+  final bool verified;
+
+  @override
+  List<Object?> get props => [name, taxId, bank, verified];
+}
+
 /// What a proposed action would do, for the confirmation card.
 final class ChatActionDetails extends Equatable {
   const new({
@@ -83,6 +102,7 @@ final class ChatActionDetails extends Equatable {
     this.pixKeyType,
     this.contactHandle,
     this.newContact,
+    this.recipient,
   });
 
   final String? payee;
@@ -98,6 +118,7 @@ final class ChatActionDetails extends Equatable {
 
   /// True when confirming saves the recipient as a new contact.
   final bool? newContact;
+  final ChatRecipient? recipient;
 
   @override
   List<Object?> get props => [
@@ -112,6 +133,7 @@ final class ChatActionDetails extends Equatable {
     pixKeyType,
     contactHandle,
     newContact,
+    recipient,
   ];
 }
 

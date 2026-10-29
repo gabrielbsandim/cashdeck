@@ -1,6 +1,9 @@
 import {
   type PaymentRail,
   type PaymentRequest,
+  type PixDirectory,
+  type PixDirectoryScope,
+  type PixPayee,
   type ProviderCheck,
   type RailResult,
   type RailStatus,
@@ -13,6 +16,7 @@ import {
   decodePaymentCode,
   type EntityKind,
   type PaymentMethod,
+  type PixKey,
 } from '@cashdeck/domain'
 import {
   type Credentials,
@@ -97,11 +101,25 @@ const BILL_OUTCOME = {
 
 type AsaasErrors = { errors?: Array<{ code?: string; description?: string }> }
 
+type AsaasReceiver = {
+  name?: string | null
+  tradingName?: string | null
+  cpfCnpj?: string | null
+  ispbName?: string | null
+}
+
 type AsaasDecodedQr = {
   value?: number
   totalValue?: number
   canBePaid?: boolean
   cannotBePaidReason?: string | null
+  receiver?: AsaasReceiver | null
+}
+
+type AsaasKeyOwner = {
+  ispbName?: string | null
+  financialInstitution?: { bank?: { name?: string | null } | null } | null
+  owner?: { name?: string | null; cpfCnpj?: string | null } | null
 }
 
 type AsaasOperation = {
@@ -157,7 +175,7 @@ export const asaasHeaders = (config: AsaasConfig) => ({
 
 export type AsaasRailDeps = { credentials: Credentials; transport: Transport }
 
-export class AsaasRail implements PaymentRail, RailStatusReader {
+export class AsaasRail implements PaymentRail, RailStatusReader, PixDirectory {
   readonly id = 'ASAAS' as const
 
   constructor(private readonly deps: AsaasRailDeps) {}
@@ -244,6 +262,48 @@ export class AsaasRail implements PaymentRail, RailStatusReader {
       endToEndId: op.endToEndIdentifier ?? null,
       settledAt: outcome === 'PAID' ? settledAt(op) : null,
     })
+  }
+
+  async ownerOfKey(
+    key: PixKey,
+    scope: PixDirectoryScope,
+  ): Promise<PixPayee | null> {
+    const config = await this.config(scope)
+    const query = `type=${key.type}&key=${encodeURIComponent(key.value)}`
+    const answer = await this.call<AsaasKeyOwner>(config, {
+      method: 'GET',
+      url: `${config.baseUrl}/pix/addressKeys/external?${query}`,
+    })
+    if (!answer.ok) {
+      return null
+    }
+    const { owner, financialInstitution, ispbName } = answer.data
+    return payee(
+      owner?.name,
+      owner?.cpfCnpj,
+      financialInstitution?.bank?.name ?? ispbName,
+    )
+  }
+
+  async receiverOfCode(
+    payload: string,
+    scope: PixDirectoryScope,
+  ): Promise<PixPayee | null> {
+    const config = await this.config(scope)
+    const answer = await this.call<AsaasDecodedQr>(config, {
+      method: 'POST',
+      url: `${config.baseUrl}/pix/qrCodes/decode`,
+      json: { payload },
+    })
+    if (!answer.ok) {
+      return null
+    }
+    const receiver = answer.data.receiver
+    return payee(
+      receiver?.name ?? receiver?.tradingName,
+      receiver?.cpfCnpj,
+      receiver?.ispbName,
+    )
   }
 
   async check(): Promise<ProviderCheck> {
@@ -424,6 +484,27 @@ function brasiliaInstant(text: string): string {
   }
   const [day, time = '00:00:00'] = text.split(' ')
   return `${day}T${time}-03:00`
+}
+
+function payee(
+  name: string | null | undefined,
+  taxId: string | null | undefined,
+  bank: string | null | undefined,
+): PixPayee | null {
+  if (!name) {
+    return null
+  }
+  return { name, taxId: maskTaxId(taxId), bank: bank || null }
+}
+
+// A person's CPF is shown the way the directory itself masks it; a company's
+// CNPJ is public and stays whole.
+function maskTaxId(taxId: string | null | undefined): string | null {
+  const digits = taxId?.replace(/\D/g, '') ?? ''
+  if (!taxId || taxId.includes('*') || digits.length !== 11) {
+    return taxId || null
+  }
+  return `***.${digits.slice(3, 6)}.${digits.slice(6, 9)}-**`
 }
 
 function errorDescription(text: string): string {

@@ -4,7 +4,7 @@ import { sendMessageSchema } from '@/dtos/chat'
 import { ConflictError, NotFoundError } from '@/errors/errors'
 import { type LlmChatResult } from '@/ports/llm-provider'
 import { account, base64, fullDeps } from '@/testing/deps.test-helpers'
-import { FakePaymentRail } from '@/testing/providers'
+import { FakePaymentRail, FakePixDirectory } from '@/testing/providers'
 import { TENANT } from '@/testing/scenario.test-helpers'
 import { ensureCategories } from '@/use-cases/categorization'
 import { DEFAULT_CHAT_CONFIG, makeChat } from '@/use-cases/chat/chat'
@@ -215,6 +215,13 @@ describe('pix in the chat', () => {
       name: 'Ana Souza',
       pixKey: 'ana@example.com',
     })
+    deps.pixDirectory = new FakePixDirectory({
+      'ana@example.com': {
+        name: 'Ana Souza Lima',
+        taxId: '***.456.789-**',
+        bank: 'Banco Exemplo',
+      },
+    })
     const thread = await chat.createThread(TENANT, { scope: 'PF' })
     deps.llm
       .enqueue(use('send_pix', { contactId: ana.id, amount: 50.5 }))
@@ -239,8 +246,17 @@ describe('pix in the chat', () => {
         pixKeyType: 'EMAIL',
         contactHandle: 'ana.souza',
         newContact: false,
+        recipient: {
+          name: 'Ana Souza Lima',
+          taxId: '***.456.789-**',
+          bank: 'Banco Exemplo',
+          verified: true,
+        },
       },
     })
+    expect(
+      JSON.parse(deps.llm.calls[1]?.messages.at(-1)?.content ?? '').recipient,
+    ).toMatchObject({ name: 'Ana Souza Lima', verified: true })
     const confirmed = await chat.confirmAction(TENANT, action?.id as string, {})
     expect(confirmed.status).toBe('CONFIRMED')
     expect(confirmed.result?.contactId).toBe(ana.id)
@@ -303,6 +319,12 @@ describe('pix in the chat', () => {
         pixKeyType: 'PHONE',
         contactHandle: 'joao.alves',
         newContact: true,
+        recipient: {
+          name: 'João Alves',
+          taxId: null,
+          bank: null,
+          verified: false,
+        },
       },
     })
     expect(await contacts.list(TENANT)).toHaveLength(1)

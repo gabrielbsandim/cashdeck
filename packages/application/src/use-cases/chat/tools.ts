@@ -4,6 +4,7 @@ import {
   BILL_STATUSES,
   type BrCode,
   type Category,
+  type PixKey,
   type EntityKind,
   isSettled,
   Money,
@@ -19,10 +20,15 @@ import { NotFoundError } from '@/errors/errors'
 import {
   type ChatAction,
   type ChatActionDetails,
+  type ChatRecipient,
   type ChatScope,
 } from '@/ports/chat'
 import { type LlmToolParameter } from '@/ports/llm-provider'
-import { type PixCharge } from '@/ports/providers'
+import {
+  type PixCharge,
+  type PixDirectoryScope,
+  type PixPayee,
+} from '@/ports/providers'
 import { allPages, required, today } from '@/use-cases/shared'
 import { type AgentTool } from '@/use-cases/chat/agent'
 import { sanitize } from '@/use-cases/chat/hardening'
@@ -57,6 +63,7 @@ type ToolDeps = Pick<
   | 'ids'
   | 'pixContacts'
   | 'pixLocations'
+  | 'pixDirectory'
 >
 
 const DEFAULT_DAYS = 30
@@ -79,6 +86,9 @@ export const scopeKind = (scope: ChatScope): EntityKind | null =>
   scope === 'ALL' ? null : scope
 
 const decimal = (money: Money) => money.toDecimal()
+
+const RECIPIENT_HINT =
+  'The reply has the recipient the Pix directory names, with bank and masked tax id: tell the user who gets the money, and warn when verified is false.'
 
 const pendingReply = (action: ChatAction) => ({
   status: 'PENDING_CONFIRMATION',
@@ -125,6 +135,24 @@ export async function readPixPayment<T extends Money | null>(
   return { code, charge, amount: code.amount ?? charge?.amount ?? typed }
 }
 
+// A directory outage must not block the proposal; the card then says the
+// payee could not be verified.
+async function checkedRecipient(
+  lookup: () => Promise<PixPayee | null>,
+  fallback: string,
+): Promise<ChatRecipient> {
+  const payee = await lookup().catch(() => null)
+  if (!payee) {
+    return { name: fallback, taxId: null, bank: null, verified: false }
+  }
+  return {
+    name: sanitize(payee.name, 120),
+    taxId: payee.taxId && sanitize(payee.taxId, 20),
+    bank: payee.bank && sanitize(payee.bank, 120),
+    verified: true,
+  }
+}
+
 export function makeChatTools(deps: ToolDeps) {
   const contacts = makePixContacts(deps)
   async function allowedEntities(
@@ -137,6 +165,15 @@ export function makeChatTools(deps: ToolDeps) {
         .filter(entity => kind === null || entity.kind === kind)
         .map(entity => [entity.id, entity.kind]),
     )
+  }
+
+  async function directoryScope(ctx: ToolContext): Promise<PixDirectoryScope> {
+    const kind = scopeKind(ctx.scope)
+    const entities = kind === null ? [] : await deps.entities.list(ctx.tenantId)
+    const entity = entities.find(candidate => candidate.kind === kind)
+    return entity
+      ? { tenantId: ctx.tenantId, entityId: entity.id }
+      : { tenantId: ctx.tenantId }
   }
 
   async function lookup(ctx: ToolContext): Promise<Lookup> {
@@ -578,8 +615,7 @@ export function makeChatTools(deps: ToolDeps) {
   function payPixCode(ctx: ToolContext): AgentTool {
     return {
       name: 'pay_pix_code',
-      description:
-        'Propose paying a Pix copy and paste code (BR Code, starts with 000201) now. The user must confirm in the app.',
+      description: `Propose paying a Pix copy and paste code (BR Code, starts with 000201) now. The user must confirm in the app. ${RECIPIENT_HINT}`,
       parameters: object(
         {
           code: text('The whole code, exactly as the user sent it'),
@@ -603,18 +639,25 @@ export function makeChatTools(deps: ToolDeps) {
           )
         }
         const entity = scopeKind(ctx.scope)
+        const payee = sanitize(charge?.payee ?? code.merchantName, 120)
+        const scope = await directoryScope(ctx)
+        const recipient = await checkedRecipient(
+          () => deps.pixDirectory.receiverOfCode(code.payload, scope),
+          payee,
+        )
         const action = await ctx.propose({
           tool: 'PAY_BILL',
           entity,
           needsEntity: entity === null,
           target: { pixCode: code.payload, amountCents: String(amount.cents) },
           details: {
-            payee: sanitize(charge?.payee ?? code.merchantName, 120),
+            payee,
             amount: amount.toJSON(),
             dueDate: charge?.dueDate ?? today(deps.clock.now()),
+            recipient,
           },
         })
-        return pendingReply(action)
+        return { ...pendingReply(action), recipient }
       },
     }
   }
@@ -751,8 +794,7 @@ export function makeChatTools(deps: ToolDeps) {
   function sendPix(ctx: ToolContext): AgentTool {
     return {
       name: 'send_pix',
-      description:
-        'Propose a Pix transfer to a saved contact (contactId) or to someone new (name and Pix key, saved as a contact when the user confirms). The user must confirm in the app.',
+      description: `Propose a Pix transfer to a saved contact (contactId) or to someone new (name and Pix key, saved as a contact when the user confirms). The user must confirm in the app. ${RECIPIENT_HINT}`,
       parameters: object(
         {
           contactId: text('Id from find_pix_contacts'),
@@ -776,6 +818,12 @@ export function makeChatTools(deps: ToolDeps) {
         )
         const amount = Money.of(Math.round(args.amount * 100))
         const entity = scopeKind(ctx.scope)
+        const key: PixKey = { type: contact.pixKeyType, value: contact.pixKey }
+        const scope = await directoryScope(ctx)
+        const recipient = await checkedRecipient(
+          () => deps.pixDirectory.ownerOfKey(key, scope),
+          sanitize(contact.name, 80),
+        )
         const target: Record<string, string> = isNew
           ? {
               name: contact.name,
@@ -796,11 +844,13 @@ export function makeChatTools(deps: ToolDeps) {
             pixKeyType: contact.pixKeyType,
             contactHandle: contact.handle,
             newContact: isNew,
+            recipient,
           },
         })
         return {
           ...pendingReply(action),
           contact: { name: contact.name, handle: `@${contact.handle}`, isNew },
+          recipient,
         }
       },
     }

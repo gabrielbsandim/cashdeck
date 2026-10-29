@@ -166,6 +166,10 @@ void main() {
     expect(find.text(l10n.chatToolSendPix), findsOneWidget);
     expect(find.text('@marina'), findsWidgets);
     expect(find.byKey(ChatActionCard.newContactKey), findsNothing);
+    expect(find.byKey(ChatActionCard.verifiedRecipientKey), findsOneWidget);
+    expect(find.text(l10n.chatDetailHolder), findsOneWidget);
+    expect(find.text('***.456.789-**'), findsOneWidget);
+    expect(find.text('Banco Exemplo'), findsOneWidget);
   });
 
   testWidgets('a Pix to someone new says the contact will be saved', (
@@ -183,6 +187,8 @@ void main() {
     expect(find.byKey(ChatActionCard.newContactKey), findsOneWidget);
     expect(find.text(l10n.chatNewContactNote('ana.exemplo')), findsOneWidget);
     expect(find.textContaining('ana@exemplo.com'), findsOneWidget);
+    expect(find.byKey(ChatActionCard.unverifiedRecipientKey), findsOneWidget);
+    expect(find.text(l10n.chatRecipientUnverified), findsOneWidget);
 
     await tester.tap(_keyStarting('chat-action-confirm-'));
     await settle(tester);

@@ -153,6 +153,7 @@ const EMPTY_DETAILS = {
   pixKeyType: null,
   contactHandle: null,
   newContact: null,
+  recipient: null,
 }
 
 const EMPTY_RESULT: ChatActionResult = {

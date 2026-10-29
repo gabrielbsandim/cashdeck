@@ -77,6 +77,17 @@ ChatActionDetails _details(JsonMap json) {
       final bool value => value,
       _ => null,
     },
+    recipient: _recipient(readOptionalMap(json, 'recipient')),
+  );
+}
+
+ChatRecipient? _recipient(JsonMap? json) {
+  if (json == null) return null;
+  return ChatRecipient(
+    name: readString(json, 'name'),
+    taxId: readOptionalString(json, 'taxId'),
+    bank: readOptionalString(json, 'bank'),
+    verified: json['verified'] == true,
   );
 }
 

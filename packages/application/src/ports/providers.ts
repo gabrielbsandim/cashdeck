@@ -3,6 +3,7 @@ import {
   type BillSource as BillSourceKind,
   type LocalDate,
   type Money,
+  type PixKey,
 } from '@cashdeck/domain'
 import { type DeviceLocale } from '@/ports/alerts'
 import {
@@ -181,6 +182,25 @@ export type PixCharge = {
 export interface PixLocationResolver {
   // Null when the location answers nothing readable; never blocks a capture.
   resolve(location: string): Promise<PixCharge | null>
+}
+
+// The account a Pix lands in, as the central bank directory names it, so the
+// user sees who gets the money before confirming.
+export type PixPayee = {
+  name: string
+  taxId: string | null
+  bank: string | null
+}
+
+export type PixDirectoryScope = { tenantId: string; entityId?: string }
+
+export interface PixDirectory {
+  // Null when the directory has no answer; the payee then shows as unverified.
+  ownerOfKey(key: PixKey, scope: PixDirectoryScope): Promise<PixPayee | null>
+  receiverOfCode(
+    payload: string,
+    scope: PixDirectoryScope,
+  ): Promise<PixPayee | null>
 }
 
 // Billers often protect the PDF with digits of the owner's tax id.

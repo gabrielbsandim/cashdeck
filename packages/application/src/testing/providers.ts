@@ -1,4 +1,4 @@
-import { type BillKind, type RailId } from '@cashdeck/domain'
+import { type BillKind, type PixKey, type RailId } from '@cashdeck/domain'
 import {
   assertSchemaWithoutTools,
   type LlmChatParams,
@@ -22,7 +22,10 @@ import {
   type Notifier,
   type OpenFinanceProvider,
   type PixCharge,
+  type PixDirectory,
+  type PixDirectoryScope,
   type PixLocationResolver,
+  type PixPayee,
   type PreviewAccount,
   type PreviewProvider,
   type ProviderAccount,
@@ -269,6 +272,36 @@ export class FakePixLocationResolver implements PixLocationResolver {
       throw charge
     }
     return charge ?? null
+  }
+}
+
+// Answers by key value or code payload; anything else is unknown.
+export class FakePixDirectory implements PixDirectory {
+  readonly lookups: Array<{ query: string; scope: PixDirectoryScope }> = []
+
+  constructor(private readonly payees: Record<string, PixPayee | Error> = {}) {}
+
+  ownerOfKey(key: PixKey, scope: PixDirectoryScope): Promise<PixPayee | null> {
+    return this.answer(key.value, scope)
+  }
+
+  receiverOfCode(
+    payload: string,
+    scope: PixDirectoryScope,
+  ): Promise<PixPayee | null> {
+    return this.answer(payload, scope)
+  }
+
+  private async answer(
+    query: string,
+    scope: PixDirectoryScope,
+  ): Promise<PixPayee | null> {
+    this.lookups.push({ query, scope })
+    const payee = this.payees[query]
+    if (payee instanceof Error) {
+      throw payee
+    }
+    return payee ?? null
   }
 }
 

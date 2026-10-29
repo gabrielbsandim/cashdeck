@@ -239,6 +239,7 @@ final class FakeChatRepository implements ChatRepository {
         pixKeyType: PixKeyType.email,
         contactHandle: 'ana.exemplo',
         newContact: true,
+        recipient: const ChatRecipient(name: 'Ana Exemplo', verified: false),
       );
     }
     return ChatActionDetails(
@@ -248,6 +249,12 @@ final class FakeChatRepository implements ChatRepository {
       pixKeyType: PixKeyType.phone,
       contactHandle: handle,
       newContact: false,
+      recipient: ChatRecipient(
+        name: handle.split('.').map(_capitalized).join(' '),
+        taxId: '***.456.789-**',
+        bank: 'Banco Exemplo',
+        verified: true,
+      ),
     );
   }
 

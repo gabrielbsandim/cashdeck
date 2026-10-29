@@ -29,6 +29,7 @@ import {
   FakeNotifier,
   FakeOpenFinanceProvider,
   FakePreviewProvider,
+  FakePixDirectory,
   FakePixLocationResolver,
   FakeSecretVault,
 } from '@/testing/providers'
@@ -79,6 +80,7 @@ type Options = {
   openFinance?: OpenFinanceProvider
   preview?: PreviewProvider
   pixLocations?: FakePixLocationResolver
+  pixDirectory?: FakePixDirectory
   documentText?: FakeDocumentTextReader
   budgets?: InMemoryBudgetRepository
   webhooks?: WebhookReader[]
@@ -120,6 +122,7 @@ export function fullDeps(options: Options = {}) {
       (options.billSources ?? []).map(source => [source.source, source]),
     ),
     pixLocations: options.pixLocations ?? new FakePixLocationResolver(),
+    pixDirectory: options.pixDirectory ?? new FakePixDirectory(),
     documentText: options.documentText ?? new FakeDocumentTextReader(),
     webhooks: new Map<WebhookProvider, WebhookReader>(
       (options.webhooks ?? []).map(reader => [reader.provider, reader]),

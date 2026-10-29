@@ -3,6 +3,7 @@ import 'package:cashdeck/core/theme/app_money_colors.dart';
 import 'package:cashdeck/core/theme/app_palette.dart';
 import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
+import 'package:cashdeck/core/theme/money_tone.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_haptics.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_status_badge.dart';
@@ -42,6 +43,10 @@ class ChatActionCard extends ConsumerStatefulWidget {
       Key('chat-action-entity-${kind.name}');
 
   static const newContactKey = Key('chat-action-new-contact');
+
+  static const verifiedRecipientKey = Key('chat-action-recipient-verified');
+
+  static const unverifiedRecipientKey = Key('chat-action-recipient-unverified');
 
   final ConversationKey conversation;
   final ChatAction action;
@@ -126,8 +131,20 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           ..._rows(l10n, action.details),
+          if (action.details.recipient case final recipient?)
+            ..._recipientRows(l10n, recipient),
           if (action.isPending && action.details.newContact == true)
-            _NewContactNote(handle: action.details.contactHandle),
+            _Note(
+              key: ChatActionCard.newContactKey,
+              icon: Symbols.person_add_rounded,
+              message: l10n.chatNewContactNote(
+                action.details.contactHandle ?? '',
+              ),
+              colors: ToneColors(
+                foreground: palette.onPrimaryContainer,
+                background: palette.primaryContainer,
+              ),
+            ),
           if (error != null)
             Text(
               error,
@@ -212,39 +229,71 @@ class _ChatActionCardState extends ConsumerState<ChatActionCard> {
       text(l10n.chatDetailPayer, details.payer),
     ];
   }
+
+  /// The holder the Pix directory names is what tells a right key from a
+  /// mistyped one, so it is shown apart from the name the user gave.
+  List<Widget> _recipientRows(AppLocalizations l10n, ChatRecipient recipient) {
+    if (!recipient.verified) {
+      return [
+        _Note(
+          key: ChatActionCard.unverifiedRecipientKey,
+          icon: Symbols.warning_rounded,
+          message: l10n.chatRecipientUnverified,
+          colors: context.tone(MoneyTone.overdue),
+        ),
+      ];
+    }
+    final taxId = recipient.taxId;
+    final bank = recipient.bank;
+    return [
+      const SizedBox(height: AppSpacing.sm),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: CdStatusBadge(
+          key: ChatActionCard.verifiedRecipientKey,
+          tone: MoneyTone.paid,
+          icon: Symbols.verified_user_rounded,
+          label: l10n.chatRecipientVerified,
+        ),
+      ),
+      CdKeyValueRow(label: l10n.chatDetailHolder, value: Text(recipient.name)),
+      if (taxId != null)
+        CdKeyValueRow(label: l10n.chatDetailTaxId, value: Text(taxId)),
+      if (bank != null)
+        CdKeyValueRow(label: l10n.chatDetailBank, value: Text(bank)),
+    ];
+  }
 }
 
-class _NewContactNote extends StatelessWidget {
-  const new({required this.handle});
+class _Note extends StatelessWidget {
+  const new({
+    required this.icon,
+    required this.message,
+    required this.colors,
+    super.key,
+  });
 
-  final String? handle;
+  final IconData icon;
+  final String message;
+  final ToneColors colors;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final palette = context.palette;
     return Container(
-      key: ChatActionCard.newContactKey,
       margin: const EdgeInsets.only(top: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: palette.primaryContainer,
+        color: colors.background,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         children: [
-          Icon(
-            Symbols.person_add_rounded,
-            size: 20,
-            color: palette.onPrimaryContainer,
-          ),
+          Icon(icon, size: 20, color: colors.foreground),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              l10n.chatNewContactNote(handle ?? ''),
-              style: AppTextStyles.bodyMd.copyWith(
-                color: palette.onPrimaryContainer,
-              ),
+              message,
+              style: AppTextStyles.bodyMd.copyWith(color: colors.foreground),
             ),
           ),
         ],
