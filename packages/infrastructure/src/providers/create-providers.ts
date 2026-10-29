@@ -8,7 +8,7 @@ import {
   type Notifier,
   type OpenFinanceProvider,
   type PaymentRail,
-  type PixDirectory,
+  type RecipientDirectory,
   type PixLocationResolver,
   type PreviewProvider,
   type RailStatusReader,
@@ -76,7 +76,7 @@ export type Providers = {
   invoiceIssuer: InvoiceIssuer
   billSources: BillSource[]
   pixLocations: PixLocationResolver
-  pixDirectory: PixDirectory
+  recipientDirectory: RecipientDirectory
   documentText: DocumentTextReader
   notifier: Notifier
   webhooks: WebhookReader[]
@@ -137,7 +137,7 @@ export function createProviders(input: CreateProvidersInput): Providers {
       new C6DdaBillSource({ credentials, clients, now }),
     ],
     pixLocations: new JwsPixLocationResolver({ transport }),
-    pixDirectory: asaas,
+    recipientDirectory: asaas,
     documentText,
     notifier: new FcmNotifier({
       credentials,

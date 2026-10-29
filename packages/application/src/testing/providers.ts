@@ -22,10 +22,10 @@ import {
   type Notifier,
   type OpenFinanceProvider,
   type PixCharge,
-  type PixDirectory,
-  type PixDirectoryScope,
+  type RecipientDirectory,
+  type RecipientDirectoryScope,
   type PixLocationResolver,
-  type PixPayee,
+  type VerifiedPayee,
   type PreviewAccount,
   type PreviewProvider,
   type ProviderAccount,
@@ -276,26 +276,39 @@ export class FakePixLocationResolver implements PixLocationResolver {
 }
 
 // Answers by key value or code payload; anything else is unknown.
-export class FakePixDirectory implements PixDirectory {
-  readonly lookups: Array<{ query: string; scope: PixDirectoryScope }> = []
+export class FakeRecipientDirectory implements RecipientDirectory {
+  readonly lookups: Array<{ query: string; scope: RecipientDirectoryScope }> =
+    []
 
-  constructor(private readonly payees: Record<string, PixPayee | Error> = {}) {}
+  constructor(
+    private readonly payees: Record<string, VerifiedPayee | Error> = {},
+  ) {}
 
-  ownerOfKey(key: PixKey, scope: PixDirectoryScope): Promise<PixPayee | null> {
+  ownerOfKey(
+    key: PixKey,
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
     return this.answer(key.value, scope)
   }
 
   receiverOfCode(
     payload: string,
-    scope: PixDirectoryScope,
-  ): Promise<PixPayee | null> {
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
     return this.answer(payload, scope)
+  }
+
+  beneficiaryOfBoleto(
+    line: string,
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
+    return this.answer(line, scope)
   }
 
   private async answer(
     query: string,
-    scope: PixDirectoryScope,
-  ): Promise<PixPayee | null> {
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
     this.lookups.push({ query, scope })
     const payee = this.payees[query]
     if (payee instanceof Error) {

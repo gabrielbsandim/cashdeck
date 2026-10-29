@@ -91,6 +91,9 @@ function fromBase64(base64: string): Uint8Array {
   }
 }
 
+export const toBase64 = (bytes: Uint8Array) =>
+  btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''))
+
 export function decodeUpload(base64: string): Uint8Array {
   const bytes = fromBase64(base64)
   if (bytes.length === 0) {

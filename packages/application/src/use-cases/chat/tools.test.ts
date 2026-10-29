@@ -7,15 +7,30 @@ import {
   fullDeps,
   transaction,
 } from '@/testing/deps.test-helpers'
-import { FakePixDirectory, FakePixLocationResolver } from '@/testing/providers'
 import {
+  FakeRecipientDirectory,
+  FakePixLocationResolver,
+} from '@/testing/providers'
+import { FakeDocumentTextReader } from '@/testing/services'
+import {
+  BOLETO_BARCODE,
+  BOLETO_LINE,
   dynamicPix,
   NOW,
   PIX_NO_AMOUNT,
+  TAX_BARCODE,
   TENANT,
 } from '@/testing/scenario.test-helpers'
 import { ensureCategories } from '@/use-cases/categorization'
 import { makeChatTools, type Proposal } from '@/use-cases/chat/tools'
+
+const TAX_LINE = '856000000013500003282026610200000004000001230002'
+const REFERENCE_BARCODE = '81780000000100000552026102000000000000456000'
+const CONDO = {
+  name: 'Condominio Exemplo',
+  taxId: '11.222.333/0001-81',
+  bank: '001',
+}
 
 async function seeded() {
   const deps = fullDeps()
@@ -417,7 +432,7 @@ describe('chat side-effect tools', () => {
       merchantCity: 'SAO PAULO',
       amount: Money.of(2977),
     })
-    const directory = new FakePixDirectory({
+    const directory = new FakeRecipientDirectory({
       [fixed]: {
         name: 'Loja Exemplo Comercio Ltda',
         taxId: '11.222.333/0001-81',
@@ -425,7 +440,7 @@ describe('chat side-effect tools', () => {
       },
       [dynamicPix(location)]: new Error('down'),
     })
-    deps.pixDirectory = directory
+    deps.recipientDirectory = directory
     expect(
       await run('pay_pix_code', { code: ` ${fixed} `, amount: 1 }),
     ).toMatchObject({ status: 'PENDING_CONFIRMATION', actionId: 'act-1' })
@@ -445,7 +460,7 @@ describe('chat side-effect tools', () => {
         tool: 'PAY_BILL',
         entity: 'PF',
         needsEntity: false,
-        target: { pixCode: fixed, amountCents: '2977' },
+        target: { pixCode: fixed, payee: 'Loja Exemplo', amountCents: '2977' },
         details: {
           payee: 'Loja Exemplo',
           amount: { cents: 2977, currency: 'BRL' },
@@ -459,10 +474,17 @@ describe('chat side-effect tools', () => {
         },
       },
       expect.objectContaining({
-        target: { pixCode: PIX_NO_AMOUNT, amountCents: '5000' },
+        target: expect.objectContaining({
+          pixCode: PIX_NO_AMOUNT,
+          amountCents: '5000',
+        }),
       }),
       expect.objectContaining({
-        target: { pixCode: dynamicPix(location), amountCents: '12345' },
+        target: {
+          pixCode: dynamicPix(location),
+          payee: 'Fornecedor Exemplo Ltda',
+          amountCents: '12345',
+        },
         details: {
           payee: 'Fornecedor Exemplo Ltda',
           amount: { cents: 12345, currency: 'BRL' },
@@ -481,12 +503,149 @@ describe('chat side-effect tools', () => {
       scope: { tenantId: TENANT, entityId: 'pf' },
     })
     const consolidated = await toolsFor('ALL')
-    consolidated.deps.pixDirectory = directory
+    consolidated.deps.recipientDirectory = directory
     await consolidated.run('pay_pix_code', { code: fixed })
     expect(directory.lookups.at(-1)?.scope).toEqual({ tenantId: TENANT })
     expect(consolidated.proposals[0]).toMatchObject({
       entity: null,
       needsEntity: true,
     })
+  })
+
+  it('proposes paying a pasted barcode with the beneficiary the registry names', async () => {
+    const { deps, proposals, run } = await toolsFor('PF')
+    const directory = new FakeRecipientDirectory({
+      [BOLETO_LINE]: CONDO,
+      [TAX_LINE]: new Error('down'),
+    })
+    deps.recipientDirectory = directory
+    expect(await run('pay_barcode', { code: BOLETO_LINE })).toMatchObject({
+      status: 'PENDING_CONFIRMATION',
+      recipient: { ...CONDO, verified: true },
+    })
+    await run('pay_barcode', { code: TAX_BARCODE, amount: 1 })
+    await run('pay_barcode', { code: REFERENCE_BARCODE, amount: 30 })
+    await expect(
+      run('pay_barcode', { code: REFERENCE_BARCODE }),
+    ).rejects.toThrow('shows no amount')
+    await expect(run('pay_barcode', { code: PIX_NO_AMOUNT })).rejects.toThrow(
+      'use pay_pix_code',
+    )
+    await expect(run('pay_barcode', { code: '123' })).rejects.toThrow(
+      'not a valid boleto barcode',
+    )
+    expect(proposals).toEqual([
+      {
+        tool: 'PAY_BILL',
+        entity: 'PF',
+        needsEntity: false,
+        target: { paymentCode: BOLETO_BARCODE, amountCents: '12345' },
+        details: {
+          payee: 'Condominio Exemplo',
+          amount: { cents: 12345, currency: 'BRL' },
+          dueDate: '2026-10-20',
+          recipient: { ...CONDO, verified: true },
+        },
+      },
+      expect.objectContaining({
+        target: { paymentCode: TAX_BARCODE, amountCents: '15000' },
+        details: {
+          payee: null,
+          amount: { cents: 15000, currency: 'BRL' },
+          dueDate: '2026-10-08',
+          recipient: {
+            name: 'Unknown',
+            taxId: null,
+            bank: null,
+            verified: false,
+          },
+        },
+      }),
+      expect.objectContaining({
+        target: { paymentCode: REFERENCE_BARCODE, amountCents: '3000' },
+      }),
+    ])
+    expect(directory.lookups[0]).toEqual({
+      query: BOLETO_LINE,
+      scope: { tenantId: TENANT, entityId: 'pf' },
+    })
+  })
+
+  it('reads an attached bill before proposing to pay it', async () => {
+    const { deps, proposals, run } = await toolsFor('PF')
+    const reading = (fields: Record<string, unknown>) => ({
+      paymentCode: '',
+      pixCode: '',
+      payee: '',
+      amount: 0,
+      dueDate: '',
+      ...fields,
+    })
+    const pix = encodeBrCode({
+      key: 'store@example.com',
+      merchantName: 'Loja Exemplo',
+      merchantCity: 'SAO PAULO',
+      amount: Money.of(2977),
+    })
+    for (const id of ['boleto', 'pix', 'guide', 'blank']) {
+      await deps.chat.saveAttachment({
+        id,
+        tenantId: TENANT,
+        threadId: 'th1',
+        messageId: 'msg1',
+        fileName: `${id}.pdf`,
+        mimeType: 'application/pdf',
+        size: 1,
+        createdAt: NOW,
+        bytes: new Uint8Array([1]),
+      })
+    }
+    deps.recipientDirectory = new FakeRecipientDirectory({
+      [BOLETO_LINE]: CONDO,
+    })
+    deps.documentText = new FakeDocumentTextReader(`Pague ${BOLETO_LINE}`)
+    deps.llm.enqueueObject(reading({ payee: 'Condominio do Edificio' }))
+    await run('pay_bill_from_attachment', { attachmentId: 'boleto' })
+    deps.documentText = new FakeDocumentTextReader(null)
+    deps.llm.enqueueObject(reading({ pixCode: pix }))
+    await run('pay_bill_from_attachment', { attachmentId: 'pix' })
+    deps.llm
+      .enqueueObject(
+        reading({ paymentCode: REFERENCE_BARCODE, dueDate: '2026-11-05' }),
+      )
+      .enqueueObject(reading({ paymentCode: REFERENCE_BARCODE, amount: 45.9 }))
+    await expect(
+      run('pay_bill_from_attachment', { attachmentId: 'guide' }),
+    ).rejects.toThrow('shows no amount')
+    await run('pay_bill_from_attachment', { attachmentId: 'guide' })
+    deps.llm.enqueueObject(reading({}))
+    await expect(
+      run('pay_bill_from_attachment', { attachmentId: 'blank' }),
+    ).rejects.toThrow('No payment code was found')
+    await expect(
+      run('pay_bill_from_attachment', { attachmentId: 'missing' }),
+    ).rejects.toThrow('Attachment was not found.')
+    expect(proposals).toEqual([
+      expect.objectContaining({
+        target: {
+          paymentCode: BOLETO_BARCODE,
+          payee: 'Condominio do Edificio',
+          amountCents: '12345',
+        },
+        details: expect.objectContaining({
+          payee: 'Condominio do Edificio',
+          dueDate: '2026-10-20',
+          recipient: { ...CONDO, verified: true },
+        }),
+      }),
+      expect.objectContaining({
+        target: { pixCode: pix, payee: 'Loja Exemplo', amountCents: '2977' },
+        details: expect.objectContaining({ dueDate: '2026-10-08' }),
+      }),
+      expect.objectContaining({
+        target: { paymentCode: REFERENCE_BARCODE, amountCents: '4590' },
+        details: expect.objectContaining({ dueDate: '2026-10-08' }),
+      }),
+    ])
   })
 })

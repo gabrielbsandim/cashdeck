@@ -17,6 +17,7 @@ import {
 } from '@/testing/deps.test-helpers'
 import { FakePaymentRail, FakePixLocationResolver } from '@/testing/providers'
 import {
+  BOLETO_BARCODE,
   BOLETO_LINE,
   dynamicPix,
   NOW,
@@ -392,6 +393,58 @@ describe('pending actions', () => {
       confirmed.result?.billId as string,
     )
     expect(created).toMatchObject({ entityId: 'pj', payee: 'Water' })
+  })
+
+  it('pays an attached boleto with its pix half right after reading it', async () => {
+    const { deps, chat } = await setup()
+    const pix = encodeBrCode({
+      key: 'condo@example.com',
+      merchantName: 'Condominio Exemplo',
+      merchantCity: 'SAO PAULO',
+      amount: Money.of(12345),
+    })
+    const thread = await chat.createThread(TENANT, { scope: 'PF' })
+    deps.llm.enqueue(say('Recebi.'))
+    const sent = await chat.sendMessage(
+      TENANT,
+      thread.id,
+      message('', [
+        {
+          fileName: 'boleto.pdf',
+          mimeType: 'application/pdf',
+          base64: base64('pdf'),
+        },
+      ]),
+    )
+    const attachmentId = sent.messages[0]?.attachments[0]?.id as string
+    deps.llm
+      .enqueue(use('pay_bill_from_attachment', { attachmentId }))
+      .enqueueObject({
+        paymentCode: BOLETO_LINE,
+        pixCode: pix,
+        payee: 'Condominio Exemplo',
+        amount: 123.45,
+        dueDate: '',
+      })
+      .enqueue(say('Confirme no card.'))
+    const turn = await chat.sendMessage(TENANT, thread.id, message('Paga'))
+    const [action] = turn.messages[1]?.actions ?? []
+    expect(action).toMatchObject({
+      tool: 'PAY_BILL',
+      details: { payee: 'Condominio Exemplo', amount: { cents: 12345 } },
+    })
+    const confirmed = await chat.confirmAction(TENANT, action?.id as string, {})
+    expect(confirmed.status).toBe('CONFIRMED')
+    expect(
+      await deps.bills.findById(TENANT, confirmed.result?.billId as string),
+    ).toMatchObject({
+      entityId: 'pf',
+      source: 'CHAT',
+      code: BOLETO_BARCODE,
+      pixCode: pix,
+      payee: 'Condominio Exemplo',
+      amount: Money.of(12345),
+    })
   })
 
   it('records a failure, cancels and expires actions', async () => {

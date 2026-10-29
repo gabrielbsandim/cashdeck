@@ -21,6 +21,8 @@ import { decodeUpload, requireEntity } from '@/use-cases/shared'
 
 type CaptureFileInput = z.infer<typeof captureFileSchema>
 type FileReading = z.infer<typeof fileReadingSchema>
+type BillFile = Pick<CaptureFileInput, 'mimeType' | 'base64'> &
+  Partial<Pick<CaptureFileInput, 'amountCents' | 'dueDate'>>
 
 const SYSTEM =
   'You read Brazilian bills: boletos, tax guides and Pix charges. Copy codes ' +
@@ -59,7 +61,7 @@ function codesOf(
   }
 }
 
-function readAmount(input: CaptureFileInput, reading: FileReading | null) {
+function readAmount(input: BillFile, reading: FileReading | null) {
   if (input.amountCents) {
     return input.amountCents
   }
@@ -67,19 +69,25 @@ function readAmount(input: CaptureFileInput, reading: FileReading | null) {
   return amount > 0 ? Math.round(amount * 100) : undefined
 }
 
-function readDueDate(input: CaptureFileInput, reading: FileReading | null) {
+function readDueDate(input: BillFile, reading: FileReading | null) {
   const printed = filled(reading?.dueDate)
   return (
     input.dueDate ?? (isoDate.safeParse(printed).success ? printed : undefined)
   )
 }
 
-export function makeCaptureFile(deps: Deps) {
-  const captureBill = makeCaptureBill(deps)
+export type BillFileReading = {
+  barcode: string | null
+  pixCode: string | null
+  payee: string | undefined
+  amountCents: number | undefined
+  dueDate: string | undefined
+}
 
-  async function readWithModel(
-    input: CaptureFileInput,
-  ): Promise<FileReading | null> {
+export function makeReadBillFile(
+  deps: Pick<Deps, 'llm' | 'documentText' | 'clock'>,
+) {
+  async function readWithModel(input: BillFile): Promise<FileReading | null> {
     const reply = await deps.llm.chat({
       system: SYSTEM,
       messages: [
@@ -102,7 +110,7 @@ export function makeCaptureFile(deps: Deps) {
   // The text layer gives the exact codes; the model still reads the payee and
   // any code only drawn as an image. Without local codes its failure is final.
   async function readFile(
-    input: CaptureFileInput,
+    input: BillFile,
     local: FoundCodes,
   ): Promise<FileReading | null> {
     const hasLocal = local.barcode !== null || local.pixCode !== null
@@ -116,16 +124,13 @@ export function makeCaptureFile(deps: Deps) {
     }
   }
 
-  return async function captureFile(
-    tenantId: string,
-    input: CaptureFileInput,
-  ): Promise<CaptureBillResult> {
-    const entity = await requireEntity(deps.entities, tenantId, input.entity)
-    const bytes = decodeUpload(input.base64)
+  return async function readBillFile(
+    input: BillFile,
+  ): Promise<BillFileReading> {
     const today = toLocalDate(deps.clock.now())
     const pageText = await deps.documentText.read({
       mimeType: input.mimeType,
-      bytes,
+      bytes: decodeUpload(input.base64),
     })
     const local = findPaymentCodes(pageText ?? '', today)
     const reading = await readFile(input, local)
@@ -136,16 +141,36 @@ export function makeCaptureFile(deps: Deps) {
     if (!codes.barcode && !codes.pixCode) {
       throw new ValidationError('No payment code was found in the file.')
     }
+    return {
+      ...codes,
+      payee: filled(reading?.payee),
+      amountCents: readAmount(input, reading),
+      dueDate: readDueDate(input, reading),
+    }
+  }
+}
+
+export function makeCaptureFile(deps: Deps) {
+  const captureBill = makeCaptureBill(deps)
+  const readBillFile = makeReadBillFile(deps)
+
+  return async function captureFile(
+    tenantId: string,
+    input: CaptureFileInput,
+  ): Promise<CaptureBillResult> {
+    const entity = await requireEntity(deps.entities, tenantId, input.entity)
+    const bytes = decodeUpload(input.base64)
+    const reading = await readBillFile(input)
     const result = await captureBill(
       tenantId,
       captureBillSchema.parse({
         entityId: entity.id,
         source: 'SHARE',
-        paymentCode: codes.barcode ?? undefined,
-        pixCode: codes.pixCode ?? undefined,
-        payee: filled(reading?.payee),
-        amountCents: readAmount(input, reading),
-        dueDate: readDueDate(input, reading),
+        paymentCode: reading.barcode ?? undefined,
+        pixCode: reading.pixCode ?? undefined,
+        payee: reading.payee,
+        amountCents: reading.amountCents,
+        dueDate: reading.dueDate,
       }),
     )
     if (result.duplicate) {

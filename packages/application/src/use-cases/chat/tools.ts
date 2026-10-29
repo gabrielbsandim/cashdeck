@@ -4,6 +4,9 @@ import {
   BILL_STATUSES,
   type BrCode,
   type Category,
+  decodePaymentCode,
+  type DecodedPaymentCode,
+  type LocalDate,
   type PixKey,
   type EntityKind,
   isSettled,
@@ -26,12 +29,13 @@ import {
 import { type LlmToolParameter } from '@/ports/llm-provider'
 import {
   type PixCharge,
-  type PixDirectoryScope,
-  type PixPayee,
+  type RecipientDirectoryScope,
+  type VerifiedPayee,
 } from '@/ports/providers'
-import { allPages, required, today } from '@/use-cases/shared'
+import { allPages, required, toBase64, today } from '@/use-cases/shared'
 import { type AgentTool } from '@/use-cases/chat/agent'
 import { sanitize } from '@/use-cases/chat/hardening'
+import { makeReadBillFile } from '@/use-cases/capture-file'
 import { ensureCategories } from '@/use-cases/categorization'
 import { type Deps } from '@/use-cases/deps'
 import { makePixContacts, type PixRecipient } from '@/use-cases/pix-contacts'
@@ -63,7 +67,9 @@ type ToolDeps = Pick<
   | 'ids'
   | 'pixContacts'
   | 'pixLocations'
-  | 'pixDirectory'
+  | 'recipientDirectory'
+  | 'llm'
+  | 'documentText'
 >
 
 const DEFAULT_DAYS = 30
@@ -120,6 +126,48 @@ function readPixCode(raw: string): BrCode {
   }
 }
 
+type Barcode = Exclude<DecodedPaymentCode, BrCode>
+
+function readBarcode(raw: string, reference: LocalDate): Barcode {
+  const decoded = tryDecode(raw, reference)
+  if (decoded?.type === 'PIX') {
+    throw new ValidationError('This is a Pix code: use pay_pix_code.')
+  }
+  if (!decoded) {
+    throw new ValidationError(
+      'This is not a valid boleto barcode or digitable line. Ask the user to send it again.',
+    )
+  }
+  return decoded
+}
+
+function amountOrAsk(amount: Money | null): Money {
+  if (!amount) {
+    throw new ValidationError(
+      'This bill shows no amount. Ask the user how much to pay.',
+    )
+  }
+  return amount
+}
+
+function tryDecode(raw: string, reference: LocalDate) {
+  try {
+    return decodePaymentCode(raw, reference)
+  } catch {
+    return null
+  }
+}
+
+// What a pay-now card needs; the boleto line, when there is one, is what the
+// registry is asked about, and the Pix code only otherwise.
+type CodePayment = {
+  barcode: Barcode | null
+  pixCode: string | null
+  amount: Money
+  dueDate: LocalDate | null
+  payee: string | null
+}
+
 // The amount the capture will pay: the code's own, then the dynamic charge's,
 // and only then the one the user typed.
 export async function readPixPayment<T extends Money | null>(
@@ -138,7 +186,7 @@ export async function readPixPayment<T extends Money | null>(
 // A directory outage must not block the proposal; the card then says the
 // payee could not be verified.
 async function checkedRecipient(
-  lookup: () => Promise<PixPayee | null>,
+  lookup: () => Promise<VerifiedPayee | null>,
   fallback: string,
 ): Promise<ChatRecipient> {
   const payee = await lookup().catch(() => null)
@@ -155,6 +203,7 @@ async function checkedRecipient(
 
 export function makeChatTools(deps: ToolDeps) {
   const contacts = makePixContacts(deps)
+  const readBillFile = makeReadBillFile(deps)
   async function allowedEntities(
     ctx: ToolContext,
   ): Promise<Map<string, EntityKind>> {
@@ -167,7 +216,9 @@ export function makeChatTools(deps: ToolDeps) {
     )
   }
 
-  async function directoryScope(ctx: ToolContext): Promise<PixDirectoryScope> {
+  async function directoryScope(
+    ctx: ToolContext,
+  ): Promise<RecipientDirectoryScope> {
     const kind = scopeKind(ctx.scope)
     const entities = kind === null ? [] : await deps.entities.list(ctx.tenantId)
     const entity = entities.find(candidate => candidate.kind === kind)
@@ -538,6 +589,14 @@ export function makeChatTools(deps: ToolDeps) {
 
   const attachmentArgs = z.object({ attachmentId: z.string().min(1) })
 
+  async function attachmentOf(ctx: ToolContext, id: string) {
+    const attachment = await deps.chat.findAttachment(ctx.tenantId, id)
+    if (attachment?.threadId !== ctx.threadId) {
+      throw new NotFoundError('Attachment')
+    }
+    return attachment
+  }
+
   function createBillFromAttachment(ctx: ToolContext): AgentTool {
     return {
       name: 'create_bill_from_attachment',
@@ -549,13 +608,7 @@ export function makeChatTools(deps: ToolDeps) {
       ),
       async run(raw) {
         const args = attachmentArgs.parse(raw)
-        const attachment = await deps.chat.findAttachment(
-          ctx.tenantId,
-          args.attachmentId,
-        )
-        if (attachment?.threadId !== ctx.threadId) {
-          throw new NotFoundError('Attachment')
-        }
+        const attachment = await attachmentOf(ctx, args.attachmentId)
         const entity = scopeKind(ctx.scope)
         const action = await ctx.propose({
           tool: 'CREATE_BILL_FROM_ATTACHMENT',
@@ -638,26 +691,148 @@ export function makeChatTools(deps: ToolDeps) {
             'This code has no amount. Ask the user how much to pay.',
           )
         }
-        const entity = scopeKind(ctx.scope)
-        const payee = sanitize(charge?.payee ?? code.merchantName, 120)
-        const scope = await directoryScope(ctx)
-        const recipient = await checkedRecipient(
-          () => deps.pixDirectory.receiverOfCode(code.payload, scope),
-          payee,
-        )
-        const action = await ctx.propose({
-          tool: 'PAY_BILL',
-          entity,
-          needsEntity: entity === null,
-          target: { pixCode: code.payload, amountCents: String(amount.cents) },
-          details: {
-            payee,
-            amount: amount.toJSON(),
-            dueDate: charge?.dueDate ?? today(deps.clock.now()),
-            recipient,
-          },
+        return proposeCodePayment(ctx, {
+          barcode: null,
+          pixCode: code.payload,
+          amount,
+          dueDate: charge?.dueDate ?? null,
+          payee: charge?.payee ?? code.merchantName,
         })
-        return { ...pendingReply(action), recipient }
+      },
+    }
+  }
+
+  async function proposeCodePayment(ctx: ToolContext, payment: CodePayment) {
+    const entity = scopeKind(ctx.scope)
+    const scope = await directoryScope(ctx)
+    const { barcode, pixCode } = payment
+    const payee = payment.payee && sanitize(payment.payee, 120)
+    const recipient = await checkedRecipient(
+      () =>
+        barcode
+          ? deps.recipientDirectory.beneficiaryOfBoleto(
+              barcode.digitableLine,
+              scope,
+            )
+          : deps.recipientDirectory.receiverOfCode(pixCode as string, scope),
+      payee ?? 'Unknown',
+    )
+    const codes = Object.entries({
+      paymentCode: barcode?.barcode,
+      pixCode,
+      payee,
+    }).filter((entry): entry is [string, string] => Boolean(entry[1]))
+    const action = await ctx.propose({
+      tool: 'PAY_BILL',
+      entity,
+      needsEntity: entity === null,
+      target: {
+        ...Object.fromEntries(codes),
+        amountCents: String(payment.amount.cents),
+      },
+      details: {
+        payee: payee ?? (recipient.verified ? recipient.name : null),
+        amount: payment.amount.toJSON(),
+        dueDate: payment.dueDate ?? today(deps.clock.now()),
+        recipient,
+      },
+    })
+    return { ...pendingReply(action), recipient }
+  }
+
+  const barcodeArgs = z.object({
+    code: z.string().trim().min(1).max(512),
+    amount: z.number().positive().max(1_000_000).optional(),
+  })
+
+  function payBarcode(ctx: ToolContext): AgentTool {
+    return {
+      name: 'pay_barcode',
+      description: `Propose paying now a boleto, utility bill or tax guide from the barcode or digitable line the user sent (44 to 48 digits). The user must confirm in the app. ${RECIPIENT_HINT}`,
+      parameters: object(
+        {
+          code: text('The barcode or digitable line, exactly as sent'),
+          amount: {
+            type: 'number',
+            description: 'Amount in reais, only when the code has none',
+          },
+        },
+        ['code'],
+      ),
+      async run(raw) {
+        const args = barcodeArgs.parse(raw)
+        const barcode = readBarcode(args.code, today(deps.clock.now()))
+        return proposeCodePayment(ctx, {
+          barcode,
+          pixCode: null,
+          amount: amountOrAsk(barcode.amount ?? reais(args.amount)),
+          dueDate: barcode.type === 'BOLETO' ? barcode.dueDate : null,
+          payee: null,
+        })
+      },
+    }
+  }
+
+  const payAttachmentArgs = z.object({
+    attachmentId: z.string().min(1),
+    amount: z.number().positive().max(1_000_000).optional(),
+  })
+
+  // The file is read before the card is shown, so the user confirms the code,
+  // amount and beneficiary that will actually be paid.
+  async function paymentInFile(
+    file: { mimeType: string; bytes: Uint8Array },
+    typed: Money | null,
+  ): Promise<CodePayment> {
+    const reading = await readBillFile({
+      mimeType: file.mimeType,
+      base64: toBase64(file.bytes),
+    })
+    const read = reading.amountCents ? Money.of(reading.amountCents) : typed
+    const printed = reading.dueDate ?? null
+    if (reading.barcode) {
+      const barcode = readBarcode(reading.barcode, today(deps.clock.now()))
+      return {
+        barcode,
+        pixCode: reading.pixCode,
+        amount: amountOrAsk(barcode.amount ?? read),
+        dueDate: (barcode.type === 'BOLETO' && barcode.dueDate) || printed,
+        payee: reading.payee ?? null,
+      }
+    }
+    const { code, charge, amount } = await readPixPayment(
+      deps,
+      reading.pixCode as string,
+      read,
+    )
+    return {
+      barcode: null,
+      pixCode: code.payload,
+      amount: amountOrAsk(amount),
+      dueDate: charge?.dueDate ?? printed,
+      payee: reading.payee ?? charge?.payee ?? code.merchantName,
+    }
+  }
+
+  function payBillFromAttachment(ctx: ToolContext): AgentTool {
+    return {
+      name: 'pay_bill_from_attachment',
+      description: `Propose paying now a boleto, tax guide or Pix charge read from a file the user attached in this chat. Use it when the user asks to pay the file; create_bill_from_attachment only saves it. The user must confirm in the app. ${RECIPIENT_HINT}`,
+      parameters: object(
+        {
+          attachmentId: text('Id of the attachment in this chat'),
+          amount: {
+            type: 'number',
+            description: 'Amount in reais, only when the file shows none',
+          },
+        },
+        ['attachmentId'],
+      ),
+      async run(raw) {
+        const args = payAttachmentArgs.parse(raw)
+        const file = await attachmentOf(ctx, args.attachmentId)
+        const payment = await paymentInFile(file, reais(args.amount))
+        return proposeCodePayment(ctx, payment)
       },
     }
   }
@@ -821,7 +996,7 @@ export function makeChatTools(deps: ToolDeps) {
         const key: PixKey = { type: contact.pixKeyType, value: contact.pixKey }
         const scope = await directoryScope(ctx)
         const recipient = await checkedRecipient(
-          () => deps.pixDirectory.ownerOfKey(key, scope),
+          () => deps.recipientDirectory.ownerOfKey(key, scope),
           sanitize(contact.name, 80),
         )
         const target: Record<string, string> = isNew
@@ -867,6 +1042,8 @@ export function makeChatTools(deps: ToolDeps) {
       createBillFromAttachment(ctx),
       payBill(ctx),
       payPixCode(ctx),
+      payBarcode(ctx),
+      payBillFromAttachment(ctx),
       createCategoryRule(ctx),
       draftInvoice(ctx),
       findPixContacts(ctx),

@@ -18,7 +18,7 @@ import {
   type InvoiceIssuer,
   type Notifier,
   type OpenFinanceProvider,
-  type PixDirectory,
+  type RecipientDirectory,
   type PixLocationResolver,
   type PreviewProvider,
   type SecretVault,
@@ -105,7 +105,7 @@ export type Deps = {
   issuer: InvoiceIssuer
   billSources: ReadonlyMap<string, BillSource>
   pixLocations: PixLocationResolver
-  pixDirectory: PixDirectory
+  recipientDirectory: RecipientDirectory
   documentText: DocumentTextReader
   webhooks: ReadonlyMap<WebhookProvider, WebhookReader>
   webhookEvents: WebhookEventStore

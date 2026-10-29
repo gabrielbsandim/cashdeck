@@ -374,6 +374,42 @@ describe('AsaasRail', () => {
     expect(await asaas.receiverOfCode(STATIC_PIX, scope)).toBeNull()
   })
 
+  it('names the beneficiary of a boleto before paying it', async () => {
+    const line = '00190000090280001234256789012178916050000012345'
+    const scripted = new ScriptedTransport().on(
+      'POST',
+      `${API}/bill/simulate`,
+      {
+        json: {
+          bankSlipInfo: {
+            beneficiaryName: 'Condominio Exemplo',
+            beneficiaryCpfCnpj: '11.222.333/0001-81',
+            bank: '001',
+          },
+        },
+      },
+      { json: { bankSlipInfo: { companyName: 'Energia Exemplo' } } },
+      { json: {} },
+      { status: 400, json: { errors: [{ description: 'Linha inválida' }] } },
+    )
+    const asaas = rail(scripted)
+    expect(await asaas.beneficiaryOfBoleto(line, scope)).toEqual({
+      name: 'Condominio Exemplo',
+      taxId: '11.222.333/0001-81',
+      bank: '001',
+    })
+    expect(scripted.body('POST', `${API}/bill/simulate`)).toEqual({
+      identificationField: line,
+    })
+    expect(await asaas.beneficiaryOfBoleto(line, scope)).toEqual({
+      name: 'Energia Exemplo',
+      taxId: null,
+      bank: null,
+    })
+    expect(await asaas.beneficiaryOfBoleto(line, scope)).toBeNull()
+    expect(await asaas.beneficiaryOfBoleto(line, scope)).toBeNull()
+  })
+
   it('checks the account balance', async () => {
     const ok = new ScriptedTransport().on('GET', `${API}/finance/balance`, {
       json: { balance: 1 },

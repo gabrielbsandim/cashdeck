@@ -1,9 +1,9 @@
 import {
   type PaymentRail,
   type PaymentRequest,
-  type PixDirectory,
-  type PixDirectoryScope,
-  type PixPayee,
+  type RecipientDirectory,
+  type RecipientDirectoryScope,
+  type VerifiedPayee,
   type ProviderCheck,
   type RailResult,
   type RailStatus,
@@ -122,6 +122,15 @@ type AsaasKeyOwner = {
   owner?: { name?: string | null; cpfCnpj?: string | null } | null
 }
 
+type AsaasBillSimulation = {
+  bankSlipInfo?: {
+    beneficiaryName?: string | null
+    beneficiaryCpfCnpj?: string | null
+    companyName?: string | null
+    bank?: string | null
+  } | null
+}
+
 type AsaasOperation = {
   id: string
   status?: string
@@ -175,7 +184,9 @@ export const asaasHeaders = (config: AsaasConfig) => ({
 
 export type AsaasRailDeps = { credentials: Credentials; transport: Transport }
 
-export class AsaasRail implements PaymentRail, RailStatusReader, PixDirectory {
+export class AsaasRail
+  implements PaymentRail, RailStatusReader, RecipientDirectory
+{
   readonly id = 'ASAAS' as const
 
   constructor(private readonly deps: AsaasRailDeps) {}
@@ -266,8 +277,8 @@ export class AsaasRail implements PaymentRail, RailStatusReader, PixDirectory {
 
   async ownerOfKey(
     key: PixKey,
-    scope: PixDirectoryScope,
-  ): Promise<PixPayee | null> {
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
     const config = await this.config(scope)
     const query = `type=${key.type}&key=${encodeURIComponent(key.value)}`
     const answer = await this.call<AsaasKeyOwner>(config, {
@@ -287,8 +298,8 @@ export class AsaasRail implements PaymentRail, RailStatusReader, PixDirectory {
 
   async receiverOfCode(
     payload: string,
-    scope: PixDirectoryScope,
-  ): Promise<PixPayee | null> {
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
     const config = await this.config(scope)
     const answer = await this.call<AsaasDecodedQr>(config, {
       method: 'POST',
@@ -303,6 +314,27 @@ export class AsaasRail implements PaymentRail, RailStatusReader, PixDirectory {
       receiver?.name ?? receiver?.tradingName,
       receiver?.cpfCnpj,
       receiver?.ispbName,
+    )
+  }
+
+  async beneficiaryOfBoleto(
+    line: string,
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null> {
+    const config = await this.config(scope)
+    const answer = await this.call<AsaasBillSimulation>(config, {
+      method: 'POST',
+      url: `${config.baseUrl}/bill/simulate`,
+      json: { identificationField: line },
+    })
+    if (!answer.ok) {
+      return null
+    }
+    const slip = answer.data.bankSlipInfo
+    return payee(
+      slip?.beneficiaryName ?? slip?.companyName,
+      slip?.beneficiaryCpfCnpj,
+      slip?.bank,
     )
   }
 
@@ -490,7 +522,7 @@ function payee(
   name: string | null | undefined,
   taxId: string | null | undefined,
   bank: string | null | undefined,
-): PixPayee | null {
+): VerifiedPayee | null {
   if (!name) {
     return null
   }

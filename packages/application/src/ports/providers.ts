@@ -186,21 +186,29 @@ export interface PixLocationResolver {
 
 // The account a Pix lands in, as the central bank directory names it, so the
 // user sees who gets the money before confirming.
-export type PixPayee = {
+export type VerifiedPayee = {
   name: string
   taxId: string | null
   bank: string | null
 }
 
-export type PixDirectoryScope = { tenantId: string; entityId?: string }
+export type RecipientDirectoryScope = { tenantId: string; entityId?: string }
 
-export interface PixDirectory {
+export interface RecipientDirectory {
   // Null when the directory has no answer; the payee then shows as unverified.
-  ownerOfKey(key: PixKey, scope: PixDirectoryScope): Promise<PixPayee | null>
+  ownerOfKey(
+    key: PixKey,
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null>
   receiverOfCode(
     payload: string,
-    scope: PixDirectoryScope,
-  ): Promise<PixPayee | null>
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null>
+  // The beneficiary the boleto registry names for a digitable line.
+  beneficiaryOfBoleto(
+    line: string,
+    scope: RecipientDirectoryScope,
+  ): Promise<VerifiedPayee | null>
 }
 
 // Billers often protect the PDF with digits of the owner's tax id.
