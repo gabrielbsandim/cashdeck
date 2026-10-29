@@ -70,6 +70,12 @@ describe('decodeBoleto', () => {
       ),
     ).toThrow('digitable line check digit')
   })
+
+  it('rejects an invoice access key whose check digit happens to match', () => {
+    const body = '3526' + '0012345678000195660000304621911015627696'
+    const accessKey = body.slice(0, 4) + mod11Boleto(body) + body.slice(4)
+    expect(() => decodeBoleto(accessKey, '2026-10-29')).toThrow('currency code')
+  })
 })
 
 describe('dueDateFromFactor', () => {

@@ -34,7 +34,14 @@ export function dueDateFromFactor(
   )
 }
 
+const REAL_CURRENCY = '9'
+
+// An invoice access key is also 44 digits and passes the modulo 11 one time in
+// ten, so the currency digit is what tells it apart from a boleto.
 function assertBarcode(barcode: string): void {
+  if (barcode.charAt(3) !== REAL_CURRENCY) {
+    throw new ValidationError('Boleto currency code is not the real.')
+  }
   const body = barcode.slice(0, 4) + barcode.slice(5)
   if (mod11Boleto(body) !== Number(barcode.charAt(4))) {
     throw new ValidationError('Boleto barcode check digit does not match.')
