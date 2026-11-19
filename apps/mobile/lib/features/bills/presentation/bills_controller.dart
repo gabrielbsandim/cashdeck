@@ -140,7 +140,14 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
-  Future<AppFailure?> retry() async {
+  Future<AppFailure?>? _retrying;
+
+  /// A second tap while the first retry is in flight waits for that one
+  /// instead of sending another.
+  Future<AppFailure?> retry() =>
+      _retrying ??= _retry().whenComplete(() => _retrying = null);
+
+  Future<AppFailure?> _retry() async {
     final result = await ref.read(retryBillProvider).call(billId);
     ref.invalidate(billsControllerProvider);
     return _apply(result);

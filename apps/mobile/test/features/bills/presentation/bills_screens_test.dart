@@ -1154,6 +1154,21 @@ void main() {
         });
       }
 
+      testWidgets('a second confirm while the first is in flight sends one', (
+        tester,
+      ) async {
+        final answer = Completer<Result<Bill>>();
+        when(() => repository.retry('bill-1')).thenAnswer((_) => answer.future);
+        await open(tester, fell);
+
+        await retry(tester);
+        await retry(tester);
+        answer.complete(Ok(testBill(status: BillStatus.scheduled)));
+        await tester.pumpAndSettle();
+
+        verify(() => repository.retry('bill-1')).called(1);
+      });
+
       testWidgets('opened to confirm, a step 3 bill opens no pay sheet', (
         tester,
       ) async {
