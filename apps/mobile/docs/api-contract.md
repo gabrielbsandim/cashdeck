@@ -146,11 +146,12 @@ waiting comes back unchanged, so a second tap is harmless.
 restarts the plan from step 1 and answers the updated `BillDetail`, or 409
 when an earlier payment may still land; the app then says to check the bank.
 
-Before the confirmation sheet of a bill with a Pix code (a QR, or a boleto
-that carries one), the app asks `GET /api/v1/bills/{id}/recipient`, which
-answers `{ "name", "taxId", "bank", "verified" }` from the central bank
-directory, or `null` for a bill without a code. A verified holder shows as
-rows on the sheet; an unverified one, or a failed lookup, shows a warning.
+Before the confirmation sheet of a Pix QR bill, the app asks
+`GET /api/v1/bills/{id}/recipient`, which answers
+`{ "name", "taxId", "bank", "verified" }` from the central bank directory, or
+`null` for any other bill: a boleto's Pix may fall back to the barcode. A
+verified holder shows as rows on the sheet; an unverified one, or a failed
+lookup, shows a warning.
 
 "Abrir banco" opens the `appLink` of the latest `BANK_APPROVAL` attempt with
 `url_launcher`. The server fills it from the tenant's institution

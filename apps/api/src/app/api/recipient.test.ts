@@ -51,16 +51,18 @@ afterEach(() => {
 
 describe('GET /v1/bills/{id}/recipient', () => {
   it('answers the receiver check of a Pix code bill', async () => {
-    const id = await capture({ pixCode: PIX_CODE })
+    const id = await capture({ pixCode: PIX_CODE, payee: 'Loja Exemplo' })
     const answer = await recipient(id)
     expect(answer.status).toBe(200)
-    expect(answer.body.data).toMatchObject({
-      name: expect.any(String),
-      verified: expect.any(Boolean),
+    expect(answer.body.data).toEqual({
+      name: 'Loja Exemplo',
+      taxId: null,
+      bank: null,
+      verified: false,
     })
   })
 
-  it('answers null for a bill without a Pix code', async () => {
+  it('answers null for a bill that is not a Pix QR', async () => {
     const id = await capture({ paymentCode: BOLETO_LINE })
     const answer = await recipient(id)
     expect(answer.status).toBe(200)

@@ -641,13 +641,13 @@ void main() {
 
     test('a fictional Pix code has a verified holder', () async {
       final holder = (await repository.recipient(
-        'bill-internet',
+        'bill-condo',
       ) as Ok<PixRecipientCheck?>).value;
 
       expect(holder?.verified, isTrue);
-      expect(holder?.name, 'Internet Fibra Sul');
+      expect(holder?.name, 'Condomínio Jardim');
       expect(
-        await repository.recipient('bill-energy'),
+        await repository.recipient('bill-internet'),
         const Ok<PixRecipientCheck?>(null),
       );
       expect(

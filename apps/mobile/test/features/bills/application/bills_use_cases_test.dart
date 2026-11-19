@@ -110,20 +110,25 @@ void main() {
     expect(await ReconcileBill(repository).call('later'), Ok(later));
   });
 
-  test('the recipient is asked only for a bill with a Pix code', () async {
+  test('the recipient is asked only for a Pix QR bill', () async {
     const holder = PixRecipientCheck(name: 'Loja Exemplo', verified: true);
     final qr = testBill(id: 'qr', kind: BillKind.pixQr, paymentCode: 'p');
-    final bolepix = testBill(id: 'bolepix', pixCode: 'p');
+    final down = testBill(id: 'down', kind: BillKind.pixQr, paymentCode: 'p');
     when(() => repository.recipient('qr'))
         .thenAnswer((_) async => const Ok(holder));
-    when(() => repository.recipient('bolepix'))
+    when(() => repository.recipient('down'))
         .thenAnswer((_) async => const Err(NetworkFailure()));
 
     final recipientOf = GetBillRecipient(repository).call;
 
     expect(await recipientOf(qr), holder);
-    expect(await recipientOf(bolepix), isNull);
+    expect(
+      await recipientOf(down),
+      PixRecipientCheck(name: down.payee, verified: false),
+    );
+    expect(await recipientOf(testBill(id: 'bolepix', pixCode: 'p')), isNull);
     expect(await recipientOf(testBill(id: 'boleto')), isNull);
+    verifyNever(() => repository.recipient('bolepix'));
     verifyNever(() => repository.recipient('boleto'));
   });
 

@@ -140,6 +140,20 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
+  var _asking = false;
+
+  /// Holds a second tap while a payment sheet for this bill is on its way or
+  /// open; the holder lookup before the sheet leaves room for one.
+  Future<void> askOnce(Future<void> Function() ask) async {
+    if (_asking) return;
+    _asking = true;
+    try {
+      await ask();
+    } finally {
+      _asking = false;
+    }
+  }
+
   Future<AppFailure?>? _retrying;
 
   /// A second tap while the first retry is in flight waits for that one

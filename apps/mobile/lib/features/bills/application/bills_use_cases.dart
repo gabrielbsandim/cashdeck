@@ -82,18 +82,18 @@ final class PayBill {
       _repository.pay(id, confirmed: confirmed);
 }
 
-/// Who receives the bill's Pix code. A failed lookup reads as no answer, as
-/// it never blocks a payment.
+/// Who receives the bill's Pix code. A failed lookup never blocks a payment;
+/// it reads as an unverified payee.
 final class GetBillRecipient {
   const new(this._repository);
 
   final BillsRepository _repository;
 
   Future<PixRecipientCheck?> call(Bill bill) async {
-    if (!hasPixCode(bill)) return null;
+    if (!paysThroughPixCode(bill)) return null;
     return switch (await _repository.recipient(bill.id)) {
       Ok(:final value) => value,
-      Err() => null,
+      Err() => PixRecipientCheck(name: bill.payee, verified: false),
     };
   }
 }

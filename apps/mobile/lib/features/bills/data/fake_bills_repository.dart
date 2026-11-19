@@ -338,7 +338,7 @@ final class FakeBillsRepository implements BillsRepository {
   Future<Result<PixRecipientCheck?>> recipient(String id) async {
     final found = await get(id);
     return switch (found) {
-      Ok(:final value) when hasPixCode(value) => Ok(
+      Ok(:final value) when value.kind == BillKind.pixQr => Ok(
         PixRecipientCheck(
           name: value.payee,
           taxId: '12.345.678/0001-90',

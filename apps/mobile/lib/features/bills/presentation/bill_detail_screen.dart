@@ -291,7 +291,11 @@ class _ConfirmBody extends StatelessWidget {
   }
 }
 
-Future<void> _confirmBill(
+Future<void> _confirmBill(BuildContext context, WidgetRef ref, Bill bill) => ref
+    .read(billDetailControllerProvider(bill.id).notifier)
+    .askOnce(() => _askToConfirm(context, ref, bill));
+
+Future<void> _askToConfirm(
   BuildContext context,
   WidgetRef ref,
   Bill bill,
@@ -359,7 +363,11 @@ String? _warningOf(
 };
 
 /// Pays again from step 1, so it asks first like any payment the user starts.
-Future<void> _retryBill(BuildContext context, WidgetRef ref, Bill bill) async {
+Future<void> _retryBill(BuildContext context, WidgetRef ref, Bill bill) => ref
+    .read(billDetailControllerProvider(bill.id).notifier)
+    .askOnce(() => _askToRetry(context, ref, bill));
+
+Future<void> _askToRetry(BuildContext context, WidgetRef ref, Bill bill) async {
   final l10n = AppLocalizations.of(context);
   final hide = ref.read(hideAmountsProvider);
   final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);

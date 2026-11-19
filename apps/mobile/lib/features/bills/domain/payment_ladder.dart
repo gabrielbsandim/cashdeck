@@ -26,11 +26,11 @@ LadderStep? currentStepOf(Bill bill) {
   return bill.plan.lastOrNull;
 }
 
-/// The ladder pays a Pix code before a barcode, so its receiver is who gets
-/// the money.
-bool hasPixCode(Bill bill) =>
-    bill.pixCode != null ||
-    (bill.kind == BillKind.pixQr && bill.paymentCode != null);
+/// Only a Pix QR bill is always paid through its code; a boleto's Pix may
+/// fall back to the barcode, so its receiver is not the one to show.
+bool paysThroughPixCode(Bill bill) =>
+    bill.kind == BillKind.pixQr &&
+    (bill.paymentCode != null || bill.pixCode != null);
 
 /// The ladder dropped the bill to step 3 after an earlier step failed, so
 /// the server can send it back to step 1.

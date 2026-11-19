@@ -1122,7 +1122,7 @@ void main() {
         expect(inSheet('Unknown'), findsNothing);
       });
 
-      testWidgets('a failed lookup still opens the sheet, with no holder', (
+      testWidgets('a failed lookup still opens the sheet, with the warning', (
         tester,
       ) async {
         when(() => repository.recipient('bill-1'))
@@ -1131,6 +1131,89 @@ void main() {
 
         expect(find.byType(CdConfirmSheet), findsOneWidget);
         expect(inSheet(l10n.chatDetailHolder), findsNothing);
+        expect(inSheet(l10n.chatRecipientUnverified), findsOneWidget);
+      });
+
+      testWidgets('an unverified sender warns over a verified holder', (
+        tester,
+      ) async {
+        when(() => repository.recipient('bill-1'))
+            .thenAnswer((_) async => const Ok(holder));
+        await open(
+          tester,
+          testBill(
+            kind: BillKind.pixQr,
+            paymentCode: '000201pix',
+            confirmationReason: ConfirmationReason.unverifiedSender,
+          ),
+        );
+
+        expect(inSheet(l10n.billUnverifiedSenderBody), findsOneWidget);
+        expect(inSheet(l10n.chatRecipientUnverified), findsNothing);
+        expect(inSheet('Loja Exemplo'), findsOneWidget);
+      });
+
+      testWidgets('a second tap during a slow lookup opens one sheet', (
+        tester,
+      ) async {
+        final answer = Completer<Result<PixRecipientCheck?>>();
+        final waiting = testBill(
+          kind: BillKind.pixQr,
+          paymentCode: '000201pix',
+          status: BillStatus.needsConfirmation,
+          plan: const [LadderStep.automatic, LadderStep.assisted],
+        );
+        when(() => repository.recipient('bill-1'))
+            .thenAnswer((_) => answer.future);
+        when(() => repository.get('bill-1'))
+            .thenAnswer((_) async => Ok(waiting));
+        when(listCall())
+            .thenAnswer((_) async => Ok(BillPage(bills: [waiting])));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1'),
+          overrides: overrides(),
+        );
+        await tester.pump();
+
+        final confirm = find.byKey(PaymentLadderView.confirmKey);
+        await tester.ensureVisible(confirm);
+        await tester.tap(confirm);
+        await tester.pump();
+        await tester.tap(confirm);
+        await tester.pump();
+        answer.complete(const Ok(holder));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsOneWidget);
+        verify(() => repository.recipient('bill-1')).called(1);
+      });
+
+      testWidgets('the retry sheet shows the holder too', (tester) async {
+        final fellQr = testBill(
+          kind: BillKind.pixQr,
+          paymentCode: '000201pix',
+          plan: const [LadderStep.automatic, LadderStep.assisted],
+          attempts: [testAttempt(LadderStep.automatic, AttemptOutcome.failed)],
+        );
+        when(() => repository.recipient('bill-1'))
+            .thenAnswer((_) async => const Ok(holder));
+        when(() => repository.get('bill-1'))
+            .thenAnswer((_) async => Ok(fellQr));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [fellQr])));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1'),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.byKey(PaymentLadderView.retryKey));
+        await tester.tap(find.byKey(PaymentLadderView.retryKey));
+        await tester.pumpAndSettle();
+
+        expect(inSheet(l10n.retryPaymentReason), findsOneWidget);
+        expect(inSheet('Loja Exemplo'), findsOneWidget);
+        expect(inSheet('Banco Exemplo'), findsOneWidget);
       });
 
       testWidgets('a bill without a Pix code asks nobody', (tester) async {
@@ -1237,7 +1320,9 @@ void main() {
         await open(tester, fell);
 
         await retry(tester);
-        await retry(tester);
+        await tester.tap(find.byKey(PaymentLadderView.retryKey));
+        await tester.pumpAndSettle();
+        expect(find.byType(CdConfirmSheet), findsNothing);
         answer.complete(Ok(testBill(status: BillStatus.scheduled)));
         await tester.pumpAndSettle();
 
