@@ -320,6 +320,7 @@ describe('PrismaPaymentRepository', () => {
       tenantId: TENANT,
       steps: plan.steps,
       currentStep: 0,
+      round: 0,
     })
     expect(await repos.payments.findPlan(TENANT, 'b1')).toEqual(plan)
     db.paymentPlan.findFirst.mockResolvedValueOnce({
@@ -327,6 +328,7 @@ describe('PrismaPaymentRepository', () => {
       tenantId: TENANT,
       steps: [{ mode: 'ASSISTED', rail: 'ASSISTED' }],
       currentStep: 0,
+      round: 0,
     })
     expect((await repos.payments.findPlan(TENANT, 'b1'))?.steps).toEqual([
       ASSISTED_STEP,
@@ -342,6 +344,29 @@ describe('PrismaPaymentRepository', () => {
       attemptToRow(TENANT, attempt),
     ])
     expect(await repos.payments.listAttempts(TENANT, 'b1')).toEqual([attempt])
+  })
+
+  it('persists and reads back the retry round of a plan', async () => {
+    const { db, repos } = mockClient()
+    const plan = {
+      ...createPaymentPlan('b1', [
+        { mode: 'AUTOMATIC', rail: 'INTER_EMPRESAS', method: 'BOLETO' },
+        ASSISTED_STEP,
+      ]),
+      round: 2,
+    }
+    await repos.payments.savePlan(TENANT, plan)
+    const call = db.paymentPlan.upsert.mock.calls[0]?.[0]
+    expect(call.create.round).toBe(2)
+    expect(call.update.round).toBe(2)
+    db.paymentPlan.findFirst.mockResolvedValueOnce({
+      billId: 'b1',
+      tenantId: TENANT,
+      steps: plan.steps,
+      currentStep: 0,
+      round: 2,
+    })
+    expect(await repos.payments.findPlan(TENANT, 'b1')).toEqual(plan)
   })
 
   it('finds the latest attempt a rail answered with an id', async () => {
@@ -543,6 +568,29 @@ describe('audit, idempotency and secrets', () => {
       where: { tenantId_key: { tenantId: TENANT, key: 'b1:0' } },
       update: {},
     })
+  })
+
+  it('claims an idempotency key once and rethrows other failures', async () => {
+    const { db, repos } = mockClient()
+    expect(await repos.idempotency.claim(TENANT, 'b1:retry:r1', 'x', {})).toBe(
+      true,
+    )
+    expect(db.idempotencyRecord.create).toHaveBeenCalledWith({
+      data: { tenantId: TENANT, key: 'b1:retry:r1', scope: 'x', result: {} },
+    })
+    db.idempotencyRecord.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('duplicate', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    )
+    expect(await repos.idempotency.claim(TENANT, 'b1:retry:r1', 'x', {})).toBe(
+      false,
+    )
+    db.idempotencyRecord.create.mockRejectedValueOnce(new Error('offline'))
+    await expect(
+      repos.idempotency.claim(TENANT, 'b1:retry:r1', 'x', {}),
+    ).rejects.toThrow('offline')
   })
 
   it('stores sealed secrets per tenant', async () => {

@@ -804,6 +804,16 @@ when a bill is captured, so `plan` is never null.
   without asking again. The audit log records the call as actor
   `USER` with the API token's hash prefix and the `x-request-id` (or
   `x-vercel-id`) header.
+- `POST /bills/{id}/retry`: no body. Runs the ladder again, confirmed, for a
+  bill at the assisted step: the plan goes back to step 1 in a new `round`
+  and every key of that round is `{billId}:r{round}:{step}:{method}` (round 0
+  keeps `{billId}:{step}:{method}`). Returns the same body as `pay`. Answers
+  `409` with the reason in the message when the bill is not `ASSISTED` or
+  another retry already took this round (`NOT_ASSISTED`), an attempt paid or
+  may still pay (`COMMITTED`), reconcile gave up on a call
+  (`OUTCOME_UNKNOWN`), the plan has only the assisted step
+  (`NO_AUTOMATIC_STEP`), or the kill switch is on (`KILL_SWITCH`). The audit
+  log records `payment.retry_requested` with the round.
 - `POST /bills/{id}/mark-paid`: body `{ attachmentId?: string, proof?: string }`.
   For a bill already paid outside Cashdeck (another account, the bank app).
   `attachmentId` points at a file already attached; `proof` is free text (an
@@ -853,7 +863,7 @@ when a bill is captured, so `plan` is never null.
 ```
 
 `BillDetailView` adds
-`plan: { steps: [{ mode: "AUTOMATIC"|"BANK_APPROVAL"|"ASSISTED", rail: RailId, method: "PIX"|"BOLETO" }], currentStep: int }`
+`plan: { steps: [{ mode: "AUTOMATIC"|"BANK_APPROVAL"|"ASSISTED", rail: RailId, method: "PIX"|"BOLETO" }], currentStep: int, round: int }`
 and `attempts: [{ id, stepIndex, rail, mode, method: "PIX"|"BOLETO", amount, outcome: "PAID"|"SUBMITTED"|"PENDING_APPROVAL"|"ASSISTED"|"FAILED"|"IN_FLIGHT", reason, externalId, appLink, at }]`.
 
 `appLink` (string or null) is set only on a `BANK_APPROVAL` attempt: the deep

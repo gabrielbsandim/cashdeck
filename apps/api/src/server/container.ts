@@ -126,6 +126,7 @@ import {
   makeRunDailyAlerts,
   makeRunDuePayments,
   makeRunPaymentLadder,
+  makeRetryPayment,
   makeTestIssuer,
   makeUpdateAccount,
   makeHousehold,
@@ -378,6 +379,7 @@ export function buildContainer(
     rescheduleBill: makeRescheduleBill(deps),
     setAutoDebit: makeSetAutoDebit(deps, makeGetBill(deps)),
     runPaymentLadder,
+    retryPayment: makeRetryPayment(deps, runPaymentLadder),
     runDuePayments: makeRunDuePayments({
       ...deps,
       runLadder: runPaymentLadder,

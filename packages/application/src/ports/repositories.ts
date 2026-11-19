@@ -109,6 +109,13 @@ export interface IdempotencyStore {
     scope: string,
     result: T,
   ): Promise<void>
+  // Stores the result only when the key is new; false means it already was.
+  claim<T>(
+    tenantId: string,
+    key: string,
+    scope: string,
+    result: T,
+  ): Promise<boolean>
 }
 
 export interface SecretStore {

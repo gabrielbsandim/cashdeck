@@ -982,6 +982,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bills/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run the payment ladder again for a bill left to the assisted step */
+        post: operations["retryBillPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/bills/{id}/mark-paid": {
         parameters: {
             query?: never;
@@ -7222,6 +7239,7 @@ export interface operations {
                                     method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
+                                round: number;
                             } | null;
                             attempts: {
                                 id: string;
@@ -7319,6 +7337,106 @@ export interface operations {
                                     method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
+                                round: number;
+                            } | null;
+                            attempts: {
+                                id: string;
+                                stepIndex: number;
+                                /** @enum {string} */
+                                rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                /** @enum {string} */
+                                mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                /** @enum {string} */
+                                method: "PIX" | "BOLETO";
+                                amount: {
+                                    cents: number;
+                                    currency: string;
+                                };
+                                /** @enum {string} */
+                                outcome: "PAID" | "SUBMITTED" | "PENDING_APPROVAL" | "ASSISTED" | "FAILED" | "IN_FLIGHT";
+                                reason: string | null;
+                                externalId: string | null;
+                                appLink: string | null;
+                                at: string;
+                            }[];
+                            instructions: {
+                                kind: string;
+                                copyCode: string | null;
+                                pixCode: string | null;
+                                amountCents: number;
+                                dueDate: string;
+                            } | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            500: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    retryBillPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run the payment ladder again for a bill left to the assisted step */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: string;
+                            entityId: string;
+                            /** @enum {string} */
+                            entityKind: "PF" | "PJ";
+                            /** @enum {string} */
+                            kind: "BOLETO" | "PIX_KEY" | "PIX_QR" | "TAX_BARCODE" | "DARF_NO_BARCODE";
+                            /** @enum {string} */
+                            status: "OPEN" | "NEEDS_CONFIRMATION" | "PROCESSING" | "AWAITING_BANK_APPROVAL" | "ASSISTED" | "PAID" | "CANCELLED";
+                            /** @enum {string} */
+                            source: "GMAIL" | "SHARE" | "CAMERA" | "CHAT" | "DDA" | "MANUAL";
+                            payee: string | null;
+                            amount: {
+                                cents: number;
+                                currency: string;
+                            };
+                            dueDate: string;
+                            code: string | null;
+                            pixCode: string | null;
+                            createdAt: string;
+                            paidAt: string | null;
+                            /** @enum {string|null} */
+                            paidBy: "RAIL" | "USER" | "STATEMENT" | null;
+                            autoDebit: boolean;
+                            unverifiedSender: boolean;
+                            /** @enum {string|null} */
+                            confirmationReason: "UNVERIFIED_SENDER" | "NEW_PAYEE" | "ABOVE_THRESHOLD" | "AMOUNT_DEVIATION" | "CAP_EXCEEDED" | null;
+                            plan: {
+                                steps: {
+                                    /** @enum {string} */
+                                    mode: "AUTOMATIC" | "BANK_APPROVAL" | "ASSISTED";
+                                    /** @enum {string} */
+                                    rail: "MERCADO_PAGO_PAYOUTS" | "ASAAS" | "INTER_EMPRESAS" | "C6_EMPRESAS" | "ASSISTED";
+                                    /** @enum {string} */
+                                    method: "PIX" | "BOLETO";
+                                }[];
+                                currentStep: number;
+                                round: number;
                             } | null;
                             attempts: {
                                 id: string;
@@ -7605,6 +7723,7 @@ export interface operations {
                                     method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
+                                round: number;
                             } | null;
                             attempts: {
                                 id: string;
@@ -7702,6 +7821,7 @@ export interface operations {
                                     method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
+                                round: number;
                             } | null;
                             attempts: {
                                 id: string;
@@ -11925,6 +12045,7 @@ export interface operations {
                                     method: "PIX" | "BOLETO";
                                 }[];
                                 currentStep: number;
+                                round: number;
                             } | null;
                             attempts: {
                                 id: string;

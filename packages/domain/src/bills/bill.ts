@@ -155,6 +155,15 @@ export function markBillUnpaid(bill: Bill): Bill {
   return { ...bill, status: 'OPEN', paidAt: null, paidBy: null }
 }
 
+// A retry starts a new round of the ladder, which only an open bill enters;
+// the table keeps ASSISTED terminal for every other path.
+export function reopenAssisted(bill: Bill): Bill {
+  if (bill.status !== 'ASSISTED') {
+    throw new InvalidTransitionError('Bill', bill.status, 'OPEN')
+  }
+  return { ...bill, status: 'OPEN' }
+}
+
 // Money already on its way keeps the date it was sent for.
 const RESCHEDULABLE: readonly BillStatus[] = [
   'OPEN',

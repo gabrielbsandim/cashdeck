@@ -1,4 +1,4 @@
-import { type BillKind, type BillStatus } from '@/bills/bill'
+import { type Bill, type BillKind, type BillStatus } from '@/bills/bill'
 import { type LocalDate, toLocalDate } from '@/calendar/local-date'
 import { type EntityKind } from '@/entities/financial-entity'
 import { type Money } from '@/money/money'
@@ -38,6 +38,7 @@ export type PaymentPlan = {
   readonly billId: string
   readonly steps: readonly PaymentStep[]
   readonly currentStep: number
+  readonly round: number
 }
 
 // IN_FLIGHT is written before a rail is called, so a crash mid-call leaves a
@@ -82,7 +83,7 @@ export function createPaymentPlan(
       'Payment steps must go from automatic to assisted.',
     )
   }
-  return { billId, steps, currentStep: 0 }
+  return { billId, steps, currentStep: 0, round: 0 }
 }
 
 export function currentStep(plan: PaymentPlan): PaymentStep {
@@ -104,12 +105,20 @@ export function jumpToAssisted(plan: PaymentPlan): PaymentPlan {
   return { ...plan, currentStep: plan.steps.length - 1 }
 }
 
+// Round 0 keeps the key from before retries existed, so the stored records of
+// bills already paid still match it.
 export function idempotencyKey(
   billId: string,
   stepIndex: number,
   method: PaymentMethod,
+  round = 0,
 ): string {
-  return `${billId}:${stepIndex}:${method}`
+  const prefix = round === 0 ? billId : `${billId}:r${round}`
+  return `${prefix}:${stepIndex}:${method}`
+}
+
+export function restartPlan(plan: PaymentPlan): PaymentPlan {
+  return { ...plan, currentStep: 0, round: plan.round + 1 }
 }
 
 const COMMITTED_OUTCOMES: readonly AttemptOutcome[] = [
@@ -176,6 +185,47 @@ export function committedCentsOn(
     .filter(attempt => firstDay.get(attempt.idempotencyKey) === day)
     .filter(attempt => COMMITTED_OUTCOMES.includes(attempt.outcome))
     .reduce((total, attempt) => total + attempt.amount.cents, 0)
+}
+
+export type RetryBlock =
+  | 'NOT_ASSISTED'
+  | 'COMMITTED'
+  | 'OUTCOME_UNKNOWN'
+  | 'NO_AUTOMATIC_STEP'
+  | 'KILL_SWITCH'
+
+// Reconcile gives up on these without knowing whether the money moved, so a
+// new round could pay the bill twice.
+const UNKNOWN_OUTCOME_REASONS: readonly (string | null)[] = [
+  'IN_FLIGHT_UNRESOLVED',
+  'APPROVAL_EXPIRED',
+]
+
+export function retryBlock(input: {
+  readonly bill: Bill
+  readonly plan: PaymentPlan
+  readonly attempts: readonly PaymentAttempt[]
+  readonly killSwitch: boolean
+}): RetryBlock | null {
+  // A plan off its assisted step means a retry already started this round.
+  if (input.bill.status !== 'ASSISTED' || !isAtAssistedStep(input.plan)) {
+    return 'NOT_ASSISTED'
+  }
+  if (hasCommittedAttempt(input.attempts)) {
+    return 'COMMITTED'
+  }
+  const unknown = latestAttempts(input.attempts).some(
+    attempt =>
+      attempt.outcome === 'FAILED' &&
+      UNKNOWN_OUTCOME_REASONS.includes(attempt.reason),
+  )
+  if (unknown) {
+    return 'OUTCOME_UNKNOWN'
+  }
+  if (input.plan.steps.every(step => step.mode === 'ASSISTED')) {
+    return 'NO_AUTOMATIC_STEP'
+  }
+  return input.killSwitch ? 'KILL_SWITCH' : null
 }
 
 const STATUS_BY_OUTCOME: Record<AttemptOutcome, BillStatus> = {

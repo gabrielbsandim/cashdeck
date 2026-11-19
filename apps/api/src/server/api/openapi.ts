@@ -719,6 +719,16 @@ const OPERATIONS: Operation[] = [
   },
   {
     method: 'post',
+    path: '/bills/{id}/retry',
+    id: 'retryBillPayment',
+    summary:
+      'Run the payment ladder again for a bill left to the assisted step',
+    response: billDetailViewSchema.extend({
+      instructions: assistedInstructionsSchema.nullable(),
+    }),
+  },
+  {
+    method: 'post',
     path: '/bills/{id}/mark-paid',
     id: 'markBillPaid',
     summary: 'Mark a bill paid by hand',

@@ -112,7 +112,11 @@ export type ConfirmationReason = (typeof CONFIRMATION_REASONS)[number]
 export const billDetailViewSchema = billViewSchema.extend({
   confirmationReason: z.enum(CONFIRMATION_REASONS).nullable(),
   plan: z
-    .object({ steps: z.array(paymentStepViewSchema), currentStep: z.int() })
+    .object({
+      steps: z.array(paymentStepViewSchema),
+      currentStep: z.int(),
+      round: z.int(),
+    })
     .nullable(),
   attempts: z.array(paymentAttemptViewSchema),
 })
@@ -168,7 +172,11 @@ export function toBillDetailView(
   return {
     ...toBillView(bill, entityKind, extra.autoDebit),
     confirmationReason: extra.confirmationReason,
-    plan: plan && { steps: [...plan.steps], currentStep: plan.currentStep },
+    plan: plan && {
+      steps: [...plan.steps],
+      currentStep: plan.currentStep,
+      round: plan.round,
+    },
     attempts: attemptHistory(attempts).map(attempt => ({
       id: attempt.id,
       stepIndex: attempt.stepIndex,

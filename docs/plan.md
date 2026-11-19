@@ -111,7 +111,7 @@ attempt.
 | ---- | ---------------- | -------------------------------------------- | -------------------------------------------------------------- |
 | 1    | Automatic        | Nothing                                      | Rail error, unsupported kind, insufficient funds, cap exceeded |
 | 2    | Approval in bank | Approves the batch in the bank's web banking | Not approved before the cutoff                                 |
-| 3    | Assisted         | Pays with the copied code or Pix payload     | Never; it stays open until marked paid or cancelled            |
+| 3    | Assisted         | Pays with the copied code or Pix payload     | Never; it waits to be marked paid, cancelled or retried        |
 
 ### 4.1 Pix first
 
@@ -162,6 +162,12 @@ gives the monthly average those bills take, to size a recurring transfer.
 - A bank approval batch still pending at the cutoff (16:00 in São Paulo on the
   due date by default) falls to assisted.
 - A global kill switch pauses all automatic steps; bills fall to assisted.
+- A bill at the assisted step can be retried once the cause is fixed (a
+  balance topped up, a rail back online). The retry starts a new round from
+  step 1 under fresh idempotency keys and keeps the old attempts. It is
+  refused while any attempt paid or may still pay, while reconcile could not
+  learn whether a call moved money, without an automatic or approval step,
+  and under the kill switch.
 - A payee marked as bank auto-debit is never paid by the app: its bills wait,
   without alerts or funding, until the debit shows in the statement.
 - Webhooks and polling reconcile the final status; a bill is `PAID` only when a
