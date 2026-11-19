@@ -140,6 +140,12 @@ class BillDetailController extends AsyncNotifier<Bill> {
     return _apply(result);
   }
 
+  Future<AppFailure?> retry() async {
+    final result = await ref.read(retryBillProvider).call(billId);
+    ref.invalidate(billsControllerProvider);
+    return _apply(result);
+  }
+
   Future<AppFailure?> setAutoDebit({required bool enabled}) async {
     final result = await ref
         .read(setAutoDebitProvider)

@@ -26,6 +26,18 @@ LadderStep? currentStepOf(Bill bill) {
   return bill.plan.lastOrNull;
 }
 
+/// The ladder dropped the bill to step 3 after an earlier step failed, so
+/// the server can send it back to step 1.
+bool canRetry(Bill bill) =>
+    bill.status == BillStatus.pending &&
+    !bill.debitsItself &&
+    currentStepOf(bill) == LadderStep.assisted &&
+    bill.attempts.any(
+      (attempt) =>
+          attempt.step != LadderStep.assisted &&
+          attempt.outcome == AttemptOutcome.failed,
+    );
+
 /// Every step of the ladder, including the ones this bill's plan lacks.
 List<LadderStepStatus> ladderOf(Bill bill) {
   final current = currentStepOf(bill);

@@ -419,6 +419,20 @@ void main() {
       expect(request.path, '/api/v1/bills/bill-1/reconcile');
     });
 
+    test('asks the server to retry a bill from step 1', () async {
+      final dio = stubDio(
+        (_) => StubResponse(200, {'data': billJson(status: 'PROCESSING')}),
+      );
+
+      final bill =
+          (await ApiBillsRepository(dio).retry('bill-1') as Ok<Bill>).value;
+
+      expect(bill.status, BillStatus.scheduled);
+      final request = adapterOf(dio).requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/api/v1/bills/bill-1/retry');
+    });
+
     test('maps a 404 and a malformed body', () async {
       final missing = stubDio((_) => const StubResponse(404));
       final malformed = stubDio((_) => const StubResponse(200, {'data': 1}));
@@ -574,6 +588,21 @@ void main() {
         await local.reconcile('missing'),
         const Err<Bill>(NotFoundFailure()),
       );
+    });
+
+    test('a retry schedules only a bill that fell to step 3', () async {
+      final local = FakeBillsRepository(
+        FixedClock(testNow),
+        latency: Duration.zero,
+      );
+
+      final retried = (await local.retry('bill-internet') as Ok<Bill>).value;
+
+      expect(retried.status, BillStatus.scheduled);
+      expect(await local.get('bill-internet'), Ok(retried));
+      final energy = await local.get('bill-energy');
+      expect(await local.retry('bill-energy'), energy);
+      expect(await local.retry('missing'), const Err<Bill>(NotFoundFailure()));
     });
 
     test('gets a bill by id or answers not found', () async {

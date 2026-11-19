@@ -1066,6 +1066,110 @@ void main() {
       });
     });
 
+    group('the retry from step 3', () {
+      final fell = testBill(
+        plan: const [LadderStep.automatic, LadderStep.assisted],
+        attempts: [
+          testAttempt(
+            LadderStep.automatic,
+            AttemptOutcome.failed,
+            reason: 'Saldo insuficiente',
+          ),
+        ],
+      );
+
+      Future<void> open(WidgetTester tester, Bill bill) async {
+        when(() => repository.get(bill.id)).thenAnswer((_) async => Ok(bill));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+        await tester.pumpApp(
+          BillDetailScreen(billId: bill.id),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> retry(WidgetTester tester, {bool confirm = true}) async {
+        await tester.ensureVisible(find.byKey(PaymentLadderView.retryKey));
+        await tester.tap(find.byKey(PaymentLadderView.retryKey));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            confirm ? CdConfirmSheet.confirmKey : CdConfirmSheet.secondaryKey,
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('a bill that only has step 3 offers no retry', (
+        tester,
+      ) async {
+        await open(tester, testBill(plan: const [LadderStep.assisted]));
+
+        expect(find.byKey(PaymentLadderView.retryKey), findsNothing);
+      });
+
+      testWidgets('cancelling the sheet sends nothing', (tester) async {
+        await open(tester, fell);
+
+        await retry(tester, confirm: false);
+
+        verifyNever(() => repository.retry(any()));
+      });
+
+      final outcomes = <(String, Result<Bill>, String Function())>[
+        (
+          'back on step 1',
+          Ok(testBill(status: BillStatus.scheduled)),
+          () => l10n.retryPaymentToast,
+        ),
+        (
+          'paid',
+          Ok(testBill(status: BillStatus.paid)),
+          () => l10n.retryPaymentPaid,
+        ),
+        ('on step 3 again', Ok(fell), () => l10n.retryPaymentFellBack),
+        (
+          'refused by the server',
+          const Err(ValidationFailure('The payment cannot be retried.')),
+          () => l10n.retryPaymentRefused,
+        ),
+        ('offline', const Err(NetworkFailure()), () => l10n.errorNetwork),
+      ];
+      for (final (name, answer, message) in outcomes) {
+        testWidgets('confirming retries once and says it is $name', (
+          tester,
+        ) async {
+          when(() => repository.retry('bill-1'))
+              .thenAnswer((_) async => answer);
+          await open(tester, fell);
+
+          await retry(tester);
+
+          verify(() => repository.retry('bill-1')).called(1);
+          verifyNever(
+            () => repository.pay(any(), confirmed: any(named: 'confirmed')),
+          );
+          expect(find.text(message()), findsOneWidget);
+        });
+      }
+
+      testWidgets('opened to confirm, a step 3 bill opens no pay sheet', (
+        tester,
+      ) async {
+        when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(fell));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [fell])));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1', confirmOnOpen: true),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+      });
+    });
+
     testWidgets('a failed load offers a retry', (tester) async {
       when(() => repository.get('bill-1'))
           .thenAnswer((_) async => const Err(NotFoundFailure()));
@@ -1110,6 +1214,9 @@ final class _Single implements BillsRepository {
   @override
   Future<Result<Bill>> pay(String id, {required bool confirmed}) =>
       inner.pay(id, confirmed: confirmed);
+
+  @override
+  Future<Result<Bill>> retry(String id) => inner.retry(id);
 
   @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>

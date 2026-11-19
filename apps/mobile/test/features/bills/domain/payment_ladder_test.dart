@@ -75,6 +75,36 @@ void main() {
     expect(currentStepOf(bill), LadderStep.automatic);
   });
 
+  group('canRetry', () {
+    final fell = testBill(
+      plan: const [LadderStep.automatic, LadderStep.assisted],
+      attempts: [testAttempt(LadderStep.automatic, AttemptOutcome.failed)],
+    );
+
+    test('a bill the ladder dropped to step 3 can go back to step 1', () {
+      expect(canRetry(fell), isTrue);
+    });
+
+    test('a bill that never left step 1 or only has step 3 cannot', () {
+      expect(canRetry(testBill()), isFalse);
+      expect(canRetry(testBill(plan: const [LadderStep.assisted])), isFalse);
+    });
+
+    test('a settled, waiting or self debiting bill cannot', () {
+      Bill like({BillStatus status = BillStatus.pending, bool auto = false}) =>
+          testBill(
+            plan: fell.plan,
+            attempts: fell.attempts,
+            status: status,
+            autoDebit: auto,
+          );
+
+      expect(canRetry(like(status: BillStatus.paid)), isFalse);
+      expect(canRetry(like(status: BillStatus.scheduled)), isFalse);
+      expect(canRetry(like(auto: true)), isFalse);
+    });
+  });
+
   test('step statuses compare by value', () {
     final bill = testBill();
     expect(ladderOf(bill), ladderOf(bill));

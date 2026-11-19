@@ -19,6 +19,7 @@ final class LadderActions {
     required this.onOpenBank,
     required this.onApproved,
     required this.onConfirm,
+    required this.onRetry,
   });
 
   final VoidCallback onMarkPaid;
@@ -26,6 +27,7 @@ final class LadderActions {
   final VoidCallback onOpenBank;
   final VoidCallback onApproved;
   final VoidCallback onConfirm;
+  final VoidCallback onRetry;
 }
 
 /// A bill's payment ladder: every step, what was tried, the visible
@@ -44,6 +46,7 @@ class PaymentLadderView extends StatelessWidget {
   static const openBankKey = Key('ladder-open-bank');
   static const approvedKey = Key('ladder-approved');
   static const confirmKey = Key('ladder-confirm');
+  static const retryKey = Key('ladder-retry');
   static const copyKey = Key('ladder-copy');
   static const copyPixKey = Key('ladder-copy-pix');
 
@@ -247,6 +250,15 @@ class PaymentLadderView extends StatelessWidget {
               ),
             ],
           ),
+          if (canRetry(bill))
+            CdButton.text(
+              key: retryKey,
+              dense: true,
+              expand: true,
+              icon: Symbols.refresh_rounded,
+              label: l10n.retryPaymentButton,
+              onPressed: actions.onRetry,
+            ),
         ],
       ),
       LadderStep.bankApproval => CdLadderStep(

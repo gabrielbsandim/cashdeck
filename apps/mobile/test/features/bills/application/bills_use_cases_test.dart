@@ -109,6 +109,11 @@ void main() {
     expect(await ReconcileBill(repository).call('later'), Ok(later));
   });
 
+  test('a retry goes to the repository', () async {
+    when(() => repository.retry('later')).thenAnswer((_) async => Ok(later));
+    expect(await RetryBill(repository).call('later'), Ok(later));
+  });
+
   test('the bills needing the user are the ones it has to act on', () {
     final overdue = testBill(id: 'overdue', dueDate: testToday.addDays(-1));
     final confirm = testBill(

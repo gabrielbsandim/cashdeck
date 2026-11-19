@@ -81,6 +81,15 @@ final class PayBill {
       _repository.pay(id, confirmed: confirmed);
 }
 
+/// Sends a bill that fell to step 3 back down the ladder.
+final class RetryBill {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<Result<Bill>> call(String id) => _repository.retry(id);
+}
+
 final class SetAutoDebit {
   const new(this._repository);
 

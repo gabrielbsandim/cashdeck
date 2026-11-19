@@ -130,6 +130,15 @@ final class ApiBillsRepository implements BillsRepository {
       });
 
   @override
+  Future<Result<Bill>> retry(String id) => guardRequest(() async {
+    final response = await _dio.post<Object?>(
+      '$path/${Uri.encodeComponent(id)}/retry',
+      data: const <String, Object?>{},
+    );
+    return billFromJson(asJsonMap(unwrapData(response.data)));
+  });
+
+  @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
       guardRequest(() async {
         final response = await _dio.put<Object?>(

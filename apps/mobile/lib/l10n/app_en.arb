@@ -1815,5 +1815,12 @@
   "householdNameTooLong": "Use at most {max} characters.",
   "householdCpfInvalid": "Invalid CPF.",
   "householdCpfTaken": "This CPF is already in the household.",
-  "householdFull": "A household has at most {max} people."
+  "householdFull": "A household has at most {max} people.",
+  "retryPaymentButton": "Try paying again",
+  "retryPaymentTitle": "Try paying {payee} again?",
+  "retryPaymentReason": "Goes back to step 1 and tries to pay now",
+  "retryPaymentToast": "The bill is back on step 1.",
+  "retryPaymentRefused": "It cannot be retried now. Check the bank in case an earlier payment went out.",
+  "retryPaymentPaid": "Paid on the new try.",
+  "retryPaymentFellBack": "The new try failed too. The bill stays on step 3."
 }

@@ -1,5 +1,6 @@
 import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
+import 'package:cashdeck/core/error/app_failure.dart';
 import 'package:cashdeck/core/error/failure_message.dart';
 import 'package:cashdeck/core/error/load_failure.dart';
 import 'package:cashdeck/core/links/link_opener.dart';
@@ -90,8 +91,10 @@ class _BillDetailScreenState extends ConsumerState<BillDetailScreen> {
     });
   }
 
+  // A step 3 bill is pending too, but paying it runs nothing on the server.
   static bool _payable(Bill bill) =>
       !bill.debitsItself &&
+      currentStepOf(bill) != LadderStep.assisted &&
       (bill.status == BillStatus.pending ||
           bill.status == BillStatus.needsConfirmation);
 
@@ -324,6 +327,46 @@ Future<void> _confirmBill(
   );
 }
 
+/// Pays again from step 1, so it asks first like any payment the user starts.
+Future<void> _retryBill(BuildContext context, WidgetRef ref, Bill bill) async {
+  final l10n = AppLocalizations.of(context);
+  final hide = ref.read(hideAmountsProvider);
+  final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+  final confirmed = await showCdConfirmSheet(
+    context,
+    title: l10n.retryPaymentTitle(billPayeeOf(l10n, bill)),
+    reason: l10n.retryPaymentReason,
+    reasonIcon: Symbols.refresh_rounded,
+    warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
+    rows: [
+      CdConfirmRow(
+        l10n.confirmRowAmount,
+        MoneyFormat.format(bill.amount, hide: hide),
+      ),
+      CdConfirmRow(l10n.confirmRowDue, bill.dueDate.dayMonth),
+    ],
+    confirmLabel: l10n.confirmAndPayButton,
+  );
+  if (confirmed != true || !context.mounted) return;
+  final failure = await notifier.retry();
+  if (!context.mounted) return;
+  CdHaptics.outcome(failure);
+  final after = ref.read(billDetailControllerProvider(bill.id)).value;
+  await showCdToast(
+    context,
+    icon: failure == null
+        ? Symbols.check_circle_rounded
+        : Symbols.error_rounded,
+    message: switch (failure) {
+      ValidationFailure() => l10n.retryPaymentRefused,
+      final AppFailure other => other.userMessage(l10n),
+      null when after != null && after.isSettled => l10n.retryPaymentPaid,
+      null when after != null && canRetry(after) => l10n.retryPaymentFellBack,
+      null => l10n.retryPaymentToast,
+    },
+  );
+}
+
 class _BillDetail extends ConsumerWidget {
   const new({required this.bill, required this.today});
 
@@ -544,6 +587,7 @@ class _BillDetail extends ConsumerWidget {
               onOpenBank: () => _openBank(context, ref),
               onApproved: () => _checkApproval(context, ref),
               onConfirm: () => _confirmBill(context, ref, bill),
+              onRetry: () => _retryBill(context, ref, bill),
             ),
           ),
         ],

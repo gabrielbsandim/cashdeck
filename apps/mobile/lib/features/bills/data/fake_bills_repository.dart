@@ -5,6 +5,7 @@ import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
+import 'package:cashdeck/features/bills/domain/payment_ladder.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 
 /// Fictional bills around today, one per state of the payment ladder. Marks
@@ -297,24 +298,38 @@ final class FakeBillsRepository implements BillsRepository {
   Future<Result<Bill>> pay(String id, {required bool confirmed}) async {
     final found = await get(id);
     if (found case Ok(:final value) when confirmed) {
-      final scheduled = Bill(
-        id: value.id,
-        payee: value.payee,
-        amount: value.amount,
-        dueDate: value.dueDate,
-        kind: value.kind,
-        owner: value.owner,
-        status: BillStatus.scheduled,
-        source: value.source,
-        plan: value.plan,
-        paymentCode: value.paymentCode,
-        pixCode: value.pixCode,
-        attempts: value.attempts,
-      );
-      _changed[id] = scheduled;
-      return Ok(scheduled);
+      return Ok(_schedule(value));
     }
     return found;
+  }
+
+  /// Only a bill the ladder dropped to step 3 goes back to step 1.
+  @override
+  Future<Result<Bill>> retry(String id) async {
+    final found = await get(id);
+    if (found case Ok(:final value) when canRetry(value)) {
+      return Ok(_schedule(value));
+    }
+    return found;
+  }
+
+  Bill _schedule(Bill value) {
+    final scheduled = Bill(
+      id: value.id,
+      payee: value.payee,
+      amount: value.amount,
+      dueDate: value.dueDate,
+      kind: value.kind,
+      owner: value.owner,
+      status: BillStatus.scheduled,
+      source: value.source,
+      plan: value.plan,
+      paymentCode: value.paymentCode,
+      pixCode: value.pixCode,
+      attempts: value.attempts,
+    );
+    _changed[value.id] = scheduled;
+    return scheduled;
   }
 
   @override

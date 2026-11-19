@@ -33,6 +33,10 @@ abstract interface class BillsRepository {
   /// the app, which is what a capped or new payee payment waits for.
   Future<Result<Bill>> pay(String id, {required bool confirmed});
 
+  /// Sends a bill that fell to step 3 back to step 1 and runs the ladder as
+  /// confirmed; the server refuses it while an earlier payment may still land.
+  Future<Result<Bill>> retry(String id);
+
   /// Marks the bill as debited by the bank on its own, or undoes it.
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled});
 

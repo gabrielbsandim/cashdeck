@@ -4488,5 +4488,19 @@
         "type": "int"
       }
     }
-  }
+  },
+  "retryPaymentButton": "Tentar pagar de novo",
+  "retryPaymentTitle": "Tentar pagar {payee} de novo?",
+  "@retryPaymentTitle": {
+    "placeholders": {
+      "payee": {
+        "type": "String"
+      }
+    }
+  },
+  "retryPaymentReason": "Volta ao passo 1 e tenta pagar agora",
+  "retryPaymentToast": "A conta voltou para o passo 1.",
+  "retryPaymentRefused": "Não dá para tentar de novo agora. Confira no banco se um pagamento anterior já saiu.",
+  "retryPaymentPaid": "Pago na nova tentativa.",
+  "retryPaymentFellBack": "A nova tentativa também falhou. A conta segue no passo 3."
 }
