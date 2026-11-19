@@ -1,4 +1,3 @@
-import 'package:cashdeck/app/router/app_routes.dart';
 import 'package:cashdeck/core/di/core_providers.dart';
 import 'package:cashdeck/core/money/money.dart';
 import 'package:cashdeck/core/money/money_format.dart';
@@ -26,7 +25,6 @@ import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Types or pastes a bill's code: a Pix copy-and-paste, a boleto or guide
@@ -56,7 +54,7 @@ class _PasteCodeScreenState extends ConsumerState<PasteCodeScreen> {
   final _code = TextEditingController();
   final _bolepix = TextEditingController();
   final _payee = TextEditingController();
-  late EntityKind _owner = defaultOwner(ref);
+  EntityKind _owner = defaultOwner;
   PastedCode? _parsed;
   var _amount = const Money(0);
   CalendarDate? _dueDate;
@@ -177,7 +175,7 @@ class _PasteCodeScreenState extends ConsumerState<PasteCodeScreen> {
     }
     switch (result) {
       case Ok(value: BillCaptured(:final duplicate)):
-        context.go(AppRoutes.bills);
+        goToBillsOf(context, ref, draft.owner);
         await showOutcomeToast(
           context,
           null,

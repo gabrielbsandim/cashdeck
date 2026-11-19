@@ -70,7 +70,7 @@ class _SendPixScreenState extends ConsumerState<SendPixScreen> {
   var _typing = false;
   PixKeyKind _kind = PixKeyKind.phone;
   Money _amount = const Money(0);
-  late EntityKind _entity = defaultOwner(ref);
+  EntityKind _entity = defaultOwner;
   var _busy = false;
   String? _problem;
 

@@ -45,13 +45,21 @@ Future<Result<CaptureOutcome>?> captureAsking(
   );
 }
 
-/// The entity a new bill goes to by default: the company only when the
-/// switcher is on it.
-EntityKind defaultOwner(WidgetRef ref) =>
-    switch (ref.read(entityScopeProvider)) {
-      EntityScope.company => EntityKind.company,
-      EntityScope.personal || EntityScope.consolidated => EntityKind.personal,
-    };
+/// The entity a new bill or Pix is paid by until the user picks the company
+/// on the screen that reads it; the switcher only filters what is shown.
+const EntityKind defaultOwner = EntityKind.personal;
+
+/// Opens the bill list on [owner], so a bill saved for the other entity is not
+/// hidden by the switcher; consolidated already shows both.
+void goToBillsOf(BuildContext context, WidgetRef ref, EntityKind owner) {
+  if (ref.read(entityScopeProvider) != EntityScope.consolidated) {
+    ref.read(entityScopeProvider.notifier).select(switch (owner) {
+      EntityKind.personal => EntityScope.personal,
+      EntityKind.company => EntityScope.company,
+    });
+  }
+  context.go(AppRoutes.bills);
+}
 
 /// Opens the captured bill with its confirm sheet up, so a code read to pay
 /// is one confirmation away; a duplicate opens the bill the server returned.

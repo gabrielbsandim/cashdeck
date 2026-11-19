@@ -6,9 +6,11 @@ import 'package:cashdeck/core/theme/app_spacing.dart';
 import 'package:cashdeck/core/theme/app_text_styles.dart';
 import 'package:cashdeck/core/widgets/buttons/cd_button.dart';
 import 'package:cashdeck/core/widgets/feedback/cd_toast.dart';
+import 'package:cashdeck/core/widgets/inputs/cd_segmented.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/scanned_code.dart';
 import 'package:cashdeck/features/capture/presentation/capture_flow.dart';
+import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +24,7 @@ class ScanBillScreen extends ConsumerStatefulWidget {
   const new({this.payOnRead = false, super.key});
 
   static const pasteKey = Key('scan-paste');
+  static Key ownerKey(EntityKind kind) => Key('scan-owner-${kind.name}');
 
   final bool payOnRead;
 
@@ -32,6 +35,7 @@ class ScanBillScreen extends ConsumerStatefulWidget {
 class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
   var _busy = false;
   var _sending = false;
+  EntityKind _owner = defaultOwner;
 
   Future<void> _read(String raw) async {
     if (_busy) return;
@@ -46,10 +50,11 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       return;
     }
     _busy = true;
+    final draft = BillDraft.fromScanned(code, _owner);
     final result = await captureAsking(
       context,
       ref,
-      BillDraft.fromScanned(code, defaultOwner(ref)),
+      draft,
       onSending: (sending) => setState(() => _sending = sending),
     );
     _busy = false;
@@ -63,7 +68,7 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
       Ok() => (null, false),
       Err(:final failure) => (failure, false),
     };
-    if (failure == null) context.go(AppRoutes.bills);
+    if (failure == null) goToBillsOf(context, ref, draft.owner);
     await showOutcomeToast(
       context,
       failure,
@@ -97,6 +102,23 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
                         style: AppTextStyles.bodyMd.copyWith(
                           color: palette.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      CdSegmented<EntityKind>(
+                        segments: [
+                          CdSegment(
+                            EntityKind.personal,
+                            l10n.entityPersonal,
+                            key: ScanBillScreen.ownerKey(EntityKind.personal),
+                          ),
+                          CdSegment(
+                            EntityKind.company,
+                            l10n.entityCompany,
+                            key: ScanBillScreen.ownerKey(EntityKind.company),
+                          ),
+                        ],
+                        selected: _owner,
+                        onChanged: (owner) => setState(() => _owner = owner),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       CdButton.text(

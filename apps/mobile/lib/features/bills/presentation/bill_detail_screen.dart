@@ -320,6 +320,7 @@ Future<void> _askToConfirm(
         MoneyFormat.format(bill.amount, hide: hide),
       ),
       CdConfirmRow(l10n.confirmRowDue, bill.dueDate.dayMonth),
+      CdConfirmRow(l10n.sendPixFrom, entityKindLabel(l10n, bill.owner)),
     ],
     confirmLabel: l10n.confirmAndPayButton,
   );
@@ -386,6 +387,7 @@ Future<void> _askToRetry(BuildContext context, WidgetRef ref, Bill bill) async {
         MoneyFormat.format(bill.amount, hide: hide),
       ),
       CdConfirmRow(l10n.confirmRowDue, bill.dueDate.dayMonth),
+      CdConfirmRow(l10n.sendPixFrom, entityKindLabel(l10n, bill.owner)),
     ],
     confirmLabel: l10n.confirmAndPayButton,
   );
