@@ -40,7 +40,7 @@ class SharedFileScreen extends ConsumerStatefulWidget {
 }
 
 class _SharedFileScreenState extends ConsumerState<SharedFileScreen> {
-  late EntityKind _owner = defaultOwner(ref);
+  EntityKind _owner = defaultOwner;
   var _sending = false;
   CaptureOutcome? _problem;
 
@@ -52,12 +52,13 @@ class _SharedFileScreenState extends ConsumerState<SharedFileScreen> {
 
   Future<void> _send({CaptureDetails? details}) async {
     final l10n = AppLocalizations.of(context);
+    final owner = _owner;
     setState(() => _sending = true);
     final result = await ref
         .read(captureRepositoryProvider)
         .submitFile(
           widget.file,
-          _owner,
+          owner,
           amount: details?.amount,
           dueDate: details?.dueDate,
         );
@@ -67,7 +68,7 @@ class _SharedFileScreenState extends ConsumerState<SharedFileScreen> {
       case Ok(value: CaptureDetailsNeeded(:final amount)):
         await _askDetails(askAmount: amount);
       case Ok(value: BillCaptured(:final duplicate)):
-        context.go(AppRoutes.bills);
+        goToBillsOf(context, ref, owner);
         await showOutcomeToast(
           context,
           null,
