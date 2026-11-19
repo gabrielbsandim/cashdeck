@@ -190,6 +190,7 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
         run.bill.id,
         plan.currentStep,
         step.method,
+        plan.round,
       ),
       at: deps.clock.now(),
     }
@@ -234,7 +235,12 @@ export function makeRunPaymentLadder(deps: RunPaymentLadderDeps) {
     if (!rail) {
       return failed('RAIL_UNAVAILABLE')
     }
-    const key = idempotencyKey(run.bill.id, plan.currentStep, step.method)
+    const key = idempotencyKey(
+      run.bill.id,
+      plan.currentStep,
+      step.method,
+      plan.round,
+    )
     const previous = await deps.idempotency.find<RailResult>(run.tenantId, key)
     if (previous) {
       return previous

@@ -1,4 +1,4 @@
-import { type BillKind } from '@cashdeck/domain'
+import { type BillKind, type RetryBlock } from '@cashdeck/domain'
 
 export class NotFoundError extends Error {
   readonly code = 'NOT_FOUND'
@@ -76,5 +76,12 @@ export class ConflictError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'ConflictError'
+  }
+}
+
+export class RetryRefusedError extends ConflictError {
+  constructor(readonly reason: RetryBlock) {
+    super(`The payment cannot be retried: ${reason}.`)
+    this.name = 'RetryRefusedError'
   }
 }

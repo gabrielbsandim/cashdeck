@@ -242,6 +242,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
       tenantId,
       steps: json(plan.steps),
       currentStep: plan.currentStep,
+      round: plan.round,
     }
     await this.db.paymentPlan.upsert({
       where: { billId: plan.billId, tenantId },
@@ -264,6 +265,7 @@ export class PrismaPaymentRepository implements PaymentRepository {
       billId: row.billId,
       steps: (row.steps as unknown as StoredStep[]).map(withMethod),
       currentStep: row.currentStep,
+      round: row.round,
     }
   }
 
@@ -476,6 +478,25 @@ export class PrismaIdempotencyStore implements IdempotencyStore {
       create: { tenantId, key, scope, result: json(result) },
       update: {},
     })
+  }
+
+  async claim<T>(
+    tenantId: string,
+    key: string,
+    scope: string,
+    result: T,
+  ): Promise<boolean> {
+    try {
+      await this.db.idempotencyRecord.create({
+        data: { tenantId, key, scope, result: json(result) },
+      })
+      return true
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return false
+      }
+      throw error
+    }
   }
 }
 

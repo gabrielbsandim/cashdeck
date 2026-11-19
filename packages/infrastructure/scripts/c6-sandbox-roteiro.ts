@@ -279,9 +279,11 @@ async function main(): Promise<void> {
   const groupId = (decoded.body as { group_id?: string } | null)?.group_id
   await paymentGroup(roteiro, groupId)
 
+  // The balance endpoint answers 501 to `accept: application/json`.
   await roteiro.run('E_01', 'Consulta de saldo', 200, {
     method: 'GET',
     url: `${STATEMENT}/balance`,
+    headers: { accept: '*/*' },
   })
   const today = new Date()
   const start = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000)

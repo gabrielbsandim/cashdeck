@@ -305,6 +305,19 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
   ): Promise<void> {
     this.rows.set(key(tenantId, idempotencyKey), result)
   }
+
+  async claim<T>(
+    tenantId: string,
+    idempotencyKey: string,
+    _scope: string,
+    result: T,
+  ): Promise<boolean> {
+    if (this.rows.has(key(tenantId, idempotencyKey))) {
+      return false
+    }
+    this.rows.set(key(tenantId, idempotencyKey), result)
+    return true
+  }
 }
 
 export class InMemorySecretStore implements SecretStore {
