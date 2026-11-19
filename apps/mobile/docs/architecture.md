@@ -95,7 +95,8 @@ test/                       mirrors lib/ one to one
   the screen. With a zone saved and the phone away from all of them (or with
   no fix), `safeModeLimitedProvider` is true: amounts stay hidden, the API
   client refuses every request but GET, the confirm sheet refuses, and the
-  router sends the chat, receipts, shared files and every Ajustes group but
+  router sends the chat, receipts, shared files, the paste code and send Pix
+  screens (with the send Pix scan and paste) and every Ajustes group but
   security back home. Ten quick taps on the version in Ajustes, plus the
   device check, release it for an hour. A zone comes from the current
   location, named by its street address, or from a typed address (both

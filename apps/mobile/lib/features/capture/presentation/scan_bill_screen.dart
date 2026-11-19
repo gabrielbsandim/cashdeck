@@ -16,11 +16,14 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Points the camera at a bill: the Pix QR or the boleto barcode, whichever
-/// it finds first. The server prefers the Pix when a bill has both.
+/// it finds first. The server prefers the Pix when a bill has both. With
+/// [payOnRead] the read bill opens ready to confirm instead of joining the list.
 class ScanBillScreen extends ConsumerStatefulWidget {
-  const new({super.key});
+  const new({this.payOnRead = false, super.key});
 
   static const pasteKey = Key('scan-paste');
+
+  final bool payOnRead;
 
   @override
   ConsumerState<ScanBillScreen> createState() => _ScanBillScreenState();
@@ -51,6 +54,10 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
     );
     _busy = false;
     if (!mounted || result == null) return;
+    if (widget.payOnRead) {
+      await openToPay(context, result);
+      return;
+    }
     final (failure, duplicate) = switch (result) {
       Ok(value: BillCaptured(:final duplicate)) => (null, duplicate),
       Ok() => (null, false),
@@ -96,8 +103,13 @@ class _ScanBillScreenState extends ConsumerState<ScanBillScreen> {
                         key: ScanBillScreen.pasteKey,
                         icon: Symbols.content_paste_rounded,
                         label: l10n.pasteCodeButton,
-                        onPressed: () =>
-                            context.push(AppRoutes.pasteCode).ignore(),
+                        onPressed: () => context
+                            .push(
+                              widget.payOnRead
+                                  ? AppRoutes.sendPixPaste
+                                  : AppRoutes.pasteCode,
+                            )
+                            .ignore(),
                       ),
                     ],
                   ),

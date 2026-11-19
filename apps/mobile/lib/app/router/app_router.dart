@@ -104,7 +104,8 @@ bool closedWhileLimited(String path) {
       path.endsWith('/receipt') ||
       path == AppRoutes.sharedFile ||
       path == AppRoutes.pasteCode ||
-      path == AppRoutes.sendPix;
+      path == AppRoutes.sendPix ||
+      path.startsWith('${AppRoutes.sendPix}/');
 }
 
 /// Where [path] must go instead: sign-in without a session, the lock screen
@@ -177,6 +178,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.sendPix,
         builder: (_, _) => const SendPixScreen(),
+        routes: [
+          GoRoute(
+            path: 'scan',
+            builder: (_, _) => const ScanBillScreen(payOnRead: true),
+          ),
+          GoRoute(
+            path: 'paste',
+            builder: (_, _) => const PasteCodeScreen(payOnRead: true),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.pasteCode,
@@ -390,8 +401,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           _tab(AppRoutes.bills, const BillsScreen(), [
             GoRoute(
               path: ':billId',
-              builder: (_, state) =>
-                  BillDetailScreen(billId: state.pathParameters['billId']!),
+              builder: (_, state) => BillDetailScreen(
+                billId: state.pathParameters['billId']!,
+                confirmOnOpen:
+                    state.extra == BillDetailScreen.confirmOnOpenExtra,
+              ),
               routes: [
                 GoRoute(
                   path: 'receipt',

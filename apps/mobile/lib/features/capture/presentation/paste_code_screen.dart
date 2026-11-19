@@ -31,9 +31,10 @@ import 'package:material_symbols_icons/symbols.dart';
 
 /// Types or pastes a bill's code: a Pix copy-and-paste, a boleto or guide
 /// line, or a Pix key. Opens with the shared text, or with the clipboard when
-/// it already holds a code.
+/// it already holds a code. With [payOnRead] the saved bill opens ready to
+/// confirm instead of joining the list.
 class PasteCodeScreen extends ConsumerStatefulWidget {
-  const new({this.sharedText, super.key});
+  const new({this.sharedText, this.payOnRead = false, super.key});
 
   static const codeKey = Key('paste-code-field');
   static const clipboardKey = Key('paste-code-clipboard');
@@ -44,6 +45,8 @@ class PasteCodeScreen extends ConsumerStatefulWidget {
 
   /// Text another app shared in, often a code inside a sentence.
   final String? sharedText;
+
+  final bool payOnRead;
 
   @override
   ConsumerState<PasteCodeScreen> createState() => _PasteCodeScreenState();
@@ -167,10 +170,12 @@ class _PasteCodeScreenState extends ConsumerState<PasteCodeScreen> {
       draft,
       onSending: (sending) => setState(() => _sending = sending),
     );
-    if (!mounted) return;
+    if (!mounted || result == null) return;
+    if (widget.payOnRead) {
+      await openToPay(context, result);
+      return;
+    }
     switch (result) {
-      case null:
-        return;
       case Ok(value: BillCaptured(:final duplicate)):
         context.go(AppRoutes.bills);
         await showOutcomeToast(

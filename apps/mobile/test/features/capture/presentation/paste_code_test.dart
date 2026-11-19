@@ -7,11 +7,17 @@ import 'package:cashdeck/core/scan/code_scanner.dart';
 import 'package:cashdeck/core/share/share_intake.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/core/time/clock.dart';
+import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
+import 'package:cashdeck/features/bills/bills_providers.dart';
+import 'package:cashdeck/features/bills/domain/bill.dart';
+import 'package:cashdeck/features/bills/domain/bills_repository.dart';
+import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/capture/capture_providers.dart';
 import 'package:cashdeck/features/capture/data/fake_capture_repository.dart';
 import 'package:cashdeck/features/capture/domain/bill_draft.dart';
 import 'package:cashdeck/features/capture/domain/capture_sources.dart';
+import 'package:cashdeck/features/capture/domain/pix_br_code.dart';
 import 'package:cashdeck/features/capture/presentation/capture_details_sheet.dart';
 import 'package:cashdeck/features/capture/presentation/paste_code_screen.dart';
 import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
@@ -20,9 +26,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../support/app_harness.dart';
 import '../../../support/builders.dart';
+import '../../../support/mocks.dart';
 import '../../../support/pump_app.dart';
 
 final class _StubCapture extends Fake implements CaptureRepository {
@@ -32,6 +40,19 @@ final class _StubCapture extends Fake implements CaptureRepository {
 
   @override
   Future<Result<CaptureOutcome>> capture(BillDraft draft) async => result;
+}
+
+final class _RecordingCapture extends Fake implements CaptureRepository {
+  new(this.answer);
+
+  final Result<CaptureOutcome> Function(BillDraft draft) answer;
+  final drafts = <BillDraft>[];
+
+  @override
+  Future<Result<CaptureOutcome>> capture(BillDraft draft) async {
+    drafts.add(draft);
+    return answer(draft);
+  }
 }
 
 void main() {
@@ -402,6 +423,287 @@ void main() {
       expect(app.location, AppRoutes.scanBill);
       expect(repository.drafts, isEmpty);
     });
+  });
+
+  group('paying from the send Pix screen', () {
+    late MockBillsRepository bills;
+
+    setUpAll(() => registerFallbackValue(EntityKind.personal));
+
+    void serve(Bill bill) {
+      bills = MockBillsRepository();
+      when(() => bills.get(bill.id)).thenAnswer((_) async => Ok(bill));
+      when(
+        () => bills.list(
+          owner: any(named: 'owner'),
+          cursor: any(named: 'cursor'),
+        ),
+      ).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+    }
+
+    Future<ProviderContainer> openPaying(
+      WidgetTester tester,
+      String route, {
+      required CaptureRepository capture,
+      String? onClipboard,
+      String? scanned,
+    }) {
+      clipboard(tester, onClipboard);
+      return pumpRoute(
+        tester,
+        route,
+        overrides: [
+          captureRepositoryProvider.overrideWithValue(capture),
+          billsRepositoryProvider.overrideWithValue(bills),
+          if (scanned != null)
+            codeScannerProvider.overrideWithValue(fakeCodeScanner(scanned)),
+        ],
+      );
+    }
+
+    Finder inSheet(String text) => find.descendant(
+      of: find.byType(CdConfirmSheet),
+      matching: find.text(text),
+    );
+
+    String dynamicCode() => withPixCrc(
+      [
+        tlv('00', '01'),
+        tlv('01', '12'),
+        tlv(
+          '26',
+          tlv('00', 'br.gov.bcb.pix') +
+              tlv(
+                '25',
+                'pix.exemplo.com/qr/v2/9d36b84fc70b478fb95c12729b90ca25',
+              ),
+        ),
+        tlv('52', '0000'),
+        tlv('53', '986'),
+        tlv('54', '25.00'),
+        tlv('58', 'BR'),
+        tlv('59', 'LOJA EXEMPLO'),
+        tlv('60', 'CURITIBA'),
+        tlv('62', tlv('05', '***')),
+      ].join(),
+    );
+
+    testWidgets('a pasted static code with an amount opens the confirm sheet', (
+      tester,
+    ) async {
+      final payload = testPixCode();
+      serve(testBill(id: 'captured-1', amount: const Money(11990)));
+      final app = await openPaying(
+        tester,
+        AppRoutes.sendPixPaste,
+        capture: repository,
+        onClipboard: payload,
+      );
+
+      await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+      await settle(tester);
+
+      expect(repository.drafts.single.pixCode, payload);
+      expect(app.location, AppRoutes.bill('captured-1'));
+      expect(find.byType(BillDetailScreen), findsOneWidget);
+      expect(find.byType(CdConfirmSheet), findsOneWidget);
+      expect(inSheet(MoneyFormat.format(const Money(11990))), findsOneWidget);
+      expect(find.text(l10n.captureSavedToast), findsNothing);
+      verifyNever(() => bills.pay(any(), confirmed: any(named: 'confirmed')));
+    });
+
+    testWidgets(
+      'a pasted static code without an amount asks it, then confirms',
+      (tester) async {
+        serve(testBill(id: 'captured-1', amount: const Money(1234)));
+        final app = await openPaying(
+          tester,
+          AppRoutes.sendPixPaste,
+          capture: repository,
+          onClipboard: testPixCode(amount: null),
+        );
+
+        await tester.enterText(field(PasteCodeScreen.amountKey), '1234');
+        await tester.pump();
+        await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+        await settle(tester);
+
+        expect(repository.drafts.single.amount, const Money(1234));
+        expect(app.location, AppRoutes.bill('captured-1'));
+        expect(inSheet(MoneyFormat.format(const Money(1234))), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a scanned static code without an amount asks it in the sheet',
+      (tester) async {
+        serve(testBill(id: 'captured-1', amount: const Money(4590)));
+        final app = await openPaying(
+          tester,
+          AppRoutes.sendPixScan,
+          capture: repository,
+          scanned: testPixCode(amount: null),
+        );
+        await tester.tap(find.byKey(fakeScannerKey));
+        await settle(tester);
+        expect(find.text(l10n.captureDetailsTitle), findsOneWidget);
+        expect(repository.drafts, isEmpty);
+
+        await tester.enterText(field(CaptureDetailsSheet.amountKey), '4590');
+        await tester.pump();
+        await tester.tap(find.byKey(CaptureDetailsSheet.submitKey));
+        await settle(tester);
+
+        expect(repository.drafts.single.amount, const Money(4590));
+        expect(app.location, AppRoutes.bill('captured-1'));
+        expect(inSheet(MoneyFormat.format(const Money(4590))), findsOneWidget);
+        expect(find.text(l10n.captureSavedToast), findsNothing);
+      },
+    );
+
+    testWidgets('a dynamic code reaches the capture whole, txid included', (
+      tester,
+    ) async {
+      final payload = dynamicCode();
+      final capture = _RecordingCapture(
+        (_) => const Ok(BillCaptured(billId: 'bill-1')),
+      );
+      serve(testBill(amount: const Money(2500)));
+      await openPaying(
+        tester,
+        AppRoutes.sendPixPaste,
+        capture: capture,
+        onClipboard: payload,
+      );
+
+      await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+      await settle(tester);
+
+      expect(capture.drafts.single.pixCode, payload);
+      expect(
+        capture.drafts.single.pixCode,
+        contains('9d36b84fc70b478fb95c12729b90ca25'),
+      );
+      expect(inSheet(MoneyFormat.format(const Money(2500))), findsOneWidget);
+    });
+
+    testWidgets(
+      'a code whose capture fails stays, says why and opens no sheet',
+      (tester) async {
+        serve(testBill());
+        final app = await openPaying(
+          tester,
+          AppRoutes.sendPixPaste,
+          capture: _RecordingCapture((_) => const Err(NetworkFailure())),
+          onClipboard: dynamicCode(),
+        );
+
+        await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+        await settle(tester);
+
+        expect(app.location, AppRoutes.sendPixPaste);
+        expect(find.text(l10n.errorNetwork), findsOneWidget);
+        expect(find.byType(CdConfirmSheet), findsNothing);
+        expect(find.byType(BillDetailScreen), findsNothing);
+        await waitForToast(tester);
+      },
+    );
+
+    testWidgets('closing the details sheet stays on the scan screen', (
+      tester,
+    ) async {
+      serve(testBill());
+      final app = await openPaying(
+        tester,
+        AppRoutes.sendPixScan,
+        capture: repository,
+        scanned: testPixCode(amount: null),
+      );
+      await tester.tap(find.byKey(fakeScannerKey));
+      await settle(tester);
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+
+      expect(app.location, AppRoutes.sendPixScan);
+      expect(find.byType(BillDetailScreen), findsNothing);
+      expect(find.byType(CdConfirmSheet), findsNothing);
+    });
+
+    testWidgets('a duplicate of a paid code lands on the bill with no sheet', (
+      tester,
+    ) async {
+      serve(testBill(status: BillStatus.paid));
+      final app = await openPaying(
+        tester,
+        AppRoutes.sendPixPaste,
+        capture: _RecordingCapture(
+          (_) => const Ok(BillCaptured(billId: 'bill-1', duplicate: true)),
+        ),
+        onClipboard: testPixCode(),
+      );
+
+      await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+      await settle(tester);
+
+      expect(app.location, AppRoutes.bill('bill-1'));
+      expect(find.byType(BillDetailScreen), findsOneWidget);
+      expect(find.byType(CdConfirmSheet), findsNothing);
+      expect(find.text(l10n.captureDuplicateToast), findsNothing);
+    });
+
+    testWidgets('a duplicate of an open code gets the confirm sheet', (
+      tester,
+    ) async {
+      serve(testBill());
+      final app = await openPaying(
+        tester,
+        AppRoutes.sendPixPaste,
+        capture: _RecordingCapture(
+          (_) => const Ok(BillCaptured(billId: 'bill-1', duplicate: true)),
+        ),
+        onClipboard: testPixCode(),
+      );
+
+      await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+      await settle(tester);
+
+      expect(app.location, AppRoutes.bill('bill-1'));
+      expect(find.byType(CdConfirmSheet), findsOneWidget);
+      expect(find.text(l10n.captureDuplicateToast), findsNothing);
+    });
+
+    testWidgets('a boleto scanned from the Pix screen still gets the sheet', (
+      tester,
+    ) async {
+      serve(testBill(id: 'captured-1', amount: const Money(11990)));
+      final app = await openPaying(
+        tester,
+        AppRoutes.sendPixScan,
+        capture: repository,
+        scanned: testBoletoLine,
+      );
+      await tester.tap(find.byKey(fakeScannerKey));
+      await settle(tester);
+
+      expect(repository.drafts.single.paymentCode, hasLength(47));
+      expect(app.location, AppRoutes.bill('captured-1'));
+      expect(find.byType(CdConfirmSheet), findsOneWidget);
+    });
+  });
+
+  testWidgets('without payOnRead a saved code still goes to the bills list', (
+    tester,
+  ) async {
+    final app = await open(tester, onClipboard: testPixCode());
+
+    await tester.tap(find.byKey(PasteCodeScreen.saveKey));
+    await settle(tester);
+
+    expect(app.location, AppRoutes.bills);
+    expect(find.text(l10n.captureSavedToast), findsOneWidget);
+    expect(find.byType(CdConfirmSheet), findsNothing);
+    expect(find.byType(BillDetailScreen), findsNothing);
+    await waitForToast(tester);
   });
 
   testWidgets('a missing due date asks only the date', (tester) async {

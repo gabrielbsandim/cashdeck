@@ -7,11 +7,14 @@ import 'package:cashdeck/core/widgets/inputs/cd_currency_input.dart';
 import 'package:cashdeck/core/widgets/money/cd_confirm_sheet.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
+import 'package:cashdeck/features/capture/presentation/paste_code_screen.dart';
+import 'package:cashdeck/features/capture/presentation/scan_bill_screen.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:cashdeck/features/pix_contacts/pix_contacts_providers.dart';
 import 'package:cashdeck/features/pix_contacts/presentation/send_pix_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -108,6 +111,46 @@ void main() {
 
     await _tap(tester, CdConfirmSheet.confirmKey);
     expect(find.byType(BillDetailScreen), findsOneWidget);
+  });
+
+  testWidgets('shows a scan row and a paste row that open their screens', (
+    tester,
+  ) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async => null,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final app = await pumpRoute(tester, AppRoutes.sendPix);
+    expect(find.byKey(SendPixScreen.scanKey), findsOneWidget);
+    expect(find.byKey(SendPixScreen.pasteKey), findsOneWidget);
+
+    await _tap(tester, SendPixScreen.scanKey);
+    expect(app.location, '/send-pix/scan');
+    expect(
+      tester.widget<ScanBillScreen>(find.byType(ScanBillScreen)).payOnRead,
+      isTrue,
+    );
+
+    app.router.pop();
+    await settle(tester);
+    expect(find.byType(SendPixScreen), findsOneWidget);
+
+    await _tap(tester, SendPixScreen.pasteKey);
+    expect(app.location, '/send-pix/paste');
+    expect(
+      tester.widget<PasteCodeScreen>(find.byType(PasteCodeScreen)).payOnRead,
+      isTrue,
+    );
+
+    app.router.pop();
+    await settle(tester);
+    expect(find.byType(SendPixScreen), findsOneWidget);
   });
 
   group('with a mocked server', () {

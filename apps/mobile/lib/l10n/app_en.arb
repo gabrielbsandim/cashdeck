@@ -1257,6 +1257,8 @@
   "billsPayScanHint": "Pix QR or barcode with the camera",
   "sendPixTo": "To whom",
   "sendPixNewKey": "New Pix key",
+  "sendPixScanQr": "Scan QR code",
+  "sendPixPasteCode": "Pix copy and paste",
   "sendPixFrom": "Pay from",
   "sendPixReview": "Review",
   "sendPixReviewTitle": "Pix to {name}",
