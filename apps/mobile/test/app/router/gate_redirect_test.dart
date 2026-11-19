@@ -45,6 +45,24 @@ void main() {
     expect(gateRedirect(AppRoutes.chat, signedIn: true, locked: false), isNull);
   });
 
+  test('the send Pix scan and paste screens close like the send Pix one', () {
+    expect(closedWhileLimited(AppRoutes.sendPix), isTrue);
+    expect(closedWhileLimited(AppRoutes.sendPixScan), isTrue);
+    expect(closedWhileLimited(AppRoutes.sendPixPaste), isTrue);
+    for (final path in [AppRoutes.sendPixScan, AppRoutes.sendPixPaste]) {
+      expect(
+        gateRedirect(path, signedIn: true, locked: false, limited: true),
+        AppRoutes.home,
+        reason: path,
+      );
+      expect(
+        gateRedirect(path, signedIn: true, locked: false),
+        isNull,
+        reason: path,
+      );
+    }
+  });
+
   test('opens capture sources from the mailbox OAuth return link', () {
     expect(
       deepLinkTarget(Uri.parse('cashdeck://capture/?connected=1')),

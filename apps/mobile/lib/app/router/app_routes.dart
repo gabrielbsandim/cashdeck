@@ -16,6 +16,8 @@ abstract final class AppRoutes {
   static const alertSettings = '$alerts/settings';
   static const pasteCode = '/paste-code';
   static const sendPix = '/send-pix';
+  static const sendPixScan = '$sendPix/scan';
+  static const sendPixPaste = '$sendPix/paste';
   static const installments = '/installments';
   static const subscriptions = '/subscriptions';
   static const cards = '/cards';

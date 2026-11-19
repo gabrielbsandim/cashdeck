@@ -2994,6 +2994,8 @@
   "billsPayScanHint": "QR Pix ou código de barras pela câmera",
   "sendPixTo": "Para quem",
   "sendPixNewKey": "Nova chave Pix",
+  "sendPixScanQr": "Ler QR Code",
+  "sendPixPasteCode": "Pix copia e cola",
   "sendPixFrom": "Pagar com",
   "sendPixReview": "Revisar",
   "sendPixReviewTitle": "Pix para {name}",

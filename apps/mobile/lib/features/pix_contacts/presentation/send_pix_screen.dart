@@ -37,7 +37,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// A Pix from the Pay tab: pick a saved contact or type a new key, review the
-/// holder the central bank names, then send after the device check.
+/// holder the central bank names, then send after the device check. A QR or
+/// copy and paste code goes through the capture instead, keeping its txid.
 class SendPixScreen extends ConsumerStatefulWidget {
   const new({super.key});
 
@@ -47,6 +48,8 @@ class SendPixScreen extends ConsumerStatefulWidget {
   static const pixKeyKey = Key('send-pix-key');
   static const reviewKey = Key('send-pix-review');
   static const problemKey = Key('send-pix-problem');
+  static const scanKey = Key('send-pix-scan');
+  static const pasteKey = Key('send-pix-paste');
 
   static Key contactKey(String id) => Key('send-pix-contact-$id');
 
@@ -239,6 +242,20 @@ class _SendPixScreenState extends ConsumerState<SendPixScreen> {
             }),
           ),
           if (_typing) ..._newKeyFields(l10n),
+          CdListRow(
+            key: SendPixScreen.scanKey,
+            icon: Symbols.qr_code_scanner_rounded,
+            title: l10n.sendPixScanQr,
+            padding: EdgeInsets.zero,
+            onTap: () => context.push(AppRoutes.sendPixScan).ignore(),
+          ),
+          CdListRow(
+            key: SendPixScreen.pasteKey,
+            icon: Symbols.content_paste_rounded,
+            title: l10n.sendPixPasteCode,
+            padding: EdgeInsets.zero,
+            onTap: () => context.push(AppRoutes.sendPixPaste).ignore(),
+          ),
           const SizedBox(height: AppSpacing.lg),
           CdCurrencyInput(
             label: l10n.chatDetailAmount,

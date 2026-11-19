@@ -39,8 +39,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class BillDetailScreen extends ConsumerWidget {
-  const new({required this.billId, super.key});
+class BillDetailScreen extends ConsumerStatefulWidget {
+  const new({required this.billId, this.confirmOnOpen = false, super.key});
+
+  /// The route extra that opens the bill with its confirm sheet up.
+  static const confirmOnOpenExtra = 'confirm-on-open';
 
   static const copyCodeKey = Key('bill-copy-code');
   static const copyPixKey = Key('bill-copy-pix');
@@ -58,9 +61,44 @@ class BillDetailScreen extends ConsumerWidget {
 
   final String billId;
 
+  /// Offers the confirm sheet once, as soon as the bill loads payable.
+  final bool confirmOnOpen;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BillDetailScreen> createState() => _BillDetailScreenState();
+}
+
+class _BillDetailScreenState extends ConsumerState<BillDetailScreen> {
+  var _offered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.confirmOnOpen) return;
+    ref.listenManual(
+      billDetailControllerProvider(widget.billId),
+      (_, next) => _offer(next.value),
+      fireImmediately: true,
+    );
+  }
+
+  void _offer(Bill? bill) {
+    if (_offered || bill == null || !_payable(bill)) return;
+    _offered = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _confirmBill(context, ref, bill).ignore();
+    });
+  }
+
+  static bool _payable(Bill bill) =>
+      !bill.debitsItself &&
+      (bill.status == BillStatus.pending ||
+          bill.status == BillStatus.needsConfirmation);
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final billId = widget.billId;
     final bill = ref.watch(billDetailControllerProvider(billId));
     final today = CalendarDate.brazilToday(ref.watch(clockProvider).now());
     return Scaffold(
@@ -248,45 +286,49 @@ class _ConfirmBody extends StatelessWidget {
   }
 }
 
+Future<void> _confirmBill(
+  BuildContext context,
+  WidgetRef ref,
+  Bill bill,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final hide = ref.read(hideAmountsProvider);
+  final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+  final reason = bill.confirmationReason;
+  final confirmed = await showCdConfirmSheet(
+    context,
+    title: l10n.confirmBillTitle(billPayeeOf(l10n, bill)),
+    reason: confirmationReasonLabel(l10n, reason),
+    reasonTone: confirmationReasonTone(reason),
+    reasonIcon: confirmationReasonIcon(reason),
+    warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
+    rows: [
+      CdConfirmRow(
+        l10n.confirmRowAmount,
+        MoneyFormat.format(bill.amount, hide: hide),
+      ),
+      CdConfirmRow(l10n.confirmRowDue, bill.dueDate.dayMonth),
+    ],
+    confirmLabel: l10n.confirmAndPayButton,
+  );
+  if (confirmed == null || !confirmed || !context.mounted) return;
+  final failure = await notifier.pay(confirmed: confirmed);
+  if (!context.mounted) return;
+  CdHaptics.outcome(failure);
+  await showCdToast(
+    context,
+    icon: failure == null
+        ? Symbols.check_circle_rounded
+        : Symbols.error_rounded,
+    message: failure?.userMessage(l10n) ?? l10n.billConfirmedToast,
+  );
+}
+
 class _BillDetail extends ConsumerWidget {
   const new({required this.bill, required this.today});
 
   final Bill bill;
   final CalendarDate today;
-
-  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final hide = ref.read(hideAmountsProvider);
-    final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
-    final reason = bill.confirmationReason;
-    final confirmed = await showCdConfirmSheet(
-      context,
-      title: l10n.confirmBillTitle(billPayeeOf(l10n, bill)),
-      reason: confirmationReasonLabel(l10n, reason),
-      reasonTone: confirmationReasonTone(reason),
-      reasonIcon: confirmationReasonIcon(reason),
-      warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
-      rows: [
-        CdConfirmRow(
-          l10n.confirmRowAmount,
-          MoneyFormat.format(bill.amount, hide: hide),
-        ),
-        CdConfirmRow(l10n.confirmRowDue, bill.dueDate.dayMonth),
-      ],
-      confirmLabel: l10n.confirmAndPayButton,
-    );
-    if (confirmed == null || !confirmed || !context.mounted) return;
-    final failure = await notifier.pay(confirmed: confirmed);
-    if (!context.mounted) return;
-    CdHaptics.outcome(failure);
-    await showCdToast(
-      context,
-      icon: failure == null
-          ? Symbols.check_circle_rounded
-          : Symbols.error_rounded,
-      message: failure?.userMessage(l10n) ?? l10n.billConfirmedToast,
-    );
-  }
 
   /// The bank app the server linked to the approval; the hint toast when it
   /// sent none or the phone cannot open it.
@@ -501,7 +543,7 @@ class _BillDetail extends ConsumerWidget {
               onReceipt: () => context.push(AppRoutes.billReceipt(bill.id)),
               onOpenBank: () => _openBank(context, ref),
               onApproved: () => _checkApproval(context, ref),
-              onConfirm: () => _confirm(context, ref),
+              onConfirm: () => _confirmBill(context, ref, bill),
             ),
           ),
         ],

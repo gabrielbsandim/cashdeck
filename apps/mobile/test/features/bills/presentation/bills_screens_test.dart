@@ -19,12 +19,14 @@ import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/bills/presentation/bill_detail_screen.dart';
+import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -940,6 +942,128 @@ void main() {
       await tester.pump();
       expect(find.byKey(BillDetailScreen.unverifiedBadgeKey), findsNothing);
       expect(find.byKey(BillDetailScreen.unverifiedBannerKey), findsNothing);
+    });
+
+    group('opened to confirm', () {
+      Future<void> open(WidgetTester tester, Bill bill) async {
+        when(() => repository.get(bill.id)).thenAnswer((_) async => Ok(bill));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+        when(
+          () => repository.pay(bill.id, confirmed: true),
+        ).thenAnswer((_) async => Ok(testBill(status: BillStatus.scheduled)));
+        await tester.pumpApp(
+          BillDetailScreen(billId: bill.id, confirmOnOpen: true),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+      }
+
+      void expectNoPay() => verifyNever(
+        () => repository.pay(any(), confirmed: any(named: 'confirmed')),
+      );
+
+      for (final status in [BillStatus.pending, BillStatus.needsConfirmation]) {
+        testWidgets('a ${status.name} bill opens the sheet by itself', (
+          tester,
+        ) async {
+          await open(tester, testBill(status: status));
+
+          expect(find.byType(CdConfirmSheet), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(CdConfirmSheet),
+              matching: find.text(MoneyFormat.format(testBill().amount)),
+            ),
+            findsOneWidget,
+          );
+          expectNoPay();
+        });
+      }
+
+      for (final status in [
+        BillStatus.paid,
+        BillStatus.scheduled,
+        BillStatus.awaitingApproval,
+        BillStatus.failed,
+        BillStatus.cancelled,
+      ]) {
+        testWidgets('a ${status.name} bill opens no sheet', (tester) async {
+          await open(tester, testBill(status: status));
+
+          expect(find.byType(BillDetailScreen), findsOneWidget);
+          expect(find.byType(CdConfirmSheet), findsNothing);
+          expectNoPay();
+        });
+      }
+
+      testWidgets('a bill that debits itself opens no sheet', (tester) async {
+        await open(tester, testBill(autoDebit: true));
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+        expectNoPay();
+      });
+
+      testWidgets('without confirmOnOpen the sheet waits for the button', (
+        tester,
+      ) async {
+        final bill = testBill();
+        when(() => repository.get('bill-1')).thenAnswer((_) async => Ok(bill));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+        await tester.pumpApp(
+          const BillDetailScreen(billId: 'bill-1'),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+      });
+
+      testWidgets('cancelling the sheet makes no pay call', (tester) async {
+        await open(tester, testBill());
+
+        await tester.tap(find.byKey(CdConfirmSheet.secondaryKey));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+        expectNoPay();
+      });
+
+      testWidgets('dismissing the sheet makes no pay call', (tester) async {
+        await open(tester, testBill());
+
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+        expectNoPay();
+      });
+
+      testWidgets('confirming pays once, confirmed', (tester) async {
+        await open(tester, testBill());
+
+        await tester.tap(find.byKey(CdConfirmSheet.confirmKey));
+        await tester.pumpAndSettle();
+
+        verify(() => repository.pay('bill-1', confirmed: true)).called(1);
+      });
+
+      testWidgets('a refresh after cancelling does not open the sheet again', (
+        tester,
+      ) async {
+        await open(tester, testBill());
+        await tester.tap(find.byKey(CdConfirmSheet.secondaryKey));
+        await tester.pumpAndSettle();
+
+        ProviderScope.containerOf(tester.element(find.byType(BillDetailScreen)))
+            .invalidate(billDetailControllerProvider('bill-1'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CdConfirmSheet), findsNothing);
+        expectNoPay();
+      });
     });
 
     testWidgets('a failed load offers a retry', (tester) async {
