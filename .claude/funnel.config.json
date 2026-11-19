@@ -1,0 +1,154 @@
+{
+  "$schema": "https://raw.githubusercontent.com/gabrielbsandim/task-funnel/main/templates/funnel.schema.json",
+  "base": "main",
+  "docs": {
+    "entry": "AGENTS.md",
+    "pipeline": "CONTRIBUTING.md",
+    "commits": "CONTRIBUTING.md"
+  },
+  "branch": {
+    "pattern": "{prefix}/{issue}-{slug}",
+    "prefix": {
+      "feature": "feat",
+      "bug": "fix",
+      "refactor": "refactor",
+      "chore": "chore"
+    }
+  },
+  "worktree": {
+    "path": "../{repo}-{issue}",
+    "setup": [
+      "pnpm install --frozen-lockfile",
+      "pnpm -C packages/infrastructure exec prisma generate"
+    ],
+    "skipSetupWhenDocOnly": true
+  },
+  "gates": {
+    "lint": {
+      "cmd": "pnpm lint && pnpm format:check && pnpm depcruise"
+    },
+    "types": {
+      "cmd": "pnpm typecheck"
+    },
+    "test": {
+      "cmd": "pnpm test"
+    },
+    "test_changed": {
+      "cmd": "pnpm test"
+    },
+    "coverage": {
+      "cmd": "pnpm test:coverage",
+      "covers": ["test"]
+    },
+    "mobile": {
+      "cmd": "apps/mobile/tool/check.sh"
+    }
+  },
+  "stages": {
+    "implement_first_pass": ["lint", "types", "test", "mobile"],
+    "implement_fix_round": ["types", "test_changed", "mobile"],
+    "tests": ["coverage"],
+    "ship": ["lint", "types", "coverage", "mobile"]
+  },
+  "slices": {
+    "src": "{base}...HEAD -- packages apps ':(exclude)*.test.ts' ':(exclude)*_test.dart' ':(exclude)packages/client/src/generated' ':(exclude)packages/client/openapi.json'",
+    "tests": "{base}...HEAD -- '*.test.ts' '*_test.dart'",
+    "surfaces": "{base}...HEAD -- docs README.md AGENTS.md",
+    "all": "{base}...HEAD -- . ':(exclude)packages/client/src/generated' ':(exclude)packages/client/openapi.json'"
+  },
+  "lenses": {
+    "correctness": {
+      "slice": "src",
+      "docs": []
+    },
+    "tests": {
+      "slice": "tests",
+      "docs": ["CONTRIBUTING.md"]
+    },
+    "surfaces": {
+      "slice": "surfaces",
+      "docs": []
+    },
+    "claims": {
+      "slice": "all",
+      "docs": [],
+      "grepTargets": ["docs", "README.md"]
+    },
+    "consequences": {
+      "slice": "src",
+      "docs": [],
+      "readsOutsideDiff": true,
+      "codeTargets": ["packages", "apps"]
+    }
+  },
+  "effort": {
+    "light": ["correctness"],
+    "standard": ["correctness", "tests", "claims"],
+    "deep": ["correctness", "tests", "claims", "surfaces", "consequences"]
+  },
+  "reviewModel": {
+    "deep": "opus"
+  },
+  "lanes": {
+    "direct": {
+      "effort": "light",
+      "maxRounds": 1
+    },
+    "risk": {
+      "effort": "deep",
+      "maxRounds": 2
+    }
+  },
+  "risk": {
+    "paths": [
+      "packages/infrastructure/prisma/*",
+      "*/payments/*",
+      "*/rails/*",
+      "*payment*",
+      "*/auth/*",
+      "apps/api/src/app/api/*",
+      "packages/application/src/use-cases/*pix*"
+    ],
+    "lenses": ["consequences"]
+  },
+  "reviewGuide": "CONTRIBUTING.md",
+  "maxRounds": 2,
+  "ledger": false,
+  "maxParallelAgents": 3,
+  "browser": {
+    "enabled": false,
+    "baseUrl": "http://localhost:3000",
+    "start": "npm run dev",
+    "readyPath": "/",
+    "readyTimeout": 180,
+    "artifactsDir": ".playwright-mcp",
+    "efforts": ["standard", "deep"],
+    "appDir": "src/app",
+    "entryFiles": ["page.tsx", "page.ts", "page.jsx", "page.js"],
+    "screenGlobs": ["src/app/**", "src/features/**", "src/components/**"],
+    "excludeGlobs": ["src/app/api/**", "*/tests/*", "*.test.*", "*.spec.*"],
+    "routeParams": {},
+    "routes": {},
+    "maxRoutes": 6,
+    "viewports": [
+      {
+        "name": "mobile",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900
+      }
+    ],
+    "auth": {
+      "loginPath": "/login",
+      "userEnv": "",
+      "passEnv": ""
+    },
+    "uxDocs": []
+  },
+  "flaky": [],
+  "board": ".claude/board.json"
+}
