@@ -2,6 +2,7 @@ import 'package:cashdeck/core/result/result.dart';
 import 'package:cashdeck/core/time/calendar_date.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:equatable/equatable.dart';
 
 /// One page of bills, open ones before settled ones.
@@ -39,6 +40,10 @@ abstract interface class BillsRepository {
 
   /// Marks the bill as debited by the bank on its own, or undoes it.
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled});
+
+  /// Who the directory says receives the bill's Pix code; null when the bill
+  /// has none.
+  Future<Result<PixRecipientCheck?>> recipient(String id);
 
   /// Corrects a due date read wrong from the e-mail.
   Future<Result<Bill>> reschedule(String id, CalendarDate dueDate);

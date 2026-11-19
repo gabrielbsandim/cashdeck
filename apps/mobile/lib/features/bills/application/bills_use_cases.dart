@@ -4,6 +4,7 @@ import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/payment_ladder.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 
 /// A page of the bills of [EntityScope], open ones first, each group by due
 /// date.
@@ -79,6 +80,22 @@ final class PayBill {
   /// Sends the confirmation flag only when [confirmed] came from the sheet.
   Future<Result<Bill>> call(String id, {required bool confirmed}) =>
       _repository.pay(id, confirmed: confirmed);
+}
+
+/// Who receives the bill's Pix code. A failed lookup reads as no answer, as
+/// it never blocks a payment.
+final class GetBillRecipient {
+  const new(this._repository);
+
+  final BillsRepository _repository;
+
+  Future<PixRecipientCheck?> call(Bill bill) async {
+    if (!hasPixCode(bill)) return null;
+    return switch (await _repository.recipient(bill.id)) {
+      Ok(:final value) => value,
+      Err() => null,
+    };
+  }
 }
 
 /// Sends a bill that fell to step 3 back down the ladder.

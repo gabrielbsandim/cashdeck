@@ -26,6 +26,12 @@ LadderStep? currentStepOf(Bill bill) {
   return bill.plan.lastOrNull;
 }
 
+/// The ladder pays a Pix code before a barcode, so its receiver is who gets
+/// the money.
+bool hasPixCode(Bill bill) =>
+    bill.pixCode != null ||
+    (bill.kind == BillKind.pixQr && bill.paymentCode != null);
+
 /// The ladder dropped the bill to step 3 after an earlier step failed, so
 /// the server can send it back to step 1.
 bool canRetry(Bill bill) =>

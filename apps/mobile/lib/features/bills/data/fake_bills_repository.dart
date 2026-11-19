@@ -7,6 +7,7 @@ import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/payment_ladder.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 
 /// Fictional bills around today, one per state of the payment ladder. Marks
 /// and confirmations live in memory for the session.
@@ -330,6 +331,24 @@ final class FakeBillsRepository implements BillsRepository {
     );
     _changed[value.id] = scheduled;
     return scheduled;
+  }
+
+  /// Every fictional Pix code lands with a verified holder.
+  @override
+  Future<Result<PixRecipientCheck?>> recipient(String id) async {
+    final found = await get(id);
+    return switch (found) {
+      Ok(:final value) when hasPixCode(value) => Ok(
+        PixRecipientCheck(
+          name: value.payee,
+          taxId: '12.345.678/0001-90',
+          bank: 'Banco Exemplo',
+          verified: true,
+        ),
+      ),
+      Ok() => const Ok(null),
+      Err(:final failure) => Err(failure),
+    };
   }
 
   @override

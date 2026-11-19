@@ -28,11 +28,13 @@ import 'package:cashdeck/core/widgets/money/cd_copy_field.dart';
 import 'package:cashdeck/core/widgets/money/privacy_toggle.dart';
 import 'package:cashdeck/core/widgets/states/cd_error_state.dart';
 import 'package:cashdeck/core/widgets/states/cd_skeleton.dart';
+import 'package:cashdeck/features/bills/bills_providers.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/payment_ladder.dart';
 import 'package:cashdeck/features/bills/presentation/bill_labels.dart';
 import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:cashdeck/features/receipts/receipts_providers.dart';
 import 'package:cashdeck/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -298,14 +300,17 @@ Future<void> _confirmBill(
   final hide = ref.read(hideAmountsProvider);
   final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
   final reason = bill.confirmationReason;
+  final recipient = await ref.read(getBillRecipientProvider).call(bill);
+  if (!context.mounted) return;
   final confirmed = await showCdConfirmSheet(
     context,
     title: l10n.confirmBillTitle(billPayeeOf(l10n, bill)),
     reason: confirmationReasonLabel(l10n, reason),
     reasonTone: confirmationReasonTone(reason),
     reasonIcon: confirmationReasonIcon(reason),
-    warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
+    warning: _warningOf(l10n, bill, recipient),
     rows: [
+      ..._holderRows(l10n, recipient),
       CdConfirmRow(
         l10n.confirmRowAmount,
         MoneyFormat.format(bill.amount, hide: hide),
@@ -327,18 +332,47 @@ Future<void> _confirmBill(
   );
 }
 
+/// The holder the directory named; an unverified name is only the payee the
+/// bill already shows, so it gets the warning instead of a row.
+List<CdConfirmRow> _holderRows(
+  AppLocalizations l10n,
+  PixRecipientCheck? recipient,
+) {
+  if (recipient == null || !recipient.verified) return const [];
+  return [
+    CdConfirmRow(l10n.chatDetailHolder, recipient.name),
+    if (recipient.taxId case final taxId?)
+      CdConfirmRow(l10n.chatDetailTaxId, taxId),
+    if (recipient.bank case final bank?)
+      CdConfirmRow(l10n.chatDetailBank, bank),
+  ];
+}
+
+String? _warningOf(
+  AppLocalizations l10n,
+  Bill bill,
+  PixRecipientCheck? recipient,
+) => switch (recipient) {
+  _ when warnsAboutSender(bill) => l10n.billUnverifiedSenderBody,
+  PixRecipientCheck(verified: false) => l10n.chatRecipientUnverified,
+  _ => null,
+};
+
 /// Pays again from step 1, so it asks first like any payment the user starts.
 Future<void> _retryBill(BuildContext context, WidgetRef ref, Bill bill) async {
   final l10n = AppLocalizations.of(context);
   final hide = ref.read(hideAmountsProvider);
   final notifier = ref.read(billDetailControllerProvider(bill.id).notifier);
+  final recipient = await ref.read(getBillRecipientProvider).call(bill);
+  if (!context.mounted) return;
   final confirmed = await showCdConfirmSheet(
     context,
     title: l10n.retryPaymentTitle(billPayeeOf(l10n, bill)),
     reason: l10n.retryPaymentReason,
     reasonIcon: Symbols.refresh_rounded,
-    warning: warnsAboutSender(bill) ? l10n.billUnverifiedSenderBody : null,
+    warning: _warningOf(l10n, bill, recipient),
     rows: [
+      ..._holderRows(l10n, recipient),
       CdConfirmRow(
         l10n.confirmRowAmount,
         MoneyFormat.format(bill.amount, hide: hide),

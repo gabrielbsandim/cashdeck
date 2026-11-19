@@ -141,6 +141,17 @@ right away and answers the updated `BillDetail`. The app then says the bill
 was paid, is still waiting for the approval, or moved on; a bill that was not
 waiting comes back unchanged, so a second tap is harmless.
 
+"Tentar pagar de novo", on a bill the ladder dropped to step 3, sends
+`POST /api/v1/bills/{id}/retry` after the confirmation sheet. The server
+restarts the plan from step 1 and answers the updated `BillDetail`, or 409
+when an earlier payment may still land; the app then says to check the bank.
+
+Before the confirmation sheet of a bill with a Pix code (a QR, or a boleto
+that carries one), the app asks `GET /api/v1/bills/{id}/recipient`, which
+answers `{ "name", "taxId", "bank", "verified" }` from the central bank
+directory, or `null` for a bill without a code. A verified holder shows as
+rows on the sheet; an unverified one, or a failed lookup, shows a warning.
+
 "Abrir banco" opens the `appLink` of the latest `BANK_APPROVAL` attempt with
 `url_launcher`. The server fills it from the tenant's institution
 configuration; when it is null or no app answers the link, a toast explains

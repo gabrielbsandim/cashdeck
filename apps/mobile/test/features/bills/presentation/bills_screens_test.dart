@@ -23,6 +23,7 @@ import 'package:cashdeck/features/bills/presentation/bills_controller.dart';
 import 'package:cashdeck/features/bills/presentation/bills_screen.dart';
 import 'package:cashdeck/features/bills/presentation/payment_ladder_view.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:cashdeck/features/receipts/presentation/receipt_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1066,6 +1067,80 @@ void main() {
       });
     });
 
+    group('the holder on the confirm sheet', () {
+      const holder = PixRecipientCheck(
+        name: 'Loja Exemplo',
+        taxId: '12.345.678/0001-90',
+        bank: 'Banco Exemplo',
+        verified: true,
+      );
+      final qr = testBill(
+        kind: BillKind.pixQr,
+        paymentCode: '000201pix',
+        status: BillStatus.needsConfirmation,
+      );
+
+      Future<void> open(WidgetTester tester, Bill bill) async {
+        when(() => repository.get(bill.id)).thenAnswer((_) async => Ok(bill));
+        when(listCall()).thenAnswer((_) async => Ok(BillPage(bills: [bill])));
+        await tester.pumpApp(
+          BillDetailScreen(billId: bill.id, confirmOnOpen: true),
+          overrides: overrides(),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+      }
+
+      Finder inSheet(String text) => find.descendant(
+        of: find.byType(CdConfirmSheet),
+        matching: find.text(text),
+      );
+
+      testWidgets('a verified holder shows its name, tax id and bank', (
+        tester,
+      ) async {
+        when(() => repository.recipient('bill-1'))
+            .thenAnswer((_) async => const Ok(holder));
+        await open(tester, qr);
+
+        expect(inSheet('Loja Exemplo'), findsOneWidget);
+        expect(inSheet('12.345.678/0001-90'), findsOneWidget);
+        expect(inSheet('Banco Exemplo'), findsOneWidget);
+        expect(inSheet(l10n.chatRecipientUnverified), findsNothing);
+      });
+
+      testWidgets('an unverified or failed lookup warns instead', (
+        tester,
+      ) async {
+        when(() => repository.recipient('bill-1')).thenAnswer(
+          (_) async =>
+              const Ok(PixRecipientCheck(name: 'Unknown', verified: false)),
+        );
+        await open(tester, qr);
+
+        expect(inSheet(l10n.chatRecipientUnverified), findsOneWidget);
+        expect(inSheet('Unknown'), findsNothing);
+      });
+
+      testWidgets('a failed lookup still opens the sheet, with no holder', (
+        tester,
+      ) async {
+        when(() => repository.recipient('bill-1'))
+            .thenAnswer((_) async => const Err(NetworkFailure()));
+        await open(tester, qr);
+
+        expect(find.byType(CdConfirmSheet), findsOneWidget);
+        expect(inSheet(l10n.chatDetailHolder), findsNothing);
+      });
+
+      testWidgets('a bill without a Pix code asks nobody', (tester) async {
+        await open(tester, testBill());
+
+        expect(find.byType(CdConfirmSheet), findsOneWidget);
+        verifyNever(() => repository.recipient(any()));
+      });
+    });
+
     group('the retry from step 3', () {
       final fell = testBill(
         plan: const [LadderStep.automatic, LadderStep.assisted],
@@ -1232,6 +1307,10 @@ final class _Single implements BillsRepository {
 
   @override
   Future<Result<Bill>> retry(String id) => inner.retry(id);
+
+  @override
+  Future<Result<PixRecipientCheck?>> recipient(String id) =>
+      inner.recipient(id);
 
   @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>

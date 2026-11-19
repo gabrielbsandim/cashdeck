@@ -4,6 +4,7 @@ import 'package:cashdeck/features/bills/application/bills_use_cases.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -107,6 +108,23 @@ void main() {
     when(() => repository.reconcile('later'))
         .thenAnswer((_) async => Ok(later));
     expect(await ReconcileBill(repository).call('later'), Ok(later));
+  });
+
+  test('the recipient is asked only for a bill with a Pix code', () async {
+    const holder = PixRecipientCheck(name: 'Loja Exemplo', verified: true);
+    final qr = testBill(id: 'qr', kind: BillKind.pixQr, paymentCode: 'p');
+    final bolepix = testBill(id: 'bolepix', pixCode: 'p');
+    when(() => repository.recipient('qr'))
+        .thenAnswer((_) async => const Ok(holder));
+    when(() => repository.recipient('bolepix'))
+        .thenAnswer((_) async => const Err(NetworkFailure()));
+
+    final recipientOf = GetBillRecipient(repository).call;
+
+    expect(await recipientOf(qr), holder);
+    expect(await recipientOf(bolepix), isNull);
+    expect(await recipientOf(testBill(id: 'boleto')), isNull);
+    verifyNever(() => repository.recipient('boleto'));
   });
 
   test('a retry goes to the repository', () async {

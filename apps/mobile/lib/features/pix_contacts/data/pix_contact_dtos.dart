@@ -69,11 +69,13 @@ PixPreview pixPreviewFromJson(JsonMap json) {
     pixKey: readString(contact, 'pixKey'),
     pixKeyType: readEnum(contact, 'pixKeyType', _keyTypes),
     isNew: readBool(contact, 'isNew'),
-    recipient: PixRecipientCheck(
-      name: readString(recipient, 'name'),
-      taxId: readOptionalString(recipient, 'taxId'),
-      bank: readOptionalString(recipient, 'bank'),
-      verified: readBool(recipient, 'verified'),
-    ),
+    recipient: pixRecipientCheckFromJson(recipient),
   );
 }
+
+PixRecipientCheck pixRecipientCheckFromJson(JsonMap json) => PixRecipientCheck(
+  name: readString(json, 'name'),
+  taxId: readOptionalString(json, 'taxId'),
+  bank: readOptionalString(json, 'bank'),
+  verified: readBool(json, 'verified'),
+);

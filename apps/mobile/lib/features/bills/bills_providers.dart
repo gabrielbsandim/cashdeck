@@ -41,6 +41,10 @@ final rescheduleBillProvider = Provider<RescheduleBill>(
   (ref) => RescheduleBill(ref.watch(billsRepositoryProvider)),
 );
 
+final getBillRecipientProvider = Provider<GetBillRecipient>(
+  (ref) => GetBillRecipient(ref.watch(billsRepositoryProvider)),
+);
+
 final retryBillProvider = Provider<RetryBill>(
   (ref) => RetryBill(ref.watch(billsRepositoryProvider)),
 );

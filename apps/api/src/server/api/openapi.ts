@@ -708,6 +708,13 @@ const OPERATIONS: Operation[] = [
     response: billDetailViewSchema,
   },
   {
+    method: 'get',
+    path: '/bills/{id}/recipient',
+    id: 'getBillRecipient',
+    summary: 'Who receives the Pix code of a bill, as the directory names it',
+    response: pixPreviewViewSchema.shape.recipient.nullable(),
+  },
+  {
     method: 'post',
     path: '/bills/{id}/pay',
     id: 'payBill',

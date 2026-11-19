@@ -10,6 +10,7 @@ import 'package:cashdeck/features/bills/data/fake_bills_repository.dart';
 import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/builders.dart';
@@ -433,6 +434,39 @@ void main() {
       expect(request.path, '/api/v1/bills/bill-1/retry');
     });
 
+    test('reads the recipient of a bill, or none', () async {
+      final holder = stubDio(
+        (_) => const StubResponse(200, {
+          'data': {
+            'name': 'Loja Exemplo',
+            'taxId': null,
+            'bank': 'Banco Exemplo',
+            'verified': true,
+          },
+        }),
+      );
+      final none = stubDio((_) => const StubResponse(200, {'data': null}));
+
+      expect(
+        await ApiBillsRepository(holder).recipient('bill-1'),
+        const Ok<PixRecipientCheck?>(
+          PixRecipientCheck(
+            name: 'Loja Exemplo',
+            bank: 'Banco Exemplo',
+            verified: true,
+          ),
+        ),
+      );
+      expect(
+        adapterOf(holder).requests.single.path,
+        '/api/v1/bills/bill-1/recipient',
+      );
+      expect(
+        await ApiBillsRepository(none).recipient('bill-1'),
+        const Ok<PixRecipientCheck?>(null),
+      );
+    });
+
     test('maps a 404 and a malformed body', () async {
       final missing = stubDio((_) => const StubResponse(404));
       final malformed = stubDio((_) => const StubResponse(200, {'data': 1}));
@@ -603,6 +637,23 @@ void main() {
       final energy = await local.get('bill-energy');
       expect(await local.retry('bill-energy'), energy);
       expect(await local.retry('missing'), const Err<Bill>(NotFoundFailure()));
+    });
+
+    test('a fictional Pix code has a verified holder', () async {
+      final holder = (await repository.recipient(
+        'bill-internet',
+      ) as Ok<PixRecipientCheck?>).value;
+
+      expect(holder?.verified, isTrue);
+      expect(holder?.name, 'Internet Fibra Sul');
+      expect(
+        await repository.recipient('bill-energy'),
+        const Ok<PixRecipientCheck?>(null),
+      );
+      expect(
+        await repository.recipient('missing'),
+        const Err<PixRecipientCheck?>(NotFoundFailure()),
+      );
     });
 
     test('gets a bill by id or answers not found', () async {

@@ -7,6 +7,8 @@ import 'package:cashdeck/features/bills/domain/bill.dart';
 import 'package:cashdeck/features/bills/domain/bills_repository.dart';
 import 'package:cashdeck/features/entities/data/entity_directory.dart';
 import 'package:cashdeck/features/entities/domain/entity_scope.dart';
+import 'package:cashdeck/features/pix_contacts/data/pix_contact_dtos.dart';
+import 'package:cashdeck/features/pix_contacts/domain/pix_contact.dart';
 import 'package:dio/dio.dart';
 
 final class ApiBillsRepository implements BillsRepository {
@@ -137,6 +139,18 @@ final class ApiBillsRepository implements BillsRepository {
     );
     return billFromJson(asJsonMap(unwrapData(response.data)));
   });
+
+  @override
+  Future<Result<PixRecipientCheck?>> recipient(String id) =>
+      guardRequest(() async {
+        final response = await _dio.get<Object?>(
+          '$path/${Uri.encodeComponent(id)}/recipient',
+        );
+        return switch (unwrapData(response.data)) {
+          null => null,
+          final data => pixRecipientCheckFromJson(asJsonMap(data)),
+        };
+      });
 
   @override
   Future<Result<Bill>> setAutoDebit(String id, {required bool enabled}) =>
